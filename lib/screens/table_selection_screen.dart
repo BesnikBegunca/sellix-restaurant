@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../manager/manager_data.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
 import '../theme/pos_grid.dart';
@@ -15,29 +16,27 @@ class TableSelectionScreen extends StatefulWidget {
 }
 
 class _TableSelectionScreenState extends State<TableSelectionScreen> {
-  /// 15 tavolina nga mock; qeliza e fundit në rrjet është gjithmonë “+”.
-  final List<TableInfo> _tables = List<TableInfo>.from(mockTables);
+  final ManagerData _m = ManagerData.instance;
 
-  int _nextTableId() {
-    var m = 0;
-    for (final t in _tables) {
-      if (t.id > m) {
-        m = t.id;
-      }
-    }
-    return m + 1;
+  @override
+  void initState() {
+    super.initState();
+    _m.addListener(_onManager);
   }
 
-  void _addTable() {
-    setState(() {
-      _tables.add(TableInfo(id: _nextTableId(), occupied: false));
-    });
+  void _onManager() => setState(() {});
+
+  @override
+  void dispose() {
+    _m.removeListener(_onManager);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final occupied = _tables.where((t) => t.occupied).length;
-    final total = _tables.fold<double>(
+    final tables = _m.cashierTables;
+    final occupied = tables.where((t) => t.occupied).length;
+    final total = tables.fold<double>(
       0,
       (s, t) => s + (t.currentTotal ?? 0),
     );
@@ -66,13 +65,15 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                       const SizedBox(height: 24),
                       Expanded(
                         child: GridView.builder(
-                          gridDelegate: PosGrid.tableDelegate,
-                          itemCount: _tables.length + 1,
+                          gridDelegate: PosGrid.tableDelegateFor(
+                            _m.tablesPerRow,
+                          ),
+                          itemCount: tables.length + 1,
                           itemBuilder: (context, i) {
-                            if (i == _tables.length) {
-                              return _AddTableCard(onTap: _addTable);
+                            if (i == tables.length) {
+                              return _AddTableCard(onTap: _m.addCashierTable);
                             }
-                            final t = _tables[i];
+                            final t = tables[i];
                             return _TableCard(
                               table: t,
                               onTap: () {

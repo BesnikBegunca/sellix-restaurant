@@ -15,7 +15,7 @@ abstract final class PosGrid {
     childAspectRatio: childAspectRatio,
   );
 
-  /// Rrjeti i tavolinave në `TableSelectionScreen` (6 kolona).
+  /// Rrjeti i tavolinave në `TableSelectionScreen` (6 kolona — default).
   static const SliverGridDelegateWithFixedCrossAxisCount tableDelegate =
       SliverGridDelegateWithFixedCrossAxisCount(
     crossAxisCount: tableCrossAxisCount,
@@ -23,6 +23,18 @@ abstract final class PosGrid {
     mainAxisSpacing: spacing,
     childAspectRatio: childAspectRatio,
   );
+
+  static SliverGridDelegateWithFixedCrossAxisCount tableDelegateFor(
+    int columns,
+  ) {
+    final c = columns.clamp(2, 12);
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: c,
+      crossAxisSpacing: spacing,
+      mainAxisSpacing: spacing,
+      childAspectRatio: childAspectRatio,
+    );
+  }
 
   static double cellWidth(double gridInnerWidth) {
     final n = crossAxisCount;
@@ -39,4 +51,12 @@ abstract final class PosGrid {
 
   static double tableCellHeight(double gridInnerWidth) =>
       tableCellWidth(gridInnerWidth) / childAspectRatio;
+
+  static double tableCellWidthFor(double gridInnerWidth, int columns) {
+    final n = columns.clamp(2, 12);
+    return (gridInnerWidth - (n - 1) * spacing) / n;
+  }
+
+  static double tableCellHeightFor(double gridInnerWidth, int columns) =>
+      tableCellWidthFor(gridInnerWidth, columns) / childAspectRatio;
 }

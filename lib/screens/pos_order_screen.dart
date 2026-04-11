@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../manager/manager_data.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
 import '../theme/pos_grid.dart';
@@ -30,6 +31,27 @@ class _CartLine {
 class _PosOrderScreenState extends State<PosOrderScreen> {
   int _categoryIndex = 0;
   final List<_CartLine> _lines = [];
+
+  @override
+  void initState() {
+    super.initState();
+    ManagerData.instance.addListener(_onMenuChanged);
+  }
+
+  void _onMenuChanged() {
+    final cats = ManagerData.instance.categories;
+    if (cats.isNotEmpty && _categoryIndex >= cats.length) {
+      setState(() => _categoryIndex = cats.length - 1);
+    } else {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    ManagerData.instance.removeListener(_onMenuChanged);
+    super.dispose();
+  }
 
   double get _subtotal =>
       _lines.fold(0, (s, l) => s + l.product.price * l.qty);
@@ -137,75 +159,109 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cats = mockCategories;
-    final products = cats[_categoryIndex].products;
-
-    return Scaffold(
-      backgroundColor: AppColors.beige,
-      body: Column(
-        children: [
-          GgAppHeader(
-            showBack: true,
-            onBack: () => Navigator.of(context).maybePop(),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final cellW =
-                            PosGrid.cellWidth(constraints.maxWidth);
-                        final cellH =
-                            PosGrid.cellHeight(constraints.maxWidth);
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _categoryRow(cats, cellW, cellH),
-                            const SizedBox(height: PosGrid.spacing),
-                            Expanded(
-                              child: GridView.builder(
-                                padding:
-                                    const EdgeInsets.only(bottom: 16),
-                                gridDelegate: PosGrid.delegate,
-                                itemCount: products.length,
-                                itemBuilder: (context, i) {
-                                  return _ProductTile(
-                                    product: products[i],
-                                    onAdd: () =>
-                                        _addProduct(products[i]),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+    return ListenableBuilder(
+      listenable: ManagerData.instance,
+      builder: (context, _) {
+        final cats = ManagerData.instance.categories;
+        if (cats.isEmpty) {
+          return Scaffold(
+            backgroundColor: AppColors.beige,
+            body: Column(
+              children: [
+                GgAppHeader(
+                  showBack: true,
+                  onBack: () => Navigator.of(context).maybePop(),
+                ),
+                const Expanded(
+                  child: Center(
+                    child: Text(
+                      'Nuk ka kategori në menu.\nMenaxheri duhet të shtojë kategori.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.mediumGreenText),
                     ),
                   ),
-                  const SizedBox(width: 24),
-                  SizedBox(
-                    width: 380,
-                    child: _OrderPanel(
-                      tableNumber: widget.tableNumber,
-                      orderNumber: widget.orderNumber,
-                      lines: _lines,
-                      subtotal: _subtotal,
-                      tax: _tax,
-                      total: _total,
-                      onDelta: _deltaQty,
-                      onSend: _sendOrder,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          );
+        }
+        final ix = _categoryIndex.clamp(0, cats.length - 1);
+        final products = cats[ix].products;
+
+        return Scaffold(
+          backgroundColor: AppColors.beige,
+          body: Column(
+            children: [
+              GgAppHeader(
+                showBack: true,
+                onBack: () => Navigator.of(context).maybePop(),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final cellW =
+                                PosGrid.cellWidth(constraints.maxWidth);
+                            final cellH =
+                                PosGrid.cellHeight(constraints.maxWidth);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _categoryRow(
+                                  cats,
+                                  cellW,
+                                  cellH,
+                                  ix,
+                                ),
+                                const SizedBox(height: PosGrid.spacing),
+                                Expanded(
+                                  child: GridView.builder(
+                                    padding: const EdgeInsets.only(
+                                      bottom: 16,
+                                    ),
+                                    gridDelegate: PosGrid.delegate,
+                                    itemCount: products.length,
+                                    itemBuilder: (context, i) {
+                                      return _ProductTile(
+                                        product: products[i],
+                                        onAdd: () =>
+                                            _addProduct(products[i]),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      SizedBox(
+                        width: 380,
+                        child: _OrderPanel(
+                          tableNumber: widget.tableNumber,
+                          orderNumber: widget.orderNumber,
+                          lines: _lines,
+                          subtotal: _subtotal,
+                          tax: _tax,
+                          total: _total,
+                          onDelta: _deltaQty,
+                          onSend: _sendOrder,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -213,6 +269,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     List<CategoryData> cats,
     double cellW,
     double cellH,
+    int selectedIndex,
   ) {
     return SizedBox(
       height: cellH,
@@ -225,7 +282,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
               width: cellW,
               child: _CategoryTile(
                 data: cats[i],
-                active: i == _categoryIndex,
+                active: i == selectedIndex,
                 onTap: () => setState(() => _categoryIndex = i),
               ),
             ),

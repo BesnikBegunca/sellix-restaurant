@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../widgets/hover_interaction.dart';
 import '../widgets/gg_header.dart';
+import 'manager_dashboard_screen.dart';
 import 'table_selection_screen.dart';
 
 /// Ekrani 1: PIN + kalkulator ndrysi; tastiera kryesore shërben për të dy sipas fokusit.
@@ -108,6 +109,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submitPin() {
     if (!_pinConfirmEnabled) return;
+    if (_pin == '9999') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const ManagerDashboardScreen(),
+        ),
+      );
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => const TableSelectionScreen(),
