@@ -1,0 +1,403 @@
+import 'package:flutter/material.dart';
+
+import '../models/mock_data.dart';
+import '../theme/app_colors.dart';
+import '../theme/pos_grid.dart';
+import '../widgets/gg_header.dart';
+import '../widgets/hover_interaction.dart';
+import 'pos_order_screen.dart';
+
+class TableSelectionScreen extends StatefulWidget {
+  const TableSelectionScreen({super.key});
+
+  @override
+  State<TableSelectionScreen> createState() => _TableSelectionScreenState();
+}
+
+class _TableSelectionScreenState extends State<TableSelectionScreen> {
+  /// 15 tavolina nga mock; qeliza e fundit në rrjet është gjithmonë “+”.
+  final List<TableInfo> _tables = List<TableInfo>.from(mockTables);
+
+  int _nextTableId() {
+    var m = 0;
+    for (final t in _tables) {
+      if (t.id > m) {
+        m = t.id;
+      }
+    }
+    return m + 1;
+  }
+
+  void _addTable() {
+    setState(() {
+      _tables.add(TableInfo(id: _nextTableId(), occupied: false));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final occupied = _tables.where((t) => t.occupied).length;
+    final total = _tables.fold<double>(
+      0,
+      (s, t) => s + (t.currentTotal ?? 0),
+    );
+
+    return Scaffold(
+      backgroundColor: AppColors.beige,
+      body: Column(
+        children: [
+          GgAppHeader(
+            showBack: true,
+            onBack: () => Navigator.of(context).maybePop(),
+          ),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1400),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _TableScreenHeaderRow(
+                        total: total,
+                        occupied: occupied,
+                      ),
+                      const SizedBox(height: 24),
+                      Expanded(
+                        child: GridView.builder(
+                          gridDelegate: PosGrid.tableDelegate,
+                          itemCount: _tables.length + 1,
+                          itemBuilder: (context, i) {
+                            if (i == _tables.length) {
+                              return _AddTableCard(onTap: _addTable);
+                            }
+                            final t = _tables[i];
+                            return _TableCard(
+                              table: t,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => PosOrderScreen(
+                                      tableNumber: t.id,
+                                      orderNumber: 10042 + t.id,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Rreshti i sipërm: Total + badge në **start**; “Select Table” më i vogël në **end**.
+class _TableScreenHeaderRow extends StatelessWidget {
+  const _TableScreenHeaderRow({
+    required this.total,
+    required this.occupied,
+  });
+
+  final double total;
+  final int occupied;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Total of All Tables',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.lightGreenText,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '\$${total.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.darkGreenText,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              _OccupiedCountBadge(occupied: occupied),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Text(
+          'Select Table',
+          textAlign: TextAlign.end,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+            color: AppColors.darkGreenText,
+            height: 1.1,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OccupiedCountBadge extends StatelessWidget {
+  const _OccupiedCountBadge({required this.occupied});
+
+  final int occupied;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.lightGreenBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        '$occupied occupied',
+        style: const TextStyle(
+          fontSize: 14,
+          color: AppColors.primaryGreen,
+        ),
+      ),
+    );
+  }
+}
+
+/// Kartë me të njëjtën madhësi si tavolinat: bardhë, qoshe 20px, “+” në qendër.
+class _AddTableCard extends StatefulWidget {
+  const _AddTableCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_AddTableCard> createState() => _AddTableCardState();
+}
+
+class _AddTableCardState extends State<_AddTableCard> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return HoverLiftCard(
+      onTap: widget.onTap,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.borderSubtle(_hover ? 0.3 : 0.1),
+            ),
+            boxShadow: _hover
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: _hover
+                    ? AppColors.lightGreenBg
+                    : AppColors.lightGreenBg.withValues(alpha: 0.6),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add,
+                size: 32,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TableCard extends StatefulWidget {
+  const _TableCard({required this.table, required this.onTap});
+
+  final TableInfo table;
+  final VoidCallback onTap;
+
+  @override
+  State<_TableCard> createState() => _TableCardState();
+}
+
+class _TableCardState extends State<_TableCard> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final o = widget.table.occupied;
+    return HoverLiftCard(
+      onTap: widget.onTap,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: o ? AppColors.lightGreenBg : AppColors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: o
+                  ? AppColors.borderEmphasized(0.3)
+                  : AppColors.borderSubtle(_hover ? 0.3 : 0.1),
+            ),
+            boxShadow: _hover
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Table ${widget.table.id}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  _StatusPill(occupied: o),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 1,
+                color: AppColors.borderSubtle(0.1),
+              ),
+              const SizedBox(height: 8),
+              if (o && widget.table.currentTotal != null) ...[
+                const Text(
+                  'Current Total',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '\$${widget.table.currentTotal!.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                ),
+              ] else
+                const Text(
+                  'No active orders',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.occupied});
+
+  final bool occupied;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: occupied
+            ? AppColors.primaryGreen.withValues(alpha: 0.1)
+            : AppColors.lightGreenText.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        occupied ? 'Occupied' : 'Available',
+        style: TextStyle(
+          fontSize: 11,
+          color: occupied ? AppColors.primaryGreen : AppColors.lightGreenText,
+        ),
+      ),
+    );
+  }
+}
