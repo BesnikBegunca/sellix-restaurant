@@ -20,12 +20,14 @@ class ProductItem {
     required this.name,
     required this.price,
     required this.emoji,
+    this.imagePath,
   });
 
   final String id;
   final String name;
   final double price;
   final String emoji;
+  final String? imagePath;
 }
 
 class CategoryData {
@@ -87,6 +89,13 @@ final List<CategoryData> mockCategories = [
       ProductItem(id: 'sp6', name: 'Brandy', price: 8.25, emoji: '🥃'),
       ProductItem(id: 'sp7', name: 'Bourbon', price: 9.0, emoji: '🥃'),
       ProductItem(id: 'sp8', name: 'Scotch', price: 9.5, emoji: '🥃'),
+      ProductItem(id: 'sp9', name: 'Coca Cola', price: 2.5, emoji: '🥤', imagePath: 'assets/images/cocacola.png'),
+      ProductItem(id: 'sp10', name: 'Fanta', price: 2.5, emoji: '🥤', imagePath: 'assets/images/fanta.webp'),
+      ProductItem(id: 'sp11', name: 'Sprite', price: 2.5, emoji: '🥤', imagePath: 'assets/images/sprite.png'),
+      ProductItem(id: 'sp12', name: 'Heineken', price: 3.5, emoji: '🍺', imagePath: 'assets/images/heineken.png'),
+      ProductItem(id: 'sp13', name: 'Peja', price: 3.0, emoji: '🍺', imagePath: 'assets/images/peja.png'),
+      ProductItem(id: 'sp14', name: 'Shkupi', price: 3.0, emoji: '🍺', imagePath: 'assets/images/shkupi.png'),
+      ProductItem(id: 'sp15', name: 'Tuborg', price: 3.5, emoji: '🍺', imagePath: 'assets/images/tuborg.png'),
     ],
   ),
   CategoryData(

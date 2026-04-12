@@ -436,13 +436,18 @@ class _ProductTileState extends State<_ProductTile> {
           children: [
             Expanded(
               child: Center(
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: Text(
-                    widget.product.emoji,
-                    style: const TextStyle(fontSize: 96),
-                  ),
-                ),
+                child: widget.product.imagePath != null
+                    ? Image.asset(
+                        widget.product.imagePath!,
+                        fit: BoxFit.contain,
+                      )
+                    : FittedBox(
+                        fit: BoxFit.contain,
+                        child: Text(
+                          widget.product.emoji,
+                          style: const TextStyle(fontSize: 96),
+                        ),
+                      ),
               ),
             ),
             Row(
@@ -714,10 +719,18 @@ class _OrderLineRow extends StatelessWidget {
               color: AppColors.white,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              line.product.emoji,
-              style: const TextStyle(fontSize: 32),
-            ),
+            child: line.product.imagePath != null
+                ? Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Image.asset(
+                      line.product.imagePath!,
+                      fit: BoxFit.contain,
+                    ),
+                  )
+                : Text(
+                    line.product.emoji,
+                    style: const TextStyle(fontSize: 32),
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(

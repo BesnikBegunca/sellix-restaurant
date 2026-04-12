@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub:*)",
+      "Bash(cmd /c \"cd c:\\\\Users\\\\PC\\\\Desktop\\\\pos_system && flutter pub get\")",
+      "Bash(cmd /c \"C:\\\\Users\\\\PC\\\\Desktop\\\\pos_system && flutter pub get && echo SUCCESS\")"
+    ]
+  }
+}
