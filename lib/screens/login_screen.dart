@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../manager/manager_data.dart';
 import '../theme/app_colors.dart';
 import '../widgets/hover_interaction.dart';
 import '../widgets/gg_header.dart';
@@ -109,7 +110,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submitPin() {
     if (!_pinConfirmEnabled) return;
+
     if (_pin == '9999') {
+      setState(() => _pin = '');
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => const ManagerDashboardScreen(),
@@ -117,9 +120,26 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const TableSelectionScreen(),
+
+    final waiter = ManagerData.instance.findWaiterByPin(_pin);
+    setState(() => _pin = '');
+
+    if (waiter != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TableSelectionScreen(waiterName: waiter.name),
+        ),
+      );
+      return;
+    }
+
+    // PIN i panjohur
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('PIN i gabuar. Kontakto menaxherin.'),
+        backgroundColor: AppColors.negativeText,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

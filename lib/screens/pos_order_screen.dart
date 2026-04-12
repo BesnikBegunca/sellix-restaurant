@@ -12,10 +12,12 @@ class PosOrderScreen extends StatefulWidget {
     super.key,
     required this.tableNumber,
     required this.orderNumber,
+    required this.waiterName,
   });
 
   final int tableNumber;
   final int orderNumber;
+  final String waiterName;
 
   @override
   State<PosOrderScreen> createState() => _PosOrderScreenState();
@@ -53,12 +55,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     super.dispose();
   }
 
-  double get _subtotal =>
+  double get _total =>
       _lines.fold(0, (s, l) => s + l.product.price * l.qty);
-
-  double get _tax => _subtotal * 0.08;
-
-  double get _total => _subtotal + _tax;
 
   void _addProduct(ProductItem p) {
     setState(() {
@@ -80,8 +78,116 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     });
   }
 
+  Future<void> _payTable() async {
+    final data = ManagerData.instance;
+    final tableTotal = data.cashierTables
+        .firstWhere((t) => t.id == widget.tableNumber,
+            orElse: () => TableInfo(id: widget.tableNumber, occupied: false))
+        .currentTotal;
+
+    // Regjistro shitjen për kamarierin e loguar
+    if (tableTotal != null && widget.waiterName.isNotEmpty) {
+      data.recordSale(widget.waiterName, tableTotal);
+    }
+
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black.withValues(alpha: 0.2),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (ctx, anim, sec) {
+        final nav = Navigator.of(ctx);
+        Future.delayed(const Duration(milliseconds: 1800), () {
+          if (nav.canPop()) nav.pop();
+        });
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 40,
+                    offset: const Offset(0, 20),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: const BoxDecoration(
+                      color: AppColors.lightGreenBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.payments_outlined,
+                      color: AppColors.primaryGreen,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Pagesa u krye!',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Table ${widget.tableNumber} u lirua',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.lightGreenText,
+                    ),
+                  ),
+                  if (tableTotal != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      '\$${tableTotal.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (ctx, anim, sec, child) {
+        final curved =
+            CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
+    ManagerData.instance.clearTable(widget.tableNumber);
+    if (mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  }
+
   Future<void> _sendOrder() async {
     if (_lines.isEmpty) return;
+    ManagerData.instance.updateTableTotal(widget.tableNumber, _total);
     await showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -254,11 +360,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           tableNumber: widget.tableNumber,
                           orderNumber: widget.orderNumber,
                           lines: _lines,
-                          subtotal: _subtotal,
-                          tax: _tax,
                           total: _total,
                           onDelta: _deltaQty,
                           onSend: _sendOrder,
+                          onPay: _payTable,
                         ),
                       ),
                     ],
@@ -547,21 +652,19 @@ class _OrderPanel extends StatelessWidget {
     required this.tableNumber,
     required this.orderNumber,
     required this.lines,
-    required this.subtotal,
-    required this.tax,
     required this.total,
     required this.onDelta,
     required this.onSend,
+    required this.onPay,
   });
 
   final int tableNumber;
   final int orderNumber;
   final List<_CartLine> lines;
-  final double subtotal;
-  final double tax;
   final double total;
   final void Function(ProductItem p, int delta) onDelta;
   final VoidCallback onSend;
+  final VoidCallback onPay;
 
   @override
   Widget build(BuildContext context) {
@@ -665,6 +768,8 @@ class _OrderPanel extends StatelessWidget {
             enabled: !empty,
             onSend: onSend,
           ),
+          const SizedBox(height: 10),
+          _PayButton(onPay: onPay),
         ],
       ),
     );
@@ -882,6 +987,81 @@ class _SendOrderButtonState extends State<_SendOrderButton> {
                 fontWeight: FontWeight.w500,
                 color: AppColors.white,
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PayButton extends StatefulWidget {
+  const _PayButton({required this.onPay});
+
+  final VoidCallback onPay;
+
+  @override
+  State<_PayButton> createState() => _PayButtonState();
+}
+
+class _PayButtonState extends State<_PayButton> {
+  bool _hover = false;
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() {
+        _hover = false;
+        _pressed = false;
+      }),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onPay,
+        child: AnimatedScale(
+          scale: _pressed ? 0.95 : (_hover ? 1.02 : 1.0),
+          duration: const Duration(milliseconds: 150),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            height: 56,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _hover ? AppColors.lightGreenBg : AppColors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _hover
+                    ? AppColors.primaryGreen
+                    : AppColors.borderVisible(0.25),
+                width: _hover ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.payments_outlined,
+                  size: 20,
+                  color: _hover
+                      ? AppColors.primaryGreen
+                      : AppColors.mediumGreenText,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'PAGUAJ',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    color: _hover
+                        ? AppColors.primaryGreen
+                        : AppColors.mediumGreenText,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

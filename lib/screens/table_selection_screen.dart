@@ -9,7 +9,9 @@ import '../widgets/hover_interaction.dart';
 import 'pos_order_screen.dart';
 
 class TableSelectionScreen extends StatefulWidget {
-  const TableSelectionScreen({super.key});
+  const TableSelectionScreen({super.key, required this.waiterName});
+
+  final String waiterName;
 
   @override
   State<TableSelectionScreen> createState() => _TableSelectionScreenState();
@@ -58,6 +60,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                   _TableScreenHeaderRow(
                     total: total,
                     occupied: occupied,
+                    waiterName: widget.waiterName,
                   ),
                   const SizedBox(height: 24),
                   Expanded(
@@ -105,6 +108,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                                     builder: (_) => PosOrderScreen(
                                       tableNumber: t.id,
                                       orderNumber: 10042 + t.id,
+                                      waiterName: widget.waiterName,
                                     ),
                                   ),
                                 );
@@ -130,10 +134,12 @@ class _TableScreenHeaderRow extends StatelessWidget {
   const _TableScreenHeaderRow({
     required this.total,
     required this.occupied,
+    required this.waiterName,
   });
 
   final double total;
   final int occupied;
+  final String waiterName;
 
   @override
   Widget build(BuildContext context) {
@@ -179,15 +185,46 @@ class _TableScreenHeaderRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        Text(
-          'Select Table',
-          textAlign: TextAlign.end,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w500,
-            color: AppColors.darkGreenText,
-            height: 1.1,
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.lightGreenBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.badge_outlined,
+                      size: 16, color: AppColors.primaryGreen),
+                  const SizedBox(width: 6),
+                  Text(
+                    waiterName,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Select Table',
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: AppColors.darkGreenText,
+                height: 1.1,
+              ),
+            ),
+          ],
         ),
       ],
     );
