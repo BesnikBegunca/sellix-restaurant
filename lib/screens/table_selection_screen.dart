@@ -50,25 +50,48 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
             onBack: () => Navigator.of(context).maybePop(),
           ),
           Expanded(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1400),
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _TableScreenHeaderRow(
-                        total: total,
-                        occupied: occupied,
-                      ),
-                      const SizedBox(height: 24),
-                      Expanded(
-                        child: GridView.builder(
-                          gridDelegate: PosGrid.tableDelegateFor(
-                            _m.tablesPerRow,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _TableScreenHeaderRow(
+                    total: total,
+                    occupied: occupied,
+                  ),
+                  const SizedBox(height: 24),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        const spacing = PosGrid.spacing;
+                        const ratio = PosGrid.childAspectRatio;
+                        final itemCount = tables.length + 1;
+                        final W = constraints.maxWidth;
+                        final H = constraints.maxHeight;
+
+                        // Start from 4 columns and increase until all rows
+                        // fit in the available height (proportional shrink).
+                        int columns = PosGrid.crossAxisCount;
+                        while (columns < itemCount) {
+                          final rows = (itemCount / columns).ceil();
+                          final cellW = (W - (columns - 1) * spacing) / columns;
+                          final cellH = cellW / ratio;
+                          final needed =
+                              rows * cellH + (rows - 1) * spacing;
+                          if (needed <= H) break;
+                          columns++;
+                        }
+
+                        return GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            crossAxisSpacing: spacing,
+                            mainAxisSpacing: spacing,
+                            childAspectRatio: ratio,
                           ),
-                          itemCount: tables.length + 1,
+                          itemCount: itemCount,
                           itemBuilder: (context, i) {
                             if (i == tables.length) {
                               return _AddTableCard(onTap: _m.addCashierTable);
@@ -88,11 +111,11 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                               },
                             );
                           },
-                        ),
-                      ),
-                    ],
+                        );
+                      },
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -312,9 +335,15 @@ class _TableCardState extends State<_TableCard> {
                     ),
                   ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+          child: LayoutBuilder(
+            builder: (context, constraints) => FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -370,9 +399,12 @@ class _TableCardState extends State<_TableCard> {
                   ),
                 ),
             ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
-      ),
     );
   }
 }

@@ -137,6 +137,7 @@ class ManagerData extends ChangeNotifier {
     required String name,
     required double price,
     String emoji = '☕',
+    String? imagePath,
   }) {
     final pid = 'p_${DateTime.now().microsecondsSinceEpoch}';
     final product = ProductItem(
@@ -144,6 +145,7 @@ class ManagerData extends ChangeNotifier {
       name: name.trim(),
       price: price,
       emoji: emoji,
+      imagePath: imagePath,
     );
     _categories = _categories.map((c) {
       if (c.id != categoryId) {
@@ -161,6 +163,48 @@ class ManagerData extends ChangeNotifier {
 
   void removeCategory(String categoryId) {
     _categories = _categories.where((c) => c.id != categoryId).toList();
+    notifyListeners();
+  }
+
+  void removeProduct(String categoryId, String productId) {
+    _categories = _categories.map((c) {
+      if (c.id != categoryId) return c;
+      return CategoryData(
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        products: c.products.where((p) => p.id != productId).toList(),
+      );
+    }).toList();
+    notifyListeners();
+  }
+
+  void editProduct(
+    String categoryId,
+    String productId, {
+    String? name,
+    double? price,
+    String? imagePath,
+    bool clearImage = false,
+  }) {
+    _categories = _categories.map((c) {
+      if (c.id != categoryId) return c;
+      return CategoryData(
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        products: c.products.map((p) {
+          if (p.id != productId) return p;
+          return ProductItem(
+            id: p.id,
+            name: name ?? p.name,
+            price: price ?? p.price,
+            emoji: p.emoji,
+            imagePath: clearImage ? null : (imagePath ?? p.imagePath),
+          );
+        }).toList(),
+      );
+    }).toList();
     notifyListeners();
   }
 

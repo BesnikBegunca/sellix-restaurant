@@ -89,6 +89,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       barrierColor: Colors.black.withValues(alpha: 0.2),
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (ctx, anim, sec) {
+        final nav = Navigator.of(ctx);
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (nav.canPop()) nav.pop();
+        });
         return Center(
           child: Material(
             color: Colors.transparent,
@@ -155,6 +159,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         );
       },
     );
+    if (mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   @override
