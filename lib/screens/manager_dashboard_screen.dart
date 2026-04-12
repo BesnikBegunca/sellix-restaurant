@@ -5,6 +5,9 @@ import '../manager/manager_data.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
 
+/// Të dhënat që barten me drag nga një produkt.
+typedef _ProductDrag = ({String fromCatId, ProductItem product});
+
 /// Dashboard menaxheri (PIN 9999). Seksionet 1–8 sipas kërkesës.
 class ManagerDashboardScreen extends StatefulWidget {
   const ManagerDashboardScreen({super.key});
@@ -438,12 +441,40 @@ class _WaitersPanel extends StatefulWidget {
 }
 
 class _WaitersPanelState extends State<_WaitersPanel> {
-  final _ctrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _pinCtrl = TextEditingController();
+  String? _errorMsg;
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _nameCtrl.dispose();
+    _pinCtrl.dispose();
     super.dispose();
+  }
+
+  void _add() {
+    final name = _nameCtrl.text.trim();
+    final pin = _pinCtrl.text.trim();
+    if (name.isEmpty) {
+      setState(() => _errorMsg = 'Shkruaj emrin e kamarierit.');
+      return;
+    }
+    if (pin.length < 4 || pin.length > 6 || int.tryParse(pin) == null) {
+      setState(() => _errorMsg = 'PIN duhet të jetë 4–6 shifra.');
+      return;
+    }
+    if (pin == '9999') {
+      setState(() => _errorMsg = 'PIN 9999 është rezervuar për menaxherin.');
+      return;
+    }
+    if (widget.m.waiters.any((w) => w.pin == pin)) {
+      setState(() => _errorMsg = 'Ky PIN ekziston tashmë.');
+      return;
+    }
+    widget.m.addWaiter(name, pin);
+    _nameCtrl.clear();
+    _pinCtrl.clear();
+    setState(() => _errorMsg = null);
   }
 
   @override
@@ -455,26 +486,58 @@ class _WaitersPanelState extends State<_WaitersPanel> {
         _sectionTitle('2. Kamarierët'),
         const SizedBox(height: 16),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
+              flex: 3,
               child: TextField(
-                controller: _ctrl,
+                controller: _nameCtrl,
                 decoration: _inputDeco('Emri i kamarierit'),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _add(),
+                textInputAction: TextInputAction.next,
               ),
             ),
             const SizedBox(width: 12),
-            FilledButton(
-              onPressed: _add,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                foregroundColor: AppColors.white,
+            SizedBox(
+              width: 140,
+              child: TextField(
+                controller: _pinCtrl,
+                decoration: _inputDeco('PIN (4–6 shifra)'),
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _add(),
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
               ),
-              child: const Text('Shto'),
+            ),
+            const SizedBox(width: 12),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: FilledButton(
+                onPressed: _add,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 18),
+                ),
+                child: const Text('Shto'),
+              ),
             ),
           ],
         ),
+        if (_errorMsg != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _errorMsg!,
+            style: const TextStyle(
+              color: AppColors.negativeText,
+              fontSize: 13,
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         if (m.waiters.isEmpty)
           Text(
@@ -482,29 +545,57 @@ class _WaitersPanelState extends State<_WaitersPanel> {
             style: TextStyle(color: AppColors.lightGreenText),
           )
         else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: m.waiters.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, i) {
-              return ListTile(
-                title: Text(m.waiters[i]),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => m.removeWaiterAt(i),
-                  color: AppColors.negativeText,
-                ),
-              );
-            },
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderSubtle(0.12)),
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: m.waiters.length,
+              separatorBuilder: (_, _) =>
+                  Divider(height: 1, color: AppColors.borderSubtle(0.08)),
+              itemBuilder: (context, i) {
+                final w = m.waiters[i];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.lightGreenBg,
+                    child: Text(
+                      w.name.isNotEmpty ? w.name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        color: AppColors.primaryGreen,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    w.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'PIN: ${'●' * w.pin.length}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.lightGreenText,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => m.removeWaiterAt(i),
+                    color: AppColors.negativeText,
+                  ),
+                );
+              },
+            ),
           ),
       ],
     );
-  }
-
-  void _add() {
-    widget.m.addWaiter(_ctrl.text);
-    _ctrl.clear();
   }
 }
 
@@ -803,33 +894,48 @@ class _TopEmployeePanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        const Text('Të gjithë (demo):', style: TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 8),
-        ...m.employeeSales.map(
-          (e) => ListTile(
-            dense: true,
-            title: Text(e.key),
-            trailing: Text('\$${e.value.toStringAsFixed(0)}'),
+        if (m.employeeSalesSorted.isEmpty)
+          Text(
+            'Asnjë shitje e regjistruar ende.',
+            style: TextStyle(color: AppColors.lightGreenText),
+          )
+        else ...[
+          const Text('Të gjithë:', style: TextStyle(fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          ...m.employeeSalesSorted.map(
+            (e) => ListTile(
+              dense: true,
+              leading: CircleAvatar(
+                backgroundColor: AppColors.lightGreenBg,
+                radius: 16,
+                child: Text(
+                  e.key.isNotEmpty ? e.key[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              ),
+              title: Text(e.key),
+              trailing: Text(
+                '\$${e.value.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
 }
 
-// ── Known bundled assets (for the image picker) ────────────────────────────
-const _kKnownAssets = <String>[
-  'assets/images/espreso.webp',
-  'assets/images/makiato.png',
-  'assets/images/kapuqino.png',
-  'assets/images/cocacola.png',
-  'assets/images/fanta.webp',
-  'assets/images/sprite.png',
-  'assets/images/heineken.png',
-  'assets/images/peja.png',
-  'assets/images/shkupi.png',
-  'assets/images/tuborg.png',
-];
+// ── Asset image picker (dynamic — reads AssetManifest at runtime) ──────────
+
+const _kImageExtensions = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'};
 
 String _assetLabel(String path) {
   final name = path.split('/').last;
@@ -837,7 +943,24 @@ String _assetLabel(String path) {
   return dot > 0 ? name.substring(0, dot) : name;
 }
 
-Future<String?> _showAssetPicker(BuildContext context, String? current) {
+Future<List<String>> _loadImageAssets() async {
+  final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+  return manifest
+      .listAssets()
+      .where((a) {
+        if (!a.startsWith('assets/images/')) return false;
+        final lower = a.toLowerCase();
+        return _kImageExtensions.any((ext) => lower.endsWith(ext));
+      })
+      .toList()
+    ..sort();
+}
+
+Future<String?> _showAssetPicker(
+    BuildContext context, String? current) async {
+  final assets = await _loadImageAssets();
+  if (!context.mounted) return null;
+
   return showDialog<String>(
     context: context,
     builder: (ctx) => Dialog(
@@ -857,26 +980,28 @@ Future<String?> _showAssetPicker(BuildContext context, String? current) {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: 480,
-              child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _AssetPickerThumb(
-                    path: null,
-                    label: 'Pa foto',
-                    selected: current == null,
-                    onTap: () => Navigator.pop(ctx, ''),
-                  ),
-                  for (final a in _kKnownAssets)
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520, maxHeight: 400),
+              child: SingleChildScrollView(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
                     _AssetPickerThumb(
-                      path: a,
-                      label: _assetLabel(a),
-                      selected: current == a,
-                      onTap: () => Navigator.pop(ctx, a),
+                      path: null,
+                      label: 'Pa foto',
+                      selected: current == null,
+                      onTap: () => Navigator.pop(ctx, ''),
                     ),
-                ],
+                    for (final a in assets)
+                      _AssetPickerThumb(
+                        path: a,
+                        label: _assetLabel(a),
+                        selected: current == a,
+                        onTap: () => Navigator.pop(ctx, a),
+                      ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -1386,6 +1511,7 @@ class _MenuPanelState extends State<_MenuPanel> {
             onDeleteCategory: () => m.removeCategory(c.id),
             onDeleteProduct: (pid) => m.removeProduct(c.id, pid),
             onEditProduct: (p) => _openEditDialog(context, c.id, p),
+            onMoveIn: (p, fromCatId) => m.moveProduct(fromCatId, p.id, c.id),
           ),
           const SizedBox(height: 20),
         ],
@@ -1402,12 +1528,14 @@ class _CategoryProductTable extends StatefulWidget {
     required this.onDeleteCategory,
     required this.onDeleteProduct,
     required this.onEditProduct,
+    required this.onMoveIn,
   });
 
   final CategoryData category;
   final VoidCallback onDeleteCategory;
   final void Function(String productId) onDeleteProduct;
   final void Function(ProductItem product) onEditProduct;
+  final void Function(ProductItem product, String fromCatId) onMoveIn;
 
   @override
   State<_CategoryProductTable> createState() => _CategoryProductTableState();
@@ -1419,14 +1547,27 @@ class _CategoryProductTableState extends State<_CategoryProductTable> {
   @override
   Widget build(BuildContext context) {
     final c = widget.category;
-    return Container(
+    return DragTarget<_ProductDrag>(
+      onWillAcceptWithDetails: (d) => d.data.fromCatId != widget.category.id,
+      onAcceptWithDetails: (d) =>
+          widget.onMoveIn(d.data.product, d.data.fromCatId),
+      builder: (context, candidateData, _) {
+        final isOver = candidateData.isNotEmpty;
+        return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: isOver
+            ? AppColors.lightGreenBg.withValues(alpha: 0.6)
+            : AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle(0.12)),
+        border: Border.all(
+          color: isOver
+              ? AppColors.primaryGreen
+              : AppColors.borderSubtle(0.12),
+          width: isOver ? 2 : 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withValues(alpha: isOver ? 0.06 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1581,6 +1722,8 @@ class _CategoryProductTableState extends State<_CategoryProductTable> {
           ),
         ],
       ),
+        );
+      },
     );
   }
 }

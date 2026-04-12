@@ -12,10 +12,12 @@ class PosOrderScreen extends StatefulWidget {
     super.key,
     required this.tableNumber,
     required this.orderNumber,
+    required this.waiterName,
   });
 
   final int tableNumber;
   final int orderNumber;
+  final String waiterName;
 
   @override
   State<PosOrderScreen> createState() => _PosOrderScreenState();
@@ -77,10 +79,16 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   }
 
   Future<void> _payTable() async {
-    final tableTotal = ManagerData.instance.cashierTables
+    final data = ManagerData.instance;
+    final tableTotal = data.cashierTables
         .firstWhere((t) => t.id == widget.tableNumber,
             orElse: () => TableInfo(id: widget.tableNumber, occupied: false))
         .currentTotal;
+
+    // Regjistro shitjen për kamarierin e loguar
+    if (tableTotal != null && widget.waiterName.isNotEmpty) {
+      data.recordSale(widget.waiterName, tableTotal);
+    }
 
     await showGeneralDialog<void>(
       context: context,

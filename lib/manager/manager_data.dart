@@ -19,6 +19,13 @@ class ExpenseRow {
   final DateTime date;
 }
 
+/// Kamarieri me emër dhe PIN.
+class WaiterInfo {
+  const WaiterInfo({required this.name, required this.pin});
+  final String name;
+  final String pin;
+}
+
 /// Gjendja globale për menaxherin, tavolinat e kasierit dhe menunë dinamike.
 class ManagerData extends ChangeNotifier {
   ManagerData._() {
@@ -47,14 +54,15 @@ class ManagerData extends ChangeNotifier {
   }
 
   // —— Kamarierët ——
-  final List<String> waiters = <String>[];
+  final List<WaiterInfo> waiters = <WaiterInfo>[];
 
-  void addWaiter(String name) {
+  void addWaiter(String name, String pin) {
     final n = name.trim();
-    if (n.isEmpty) {
-      return;
-    }
-    waiters.add(n);
+    final p = pin.trim();
+    if (n.isEmpty || p.length < 4) return;
+    // Kontrollo nëse PIN ekziston
+    if (waiters.any((w) => w.pin == p) || p == '9999') return;
+    waiters.add(WaiterInfo(name: n, pin: p));
     notifyListeners();
   }
 
@@ -64,6 +72,14 @@ class ManagerData extends ChangeNotifier {
     }
     waiters.removeAt(index);
     notifyListeners();
+  }
+
+  WaiterInfo? findWaiterByPin(String pin) {
+    try {
+      return waiters.firstWhere((w) => w.pin == pin);
+    } catch (_) {
+      return null;
+    }
   }
 
   // —— Shpenzime / rroga ——
@@ -96,19 +112,31 @@ class ManagerData extends ChangeNotifier {
 
   double profitMonthly() => _baseMonthly - totalExpenses * 2.2;
 
-  // —— Top puntor (demo) ——
-  final List<MapEntry<String, double>> employeeSales = [
-    const MapEntry('Ana M.', 2840),
-    const MapEntry('Driton K.', 2310),
-    const MapEntry('Elona S.', 1980),
-    const MapEntry('Blerim H.', 1650),
-  ];
+  // —— Top puntor (dinamik) ——
+  final Map<String, double> waiterSales = {};
+
+  void recordSale(String waiterName, double amount) {
+    if (waiterName.trim().isEmpty) return;
+    waiterSales[waiterName] = (waiterSales[waiterName] ?? 0) + amount;
+    notifyListeners();
+  }
+
+  void clearWaiterSales() {
+    waiterSales.clear();
+    notifyListeners();
+  }
+
+  List<MapEntry<String, double>> get employeeSalesSorted {
+    final entries = waiterSales.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return entries;
+  }
 
   MapEntry<String, double> get topEmployee {
-    if (employeeSales.isEmpty) {
+    if (waiterSales.isEmpty) {
       return const MapEntry('—', 0.0);
     }
-    return employeeSales.reduce(
+    return waiterSales.entries.reduce(
       (a, b) => a.value >= b.value ? a : b,
     );
   }
@@ -243,6 +271,44 @@ class ManagerData extends ChangeNotifier {
     _cashierTables = _cashierTables.map((t) {
       if (t.id != tableId) return t;
       return TableInfo(id: t.id, occupied: false);
+    }).toList();
+    notifyListeners();
+  }
+
+  void moveProduct(String fromCategoryId, String productId, String toCategoryId) {
+    if (fromCategoryId == toCategoryId) return;
+    ProductItem? product;
+    for (final c in _categories) {
+      if (c.id == fromCategoryId) {
+        for (final p in c.products) {
+          if (p.id == productId) {
+            product = p;
+            break;
+          }
+        }
+        break;
+      }
+    }
+    if (product == null) return;
+    final prod = product;
+    _categories = _categories.map((c) {
+      if (c.id == fromCategoryId) {
+        return CategoryData(
+          id: c.id,
+          name: c.name,
+          icon: c.icon,
+          products: c.products.where((p) => p.id != productId).toList(),
+        );
+      }
+      if (c.id == toCategoryId) {
+        return CategoryData(
+          id: c.id,
+          name: c.name,
+          icon: c.icon,
+          products: [...c.products, prod],
+        );
+      }
+      return c;
     }).toList();
     notifyListeners();
   }
