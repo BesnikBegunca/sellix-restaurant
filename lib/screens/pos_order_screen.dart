@@ -403,9 +403,12 @@ class _ProductTileState extends State<_ProductTile> {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      child: AnimatedContainer(
+      child: GestureDetector(
+        onTap: widget.onAdd,
+        child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         transform: Matrix4.translationValues(0, _hover ? -4 : 0, 0),
         padding: const EdgeInsets.all(24),
@@ -489,6 +492,7 @@ class _ProductTileState extends State<_ProductTile> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
