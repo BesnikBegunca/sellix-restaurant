@@ -525,14 +525,10 @@ class _AddCircleState extends State<_AddCircle> {
           color: h ? AppColors.darkerGreenHover : AppColors.primaryGreen,
           shape: BoxShape.circle,
         ),
-        child: const Text(
-          '+',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w300,
-            color: AppColors.white,
-            height: 1,
-          ),
+        child: const Icon(
+          Icons.add,
+          color: AppColors.white,
+          size: 20,
         ),
       ),
     );
@@ -655,18 +651,7 @@ class _OrderPanel extends StatelessWidget {
                 top: BorderSide(color: AppColors.borderSubtle(0.1)),
               ),
             ),
-            child: Column(
-              children: [
-                _moneyRow('Subtotal', subtotal, large: false),
-                const SizedBox(height: 12),
-                _moneyRow('Tax (8%)', tax, large: false),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: _moneyRow('Total', total, large: true),
-                ),
-              ],
-            ),
+            child: _moneyRow('Total', total, large: true),
           ),
           const SizedBox(height: 24),
           _SendOrderButton(
