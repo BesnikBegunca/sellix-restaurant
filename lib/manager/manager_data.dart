@@ -231,6 +231,22 @@ class ManagerData extends ChangeNotifier {
     _syncTablesFromSettings();
   }
 
+  void updateTableTotal(int tableId, double total) {
+    _cashierTables = _cashierTables.map((t) {
+      if (t.id != tableId) return t;
+      return TableInfo(id: t.id, occupied: true, currentTotal: total);
+    }).toList();
+    notifyListeners();
+  }
+
+  void clearTable(int tableId) {
+    _cashierTables = _cashierTables.map((t) {
+      if (t.id != tableId) return t;
+      return TableInfo(id: t.id, occupied: false);
+    }).toList();
+    notifyListeners();
+  }
+
   void addCashierTable() {
     final nextId = _cashierTables.isEmpty
         ? 1

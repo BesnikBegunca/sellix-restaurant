@@ -45,21 +45,7 @@ class CategoryData {
 }
 
 final List<TableInfo> mockTables = [
-  const TableInfo(id: 1, occupied: false),
-  const TableInfo(id: 2, occupied: true, currentTotal: 24.5),
-  const TableInfo(id: 3, occupied: false),
-  const TableInfo(id: 4, occupied: true, currentTotal: 12.0),
-  const TableInfo(id: 5, occupied: false),
-  const TableInfo(id: 6, occupied: false),
-  const TableInfo(id: 7, occupied: true, currentTotal: 8.75),
-  const TableInfo(id: 8, occupied: false),
-  const TableInfo(id: 9, occupied: false),
-  const TableInfo(id: 10, occupied: true, currentTotal: 42.0),
-  const TableInfo(id: 11, occupied: false),
-  const TableInfo(id: 12, occupied: false),
-  const TableInfo(id: 13, occupied: false),
-  const TableInfo(id: 14, occupied: false),
-  const TableInfo(id: 15, occupied: false),
+  for (var i = 1; i <= 15; i++) TableInfo(id: i, occupied: false),
 ];
 
 final List<CategoryData> mockCategories = [
