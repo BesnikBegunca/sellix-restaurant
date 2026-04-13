@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/mock_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Rresht në tabelën e shpenzimeve / rrogave.
 class ExpenseRow {
@@ -28,9 +29,26 @@ class WaiterInfo {
 
 /// Gjendja globale për menaxherin, tavolinat e kasierit dhe menunë dinamike.
 class ManagerData extends ChangeNotifier {
-  ManagerData._() {
+  ManagerData._() : super() {
+    _init();
+  }
+
+  late SharedPreferences _prefs;
+  String? companyName;
+
+  Future<void> _init() async {
+    _prefs = await SharedPreferences.getInstance();
+    companyName = _prefs.getString('company_name');
     _categories = List<CategoryData>.from(mockCategories);
     _syncTablesFromSettings();
+    notifyListeners();
+  }
+
+  Future<void> saveCompanyName(String name) async {
+    if (name.trim().isEmpty) return;
+    companyName = name.trim();
+    await _prefs.setString('company_name', companyName!);
+    notifyListeners();
   }
 
   static final ManagerData instance = ManagerData._();
@@ -98,8 +116,7 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  double get totalExpenses =>
-      expenses.fold<double>(0, (s, e) => s + e.amount);
+  double get totalExpenses => expenses.fold<double>(0, (s, e) => s + e.amount);
 
   // —— Fitime (demo + shpenzime) ——
   static const double _baseDaily = 1850;
@@ -136,9 +153,7 @@ class ManagerData extends ChangeNotifier {
     if (waiterSales.isEmpty) {
       return const MapEntry('—', 0.0);
     }
-    return waiterSales.entries.reduce(
-      (a, b) => a.value >= b.value ? a : b,
-    );
+    return waiterSales.entries.reduce((a, b) => a.value >= b.value ? a : b);
   }
 
   // —— Menu / kategori ——
@@ -275,7 +290,11 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  void moveProduct(String fromCategoryId, String productId, String toCategoryId) {
+  void moveProduct(
+    String fromCategoryId,
+    String productId,
+    String toCategoryId,
+  ) {
     if (fromCategoryId == toCategoryId) return;
     ProductItem? product;
     for (final c in _categories) {
