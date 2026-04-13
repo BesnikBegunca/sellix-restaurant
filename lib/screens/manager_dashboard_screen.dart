@@ -24,6 +24,7 @@ const _kSectionTitles = <String>[
   'Top puntor',
   'Menu',
   'Tavolinat',
+  'Company Settings',
 ];
 
 /// Dashboard menaxheri (PIN 9999). Seksionet 1–8 sipas kërkesës.
@@ -66,7 +67,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
           _ManagerSideNav(
             expanded: _sidebarExpanded,
             selectedIndex: _railIndex,
-            onToggle: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+            onToggle: () =>
+                setState(() => _sidebarExpanded = !_sidebarExpanded),
             onDestinationSelected: (i) => setState(() => _railIndex = i),
             onLogout: _exitToLogin,
           ),
@@ -75,9 +77,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ManagerTopBar(
-                  sectionTitle: _kSectionTitles[_railIndex],
-                ),
+                _ManagerTopBar(sectionTitle: _kSectionTitles[_railIndex]),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
@@ -121,9 +121,116 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         return _MenuPanel(m: _m);
       case 8:
         return _TablesConfigPanel(m: _m);
+      case 9:
+        return _CompanySettingsPanel(m: _m);
       default:
         return const SizedBox.shrink();
     }
+  }
+}
+
+class _CompanySettingsPanel extends StatefulWidget {
+  const _CompanySettingsPanel({required this.m});
+
+  final ManagerData m;
+
+  @override
+  State<_CompanySettingsPanel> createState() => _CompanySettingsPanelState();
+}
+
+class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
+  final _nameCtrl = TextEditingController();
+  String? _errorMsg;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl.text = widget.m.companyName ?? '';
+    widget.m.addListener(_onM);
+  }
+
+  void _onM() => setState(() {});
+
+  @override
+  void dispose() {
+    widget.m.removeListener(_onM);
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      setState(() => _errorMsg = 'Emri i kompanisë është i detyrueshëm.');
+      return;
+    }
+    await widget.m.saveCompanyName(name);
+    setState(() => _errorMsg = null);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cilësimet e kompanisë u ruajtën.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('10. Company Settings'),
+        const SizedBox(height: 16),
+        Text(
+          'Vendos emrin e firmës/kompanisë. Përdoret në krejt aplikacionin.',
+          style: TextStyle(color: AppColors.mediumGreenText),
+        ),
+        const SizedBox(height: 24),
+        Card(
+          elevation: 0,
+          color: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _nameCtrl,
+                  decoration: _inputDeco('Emri i kompanisë (i detyrueshëm)'),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _save(),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _save,
+                  icon: const Icon(Icons.save_outlined),
+                  label: const Text('Ruaj'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+                if (_errorMsg != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMsg!,
+                    style: const TextStyle(color: AppColors.negativeText),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -148,26 +255,14 @@ class _ManagerSideNav extends StatelessWidget {
       sel: Icons.dashboard,
       label: 'Përmbledhje',
     ),
-    (
-      icon: Icons.schedule_outlined,
-      sel: Icons.schedule,
-      label: 'Gjendja',
-    ),
-    (
-      icon: Icons.badge_outlined,
-      sel: Icons.badge,
-      label: 'Kamarierët',
-    ),
+    (icon: Icons.schedule_outlined, sel: Icons.schedule, label: 'Gjendja'),
+    (icon: Icons.badge_outlined, sel: Icons.badge, label: 'Kamarierët'),
     (
       icon: Icons.table_rows_outlined,
       sel: Icons.table_rows,
       label: 'Shpenzime',
     ),
-    (
-      icon: Icons.trending_up_outlined,
-      sel: Icons.trending_up,
-      label: 'Fitime',
-    ),
+    (icon: Icons.trending_up_outlined, sel: Icons.trending_up, label: 'Fitime'),
     (
       icon: Icons.description_outlined,
       sel: Icons.description,
@@ -178,16 +273,9 @@ class _ManagerSideNav extends StatelessWidget {
       sel: Icons.emoji_events,
       label: 'Top puntor',
     ),
-    (
-      icon: Icons.menu_book_outlined,
-      sel: Icons.menu_book,
-      label: 'Menu',
-    ),
-    (
-      icon: Icons.grid_view_outlined,
-      sel: Icons.grid_view,
-      label: 'Tavolinat',
-    ),
+    (icon: Icons.menu_book_outlined, sel: Icons.menu_book, label: 'Menu'),
+    (icon: Icons.grid_view_outlined, sel: Icons.grid_view, label: 'Tavolinat'),
+    (icon: Icons.settings_outlined, sel: Icons.settings, label: 'Company'),
   ];
 
   @override
@@ -204,7 +292,9 @@ class _ManagerSideNav extends StatelessWidget {
             child: Align(
               alignment: expanded ? Alignment.centerRight : Alignment.center,
               child: IconButton(
-                tooltip: expanded ? 'Mbyll menunë anësore' : 'Hap menunë anësore',
+                tooltip: expanded
+                    ? 'Mbyll menunë anësore'
+                    : 'Hap menunë anësore',
                 onPressed: onToggle,
                 icon: Icon(
                   expanded ? Icons.keyboard_double_arrow_left : Icons.menu,
@@ -249,8 +339,9 @@ class _ManagerSideNav extends StatelessWidget {
                                 child: Text(
                                   it.label,
                                   style: TextStyle(
-                                    fontWeight:
-                                        sel ? FontWeight.w600 : FontWeight.w500,
+                                    fontWeight: sel
+                                        ? FontWeight.w600
+                                        : FontWeight.w500,
                                     color: sel
                                         ? AppColors.darkGreenText
                                         : AppColors.mediumGreenText,
@@ -324,7 +415,9 @@ class _ManagerTopBar extends StatelessWidget {
         height: 72,
         padding: const EdgeInsets.symmetric(horizontal: 24),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.borderSubtle(0.1))),
+          border: Border(
+            bottom: BorderSide(color: AppColors.borderSubtle(0.1)),
+          ),
         ),
         child: Row(
           children: [
@@ -388,14 +481,20 @@ class _OverviewPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final top = m.topEmployee;
-    final productCount =
-        m.categories.fold<int>(0, (s, c) => s + c.products.length);
+    final productCount = m.categories.fold<int>(
+      0,
+      (s, c) => s + c.products.length,
+    );
     final categoryCount = m.categories.length;
     final occupied = m.cashierTables.where((t) => t.occupied).length;
-    final totalStaffSales =
-        m.waiterSales.values.fold<double>(0, (a, b) => a + b);
-    final openCheck =
-        m.cashierTables.fold<double>(0, (s, t) => s + (t.currentTotal ?? 0));
+    final totalStaffSales = m.waiterSales.values.fold<double>(
+      0,
+      (a, b) => a + b,
+    );
+    final openCheck = m.cashierTables.fold<double>(
+      0,
+      (s, t) => s + (t.currentTotal ?? 0),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,7 +563,9 @@ class _OverviewPanel extends StatelessWidget {
             _StatCard(
               title: 'Top puntor',
               value: top.key == '—' ? '—' : top.key,
-              subtitle: top.key == '—' ? null : '\$${top.value.toStringAsFixed(0)}',
+              subtitle: top.key == '—'
+                  ? null
+                  : '\$${top.value.toStringAsFixed(0)}',
               icon: Icons.emoji_events,
             ),
             _StatCard(
@@ -508,10 +609,7 @@ class _OverviewPanel extends StatelessWidget {
               children: [
                 _OverviewSalesBarsCard(m: m),
                 const SizedBox(height: 16),
-                _OverviewTrendAndOccupancyCard(
-                  m: m,
-                  occupied: occupied,
-                ),
+                _OverviewTrendAndOccupancyCard(m: m, occupied: occupied),
                 const SizedBox(height: 16),
                 _OverviewActivityCard(m: m),
               ],
@@ -536,11 +634,7 @@ class _OverviewPanel extends StatelessWidget {
             }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                chartColumn,
-                const SizedBox(height: 20),
-                sideColumn,
-              ],
+              children: [chartColumn, const SizedBox(height: 20), sideColumn],
             );
           },
         ),
@@ -771,8 +865,9 @@ class _OverviewTrendAndOccupancyCard extends StatelessWidget {
                                         begin: Alignment.bottomCenter,
                                         end: Alignment.topCenter,
                                         colors: [
-                                          AppColors.primaryGreen
-                                              .withValues(alpha: 0.85),
+                                          AppColors.primaryGreen.withValues(
+                                            alpha: 0.85,
+                                          ),
                                           AppColors.lightGreenBg,
                                         ],
                                       ),
@@ -797,7 +892,7 @@ class _OverviewTrendAndOccupancyCard extends StatelessWidget {
                     ),
                   ),
               ],
-          ),
+            ),
           ),
           const SizedBox(height: 20),
           Text(
@@ -842,7 +937,10 @@ class _OverviewActivityCard extends StatelessWidget {
       tiles.add(
         ListTile(
           dense: true,
-          leading: Icon(Icons.play_circle_outline, color: AppColors.primaryGreen),
+          leading: Icon(
+            Icons.play_circle_outline,
+            color: AppColors.primaryGreen,
+          ),
           title: const Text('Gjendja u hap'),
           subtitle: Text(
             '${m.shiftOpenedAt}',
@@ -855,7 +953,10 @@ class _OverviewActivityCard extends StatelessWidget {
       tiles.add(
         ListTile(
           dense: true,
-          leading: Icon(Icons.stop_circle_outlined, color: AppColors.mediumGreenText),
+          leading: Icon(
+            Icons.stop_circle_outlined,
+            color: AppColors.mediumGreenText,
+          ),
           title: const Text('Gjendja u mbyll'),
           subtitle: Text(
             '${m.shiftClosedAt}',
@@ -872,7 +973,11 @@ class _OverviewActivityCard extends StatelessWidget {
         ListTile(
           dense: true,
           leading: const Icon(Icons.receipt_outlined, size: 22),
-          title: Text(e.description, maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: Text(
+            e.description,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           subtitle: Text(
             '${e.type} · ${e.date}',
             style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
@@ -1174,7 +1279,10 @@ class _ShiftPanel extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
                 foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
               ),
             ),
             const SizedBox(width: 16),
@@ -1185,7 +1293,10 @@ class _ShiftPanel extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.darkGreenText,
                 foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
               ),
             ),
           ],
@@ -1305,9 +1416,7 @@ class _WaitersPanelState extends State<_WaitersPanel> {
                 obscureText: true,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _add(),
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
             ),
             const SizedBox(width: 12),
@@ -1319,7 +1428,9 @@ class _WaitersPanelState extends State<_WaitersPanel> {
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: AppColors.white,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 18),
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
                 ),
                 child: const Text('Shto'),
               ),
@@ -1330,10 +1441,7 @@ class _WaitersPanelState extends State<_WaitersPanel> {
           const SizedBox(height: 8),
           Text(
             _errorMsg!,
-            style: const TextStyle(
-              color: AppColors.negativeText,
-              fontSize: 13,
-            ),
+            style: const TextStyle(color: AppColors.negativeText, fontSize: 13),
           ),
         ],
         const SizedBox(height: 24),
@@ -1461,13 +1569,18 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
 
   int _indexInManager(ExpenseRow row) => widget.m.expenses.indexOf(row);
 
-  Future<void> _exportPdf(BuildContext context, {required bool printDialog}) async {
+  Future<void> _exportPdf(
+    BuildContext context, {
+    required bool printDialog,
+  }) async {
     final rows = _filtered(widget.m.expenses);
     if (rows.isEmpty) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Nuk ka rreshta për eksport — shto ose ndrysho filtrat.'),
+          content: const Text(
+            'Nuk ka rreshta për eksport — shto ose ndrysho filtrat.',
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.negativeText,
         ),
@@ -1665,7 +1778,10 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
                 const SizedBox(height: 6),
                 Text(
                   'PDF përfshin vetëm rreshtat që shfaqen sipas filtrave aktualë.',
-                  style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.lightGreenText,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 LayoutBuilder(
@@ -1879,8 +1995,9 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
                 TextField(
                   controller: amtCtrl,
                   decoration: _inputDeco('Shuma (USD)'),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                   ],
@@ -1952,7 +2069,10 @@ class _ExpenseKpiCard extends StatelessWidget {
                   Icon(icon, color: AppColors.primaryGreen, size: 22),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.lightGreenBg,
                       borderRadius: BorderRadius.circular(8),
@@ -1971,10 +2091,7 @@ class _ExpenseKpiCard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.lightGreenText,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
               ),
               const SizedBox(height: 4),
               Text(
@@ -2080,7 +2197,9 @@ class _ExpenseTypeDistributionBar extends StatelessWidget {
                     Expanded(
                       flex: flex(shpenz),
                       child: Container(
-                        color: AppColors.mediumGreenText.withValues(alpha: 0.65),
+                        color: AppColors.mediumGreenText.withValues(
+                          alpha: 0.65,
+                        ),
                       ),
                     ),
                     Expanded(
@@ -2167,10 +2286,7 @@ class _ExpensesEmptyState extends StatelessWidget {
           Text(
             'Zbraz kërkimin, zgjidh “Të gjitha” te lloji, ose shto një transaksion të ri.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.mediumGreenText,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.mediumGreenText),
           ),
           const SizedBox(height: 20),
           OutlinedButton.icon(
@@ -2209,9 +2325,7 @@ class _ExpensesDataTable extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            decoration: const BoxDecoration(
-              color: AppColors.lightGreenBg,
-            ),
+            decoration: const BoxDecoration(color: AppColors.lightGreenBg),
             child: const Row(
               children: [
                 SizedBox(width: 120, child: Text('Lloji')),
@@ -2249,90 +2363,92 @@ class _ExpensesDataTable extends StatelessWidget {
               return Material(
                 color: stripe,
                 child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 120,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Chip(
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              labelPadding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              side: BorderSide(color: typeColor(e.type)),
-                              backgroundColor: typeColor(e.type).withValues(
-                                alpha: 0.12,
-                              ),
-                              label: Text(
-                                e.type,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: typeColor(e.type),
-                                ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Chip(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            labelPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                            ),
+                            side: BorderSide(color: typeColor(e.type)),
+                            backgroundColor: typeColor(
+                              e.type,
+                            ).withValues(alpha: 0.12),
+                            label: Text(
+                              e.type,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: typeColor(e.type),
                               ),
                             ),
                           ),
                         ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 8, top: 2),
-                            child: Text(
-                              e.description,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppColors.darkGreenText,
-                                height: 1.35,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 100,
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8, top: 2),
                           child: Text(
-                            '\$${e.amount.toStringAsFixed(2)}',
-                            textAlign: TextAlign.right,
+                            e.description,
                             style: const TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w700,
                               color: AppColors.darkGreenText,
+                              height: 1.35,
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: 110,
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              fmtDate(e.date),
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.mediumGreenText,
-                              ),
+                      ),
+                      SizedBox(
+                        width: 100,
+                        child: Text(
+                          '\$${e.amount.toStringAsFixed(2)}',
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.darkGreenText,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 110,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            fmtDate(e.date),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.mediumGreenText,
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: 48,
-                          child: IconButton(
-                            tooltip: 'Fshi rreshtin',
-                            icon: Icon(
-                              Icons.delete_outline,
-                              color: AppColors.negativeText.withValues(alpha: 0.85),
+                      ),
+                      SizedBox(
+                        width: 48,
+                        child: IconButton(
+                          tooltip: 'Fshi rreshtin',
+                          icon: Icon(
+                            Icons.delete_outline,
+                            color: AppColors.negativeText.withValues(
+                              alpha: 0.85,
                             ),
-                            onPressed: () => onDelete(e),
                           ),
+                          onPressed: () => onDelete(e),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
               );
             },
           ),
@@ -2487,10 +2603,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                   child: SegmentedButton<int>(
                     segments: [
                       for (var i = 0; i < 3; i++)
-                        ButtonSegment<int>(
-                          value: i,
-                          label: Text(labels[i]),
-                        ),
+                        ButtonSegment<int>(value: i, label: Text(labels[i])),
                     ],
                     selected: {_tab},
                     onSelectionChanged: (s) => setState(() => _tab = s.first),
@@ -2548,17 +2661,21 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                                   child: Align(
                                     alignment: Alignment.bottomCenter,
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 300),
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
                                       width: 40,
                                       height: 12 + norm[i] * 72,
                                       decoration: BoxDecoration(
                                         color: _tab == i
                                             ? AppColors.primaryGreen
-                                            : AppColors.primaryGreen
-                                                .withValues(alpha: 0.45),
-                                        borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(8),
-                                        ),
+                                            : AppColors.primaryGreen.withValues(
+                                                alpha: 0.45,
+                                              ),
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(8),
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -2604,10 +2721,22 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                     _profitTblHead('Vlera', right: true),
                   ],
                 ),
-                _profitTblRow('Fitim ditor (demo)', '\$${daily.toStringAsFixed(2)}'),
-                _profitTblRow('Fitim javor (demo)', '\$${weekly.toStringAsFixed(2)}'),
-                _profitTblRow('Fitim mujor (demo)', '\$${monthly.toStringAsFixed(2)}'),
-                _profitTblRow('Shpenzime të regjistruara', '\$${m.totalExpenses.toStringAsFixed(2)}'),
+                _profitTblRow(
+                  'Fitim ditor (demo)',
+                  '\$${daily.toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Fitim javor (demo)',
+                  '\$${weekly.toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Fitim mujor (demo)',
+                  '\$${monthly.toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Shpenzime të regjistruara',
+                  '\$${m.totalExpenses.toStringAsFixed(2)}',
+                ),
                 _profitTblRow(
                   'Rreshta në regjistrin e shpenzimeve',
                   '${m.expenses.length}',
@@ -2708,10 +2837,7 @@ class _ProfitKpiTile extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.lightGreenText,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
               ),
               const SizedBox(height: 4),
               Text(
@@ -3045,8 +3171,10 @@ class _ReportsPanelState extends State<_ReportsPanel> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.receipt_long_outlined,
-                            color: AppColors.primaryGreen),
+                        Icon(
+                          Icons.receipt_long_outlined,
+                          color: AppColors.primaryGreen,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Parapamje shpenzimesh (8 të fundit)',
@@ -3109,8 +3237,10 @@ class _ReportsPanelState extends State<_ReportsPanel> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.point_of_sale_outlined,
-                            color: AppColors.primaryGreen),
+                        Icon(
+                          Icons.point_of_sale_outlined,
+                          color: AppColors.primaryGreen,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Shitje stafi (sesion)',
@@ -3168,13 +3298,7 @@ class _ReportsPanelState extends State<_ReportsPanel> {
                 ],
               );
             }
-            return Column(
-              children: [
-                left,
-                const SizedBox(height: 16),
-                right,
-              ],
-            );
+            return Column(children: [left, const SizedBox(height: 16), right]);
           },
         ),
       ],
@@ -3212,10 +3336,7 @@ class _ReportStatChip extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.lightGreenText,
-                ),
+                style: TextStyle(fontSize: 11, color: AppColors.lightGreenText),
               ),
               Text(
                 value,
@@ -3249,12 +3370,18 @@ class _TopEmployeePanel extends StatelessWidget {
         Card(
           elevation: 0,
           color: AppColors.lightGreenBg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                const Icon(Icons.emoji_events, size: 48, color: AppColors.primaryGreen),
+                const Icon(
+                  Icons.emoji_events,
+                  size: 48,
+                  color: AppColors.primaryGreen,
+                ),
                 const SizedBox(width: 20),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3291,7 +3418,10 @@ class _TopEmployeePanel extends StatelessWidget {
             style: TextStyle(color: AppColors.lightGreenText),
           )
         else ...[
-          const Text('Të gjithë:', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text(
+            'Të gjithë:',
+            style: TextStyle(fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: 8),
           ...m.employeeSalesSorted.map(
             (e) => ListTile(
@@ -3336,19 +3466,14 @@ String _assetLabel(String path) {
 
 Future<List<String>> _loadImageAssets() async {
   final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-  return manifest
-      .listAssets()
-      .where((a) {
-        if (!a.startsWith('assets/images/')) return false;
-        final lower = a.toLowerCase();
-        return _kImageExtensions.any((ext) => lower.endsWith(ext));
-      })
-      .toList()
-    ..sort();
+  return manifest.listAssets().where((a) {
+    if (!a.startsWith('assets/images/')) return false;
+    final lower = a.toLowerCase();
+    return _kImageExtensions.any((ext) => lower.endsWith(ext));
+  }).toList()..sort();
 }
 
-Future<String?> _showAssetPicker(
-    BuildContext context, String? current) async {
+Future<String?> _showAssetPicker(BuildContext context, String? current) async {
   final assets = await _loadImageAssets();
   if (!context.mounted) return null;
 
@@ -3447,15 +3572,15 @@ class _AssetPickerThumbState extends State<_AssetPickerThumb> {
               color: widget.selected
                   ? AppColors.primaryGreen
                   : _hover
-                      ? AppColors.borderVisible(0.4)
-                      : AppColors.borderSubtle(0.15),
+                  ? AppColors.borderVisible(0.4)
+                  : AppColors.borderSubtle(0.15),
               width: widget.selected ? 2 : 1,
             ),
             color: widget.selected
                 ? AppColors.lightGreenBg
                 : _hover
-                    ? AppColors.beige
-                    : AppColors.white,
+                ? AppColors.beige
+                : AppColors.white,
           ),
           padding: const EdgeInsets.all(8),
           child: Column(
@@ -3570,16 +3695,16 @@ class _MenuPanelState extends State<_MenuPanel> {
     ProductItem p,
   ) async {
     final nameCtrl = TextEditingController(text: p.name);
-    final priceCtrl =
-        TextEditingController(text: p.price.toStringAsFixed(2));
+    final priceCtrl = TextEditingController(text: p.price.toStringAsFixed(2));
     String? editImage = p.imagePath;
 
     await showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSt) => Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(28),
             child: SizedBox(
@@ -3627,10 +3752,15 @@ class _MenuPanelState extends State<_MenuPanel> {
                           OutlinedButton.icon(
                             onPressed: () async {
                               final picked = await _showAssetPicker(
-                                  context, editImage);
+                                context,
+                                editImage,
+                              );
                               if (picked != null) {
-                                setSt(() => editImage =
-                                    picked.isEmpty ? null : picked);
+                                setSt(
+                                  () => editImage = picked.isEmpty
+                                      ? null
+                                      : picked,
+                                );
                               }
                             },
                             icon: const Icon(Icons.image_outlined, size: 16),
@@ -3638,9 +3768,12 @@ class _MenuPanelState extends State<_MenuPanel> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primaryGreen,
                               side: const BorderSide(
-                                  color: AppColors.primaryGreen),
+                                color: AppColors.primaryGreen,
+                              ),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
                             ),
                           ),
                         ],
@@ -3657,7 +3790,8 @@ class _MenuPanelState extends State<_MenuPanel> {
                     controller: priceCtrl,
                     decoration: _inputDeco('Çmimi'),
                     keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true),
+                      decimal: true,
+                    ),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                     ],
@@ -3706,18 +3840,18 @@ class _MenuPanelState extends State<_MenuPanel> {
   }
 
   Widget _noImageBox() => Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: AppColors.lightGreenBg,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Icon(
-          Icons.hide_image_outlined,
-          size: 28,
-          color: AppColors.lightGreenText,
-        ),
-      );
+    width: 64,
+    height: 64,
+    decoration: BoxDecoration(
+      color: AppColors.lightGreenBg,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: const Icon(
+      Icons.hide_image_outlined,
+      size: 28,
+      color: AppColors.lightGreenText,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -3740,8 +3874,8 @@ class _MenuPanelState extends State<_MenuPanel> {
 
     final catValue =
         (_selectedCatId != null && cats.any((c) => c.id == _selectedCatId))
-            ? _selectedCatId!
-            : cats.first.id;
+        ? _selectedCatId!
+        : cats.first.id;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3829,7 +3963,9 @@ class _MenuPanelState extends State<_MenuPanel> {
                             color: AppColors.lightGreenBg,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.3,
+                              ),
                             ),
                           ),
                           child: ClipRRect(
@@ -3868,8 +4004,9 @@ class _MenuPanelState extends State<_MenuPanel> {
                     child: TextField(
                       controller: _prodPrice,
                       decoration: _inputDeco('Çmimi'),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                       ],
@@ -3884,7 +4021,9 @@ class _MenuPanelState extends State<_MenuPanel> {
                       backgroundColor: AppColors.primaryGreen,
                       foregroundColor: AppColors.white,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                     ),
                     child: const Text('Shto'),
                   ),
@@ -3945,174 +4084,179 @@ class _CategoryProductTableState extends State<_CategoryProductTable> {
       builder: (context, candidateData, _) {
         final isOver = candidateData.isNotEmpty;
         return Container(
-      decoration: BoxDecoration(
-        color: isOver
-            ? AppColors.lightGreenBg.withValues(alpha: 0.6)
-            : AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isOver
-              ? AppColors.primaryGreen
-              : AppColors.borderSubtle(0.12),
-          width: isOver ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isOver ? 0.06 : 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header row
-          InkWell(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            onTap: () => setState(() => _expanded = !_expanded),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
-                children: [
-                  Icon(
-                    c.icon,
-                    size: 20,
-                    color: AppColors.primaryGreen,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      c.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkGreenText,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightGreenBg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${c.products.length} produkte',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: 'Fshi kategorinë',
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    color: AppColors.negativeText,
-                    onPressed: widget.onDeleteCategory,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  const SizedBox(width: 4),
-                  AnimatedRotation(
-                    turns: _expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                ],
-              ),
+          decoration: BoxDecoration(
+            color: isOver
+                ? AppColors.lightGreenBg.withValues(alpha: 0.6)
+                : AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isOver
+                  ? AppColors.primaryGreen
+                  : AppColors.borderSubtle(0.12),
+              width: isOver ? 2 : 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isOver ? 0.06 : 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-
-          // Products list
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: c.products.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.beige,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        'Nuk ka produkte në këtë kategori.',
-                        style: TextStyle(
-                          color: AppColors.lightGreenText,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  )
-                : Column(
+          child: Column(
+            children: [
+              // Header row
+              InkWell(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                onTap: () => setState(() => _expanded = !_expanded),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Row(
                     children: [
-                      // Table header
-                      Container(
-                        color: AppColors.lightGreenBg,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 52),
-                            const SizedBox(width: 16),
-                            const Expanded(
-                              flex: 3,
-                              child: Text(
-                                'Emri',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.mediumGreenText,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 100,
-                              child: Text(
-                                'Çmimi',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.mediumGreenText,
-                                  letterSpacing: 0.5,
-                                ),
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                            const SizedBox(width: 88),
-                          ],
+                      Icon(c.icon, size: 20, color: AppColors.primaryGreen),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          c.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.darkGreenText,
+                          ),
                         ),
                       ),
-                      for (var i = 0; i < c.products.length; i++) ...[
-                        if (i > 0)
-                          Divider(
-                            height: 1,
-                            color: AppColors.borderSubtle(0.08),
-                          ),
-                        _ProductTableRow(
-                          product: c.products[i],
-                          isLast: i == c.products.length - 1,
-                          onEdit: () => widget.onEditProduct(c.products[i]),
-                          onDelete: () =>
-                              widget.onDeleteProduct(c.products[i].id),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                      ],
+                        decoration: BoxDecoration(
+                          color: AppColors.lightGreenBg,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${c.products.length} produkte',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primaryGreen,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Fshi kategorinë',
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        color: AppColors.negativeText,
+                        onPressed: widget.onDeleteCategory,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      const SizedBox(width: 4),
+                      AnimatedRotation(
+                        turns: _expanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.mediumGreenText,
+                        ),
+                      ),
                     ],
                   ),
-            crossFadeState: _expanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
+                ),
+              ),
+
+              // Products list
+              AnimatedCrossFade(
+                firstChild: const SizedBox(width: double.infinity),
+                secondChild: c.products.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.beige,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'Nuk ka produkte në këtë kategori.',
+                            style: TextStyle(
+                              color: AppColors.lightGreenText,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          // Table header
+                          Container(
+                            color: AppColors.lightGreenBg,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 52),
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    'Emri',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.mediumGreenText,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 100,
+                                  child: Text(
+                                    'Çmimi',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.mediumGreenText,
+                                      letterSpacing: 0.5,
+                                    ),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
+                                const SizedBox(width: 88),
+                              ],
+                            ),
+                          ),
+                          for (var i = 0; i < c.products.length; i++) ...[
+                            if (i > 0)
+                              Divider(
+                                height: 1,
+                                color: AppColors.borderSubtle(0.08),
+                              ),
+                            _ProductTableRow(
+                              product: c.products[i],
+                              isLast: i == c.products.length - 1,
+                              onEdit: () => widget.onEditProduct(c.products[i]),
+                              onDelete: () =>
+                                  widget.onDeleteProduct(c.products[i].id),
+                            ),
+                          ],
+                        ],
+                      ),
+                crossFadeState: _expanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 200),
+              ),
+            ],
           ),
-        ],
-      ),
         );
       },
     );
@@ -4227,18 +4371,18 @@ class _ProductTableRowState extends State<_ProductTableRow> {
   }
 
   Widget _thumbPlaceholder() => Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: AppColors.lightGreenBg,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(
-          Icons.fastfood_outlined,
-          size: 22,
-          color: AppColors.lightGreenText,
-        ),
-      );
+    width: 52,
+    height: 52,
+    decoration: BoxDecoration(
+      color: AppColors.lightGreenBg,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: const Icon(
+      Icons.fastfood_outlined,
+      size: 22,
+      color: AppColors.lightGreenText,
+    ),
+  );
 }
 
 class _ActionBtn extends StatefulWidget {
@@ -4474,7 +4618,9 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                     activeTrackColor: AppColors.primaryGreen,
                     inactiveTrackColor: AppColors.borderSubtle(0.15),
                     thumbColor: AppColors.primaryGreen,
-                    overlayColor: AppColors.primaryGreen.withValues(alpha: 0.12),
+                    overlayColor: AppColors.primaryGreen.withValues(
+                      alpha: 0.12,
+                    ),
                   ),
                   child: Slider(
                     value: _count,
@@ -4520,7 +4666,9 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                     activeTrackColor: AppColors.primaryGreen,
                     inactiveTrackColor: AppColors.borderSubtle(0.15),
                     thumbColor: AppColors.primaryGreen,
-                    overlayColor: AppColors.primaryGreen.withValues(alpha: 0.12),
+                    overlayColor: AppColors.primaryGreen.withValues(
+                      alpha: 0.12,
+                    ),
                   ),
                   child: Slider(
                     value: _perRow,
@@ -4669,8 +4817,9 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minWidth: 520),
                 child: DataTable(
-                  headingRowColor:
-                      const WidgetStatePropertyAll(AppColors.lightGreenBg),
+                  headingRowColor: const WidgetStatePropertyAll(
+                    AppColors.lightGreenBg,
+                  ),
                   columns: const [
                     DataColumn(label: Text('ID')),
                     DataColumn(label: Text('Gjendja')),
@@ -4755,10 +4904,7 @@ class _TableStatPill extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.lightGreenText,
-                ),
+                style: TextStyle(fontSize: 11, color: AppColors.lightGreenText),
               ),
               Text(
                 value,
