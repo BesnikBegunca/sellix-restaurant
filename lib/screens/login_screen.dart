@@ -219,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Green Grounds POS',
+                  'POS System',
                   style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.w500,

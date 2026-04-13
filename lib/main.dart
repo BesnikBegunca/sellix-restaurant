@@ -5,16 +5,16 @@ import 'theme/app_colors.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const GreenGroundsApp());
+  runApp(const PosSystemApp());
 }
 
-class GreenGroundsApp extends StatelessWidget {
-  const GreenGroundsApp({super.key});
+class PosSystemApp extends StatelessWidget {
+  const PosSystemApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Green Grounds POS',
+      title: 'POS System',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

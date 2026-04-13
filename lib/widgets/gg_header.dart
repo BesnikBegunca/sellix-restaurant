@@ -33,7 +33,7 @@ class GgAppHeader extends StatelessWidget {
     super.key,
     this.showBack = false,
     this.onBack,
-    this.title = 'Green Grounds Coffee',
+    this.title = 'POS System',
     this.logoSize = 40,
   });
 

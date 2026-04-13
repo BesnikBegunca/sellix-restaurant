@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Green Grounds POS — paleta sipas specifikës vizuale.
+/// POS System — paleta sipas specifikës vizuale.
 abstract final class AppColors {
   static const Color primaryGreen = Color(0xFF4a7c59);
   static const Color lightGreenBg = Color(0xFFe8f3ec);

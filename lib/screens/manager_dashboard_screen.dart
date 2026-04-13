@@ -1,12 +1,30 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:printing/printing.dart';
 
 import '../manager/manager_data.dart';
+import '../services/expenses_pdf_export.dart';
+import '../services/manager_summary_pdf.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
 
 /// Të dhënat që barten me drag nga një produkt.
 typedef _ProductDrag = ({String fromCatId, ProductItem product});
+
+const _kSectionTitles = <String>[
+  'Përmbledhje',
+  'Gjendja',
+  'Kamarierët',
+  'Shpenzime',
+  'Fitime',
+  'Raporte',
+  'Top puntor',
+  'Menu',
+  'Tavolinat',
+];
 
 /// Dashboard menaxheri (PIN 9999). Seksionet 1–8 sipas kërkesës.
 class ManagerDashboardScreen extends StatefulWidget {
@@ -19,6 +37,7 @@ class ManagerDashboardScreen extends StatefulWidget {
 class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   final ManagerData _m = ManagerData.instance;
   int _railIndex = 0;
+  bool _sidebarExpanded = true;
 
   @override
   void initState() {
@@ -44,84 +63,28 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       backgroundColor: AppColors.beige,
       body: Row(
         children: [
-          NavigationRail(
-            extended: MediaQuery.sizeOf(context).width > 1100,
-            backgroundColor: AppColors.white,
+          _ManagerSideNav(
+            expanded: _sidebarExpanded,
             selectedIndex: _railIndex,
+            onToggle: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
             onDestinationSelected: (i) => setState(() => _railIndex = i),
-            // Kur `extended: true`, `labelType` duhet të jetë null (rregull i Flutter-it).
-            labelType: MediaQuery.sizeOf(context).width > 1100
-                ? null
-                : NavigationRailLabelType.selected,
-            leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: IconButton(
-                tooltip: 'Kthehu te hyrja',
-                onPressed: _exitToLogin,
-                icon: const Icon(Icons.logout, color: AppColors.primaryGreen),
-              ),
-            ),
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard),
-                label: Text('Përmbledhje'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.schedule_outlined),
-                selectedIcon: Icon(Icons.schedule),
-                label: Text('Gjendja'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.badge_outlined),
-                selectedIcon: Icon(Icons.badge),
-                label: Text('Kamarierët'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.table_rows_outlined),
-                selectedIcon: Icon(Icons.table_rows),
-                label: Text('Shpenzime'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.trending_up_outlined),
-                selectedIcon: Icon(Icons.trending_up),
-                label: Text('Fitime'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.description_outlined),
-                selectedIcon: Icon(Icons.description),
-                label: Text('Raporte'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.emoji_events_outlined),
-                selectedIcon: Icon(Icons.emoji_events),
-                label: Text('Top puntor'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.menu_book_outlined),
-                selectedIcon: Icon(Icons.menu_book),
-                label: Text('Menu'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.grid_view_outlined),
-                selectedIcon: Icon(Icons.grid_view),
-                label: Text('Tavolinat'),
-              ),
-            ],
+            onLogout: _exitToLogin,
           ),
           const VerticalDivider(width: 1, thickness: 1),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ManagerTopBar(onLogout: _exitToLogin),
+                _ManagerTopBar(
+                  sectionTitle: _kSectionTitles[_railIndex],
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Align(
                       alignment: Alignment.topLeft,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 960),
+                        constraints: const BoxConstraints(maxWidth: 1280),
                         child: _buildSection(),
                       ),
                     ),
@@ -138,7 +101,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   Widget _buildSection() {
     switch (_railIndex) {
       case 0:
-        return _OverviewPanel(m: _m);
+        return _OverviewPanel(
+          m: _m,
+          onNavigate: (i) => setState(() => _railIndex = i),
+        );
       case 1:
         return _ShiftPanel(m: _m);
       case 2:
@@ -148,7 +114,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       case 4:
         return _ProfitsPanel(m: _m);
       case 5:
-        return _ReportsPanel();
+        return _ReportsPanel(m: _m);
       case 6:
         return _TopEmployeePanel(m: _m);
       case 7:
@@ -161,10 +127,193 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   }
 }
 
-class _ManagerTopBar extends StatelessWidget {
-  const _ManagerTopBar({required this.onLogout});
+class _ManagerSideNav extends StatelessWidget {
+  const _ManagerSideNav({
+    required this.expanded,
+    required this.selectedIndex,
+    required this.onToggle,
+    required this.onDestinationSelected,
+    required this.onLogout,
+  });
 
+  final bool expanded;
+  final int selectedIndex;
+  final VoidCallback onToggle;
+  final ValueChanged<int> onDestinationSelected;
   final VoidCallback onLogout;
+
+  static const _items = <({IconData icon, IconData sel, String label})>[
+    (
+      icon: Icons.dashboard_outlined,
+      sel: Icons.dashboard,
+      label: 'Përmbledhje',
+    ),
+    (
+      icon: Icons.schedule_outlined,
+      sel: Icons.schedule,
+      label: 'Gjendja',
+    ),
+    (
+      icon: Icons.badge_outlined,
+      sel: Icons.badge,
+      label: 'Kamarierët',
+    ),
+    (
+      icon: Icons.table_rows_outlined,
+      sel: Icons.table_rows,
+      label: 'Shpenzime',
+    ),
+    (
+      icon: Icons.trending_up_outlined,
+      sel: Icons.trending_up,
+      label: 'Fitime',
+    ),
+    (
+      icon: Icons.description_outlined,
+      sel: Icons.description,
+      label: 'Raporte',
+    ),
+    (
+      icon: Icons.emoji_events_outlined,
+      sel: Icons.emoji_events,
+      label: 'Top puntor',
+    ),
+    (
+      icon: Icons.menu_book_outlined,
+      sel: Icons.menu_book,
+      label: 'Menu',
+    ),
+    (
+      icon: Icons.grid_view_outlined,
+      sel: Icons.grid_view,
+      label: 'Tavolinat',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOutCubic,
+      width: expanded ? 256 : 72,
+      color: AppColors.white,
+      child: Column(
+        children: [
+          SizedBox(
+            height: 56,
+            child: Align(
+              alignment: expanded ? Alignment.centerRight : Alignment.center,
+              child: IconButton(
+                tooltip: expanded ? 'Mbyll menunë anësore' : 'Hap menunë anësore',
+                onPressed: onToggle,
+                icon: Icon(
+                  expanded ? Icons.keyboard_double_arrow_left : Icons.menu,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: _items.length,
+              itemBuilder: (context, i) {
+                final it = _items[i];
+                final sel = i == selectedIndex;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Material(
+                    color: sel ? AppColors.lightGreenBg : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => onDestinationSelected(i),
+                      child: SizedBox(
+                        height: 48,
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: expanded ? 44 : 56,
+                              child: Center(
+                                child: Icon(
+                                  sel ? it.sel : it.icon,
+                                  size: 22,
+                                  color: sel
+                                      ? AppColors.primaryGreen
+                                      : AppColors.mediumGreenText,
+                                ),
+                              ),
+                            ),
+                            if (expanded)
+                              Expanded(
+                                child: Text(
+                                  it.label,
+                                  style: TextStyle(
+                                    fontWeight:
+                                        sel ? FontWeight.w600 : FontWeight.w500,
+                                    color: sel
+                                        ? AppColors.darkGreenText
+                                        : AppColors.mediumGreenText,
+                                    fontSize: 14,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Divider(height: 1, thickness: 1, color: AppColors.borderSubtle(0.12)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
+            child: expanded
+                ? SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onLogout,
+                      icon: const Icon(Icons.logout, size: 20),
+                      label: const Text('Dil'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primaryGreen,
+                        side: BorderSide(color: AppColors.borderVisible(0.25)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  )
+                : Tooltip(
+                    message: 'Dil',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onLogout,
+                        borderRadius: BorderRadius.circular(12),
+                        child: const SizedBox(
+                          height: 48,
+                          width: 48,
+                          child: Icon(
+                            Icons.logout,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ManagerTopBar extends StatelessWidget {
+  const _ManagerTopBar({required this.sectionTitle});
+
+  final String sectionTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -196,21 +345,31 @@ class _ManagerTopBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            const Text(
-              'Dashboard menaxheri',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w500,
-                color: AppColors.darkGreenText,
-              ),
-            ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: onLogout,
-              icon: const Icon(Icons.logout, size: 20),
-              label: const Text('Dil'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primaryGreen,
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    sectionTitle,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'Dashboard menaxheri · POS System',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.lightGreenText,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ],
@@ -221,33 +380,61 @@ class _ManagerTopBar extends StatelessWidget {
 }
 
 class _OverviewPanel extends StatelessWidget {
-  const _OverviewPanel({required this.m});
+  const _OverviewPanel({required this.m, required this.onNavigate});
 
   final ManagerData m;
+  final ValueChanged<int> onNavigate;
 
   @override
   Widget build(BuildContext context) {
     final top = m.topEmployee;
+    final productCount =
+        m.categories.fold<int>(0, (s, c) => s + c.products.length);
+    final categoryCount = m.categories.length;
+    final occupied = m.cashierTables.where((t) => t.occupied).length;
+    final totalStaffSales =
+        m.waiterSales.values.fold<double>(0, (a, b) => a + b);
+    final openCheck =
+        m.cashierTables.fold<double>(0, (s, t) => s + (t.currentTotal ?? 0));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Përmbledhje',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w500,
-            color: AppColors.darkGreenText,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'PIN menaxheri: 9999',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Përmbledhje operacioni',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'PIN menaxheri: 9999 · Menu dinamike, tavolina dhe raporte në një vend.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.35,
+                      color: AppColors.lightGreenText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            _OverviewLiveClockChip(),
+          ],
         ),
         const SizedBox(height: 24),
         Wrap(
-          spacing: 16,
-          runSpacing: 16,
+          spacing: 14,
+          runSpacing: 14,
           children: [
             _StatCard(
               title: 'Gjendja',
@@ -255,7 +442,7 @@ class _OverviewPanel extends StatelessWidget {
               icon: Icons.schedule,
             ),
             _StatCard(
-              title: 'Kamarierë',
+              title: 'Kamarierë aktivë',
               value: '${m.waiters.length}',
               icon: Icons.badge,
             ),
@@ -270,9 +457,14 @@ class _OverviewPanel extends StatelessWidget {
               icon: Icons.trending_up,
             ),
             _StatCard(
+              title: 'Fitim javor (demo)',
+              value: '\$${m.profitWeekly().toStringAsFixed(0)}',
+              icon: Icons.calendar_view_week_outlined,
+            ),
+            _StatCard(
               title: 'Top puntor',
-              value: top.key,
-              subtitle: '\$${top.value.toStringAsFixed(0)}',
+              value: top.key == '—' ? '—' : top.key,
+              subtitle: top.key == '—' ? null : '\$${top.value.toStringAsFixed(0)}',
               icon: Icons.emoji_events,
             ),
             _StatCard(
@@ -280,9 +472,615 @@ class _OverviewPanel extends StatelessWidget {
               value: '${m.cashierTables.length} · ${m.tablesPerRow}/rresht',
               icon: Icons.grid_view,
             ),
+            _StatCard(
+              title: 'Tavolina të zëna',
+              value: '$occupied / ${m.cashierTables.length}',
+              icon: Icons.event_seat_outlined,
+            ),
+            _StatCard(
+              title: 'Hapësirë e hapur',
+              value: '\$${openCheck.toStringAsFixed(2)}',
+              icon: Icons.receipt_long_outlined,
+            ),
+            _StatCard(
+              title: 'Kategori menuje',
+              value: '$categoryCount',
+              icon: Icons.category_outlined,
+            ),
+            _StatCard(
+              title: 'Produkte në menu',
+              value: '$productCount',
+              icon: Icons.inventory_2_outlined,
+            ),
+            _StatCard(
+              title: 'Shitje stafi (sesioni)',
+              value: '\$${totalStaffSales.toStringAsFixed(2)}',
+              icon: Icons.point_of_sale_outlined,
+            ),
           ],
         ),
+        const SizedBox(height: 28),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth > 920;
+            final chartColumn = Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _OverviewSalesBarsCard(m: m),
+                const SizedBox(height: 16),
+                _OverviewTrendAndOccupancyCard(
+                  m: m,
+                  occupied: occupied,
+                ),
+                const SizedBox(height: 16),
+                _OverviewActivityCard(m: m),
+              ],
+            );
+            final sideColumn = Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _OverviewQuickActionsCard(onNavigate: onNavigate),
+                const SizedBox(height: 16),
+                _OverviewWaitersLeaderboard(m: m),
+              ],
+            );
+            if (wide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 58, child: chartColumn),
+                  const SizedBox(width: 20),
+                  Expanded(flex: 42, child: sideColumn),
+                ],
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                chartColumn,
+                const SizedBox(height: 20),
+                sideColumn,
+              ],
+            );
+          },
+        ),
       ],
+    );
+  }
+}
+
+class _OverviewLiveClockChip extends StatefulWidget {
+  @override
+  State<_OverviewLiveClockChip> createState() => _OverviewLiveClockChipState();
+}
+
+class _OverviewLiveClockChipState extends State<_OverviewLiveClockChip> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final t =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    return Material(
+      color: AppColors.lightGreenBg,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.schedule, size: 20, color: AppColors.primaryGreen),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  t,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: AppColors.darkGreenText,
+                  ),
+                ),
+                Text(
+                  '${now.day}.${now.month}.${now.year}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OverviewSalesBarsCard extends StatelessWidget {
+  const _OverviewSalesBarsCard({required this.m});
+
+  final ManagerData m;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = m.employeeSalesSorted.take(6).toList();
+    return _OverviewSectionCard(
+      title: 'Shitje sipas kamarierit',
+      subtitle:
+          'Total i mbledhur nga pagesat në POS (sesioni aktual në memorie).',
+      child: entries.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'Nuk ka shitje të regjistruara ende. Finalizo një pagesë nga kasieri.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.mediumGreenText),
+                ),
+              ),
+            )
+          : _OverviewSalesBarsInner(entries: entries),
+    );
+  }
+}
+
+class _OverviewSalesBarsInner extends StatelessWidget {
+  const _OverviewSalesBarsInner({required this.entries});
+
+  final List<MapEntry<String, double>> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxV = entries.map((e) => e.value).reduce(math.max);
+    const maxBar = 140.0;
+    return SizedBox(
+      height: 200,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final e in entries)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      '\$${e.value.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          width: 36,
+                          height: maxV > 0 ? (e.value / maxV) * maxBar : 4.0,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      e.key,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.mediumGreenText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverviewTrendAndOccupancyCard extends StatelessWidget {
+  const _OverviewTrendAndOccupancyCard({
+    required this.m,
+    required this.occupied,
+  });
+
+  final ManagerData m;
+  final int occupied;
+
+  @override
+  Widget build(BuildContext context) {
+    final n = math.max(m.cashierTables.length, 1);
+    final occRatio = (occupied / n).clamp(0.0, 1.0);
+    final daily = m.profitDaily();
+    final weekly = m.profitWeekly();
+    final monthly = m.profitMonthly();
+    final bars = <double>[
+      daily * 0.35,
+      daily * 0.55,
+      daily * 0.48,
+      weekly / 14,
+      weekly / 11,
+      monthly / 40,
+      daily * 0.62,
+    ];
+    final hi = bars.reduce(math.max);
+    final norm = hi > 0 ? bars.map((b) => b / hi).toList() : bars;
+
+    return _OverviewSectionCard(
+      title: 'Trend & kapacitet tavolinash',
+      subtitle:
+          'Shtyllat janë krahasim relativ (demo) midis metrikave të fitimit; '
+          'shiriti i poshtëm tregon zënien e tavolinave.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 108,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var i = 0; i < norm.length; i++)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: LayoutBuilder(
+                                builder: (context, c) {
+                                  final maxH = math.max(4.0, c.maxHeight);
+                                  final h = 4 + norm[i] * (maxH - 4);
+                                  return Container(
+                                    width: double.infinity,
+                                    height: h.clamp(4.0, maxH),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          AppColors.primaryGreen
+                                              .withValues(alpha: 0.85),
+                                          AppColors.lightGreenBg,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${i + 1}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              height: 1.1,
+                              color: AppColors.lightGreenText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+          ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Zënia e tavolinave',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: occRatio,
+              minHeight: 10,
+              backgroundColor: AppColors.lightGreenBg,
+              color: AppColors.primaryGreen,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$occupied të zëna nga ${m.cashierTables.length} (${(occRatio * 100).toStringAsFixed(0)}%)',
+            style: TextStyle(fontSize: 12, color: AppColors.mediumGreenText),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverviewActivityCard extends StatelessWidget {
+  const _OverviewActivityCard({required this.m});
+
+  final ManagerData m;
+
+  @override
+  Widget build(BuildContext context) {
+    final tiles = <Widget>[];
+
+    if (m.shiftOpenedAt != null) {
+      tiles.add(
+        ListTile(
+          dense: true,
+          leading: Icon(Icons.play_circle_outline, color: AppColors.primaryGreen),
+          title: const Text('Gjendja u hap'),
+          subtitle: Text(
+            '${m.shiftOpenedAt}',
+            style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+          ),
+        ),
+      );
+    }
+    if (m.shiftClosedAt != null && !m.shiftOpen) {
+      tiles.add(
+        ListTile(
+          dense: true,
+          leading: Icon(Icons.stop_circle_outlined, color: AppColors.mediumGreenText),
+          title: const Text('Gjendja u mbyll'),
+          subtitle: Text(
+            '${m.shiftClosedAt}',
+            style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+          ),
+        ),
+      );
+    }
+
+    final sortedExp = List<ExpenseRow>.from(m.expenses)
+      ..sort((a, b) => b.date.compareTo(a.date));
+    for (final e in sortedExp.take(6)) {
+      tiles.add(
+        ListTile(
+          dense: true,
+          leading: const Icon(Icons.receipt_outlined, size: 22),
+          title: Text(e.description, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Text(
+            '${e.type} · ${e.date}',
+            style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+          ),
+          trailing: Text(
+            '\$${e.amount.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (tiles.isEmpty) {
+      tiles.add(
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            'Nuk ka aktivitet të fundit. Hap gjendjen ose shto shpenzime për të parë historikun këtu.',
+            style: TextStyle(color: AppColors.mediumGreenText),
+          ),
+        ),
+      );
+    }
+
+    return _OverviewSectionCard(
+      title: 'Aktiviteti i fundit',
+      subtitle: 'Shift dhe shpenzime së fundi (sipas të dhënave lokale).',
+      child: Column(children: tiles),
+    );
+  }
+}
+
+class _OverviewQuickActionsCard extends StatelessWidget {
+  const _OverviewQuickActionsCard({required this.onNavigate});
+
+  final ValueChanged<int> onNavigate;
+
+  @override
+  Widget build(BuildContext context) {
+    void go(int i) => onNavigate(i);
+
+    Widget chip(String label, IconData icon, int section) {
+      return ActionChip(
+        avatar: Icon(icon, size: 18, color: AppColors.primaryGreen),
+        label: Text(label),
+        backgroundColor: AppColors.white,
+        side: BorderSide(color: AppColors.borderSubtle(0.15)),
+        onPressed: () => go(section),
+      );
+    }
+
+    return _OverviewSectionCard(
+      title: 'Veprime të shpejta',
+      subtitle: 'Shko direkt te seksioni përkatës në menunë anësore.',
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          chip('Gjendja', Icons.schedule, 1),
+          chip('Kamarierët', Icons.badge_outlined, 2),
+          chip('Shpenzime', Icons.table_rows_outlined, 3),
+          chip('Fitime', Icons.trending_up, 4),
+          chip('Raporte', Icons.description_outlined, 5),
+          chip('Top puntor', Icons.emoji_events_outlined, 6),
+          chip('Menu', Icons.menu_book_outlined, 7),
+          chip('Tavolinat', Icons.grid_view_outlined, 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverviewWaitersLeaderboard extends StatelessWidget {
+  const _OverviewWaitersLeaderboard({required this.m});
+
+  final ManagerData m;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = m.employeeSalesSorted.take(8).toList();
+    return _OverviewSectionCard(
+      title: 'Renditja e shitjeve',
+      subtitle: 'Kamarierët me shumë shitje të regjistruara në këtë sesion.',
+      child: rows.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                'Ende pa të dhëna shitjesh për stafin.',
+                style: TextStyle(color: AppColors.mediumGreenText),
+              ),
+            )
+          : Table(
+              columnWidths: const {
+                0: FixedColumnWidth(36),
+                1: FlexColumnWidth(2),
+                2: FlexColumnWidth(1),
+              },
+              children: [
+                TableRow(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: AppColors.borderSubtle(0.12)),
+                    ),
+                  ),
+                  children: [
+                    _tblHead('#'),
+                    _tblHead('Kamarieri'),
+                    _tblHead('Shitje', right: true),
+                  ],
+                ),
+                for (var i = 0; i < rows.length; i++)
+                  TableRow(
+                    children: [
+                      _tblCell('${i + 1}', bold: i == 0),
+                      _tblCell(rows[i].key, bold: i == 0),
+                      _tblCell(
+                        '\$${rows[i].value.toStringAsFixed(2)}',
+                        right: true,
+                        bold: i == 0,
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+    );
+  }
+
+  static Widget _tblHead(String s, {bool right = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        s,
+        textAlign: right ? TextAlign.right : TextAlign.start,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: AppColors.lightGreenText,
+        ),
+      ),
+    );
+  }
+
+  static Widget _tblCell(String s, {bool right = false, bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Text(
+        s,
+        textAlign: right ? TextAlign.right : TextAlign.start,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+          color: AppColors.darkGreenText,
+        ),
+      ),
+    );
+  }
+}
+
+class _OverviewSectionCard extends StatelessWidget {
+  const _OverviewSectionCard({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: AppColors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppColors.borderSubtle(0.12)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.darkGreenText,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.35,
+                color: AppColors.mediumGreenText,
+              ),
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
     );
   }
 }
@@ -608,60 +1406,430 @@ class _ExpensesPanel extends StatefulWidget {
   State<_ExpensesPanel> createState() => _ExpensesPanelState();
 }
 
+enum _ExpSort { dateDesc, dateAsc, amountDesc, amountAsc }
+
 class _ExpensesPanelState extends State<_ExpensesPanel> {
+  final _searchCtrl = TextEditingController();
+  String? _typeFilter;
+  _ExpSort _sort = _ExpSort.dateDesc;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.m.addListener(_onM);
+    _searchCtrl.addListener(_onM);
+  }
+
+  void _onM() => setState(() {});
+
+  @override
+  void dispose() {
+    widget.m.removeListener(_onM);
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<ExpenseRow> _filtered(List<ExpenseRow> all) {
+    final q = _searchCtrl.text.trim().toLowerCase();
+    var list = all.where((e) {
+      if (_typeFilter != null && e.type != _typeFilter) return false;
+      if (q.isEmpty) return true;
+      return e.description.toLowerCase().contains(q) ||
+          e.type.toLowerCase().contains(q) ||
+          e.amount.toString().contains(q);
+    }).toList();
+
+    switch (_sort) {
+      case _ExpSort.dateDesc:
+        list.sort((a, b) => b.date.compareTo(a.date));
+        break;
+      case _ExpSort.dateAsc:
+        list.sort((a, b) => a.date.compareTo(b.date));
+        break;
+      case _ExpSort.amountDesc:
+        list.sort((a, b) => b.amount.compareTo(a.amount));
+        break;
+      case _ExpSort.amountAsc:
+        list.sort((a, b) => a.amount.compareTo(b.amount));
+        break;
+    }
+    return list;
+  }
+
+  static double _sumType(Iterable<ExpenseRow> rows, String type) =>
+      rows.where((e) => e.type == type).fold<double>(0, (s, e) => s + e.amount);
+
+  int _indexInManager(ExpenseRow row) => widget.m.expenses.indexOf(row);
+
+  Future<void> _exportPdf(BuildContext context, {required bool printDialog}) async {
+    final rows = _filtered(widget.m.expenses);
+    if (rows.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Nuk ka rreshta për eksport — shto ose ndrysho filtrat.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.negativeText,
+        ),
+      );
+      return;
+    }
+    final bytes = await buildExpensesPdfBytes(rows: rows);
+    if (!context.mounted) return;
+    if (printDialog) {
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } else {
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename:
+            'shpenzime_pos_system_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final m = widget.m;
+    final filtered = _filtered(m.expenses);
+    final totalAll = m.expenses.fold<double>(0, (s, e) => s + e.amount);
+    final totalFiltered = filtered.fold<double>(0, (s, e) => s + e.amount);
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _sectionTitle('3. Shpenzime / rroga (tabelë)'),
-        const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            onPressed: () => _openAddDialog(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Shto rresht'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              foregroundColor: AppColors.white,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.lightGreenBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 32,
+                color: AppColors.primaryGreen,
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor: WidgetStatePropertyAll(AppColors.lightGreenBg),
-            columns: const [
-              DataColumn(label: Text('Lloji')),
-              DataColumn(label: Text('Përshkrimi')),
-              DataColumn(label: Text('Shuma'), numeric: true),
-              DataColumn(label: Text('Data')),
-              DataColumn(label: Text('')),
-            ],
-            rows: [
-              for (var i = 0; i < m.expenses.length; i++)
-                DataRow(
-                  cells: [
-                    DataCell(Text(m.expenses[i].type)),
-                    DataCell(Text(m.expenses[i].description)),
-                    DataCell(Text('\$${m.expenses[i].amount.toStringAsFixed(2)}')),
-                    DataCell(Text(_fmtDate(m.expenses[i].date))),
-                    DataCell(
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () => m.removeExpenseAt(i),
-                      ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Shpenzime & rroga',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Ndjek transaksionet, filtro sipas llojit, kërko dhe eksporto raport PDF.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _ExpenseKpiCard(
+              title: 'Total i regjistruar',
+              value: '\$${totalAll.toStringAsFixed(2)}',
+              subtitle: '${m.expenses.length} transaksione',
+              icon: Icons.savings_outlined,
+            ),
+            _ExpenseKpiCard(
+              title: 'Në pamje (filtër)',
+              value: '\$${totalFiltered.toStringAsFixed(2)}',
+              subtitle: '${filtered.length} rreshta',
+              icon: Icons.visibility_outlined,
+            ),
+            _ExpenseKpiCard(
+              title: 'Rrogë (kumulativ)',
+              value: '\$${_sumType(m.expenses, 'Rrogë').toStringAsFixed(2)}',
+              icon: Icons.payments_outlined,
+            ),
+            _ExpenseKpiCard(
+              title: 'Shpenzime (kumulativ)',
+              value: '\$${_sumType(m.expenses, 'Shpenzim').toStringAsFixed(2)}',
+              icon: Icons.shopping_cart_outlined,
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        _ExpenseTypeDistributionBar(expenses: m.expenses),
+        const SizedBox(height: 20),
+        Card(
+          elevation: 0,
+          color: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LayoutBuilder(
+                  builder: (context, c) {
+                    final wideToolbar = c.maxWidth >= 720;
+                    final title = Text(
+                      'Regjistri',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
+                      ),
+                    );
+                    final addBtn = FilledButton.icon(
+                      onPressed: () => _openAddDialog(context),
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text('Shto transaksion'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: AppColors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 14,
+                        ),
+                      ),
+                    );
+                    final pdfBtn = OutlinedButton.icon(
+                      onPressed: filtered.isEmpty
+                          ? null
+                          : () => _exportPdf(context, printDialog: false),
+                      icon: const Icon(Icons.download_outlined, size: 20),
+                      label: const Text('Shkarko PDF'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primaryGreen,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                    );
+                    final printBtn = OutlinedButton.icon(
+                      onPressed: filtered.isEmpty
+                          ? null
+                          : () => _exportPdf(context, printDialog: true),
+                      icon: const Icon(Icons.print_outlined, size: 20),
+                      label: const Text('Printo'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.darkGreenText,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                    );
+                    if (wideToolbar) {
+                      return Row(
+                        children: [
+                          title,
+                          const Spacer(),
+                          addBtn,
+                          const SizedBox(width: 10),
+                          pdfBtn,
+                          const SizedBox(width: 8),
+                          printBtn,
+                        ],
+                      );
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        title,
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [addBtn, pdfBtn, printBtn],
+                        ),
+                      ],
+                    );
+                  },
                 ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  'PDF përfshin vetëm rreshtat që shfaqen sipas filtrave aktualë.',
+                  style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+                ),
+                const SizedBox(height: 20),
+                LayoutBuilder(
+                  builder: (context, c) {
+                    final narrow = c.maxWidth < 720;
+                    return Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        SizedBox(
+                          width: narrow ? double.infinity : 260,
+                          child: TextField(
+                            controller: _searchCtrl,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: 'Kërko përshkrim, lloj ose shumë…',
+                              prefixIcon: const Icon(Icons.search, size: 22),
+                              filled: true,
+                              fillColor: AppColors.beige,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.borderSubtle(0.15),
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.borderSubtle(0.15),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppColors.primaryGreen,
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: narrow ? double.infinity : 200,
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              isDense: true,
+                              labelText: 'Lloji',
+                              filled: true,
+                              fillColor: AppColors.beige,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.borderSubtle(0.15),
+                                ),
+                              ),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String?>(
+                                value: _typeFilter,
+                                isExpanded: true,
+                                hint: const Text('Të gjitha'),
+                                items: const [
+                                  DropdownMenuItem<String?>(
+                                    value: null,
+                                    child: Text('Të gjitha'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Shpenzim',
+                                    child: Text('Shpenzim'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Rrogë',
+                                    child: Text('Rrogë'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Bonus',
+                                    child: Text('Bonus'),
+                                  ),
+                                ],
+                                onChanged: (v) =>
+                                    setState(() => _typeFilter = v),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SegmentedButton<_ExpSort>(
+                            segments: const [
+                              ButtonSegment(
+                                value: _ExpSort.dateDesc,
+                                label: Text('Data ↓'),
+                                tooltip: 'Data më e re fillim',
+                              ),
+                              ButtonSegment(
+                                value: _ExpSort.dateAsc,
+                                label: Text('Data ↑'),
+                              ),
+                              ButtonSegment(
+                                value: _ExpSort.amountDesc,
+                                label: Text('Shuma ↓'),
+                              ),
+                              ButtonSegment(
+                                value: _ExpSort.amountAsc,
+                                label: Text('Shuma ↑'),
+                              ),
+                            ],
+                            selected: {_sort},
+                            onSelectionChanged: (s) =>
+                                setState(() => _sort = s.first),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                if (filtered.isEmpty)
+                  _ExpensesEmptyState(onAdd: () => _openAddDialog(context))
+                else
+                  LayoutBuilder(
+                    builder: (context, c) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: math.max(560, c.maxWidth),
+                          ),
+                          child: _ExpensesDataTable(
+                            rows: filtered,
+                            fmtDate: _fmtDate,
+                            typeColor: _typeAccent,
+                            onDelete: (row) {
+                              final i = _indexInManager(row);
+                              if (i >= 0) m.removeExpenseAt(i);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ],
     );
+  }
+
+  Color _typeAccent(String type) {
+    switch (type) {
+      case 'Rrogë':
+        return AppColors.primaryGreen;
+      case 'Bonus':
+        return AppColors.darkerGreenHover;
+      case 'Shpenzim':
+        return AppColors.mediumGreenText;
+      default:
+        return AppColors.lightGreenText;
+    }
   }
 
   String _fmtDate(DateTime d) =>
@@ -750,6 +1918,430 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
   }
 }
 
+class _ExpenseKpiCard extends StatelessWidget {
+  const _ExpenseKpiCard({
+    required this.title,
+    required this.value,
+    this.subtitle,
+    required this.icon,
+  });
+
+  final String title;
+  final String value;
+  final String? subtitle;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 212,
+      child: Card(
+        elevation: 0,
+        color: AppColors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.borderSubtle(0.12)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: AppColors.primaryGreen, size: 22),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.lightGreenBg,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'KPI',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.lightGreenText,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.mediumGreenText,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpenseTypeDistributionBar extends StatelessWidget {
+  const _ExpenseTypeDistributionBar({required this.expenses});
+
+  final List<ExpenseRow> expenses;
+
+  @override
+  Widget build(BuildContext context) {
+    final roga = _ExpensesPanelState._sumType(expenses, 'Rrogë');
+    final shpenz = _ExpensesPanelState._sumType(expenses, 'Shpenzim');
+    final bonus = _ExpensesPanelState._sumType(expenses, 'Bonus');
+    final t = roga + shpenz + bonus;
+    if (t <= 0) {
+      return Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.borderSubtle(0.1)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Icon(Icons.pie_chart_outline, color: AppColors.lightGreenText),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Shto transaksione për të parë shpërndarjen sipas llojit (Rrogë / Shpenzim / Bonus).',
+                  style: TextStyle(color: AppColors.mediumGreenText),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    int flex(double part) => math.max(1, (part / t * 1000).round());
+
+    return Card(
+      elevation: 0,
+      color: AppColors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppColors.borderSubtle(0.12)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Shpërndarja sipas llojit',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.darkGreenText,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Përqindje e shumës totale të regjistruar',
+              style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+            ),
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                height: 14,
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: flex(roga),
+                      child: Container(color: AppColors.primaryGreen),
+                    ),
+                    Expanded(
+                      flex: flex(shpenz),
+                      child: Container(
+                        color: AppColors.mediumGreenText.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    Expanded(
+                      flex: flex(bonus),
+                      child: Container(color: AppColors.darkerGreenHover),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                _legendDot(AppColors.primaryGreen, 'Rrogë', roga, t),
+                _legendDot(
+                  AppColors.mediumGreenText.withValues(alpha: 0.65),
+                  'Shpenzim',
+                  shpenz,
+                  t,
+                ),
+                _legendDot(AppColors.darkerGreenHover, 'Bonus', bonus, t),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _legendDot(Color c, String label, double amt, double total) {
+    final pct = total > 0 ? (amt / total * 100) : 0.0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label · ${pct.toStringAsFixed(0)}% (\$${amt.toStringAsFixed(2)})',
+          style: TextStyle(fontSize: 12, color: AppColors.mediumGreenText),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExpensesEmptyState extends StatelessWidget {
+  const _ExpensesEmptyState({required this.onAdd});
+
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      decoration: BoxDecoration(
+        color: AppColors.beige,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle(0.08)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 56,
+            color: AppColors.lightGreenText.withValues(alpha: 0.6),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Nuk ka rreshta që përputhen me filtrat',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Zbraz kërkimin, zgjidh “Të gjitha” te lloji, ose shto një transaksion të ri.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.mediumGreenText,
+            ),
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.add),
+            label: const Text('Shto transaksion'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primaryGreen,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpensesDataTable extends StatelessWidget {
+  const _ExpensesDataTable({
+    required this.rows,
+    required this.fmtDate,
+    required this.typeColor,
+    required this.onDelete,
+  });
+
+  final List<ExpenseRow> rows;
+  final String Function(DateTime) fmtDate;
+  final Color Function(String) typeColor;
+  final void Function(ExpenseRow) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: const BoxDecoration(
+              color: AppColors.lightGreenBg,
+            ),
+            child: const Row(
+              children: [
+                SizedBox(width: 120, child: Text('Lloji')),
+                Expanded(
+                  child: Text(
+                    'Përshkrimi',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                SizedBox(
+                  width: 100,
+                  child: Text(
+                    'Shuma',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                SizedBox(width: 110, child: Text('Data')),
+                SizedBox(width: 52),
+              ],
+            ),
+          ),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: rows.length,
+            separatorBuilder: (_, __) => Divider(
+              height: 1,
+              thickness: 1,
+              color: AppColors.borderSubtle(0.08),
+            ),
+            itemBuilder: (context, i) {
+              final e = rows[i];
+              final stripe = i.isEven ? AppColors.white : AppColors.beige;
+              return Material(
+                color: stripe,
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Chip(
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              labelPadding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              side: BorderSide(color: typeColor(e.type)),
+                              backgroundColor: typeColor(e.type).withValues(
+                                alpha: 0.12,
+                              ),
+                              label: Text(
+                                e.type,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: typeColor(e.type),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8, top: 2),
+                            child: Text(
+                              e.description,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.darkGreenText,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          child: Text(
+                            '\$${e.amount.toStringAsFixed(2)}',
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.darkGreenText,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 110,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              fmtDate(e.date),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.mediumGreenText,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 48,
+                          child: IconButton(
+                            tooltip: 'Fshi rreshtin',
+                            icon: Icon(
+                              Icons.delete_outline,
+                              color: AppColors.negativeText.withValues(alpha: 0.85),
+                            ),
+                            onPressed: () => onDelete(e),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfitsPanel extends StatefulWidget {
   const _ProfitsPanel({required this.m});
 
@@ -763,35 +2355,309 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
   int _tab = 0;
 
   @override
+  void initState() {
+    super.initState();
+    widget.m.addListener(_onM);
+  }
+
+  void _onM() => setState(() {});
+
+  @override
+  void dispose() {
+    widget.m.removeListener(_onM);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final m = widget.m;
-    final values = [m.profitDaily(), m.profitWeekly(), m.profitMonthly()];
+    final daily = m.profitDaily();
+    final weekly = m.profitWeekly();
+    final monthly = m.profitMonthly();
+    final values = [daily, weekly, monthly];
     final labels = ['Ditore', 'Javore', 'Mujore'];
+    final hi = math.max(daily, math.max(weekly, monthly));
+    final norm = hi > 0
+        ? [daily / hi, weekly / hi, monthly / hi]
+        : [0.0, 0.0, 0.0];
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _sectionTitle('4. Totali i fitimeve'),
-        const SizedBox(height: 16),
-        SegmentedButton<int>(
-          segments: [
-            for (var i = 0; i < 3; i++)
-              ButtonSegment<int>(value: i, label: Text(labels[i])),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.lightGreenBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.trending_up,
+                size: 32,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Fitime & performanca',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Vlera demo të fitimit (baza fikse minus shpenzimet). Përditësohen kur ndryshon regjistri i shpenzimeve.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-          selected: {_tab},
-          onSelectionChanged: (s) => setState(() => _tab = s.first),
         ),
-        const SizedBox(height: 24),
-        Text(
-          'Fitimi ${labels[_tab].toLowerCase()} (vlerë demo, minus shpenzime)',
-          style: TextStyle(color: AppColors.mediumGreenText),
+        const SizedBox(height: 22),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _ProfitKpiTile(
+              label: 'Fitim ditor',
+              value: '\$${daily.toStringAsFixed(2)}',
+              icon: Icons.today_outlined,
+              highlight: _tab == 0,
+              onTap: () => setState(() => _tab = 0),
+            ),
+            _ProfitKpiTile(
+              label: 'Fitim javor',
+              value: '\$${weekly.toStringAsFixed(2)}',
+              icon: Icons.date_range_outlined,
+              highlight: _tab == 1,
+              onTap: () => setState(() => _tab = 1),
+            ),
+            _ProfitKpiTile(
+              label: 'Fitim mujor',
+              value: '\$${monthly.toStringAsFixed(2)}',
+              icon: Icons.calendar_month_outlined,
+              highlight: _tab == 2,
+              onTap: () => setState(() => _tab = 2),
+            ),
+            _ProfitKpiTile(
+              label: 'Shpenzime totale',
+              value: '\$${m.totalExpenses.toStringAsFixed(2)}',
+              icon: Icons.receipt_long_outlined,
+              highlight: false,
+              onTap: null,
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          '\$${values[_tab].toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontSize: 40,
-            fontWeight: FontWeight.w500,
-            color: AppColors.darkGreenText,
+        const SizedBox(height: 20),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Zgjidh periudhën',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkGreenText,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SegmentedButton<int>(
+                    segments: [
+                      for (var i = 0; i < 3; i++)
+                        ButtonSegment<int>(
+                          value: i,
+                          label: Text(labels[i]),
+                        ),
+                    ],
+                    selected: {_tab},
+                    onSelectionChanged: (s) => setState(() => _tab = s.first),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Fitimi ${labels[_tab].toLowerCase()}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.mediumGreenText,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '\$${values[_tab].toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 44,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.darkGreenText,
+                    height: 1.05,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Krahasim relativ (shkallëzim sipas vlerës më të lartë)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 120,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (var i = 0; i < 3; i++)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '\$${values[i].toStringAsFixed(0)}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.darkGreenText,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 300),
+                                      width: 40,
+                                      height: 12 + norm[i] * 72,
+                                      decoration: BoxDecoration(
+                                        color: _tab == i
+                                            ? AppColors.primaryGreen
+                                            : AppColors.primaryGreen
+                                                .withValues(alpha: 0.45),
+                                        borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(8),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  labels[i],
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.mediumGreenText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          elevation: 0,
+          color: AppColors.beige,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.borderSubtle(0.1)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(2),
+                1: FlexColumnWidth(1),
+              },
+              children: [
+                TableRow(
+                  children: [
+                    _profitTblHead('Metrika'),
+                    _profitTblHead('Vlera', right: true),
+                  ],
+                ),
+                _profitTblRow('Fitim ditor (demo)', '\$${daily.toStringAsFixed(2)}'),
+                _profitTblRow('Fitim javor (demo)', '\$${weekly.toStringAsFixed(2)}'),
+                _profitTblRow('Fitim mujor (demo)', '\$${monthly.toStringAsFixed(2)}'),
+                _profitTblRow('Shpenzime të regjistruara', '\$${m.totalExpenses.toStringAsFixed(2)}'),
+                _profitTblRow(
+                  'Rreshta në regjistrin e shpenzimeve',
+                  '${m.expenses.length}',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Widget _profitTblHead(String s, {bool right = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        s,
+        textAlign: right ? TextAlign.right : TextAlign.start,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: AppColors.lightGreenText,
+        ),
+      ),
+    );
+  }
+
+  static TableRow _profitTblRow(String a, String b) {
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Text(
+            a,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Text(
+            b,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
           ),
         ),
       ],
@@ -799,45 +2665,570 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
   }
 }
 
-class _ReportsPanel extends StatelessWidget {
+class _ProfitKpiTile extends StatelessWidget {
+  const _ProfitKpiTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.highlight,
+    this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final bool highlight;
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    void snack(String msg) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 200,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: highlight ? AppColors.lightGreenBg : AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: highlight
+                  ? AppColors.primaryGreen.withValues(alpha: 0.45)
+                  : AppColors.borderSubtle(0.12),
+              width: highlight ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: AppColors.primaryGreen, size: 22),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.lightGreenText,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Prek për të zgjedhur',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.mediumGreenText,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportsPanel extends StatefulWidget {
+  const _ReportsPanel({required this.m});
+
+  final ManagerData m;
+
+  @override
+  State<_ReportsPanel> createState() => _ReportsPanelState();
+}
+
+class _ReportsPanelState extends State<_ReportsPanel> {
+  @override
+  void initState() {
+    super.initState();
+    widget.m.addListener(_onM);
+  }
+
+  void _onM() => setState(() {});
+
+  @override
+  void dispose() {
+    widget.m.removeListener(_onM);
+    super.dispose();
+  }
+
+  Future<void> _pdf({required bool printOnly}) async {
+    final bytes = await buildManagerSummaryPdfBytes(widget.m);
+    if (!mounted) return;
+    if (printOnly) {
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } else {
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename:
+            'raport_pos_system_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
     }
+  }
+
+  String _buildExpensesCsv() {
+    final b = StringBuffer();
+    b.writeln('Lloji,Përshkrimi,Shuma,Data');
+    for (final e in widget.m.expenses) {
+      final desc = e.description.replaceAll('"', '""').replaceAll('\n', ' ');
+      b.writeln(
+        '"${e.type}","$desc",${e.amount.toStringAsFixed(2)},${e.date.toIso8601String()}',
+      );
+    }
+    return b.toString();
+  }
+
+  Future<void> _exportCsv(BuildContext context) async {
+    final csv = _buildExpensesCsv();
+    await Clipboard.setData(ClipboardData(text: csv));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'CSV u kopjua në clipboard — ngjite në Excel ose në një skedar .csv',
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.primaryGreen,
+      ),
+    );
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eksport CSV'),
+        content: SizedBox(
+          width: 480,
+          height: 280,
+          child: SingleChildScrollView(
+            child: SelectableText(
+              csv,
+              style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Mbyll'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final m = widget.m;
+    final recentExp = List<ExpenseRow>.from(m.expenses)
+      ..sort((a, b) => b.date.compareTo(a.date));
+    final preview = recentExp.take(8).toList();
+    final sales = m.employeeSalesSorted.take(6).toList();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _sectionTitle('5. Nxjerrja e raporteve'),
-        const SizedBox(height: 8),
-        Text(
-          'Gjenerim demo (nuk shkarkon skedarë të vërtetë).',
-          style: TextStyle(color: AppColors.mediumGreenText),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.lightGreenBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.description_outlined,
+                size: 32,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Raporte & eksporte',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Gjenero PDF përmbledhës, printo ose eksporto shpenzimet si CSV për Excel.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 22),
         Wrap(
           spacing: 12,
           runSpacing: 12,
           children: [
-            OutlinedButton.icon(
-              onPressed: () => snack('Raporti PDF u gjenerua (demo).'),
-              icon: const Icon(Icons.picture_as_pdf_outlined),
-              label: const Text('Raport PDF'),
+            _ReportStatChip(
+              icon: Icons.picture_as_pdf_outlined,
+              label: 'PDF',
+              value: 'Raport i plotë',
             ),
-            OutlinedButton.icon(
-              onPressed: () => snack('Eksport Excel u përgatit (demo).'),
-              icon: const Icon(Icons.table_chart_outlined),
-              label: const Text('Export Excel'),
+            _ReportStatChip(
+              icon: Icons.table_chart_outlined,
+              label: 'CSV',
+              value: '${m.expenses.length} rreshta',
             ),
-            OutlinedButton.icon(
-              onPressed: () => snack('Raporti i zbritjeve u printua (demo).'),
-              icon: const Icon(Icons.print_outlined),
-              label: const Text('Printo'),
+            _ReportStatChip(
+              icon: Icons.groups_outlined,
+              label: 'Kamarierë',
+              value: '${m.waiters.length}',
             ),
           ],
         ),
+        const SizedBox(height: 20),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Veprime',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkGreenText,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'PDF përfshin fitime (demo), tavolina, shift, shpenzime dhe shitje stafi.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.mediumGreenText,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                LayoutBuilder(
+                  builder: (context, c) {
+                    final wide = c.maxWidth > 560;
+                    if (wide) {
+                      return Row(
+                        children: [
+                          FilledButton.icon(
+                            onPressed: () => _pdf(printOnly: false),
+                            icon: const Icon(Icons.download_outlined),
+                            label: const Text('Shkarko PDF'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              foregroundColor: AppColors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          OutlinedButton.icon(
+                            onPressed: () => _exportCsv(context),
+                            icon: const Icon(Icons.table_chart_outlined),
+                            label: const Text('Eksport CSV (Excel)'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryGreen,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          OutlinedButton.icon(
+                            onPressed: () => _pdf(printOnly: true),
+                            icon: const Icon(Icons.print_outlined),
+                            label: const Text('Printo PDF'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.darkGreenText,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () => _pdf(printOnly: false),
+                          icon: const Icon(Icons.download_outlined),
+                          label: const Text('Shkarko PDF'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            foregroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => _exportCsv(context),
+                          icon: const Icon(Icons.table_chart_outlined),
+                          label: const Text('Eksport CSV'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryGreen,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => _pdf(printOnly: true),
+                          icon: const Icon(Icons.print_outlined),
+                          label: const Text('Printo'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.darkGreenText,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        LayoutBuilder(
+          builder: (context, c) {
+            final twoCol = c.maxWidth > 900;
+            final left = Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: AppColors.borderSubtle(0.1)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.receipt_long_outlined,
+                            color: AppColors.primaryGreen),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Parapamje shpenzimesh (8 të fundit)',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.darkGreenText,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    if (preview.isEmpty)
+                      Text(
+                        'Nuk ka shpenzime. Shto nga seksioni Shpenzime.',
+                        style: TextStyle(color: AppColors.mediumGreenText),
+                      )
+                    else
+                      ...preview.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  e.description,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.darkGreenText,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '\$${e.amount.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.darkGreenText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+            final right = Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: AppColors.borderSubtle(0.1)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.point_of_sale_outlined,
+                            color: AppColors.primaryGreen),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Shitje stafi (sesion)',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.darkGreenText,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    if (sales.isEmpty)
+                      Text(
+                        'Ende pa shitje të regjistruara.',
+                        style: TextStyle(color: AppColors.mediumGreenText),
+                      )
+                    else
+                      ...sales.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  e.key,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.darkGreenText,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '\$${e.value.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+            if (twoCol) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: left),
+                  const SizedBox(width: 16),
+                  Expanded(child: right),
+                ],
+              );
+            }
+            return Column(
+              children: [
+                left,
+                const SizedBox(height: 16),
+                right,
+              ],
+            );
+          },
+        ),
       ],
+    );
+  }
+}
+
+class _ReportStatChip extends StatelessWidget {
+  const _ReportStatChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle(0.12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 22, color: AppColors.primaryGreen),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.lightGreenText,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1916,69 +4307,471 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
     super.initState();
     _count = widget.m.tableCount.toDouble();
     _perRow = widget.m.tablesPerRow.toDouble();
+    widget.m.addListener(_onM);
   }
+
+  void _onM() => setState(() {});
 
   @override
   void didUpdateWidget(covariant _TablesConfigPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    oldWidget.m.removeListener(_onM);
+    widget.m.addListener(_onM);
     _count = widget.m.tableCount.toDouble();
     _perRow = widget.m.tablesPerRow.toDouble();
   }
 
   @override
+  void dispose() {
+    widget.m.removeListener(_onM);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final m = widget.m;
+    final n = _count.round();
+    final pr = _perRow.round();
+    final rows = (n / pr).ceil();
+    final occupied = m.cashierTables.where((t) => t.occupied).length;
+    final openTotal = m.cashierTables.fold<double>(
+      0,
+      (s, t) => s + (t.currentTotal ?? 0),
+    );
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _sectionTitle('8. Numri i tavolinave dhe kolonat'),
-        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.lightGreenBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.grid_view_rounded,
+                size: 32,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tavolinat & rrjeti i kasës',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Ruajtja rindërton listën 1…N. Kamarieri mund të shtojë tavolina me “+” nga ekrani i tavolinave.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _TableStatPill(
+              icon: Icons.event_seat_outlined,
+              label: 'Tavolina (aktualisht)',
+              value: '${m.cashierTables.length}',
+            ),
+            _TableStatPill(
+              icon: Icons.event_available_outlined,
+              label: 'Të zëna',
+              value: '$occupied',
+            ),
+            _TableStatPill(
+              icon: Icons.event_busy_outlined,
+              label: 'Të lira',
+              value: '${m.cashierTables.length - occupied}',
+            ),
+            _TableStatPill(
+              icon: Icons.receipt_outlined,
+              label: 'Hapësirë e hapur',
+              value: '\$${openTotal.toStringAsFixed(2)}',
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Cilësimet e rrjetit',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkGreenText,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Parapamja poshtë përdor vlerat e zgjedhura (para ruajtjes). Rreshta të parashikuar në grid: $rows.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.mediumGreenText,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Text(
+                      'Numri i tavolinave',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightGreenBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${_count.round()}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: AppColors.primaryGreen,
+                    inactiveTrackColor: AppColors.borderSubtle(0.15),
+                    thumbColor: AppColors.primaryGreen,
+                    overlayColor: AppColors.primaryGreen.withValues(alpha: 0.12),
+                  ),
+                  child: Slider(
+                    value: _count,
+                    min: 1,
+                    max: 48,
+                    divisions: 47,
+                    label: '${_count.round()}',
+                    onChanged: (v) => setState(() => _count = v),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(
+                      'Tavolina për rresht',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightGreenBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${_perRow.round()}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: AppColors.primaryGreen,
+                    inactiveTrackColor: AppColors.borderSubtle(0.15),
+                    thumbColor: AppColors.primaryGreen,
+                    overlayColor: AppColors.primaryGreen.withValues(alpha: 0.12),
+                  ),
+                  child: Slider(
+                    value: _perRow,
+                    min: 2,
+                    max: 12,
+                    divisions: 10,
+                    label: '${_perRow.round()}',
+                    onChanged: (v) => setState(() => _perRow = v),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () {
+                    m.setTableLayout(
+                      count: _count.round(),
+                      perRow: _perRow.round(),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Cilësimet e tavolinave u ruajtën.',
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: AppColors.primaryGreen,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.save_outlined),
+                  label: const Text('Ruaj cilësimet'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
         Text(
-          'Ruajtja rifillon listën e tavolinave (1…N) nga të dhënat fillestare; kamarieri mund të shtojë me “+”.',
-          style: TextStyle(color: AppColors.mediumGreenText),
+          'Parapamje e shpërndarjes ($n tavolina · $pr kolona)',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.darkGreenText,
+          ),
         ),
-        const SizedBox(height: 24),
-        Text('Numri i tavolinave: ${_count.round()}'),
-        Slider(
-          value: _count,
-          min: 1,
-          max: 48,
-          divisions: 47,
-          label: '${_count.round()}',
-          activeColor: AppColors.primaryGreen,
-          onChanged: (v) => setState(() => _count = v),
+        const SizedBox(height: 12),
+        Card(
+          elevation: 0,
+          color: AppColors.beige,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.borderSubtle(0.1)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: LayoutBuilder(
+              builder: (context, c) {
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: pr.clamp(2, 12),
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: 1.15,
+                  ),
+                  itemCount: n,
+                  itemBuilder: (context, i) {
+                    final id = i + 1;
+                    TableInfo? info;
+                    try {
+                      info = m.cashierTables.firstWhere((t) => t.id == id);
+                    } catch (_) {
+                      info = null;
+                    }
+                    final occ = info?.occupied ?? false;
+                    return Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: occ
+                            ? AppColors.primaryGreen.withValues(alpha: 0.2)
+                            : AppColors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: occ
+                              ? AppColors.primaryGreen
+                              : AppColors.borderSubtle(0.15),
+                          width: occ ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '$id',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              color: AppColors.darkGreenText,
+                            ),
+                          ),
+                          if (occ)
+                            Text(
+                              '\$${(info?.currentTotal ?? 0).toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
         ),
-        const SizedBox(height: 8),
-        Text('Tavolina për rresht: ${_perRow.round()}'),
-        Slider(
-          value: _perRow,
-          min: 2,
-          max: 12,
-          divisions: 10,
-          label: '${_perRow.round()}',
-          activeColor: AppColors.primaryGreen,
-          onChanged: (v) => setState(() => _perRow = v),
+        const SizedBox(height: 20),
+        Text(
+          'Statusi aktual i tavolinave',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.darkGreenText,
+          ),
         ),
-        const SizedBox(height: 24),
-        FilledButton.icon(
-          onPressed: () {
-            m.setTableLayout(
-              count: _count.round(),
-              perRow: _perRow.round(),
-            );
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Cilësimet e tavolinave u ruajtën.')),
-            );
-          },
-          icon: const Icon(Icons.save_outlined),
-          label: const Text('Ruaj cilësimet'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primaryGreen,
-            foregroundColor: AppColors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        const SizedBox(height: 10),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.borderSubtle(0.1)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 520),
+                child: DataTable(
+                  headingRowColor:
+                      const WidgetStatePropertyAll(AppColors.lightGreenBg),
+                  columns: const [
+                    DataColumn(label: Text('ID')),
+                    DataColumn(label: Text('Gjendja')),
+                    DataColumn(label: Text('Total'), numeric: true),
+                  ],
+                  rows: [
+                    for (final t in m.cashierTables)
+                      DataRow(
+                        cells: [
+                          DataCell(Text('${t.id}')),
+                          DataCell(
+                            Row(
+                              children: [
+                                Icon(
+                                  t.occupied
+                                      ? Icons.circle
+                                      : Icons.circle_outlined,
+                                  size: 12,
+                                  color: t.occupied
+                                      ? AppColors.primaryGreen
+                                      : AppColors.lightGreenText,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  t.occupied ? 'E zënë' : 'E lirë',
+                                  style: TextStyle(
+                                    color: t.occupied
+                                        ? AppColors.darkGreenText
+                                        : AppColors.mediumGreenText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          DataCell(
+                            Text(
+                              t.currentTotal != null
+                                  ? '\$${t.currentTotal!.toStringAsFixed(2)}'
+                                  : '—',
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TableStatPill extends StatelessWidget {
+  const _TableStatPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle(0.12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 22, color: AppColors.primaryGreen),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.lightGreenText,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
