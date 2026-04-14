@@ -114,13 +114,11 @@ class ManagerData extends ChangeNotifier {
       companyLogoBytes = blob != null ? Uint8List.fromList(blob as List<int>) : null;
     }
 
-    // Shift
+    // Shift — system is always active; only load last-closed timestamp for display.
+    shiftOpen = true;
     final shift = await db.fetchShift();
     if (shift != null) {
-      shiftOpen = (shift['status'] as String?) == 'open';
-      final oa = shift['openedAt'] as String?;
       final ca = shift['closedAt'] as String?;
-      shiftOpenedAt = oa != null ? DateTime.tryParse(oa) : null;
       shiftClosedAt = ca != null ? DateTime.tryParse(ca) : null;
     }
 
@@ -210,14 +208,18 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Finalises the current period: records the close timestamp, resets all
+  /// waiter totals to zero, and keeps the system active for the next period.
   Future<void> closeShift() async {
-    shiftOpen = false;
     shiftClosedAt = DateTime.now();
     await DatabaseService.instance.updateShift(
-      openedAt: shiftOpenedAt?.toIso8601String(),
+      openedAt: null,
       closedAt: shiftClosedAt!.toIso8601String(),
-      status: 'closed',
+      status: 'open',
     );
+    // Clear all sales so totals start fresh from zero.
+    await DatabaseService.instance.clearSales();
+    waiterSales.clear();
     notifyListeners();
   }
 

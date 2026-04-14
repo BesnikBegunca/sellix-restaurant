@@ -1577,6 +1577,20 @@ class _ShiftPanel extends StatelessWidget {
 
   final ManagerData m;
 
+  void _showPrintDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => _GjendjaDialog(m: m, isClose: false),
+    );
+  }
+
+  void _showCloseDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => _GjendjaDialog(m: m, isClose: true),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -1585,16 +1599,16 @@ class _ShiftPanel extends StatelessWidget {
         _sectionTitle('1. Gjendja (shift)'),
         const SizedBox(height: 8),
         Text(
-          'Hap ose mbyll gjendjen e ditës për kasë / raportim.',
+          'Shtyp gjendjen çdo moment ose mbyll ditën për të resetuar totalet.',
           style: TextStyle(color: AppColors.mediumGreenText),
         ),
         const SizedBox(height: 24),
         Row(
           children: [
             FilledButton.icon(
-              onPressed: m.shiftOpen ? null : () => m.openShift(),
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Hap gjendjen'),
+              onPressed: () => _showPrintDialog(context),
+              icon: const Icon(Icons.print_outlined),
+              label: const Text('Shtyp gjendjen'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primaryGreen,
                 foregroundColor: AppColors.white,
@@ -1606,7 +1620,7 @@ class _ShiftPanel extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             FilledButton.icon(
-              onPressed: !m.shiftOpen ? null : () => m.closeShift(),
+              onPressed: () => _showCloseDialog(context),
               icon: const Icon(Icons.stop),
               label: const Text('Mbyll gjendjen'),
               style: FilledButton.styleFrom(
@@ -1633,19 +1647,12 @@ class _ShiftPanel extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Statusi: ${m.shiftOpen ? "AKTIV" : "JOAKTIV"}',
+                'Statusi: AKTIV',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: m.shiftOpen
-                      ? AppColors.primaryGreen
-                      : AppColors.lightGreenText,
+                  color: AppColors.primaryGreen,
                 ),
               ),
-              if (m.shiftOpenedAt != null)
-                Text(
-                  'Hapur: ${m.shiftOpenedAt}',
-                  style: const TextStyle(fontSize: 13),
-                ),
               if (m.shiftClosedAt != null)
                 Text(
                   'Mbyllur së fundmi: ${m.shiftClosedAt}',
@@ -1654,6 +1661,106 @@ class _ShiftPanel extends StatelessWidget {
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Modal that shows all waiter totals.
+/// When [isClose] is true it adds a confirm button that finalises and resets.
+class _GjendjaDialog extends StatelessWidget {
+  const _GjendjaDialog({required this.m, required this.isClose});
+
+  final ManagerData m;
+  final bool isClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final sales = m.waiterSales;
+
+    // Union of registered waiters and any name that appears in sales map.
+    final names = <String>{
+      ...m.waiters.map((w) => w.name),
+      ...sales.keys,
+    }.toList()
+      ..sort();
+
+    final grandTotal = names.fold<double>(0, (s, n) => s + (sales[n] ?? 0));
+
+    return AlertDialog(
+      title: Text(
+        isClose ? 'Mbyll gjendjen' : 'Gjendja aktuale',
+        style: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+      content: SizedBox(
+        width: 360,
+        child: names.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Nuk ka kamarierë të regjistruar.',
+                  style: TextStyle(color: AppColors.mediumGreenText),
+                ),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...names.map(
+                    (name) => ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(name),
+                      trailing: Text(
+                        '${(sales[name] ?? 0.0).toStringAsFixed(2)} €',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        '${grandTotal.toStringAsFixed(2)} €',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                  if (isClose)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Text(
+                        'Pas konfirmimit të gjitha totalet resetohen në 0.00.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.mediumGreenText,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(isClose ? 'Anulo' : 'Mbyll'),
+        ),
+        if (isClose)
+          FilledButton(
+            onPressed: () {
+              m.closeShift();
+              Navigator.of(context).pop();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.darkGreenText,
+              foregroundColor: AppColors.white,
+            ),
+            child: const Text('Konfirmo & Reseto'),
+          ),
       ],
     );
   }

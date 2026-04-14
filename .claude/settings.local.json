@@ -11,7 +11,8 @@
       "Bash(powershell -Command \"Get-Command git -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
       "Bash(powershell -Command 'Get-Command dart | Select-Object -ExpandProperty Source')",
       "Bash(powershell -Command 'Set-Location \"C:\\\\Users\\\\PC\\\\Desktop\\\\pos_system\"; & \"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" pub get 2>&1')",
-      "Bash(powershell -Command 'Set-Location \"C:\\\\Users\\\\PC\\\\Desktop\\\\pos_system\"; $env:PATH += \";C:\\\\Windows\\\\System32\"; & \"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" analyze lib 2>&1')"
+      "Bash(powershell -Command 'Set-Location \"C:\\\\Users\\\\PC\\\\Desktop\\\\pos_system\"; $env:PATH += \";C:\\\\Windows\\\\System32\"; & \"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" analyze lib 2>&1')",
+      "Bash(\"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" analyze:*)"
     ]
   }
 }
