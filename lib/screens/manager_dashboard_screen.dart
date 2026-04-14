@@ -225,17 +225,11 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
           decoration: BoxDecoration(
             color: AppColors.lightGreenBg.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.borderSubtle(0.1),
-            ),
+            border: Border.all(color: AppColors.borderSubtle(0.1)),
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                color: AppColors.primaryGreen,
-                size: 20,
-              ),
+              Icon(Icons.info_outline, color: AppColors.primaryGreen, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -269,10 +263,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
               const SizedBox(height: 16),
               Text(
                 'Ky emër do të shfaqet në ekranin e hyrjes dhe në titujt e aplikacionit.',
-                style: TextStyle(
-                  color: AppColors.lightGreenText,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: AppColors.lightGreenText, fontSize: 13),
               ),
             ],
           ),
@@ -293,9 +284,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
                 decoration: BoxDecoration(
                   color: AppColors.beige,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.borderSubtle(0.15),
-                  ),
+                  border: Border.all(color: AppColors.borderSubtle(0.15)),
                 ),
                 child: Row(
                   children: [
@@ -306,9 +295,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
                       decoration: BoxDecoration(
                         color: AppColors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.borderSubtle(0.2),
-                        ),
+                        border: Border.all(color: AppColors.borderSubtle(0.2)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.05),
@@ -384,11 +371,18 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
                                 const SizedBox(width: 12),
                                 OutlinedButton.icon(
                                   onPressed: _clearLogo,
-                                  icon: const Icon(Icons.delete_outline, size: 18),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 18,
+                                  ),
                                   label: const Text('Fshi'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.negativeText,
-                                    side: BorderSide(color: AppColors.negativeText.withValues(alpha: 0.3)),
+                                    side: BorderSide(
+                                      color: AppColors.negativeText.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 20,
                                       vertical: 12,
@@ -420,9 +414,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.borderSubtle(0.1),
-            ),
+            border: Border.all(color: AppColors.borderSubtle(0.1)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.03),
@@ -499,9 +491,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.borderSubtle(0.1),
-        ),
+        border: Border.all(color: AppColors.borderSubtle(0.1)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -525,11 +515,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
             ),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  color: AppColors.primaryGreen,
-                  size: 24,
-                ),
+                Icon(icon, color: AppColors.primaryGreen, size: 24),
                 const SizedBox(width: 12),
                 Text(
                   title,
@@ -543,10 +529,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
             ),
           ),
           // Content
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: child,
-          ),
+          Padding(padding: const EdgeInsets.all(20), child: child),
         ],
       ),
     );
@@ -1682,8 +1665,7 @@ class _GjendjaDialog extends StatelessWidget {
     final names = <String>{
       ...m.waiters.map((w) => w.name),
       ...sales.keys,
-    }.toList()
-      ..sort();
+    }.toList()..sort();
 
     final grandTotal = names.fold<double>(0, (s, n) => s + (sales[n] ?? 0));
 
@@ -2334,11 +2316,13 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
                 else
                   LayoutBuilder(
                     builder: (context, c) {
+                      final tableWidth = math.max(560.0, c.maxWidth);
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            minWidth: math.max(560, c.maxWidth),
+                            minWidth: tableWidth,
+                            maxWidth: tableWidth,
                           ),
                           child: _ExpensesDataTable(
                             rows: filtered,
@@ -2747,9 +2731,9 @@ class _ExpensesDataTable extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: const BoxDecoration(color: AppColors.lightGreenBg),
             child: const Row(
