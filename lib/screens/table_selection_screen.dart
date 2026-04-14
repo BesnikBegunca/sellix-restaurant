@@ -183,40 +183,6 @@ class _TableScreenHeaderRow extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.lightGreenBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.badge_outlined,
-                    size: 16,
-                    color: AppColors.primaryGreen,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    waiterName,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 0),
-          ],
-        ),
       ],
     );
   }
