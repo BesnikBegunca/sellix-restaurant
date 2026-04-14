@@ -41,6 +41,7 @@ class GgAppHeader extends StatelessWidget {
     this.title,
     this.logoSize = 40,
     this.showLogo = true,
+    this.userName,
   });
 
   final bool showBack;
@@ -48,6 +49,7 @@ class GgAppHeader extends StatelessWidget {
   final String? title;
   final double logoSize;
   final bool showLogo;
+  final String? userName;
 
   static String formattedDate(DateTime d) {
     const days = [
@@ -104,7 +106,7 @@ class GgAppHeader extends StatelessWidget {
             ),
           ),
           const Expanded(child: Center(child: _DateLabel())),
-          const _UserSection(),
+          _UserSection(userName: userName),
         ],
       ),
     );
@@ -124,7 +126,9 @@ class _DateLabel extends StatelessWidget {
 }
 
 class _UserSection extends StatelessWidget {
-  const _UserSection();
+  const _UserSection({this.userName});
+
+  final String? userName;
 
   @override
   Widget build(BuildContext context) {
@@ -144,9 +148,9 @@ class _UserSection extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        const Text(
-          'Cashier',
-          style: TextStyle(fontSize: 16, color: AppColors.darkGreenText),
+        Text(
+          userName ?? 'Cashier',
+          style: const TextStyle(fontSize: 16, color: AppColors.darkGreenText),
         ),
       ],
     );

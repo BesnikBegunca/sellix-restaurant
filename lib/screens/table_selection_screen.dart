@@ -48,6 +48,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
             showBack: true,
             showLogo: false,
             title: 'Tavolinat',
+            userName: widget.waiterName,
             onBack: () => Navigator.of(context).maybePop(),
           ),
           Expanded(
@@ -213,17 +214,7 @@ class _TableScreenHeaderRow extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'Select Table',
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: AppColors.darkGreenText,
-                height: 1.1,
-              ),
-            ),
+            const SizedBox(height: 0),
           ],
         ),
       ],

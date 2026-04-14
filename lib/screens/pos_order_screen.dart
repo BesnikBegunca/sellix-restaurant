@@ -293,6 +293,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   showBack: true,
                   showLogo: false,
                   title: 'Porosia',
+                  userName: widget.waiterName,
                   onBack: () => Navigator.of(context).maybePop(),
                 ),
                 const Expanded(
@@ -319,6 +320,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                 showBack: true,
                 showLogo: false,
                 title: 'Porosia',
+                userName: widget.waiterName,
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               Expanded(
