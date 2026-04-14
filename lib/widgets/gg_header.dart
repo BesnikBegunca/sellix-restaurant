@@ -22,7 +22,12 @@ class GgLogoBox extends StatelessWidget {
       clipBehavior: logo != null ? Clip.hardEdge : Clip.none,
       alignment: Alignment.center,
       child: logo != null
-          ? Image.memory(logo, width: size, height: size, fit: BoxFit.cover)
+          ? Image.memory(
+              logo,
+              width: size,
+              height: size,
+              fit: BoxFit.contain,
+            )
           : Icon(
               Icons.local_cafe,
               color: AppColors.white,
