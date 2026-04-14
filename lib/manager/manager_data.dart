@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -35,10 +37,19 @@ class ManagerData extends ChangeNotifier {
 
   late SharedPreferences _prefs;
   String? companyName;
+  Uint8List? companyLogoBytes;
 
   Future<void> _init() async {
     _prefs = await SharedPreferences.getInstance();
     companyName = _prefs.getString('company_name');
+    final encodedLogo = _prefs.getString('company_logo');
+    if (encodedLogo != null) {
+      try {
+        companyLogoBytes = base64Decode(encodedLogo);
+      } catch (_) {
+        companyLogoBytes = null;
+      }
+    }
     _categories = List<CategoryData>.from(mockCategories);
     _syncTablesFromSettings();
     notifyListeners();
@@ -48,6 +59,18 @@ class ManagerData extends ChangeNotifier {
     if (name.trim().isEmpty) return;
     companyName = name.trim();
     await _prefs.setString('company_name', companyName!);
+    notifyListeners();
+  }
+
+  Future<void> saveCompanyLogo(Uint8List bytes) async {
+    companyLogoBytes = bytes;
+    await _prefs.setString('company_logo', base64Encode(bytes));
+    notifyListeners();
+  }
+
+  Future<void> clearCompanyLogo() async {
+    companyLogoBytes = null;
+    await _prefs.remove('company_logo');
     notifyListeners();
   }
 

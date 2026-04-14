@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../manager/manager_data.dart';
 import '../theme/app_colors.dart';
 
 class GgLogoBox extends StatelessWidget {
@@ -10,19 +11,23 @@ class GgLogoBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final logo = ManagerData.instance.companyLogoBytes;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppColors.primaryGreen,
+        color: logo == null ? AppColors.primaryGreen : null,
         borderRadius: BorderRadius.circular(radius),
       ),
+      clipBehavior: logo != null ? Clip.hardEdge : Clip.none,
       alignment: Alignment.center,
-      child: Icon(
-        Icons.local_cafe,
-        color: AppColors.white,
-        size: size * (28 / 48),
-      ),
+      child: logo != null
+          ? Image.memory(logo, width: size, height: size, fit: BoxFit.cover)
+          : Icon(
+              Icons.local_cafe,
+              color: AppColors.white,
+              size: size * (28 / 48),
+            ),
     );
   }
 }
@@ -76,9 +81,7 @@ class GgAppHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       decoration: BoxDecoration(
         color: AppColors.white,
-        border: Border(
-          bottom: BorderSide(color: AppColors.borderSubtle(0.1)),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.borderSubtle(0.1))),
       ),
       child: Row(
         children: [
@@ -96,11 +99,7 @@ class GgAppHeader extends StatelessWidget {
               color: AppColors.darkGreenText,
             ),
           ),
-          const Expanded(
-            child: Center(
-              child: _DateLabel(),
-            ),
-          ),
+          const Expanded(child: Center(child: _DateLabel())),
           const _UserSection(),
         ],
       ),
@@ -115,10 +114,7 @@ class _DateLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       GgAppHeader.formattedDate(DateTime.now()),
-      style: const TextStyle(
-        fontSize: 16,
-        color: AppColors.mediumGreenText,
-      ),
+      style: const TextStyle(fontSize: 16, color: AppColors.mediumGreenText),
     );
   }
 }
@@ -146,10 +142,7 @@ class _UserSection extends StatelessWidget {
         const SizedBox(width: 12),
         const Text(
           'Cashier',
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.darkGreenText,
-          ),
+          style: TextStyle(fontSize: 16, color: AppColors.darkGreenText),
         ),
       ],
     );

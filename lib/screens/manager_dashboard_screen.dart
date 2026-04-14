@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
@@ -177,6 +179,40 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
     }
   }
 
+  Future<void> _pickLogo() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final bytes = result.files.first.bytes;
+    if (bytes == null || bytes.isEmpty) return;
+    await widget.m.saveCompanyLogo(bytes);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logo e kompanisë u ruajt.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+    }
+  }
+
+  Future<void> _clearLogo() async {
+    await widget.m.clearCompanyLogo();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logo e kompanisë u fshi.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -206,6 +242,73 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
                   decoration: _inputDeco('Emri i kompanisë (i detyrueshëm)'),
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _save(),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Logo e kompanisë',
+                  style: TextStyle(
+                    color: AppColors.darkGreenText,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 112,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 112,
+                        height: 112,
+                        decoration: BoxDecoration(
+                          color: AppColors.beige,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.borderSubtle(0.2),
+                          ),
+                        ),
+                        clipBehavior: Clip.hardEdge,
+                        child: widget.m.companyLogoBytes != null
+                            ? Image.memory(
+                                widget.m.companyLogoBytes!,
+                                fit: BoxFit.cover,
+                              )
+                            : const Center(
+                                child: Icon(
+                                  Icons.image_outlined,
+                                  color: AppColors.mediumGreenText,
+                                  size: 40,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: _pickLogo,
+                              icon: const Icon(Icons.upload_file_outlined),
+                              label: const Text('Ngarko logo'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.primaryGreen,
+                                foregroundColor: AppColors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            if (widget.m.companyLogoBytes != null)
+                              OutlinedButton.icon(
+                                onPressed: _clearLogo,
+                                icon: const Icon(Icons.delete_outline),
+                                label: const Text('Fshi logo'),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
