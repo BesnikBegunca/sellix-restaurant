@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
@@ -55,8 +57,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     super.dispose();
   }
 
-  double get _total =>
-      _lines.fold(0, (s, l) => s + l.product.price * l.qty);
+  double get _total => _lines.fold(0, (s, l) => s + l.product.price * l.qty);
 
   void _addProduct(ProductItem p) {
     setState(() {
@@ -81,8 +82,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   Future<void> _payTable() async {
     final data = ManagerData.instance;
     final tableTotal = data.cashierTables
-        .firstWhere((t) => t.id == widget.tableNumber,
-            orElse: () => TableInfo(id: widget.tableNumber, occupied: false))
+        .firstWhere(
+          (t) => t.id == widget.tableNumber,
+          orElse: () => TableInfo(id: widget.tableNumber, occupied: false),
+        )
         .currentTotal;
 
     // Regjistro shitjen për kamarierin e loguar
@@ -168,8 +171,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         );
       },
       transitionBuilder: (ctx, anim, sec, child) {
-        final curved =
-            CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: anim,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: curved,
           child: ScaleTransition(
@@ -255,7 +260,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         );
       },
       transitionBuilder: (ctx, anim, sec, child) {
-        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: anim,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: curved,
           child: ScaleTransition(
@@ -318,32 +326,39 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                       Expanded(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            final cellW =
-                                PosGrid.cellWidth(constraints.maxWidth);
-                            final cellH =
-                                PosGrid.cellHeight(constraints.maxWidth);
+                            final cellW = PosGrid.cellWidth(
+                              constraints.maxWidth,
+                            );
+                            final cellH = PosGrid.cellHeight(
+                              constraints.maxWidth,
+                            );
+                            final categoryWidth = math.min(
+                              cellW,
+                              (constraints.maxWidth -
+                                      (cats.length - 1) * PosGrid.spacing) /
+                                  cats.length,
+                            );
+                            final categoryHeight =
+                                categoryWidth / PosGrid.childAspectRatio;
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _categoryRow(
                                   cats,
-                                  cellW,
-                                  cellH,
+                                  categoryWidth,
+                                  categoryHeight,
                                   ix,
                                 ),
                                 const SizedBox(height: PosGrid.spacing),
                                 Expanded(
                                   child: GridView.builder(
-                                    padding: const EdgeInsets.only(
-                                      bottom: 16,
-                                    ),
+                                    padding: const EdgeInsets.only(bottom: 16),
                                     gridDelegate: PosGrid.delegate,
                                     itemCount: products.length,
                                     itemBuilder: (context, i) {
                                       return _ProductTile(
                                         product: products[i],
-                                        onAdd: () =>
-                                            _addProduct(products[i]),
+                                        onAdd: () => _addProduct(products[i]),
                                       );
                                     },
                                   ),
@@ -521,90 +536,90 @@ class _ProductTileState extends State<_ProductTile> {
       child: GestureDetector(
         onTap: widget.onAdd,
         child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        transform: Matrix4.translationValues(0, _hover ? -4 : 0, 0),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.borderSubtle(_hover ? 0.3 : 0.1),
+          duration: const Duration(milliseconds: 200),
+          transform: Matrix4.translationValues(0, _hover ? -4 : 0, 0),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.borderSubtle(_hover ? 0.3 : 0.1),
+            ),
+            boxShadow: _hover
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
-          boxShadow: _hover
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Center(
+                  child: widget.product.imagePath != null
+                      ? Image.asset(
+                          widget.product.imagePath!,
+                          fit: BoxFit.contain,
+                        )
+                      : FittedBox(
+                          fit: BoxFit.contain,
+                          child: Text(
+                            widget.product.emoji,
+                            style: const TextStyle(fontSize: 96),
+                          ),
+                        ),
+                ),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.product.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.darkGreenText,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '\$${widget.product.price.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.lightGreenText,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
+                  HoverScaleButton(
+                    onPressed: widget.onAdd,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: _AddCircle(hover: _hover),
+                    ),
                   ),
                 ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Center(
-                child: widget.product.imagePath != null
-                    ? Image.asset(
-                        widget.product.imagePath!,
-                        fit: BoxFit.contain,
-                      )
-                    : FittedBox(
-                        fit: BoxFit.contain,
-                        child: Text(
-                          widget.product.emoji,
-                          style: const TextStyle(fontSize: 96),
-                        ),
-                      ),
               ),
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.product.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.darkGreenText,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '\$${widget.product.price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.lightGreenText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                HoverScaleButton(
-                  onPressed: widget.onAdd,
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: _AddCircle(hover: _hover),
-                  ),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -637,11 +652,7 @@ class _AddCircleState extends State<_AddCircle> {
           color: h ? AppColors.darkerGreenHover : AppColors.primaryGreen,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.add,
-          color: AppColors.white,
-          size: 20,
-        ),
+        child: const Icon(Icons.add, color: AppColors.white, size: 20),
       ),
     );
   }
@@ -764,10 +775,7 @@ class _OrderPanel extends StatelessWidget {
             child: _moneyRow('Total', total, large: true),
           ),
           const SizedBox(height: 24),
-          _SendOrderButton(
-            enabled: !empty,
-            onSend: onSend,
-          ),
+          _SendOrderButton(enabled: !empty, onSend: onSend),
           const SizedBox(height: 10),
           _PayButton(onPay: onPay),
         ],
@@ -860,10 +868,7 @@ class _OrderLineRow extends StatelessWidget {
           ),
           Row(
             children: [
-              _QtyButton(
-                label: '−',
-                onPressed: onMinus,
-              ),
+              _QtyButton(label: '−', onPressed: onMinus),
               SizedBox(
                 width: 24,
                 child: Text(
@@ -876,10 +881,7 @@ class _OrderLineRow extends StatelessWidget {
                   ),
                 ),
               ),
-              _QtyButton(
-                label: '+',
-                onPressed: onPlus,
-              ),
+              _QtyButton(label: '+', onPressed: onPlus),
             ],
           ),
         ],

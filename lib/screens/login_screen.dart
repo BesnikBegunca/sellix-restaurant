@@ -19,8 +19,25 @@ class _LoginScreenState extends State<LoginScreen> {
   String _pin = '';
   String _bill = '';
   String _paid = '';
+
   /// null = hyrje në PIN; 0 = fatura; 1 = pagesa.
   int? _calcField;
+
+  @override
+  void initState() {
+    super.initState();
+    ManagerData.instance.addListener(_onDataChanged);
+  }
+
+  @override
+  void dispose() {
+    ManagerData.instance.removeListener(_onDataChanged);
+    super.dispose();
+  }
+
+  void _onDataChanged() {
+    setState(() {});
+  }
 
   bool get _pinConfirmEnabled => _pin.length >= 4 && _pin.length <= 6;
 
@@ -114,9 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_pin == '9999') {
       setState(() => _pin = '');
       Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const ManagerDashboardScreen(),
-        ),
+        MaterialPageRoute<void>(builder: (_) => const ManagerDashboardScreen()),
       );
       return;
     }
@@ -180,15 +195,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: _pinCard(context),
-                                ),
+                                Expanded(flex: 3, child: _pinCard(context)),
                                 const SizedBox(width: 24),
-                                SizedBox(
-                                  width: 320,
-                                  child: _calcCard(context),
-                                ),
+                                SizedBox(width: 320, child: _calcCard(context)),
                               ],
                             ),
                           ),
@@ -205,12 +214,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildHeaderGroup() {
+    final companyName = ManagerData.instance.companyName;
+    final title = companyName != null && companyName.isNotEmpty
+        ? companyName
+        : 'POS System';
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const GgLogoBox(size: 48, radius: 12),
-        const SizedBox(width: 12),
+        const GgLogoBox(size: 80, radius: 16),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'POS System',
+                  title,
                   style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.w500,
@@ -231,10 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 12),
               Text(
                 'Fast and simple restaurant management system',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.lightGreenText,
-                ),
+                style: TextStyle(fontSize: 16, color: AppColors.lightGreenText),
               ),
             ],
           ),
@@ -293,10 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const Center(
               child: Text(
                 'Enter 4-6 digit PIN to continue',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.lightGreenText,
-                ),
+                style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
               ),
             ),
           ],
@@ -383,17 +390,11 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Container(
-              height: 1,
-              color: AppColors.borderSubtle(0.1),
-            ),
+            child: Container(height: 1, color: AppColors.borderSubtle(0.1)),
           ),
           const Text(
             'Change',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.lightGreenText,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
           ),
           const SizedBox(height: 8),
           Container(
@@ -415,7 +416,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 fontWeight: FontWeight.w600,
                 color: change == null
                     ? AppColors.lightGreenText
-                    : (negative ? AppColors.negativeText : AppColors.primaryGreen),
+                    : (negative
+                          ? AppColors.negativeText
+                          : AppColors.primaryGreen),
               ),
             ),
           ),
@@ -438,10 +441,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const Text(
               'Click field to select, use main keypad to enter',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.lightGreenText,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
             ),
           ],
         ],
@@ -460,10 +460,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.lightGreenText,
-          ),
+          style: const TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
         const SizedBox(height: 8),
         MouseRegion(
@@ -636,10 +633,7 @@ class _NumKeyBodyState extends State<_NumKeyBody> {
         ),
         child: Text(
           widget.label,
-          style: const TextStyle(
-            fontSize: 32,
-            color: AppColors.darkGreenText,
-          ),
+          style: const TextStyle(fontSize: 32, color: AppColors.darkGreenText),
         ),
       ),
     );
