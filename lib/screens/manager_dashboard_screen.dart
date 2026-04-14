@@ -853,13 +853,13 @@ class _OverviewPanel extends StatelessWidget {
               icon: Icons.payments_outlined,
             ),
             _StatCard(
-              title: 'Fitim sot (demo)',
-              value: '\$${m.profitDaily().toStringAsFixed(0)}',
+              title: 'Fitim sot',
+              value: '€${m.profitToday.toStringAsFixed(0)}',
               icon: Icons.trending_up,
             ),
             _StatCard(
-              title: 'Fitim javor (demo)',
-              value: '\$${m.profitWeekly().toStringAsFixed(0)}',
+              title: 'Fitim kjo javë',
+              value: '€${m.profitThisWeek.toStringAsFixed(0)}',
               icon: Icons.calendar_view_week_outlined,
             ),
             _StatCard(
@@ -1117,25 +1117,22 @@ class _OverviewTrendAndOccupancyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final n = math.max(m.cashierTables.length, 1);
     final occRatio = (occupied / n).clamp(0.0, 1.0);
-    final daily = m.profitDaily();
-    final weekly = m.profitWeekly();
-    final monthly = m.profitMonthly();
-    final bars = <double>[
-      daily * 0.35,
-      daily * 0.55,
-      daily * 0.48,
-      weekly / 14,
-      weekly / 11,
-      monthly / 40,
-      daily * 0.62,
-    ];
-    final hi = bars.reduce(math.max);
-    final norm = hi > 0 ? bars.map((b) => b / hi).toList() : bars;
+
+    // Real sales per day for the last 7 days (oldest → newest).
+    final today = DateTime.now();
+    final bars = List.generate(7, (i) {
+      final day = today.subtract(Duration(days: 6 - i));
+      final from = DateTime(day.year, day.month, day.day);
+      final to   = DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
+      return m.revenueInRange(from, to);
+    });
+    final hi = bars.fold(0.0, math.max);
+    final norm = hi > 0 ? bars.map((b) => b / hi).toList() : List.filled(7, 0.0);
 
     return _OverviewSectionCard(
       title: 'Trend & kapacitet tavolinash',
       subtitle:
-          'Shtyllat janë krahasim relativ (demo) midis metrikave të fitimit; '
+          'Shitjet ditore — 7 ditët e fundit; '
           'shiriti i poshtëm tregon zënien e tavolinave.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2897,19 +2894,44 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
   @override
   Widget build(BuildContext context) {
     final m = widget.m;
-    final daily = m.profitDaily();
-    final weekly = m.profitWeekly();
-    final monthly = m.profitMonthly();
-    final values = [daily, weekly, monthly];
-    final labels = ['Ditore', 'Javore', 'Mujore'];
-    final hi = math.max(daily, math.max(weekly, monthly));
-    final norm = hi > 0
-        ? [daily / hi, weekly / hi, monthly / hi]
+
+    // Revenue (shitjet nga kamarierët)
+    final revDay   = m.revenueToday;
+    final revWeek  = m.revenueThisWeek;
+    final revMonth = m.revenueThisMonth;
+
+    // Expenses (shpenzimet) për periudhën
+    final expDay   = m.expensesToday;
+    final expWeek  = m.expensesThisWeek;
+    final expMonth = m.expensesThisMonth;
+
+    // Profit = revenue – expenses
+    final profDay   = m.profitToday;
+    final profWeek  = m.profitThisWeek;
+    final profMonth = m.profitThisMonth;
+
+    final labels    = ['Sot', 'Kjo javë', 'Ky muaj'];
+    final revenues  = [revDay, revWeek, revMonth];
+    final expenses  = [expDay, expWeek, expMonth];
+    final profits   = [profDay, profWeek, profMonth];
+
+    // Normalise bar heights by the largest revenue value.
+    final maxRev = revenues.fold(0.0, math.max);
+    final norm   = maxRev > 0
+        ? revenues.map((v) => v / maxRev).toList()
         : [0.0, 0.0, 0.0];
+
+    final selProfit  = profits[_tab];
+    final selRev     = revenues[_tab];
+    final selExp     = expenses[_tab];
+    final profitColor = selProfit >= 0
+        ? AppColors.primaryGreen
+        : AppColors.negativeText;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ── header ────────────────────────────────────────────────────────
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2940,7 +2962,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Vlera demo të fitimit (baza fikse minus shpenzimet). Përditësohen kur ndryshon regjistri i shpenzimeve.',
+                    'Fitimi real bazuar në shitjet e kamarierëve minus shpenzimet e regjistruara.',
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.4,
@@ -2953,41 +2975,49 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
           ],
         ),
         const SizedBox(height: 22),
+
+        // ── KPI tiles ─────────────────────────────────────────────────────
         Wrap(
           spacing: 12,
           runSpacing: 12,
           children: [
             _ProfitKpiTile(
-              label: 'Fitim ditor',
-              value: '\$${daily.toStringAsFixed(2)}',
+              label: 'Fitim sot',
+              value: '${profDay >= 0 ? '' : '-'}€${profDay.abs().toStringAsFixed(2)}',
               icon: Icons.today_outlined,
               highlight: _tab == 0,
+              positive: profDay >= 0,
               onTap: () => setState(() => _tab = 0),
             ),
             _ProfitKpiTile(
-              label: 'Fitim javor',
-              value: '\$${weekly.toStringAsFixed(2)}',
+              label: 'Fitim kjo javë',
+              value: '${profWeek >= 0 ? '' : '-'}€${profWeek.abs().toStringAsFixed(2)}',
               icon: Icons.date_range_outlined,
               highlight: _tab == 1,
+              positive: profWeek >= 0,
               onTap: () => setState(() => _tab = 1),
             ),
             _ProfitKpiTile(
-              label: 'Fitim mujor',
-              value: '\$${monthly.toStringAsFixed(2)}',
+              label: 'Fitim ky muaj',
+              value: '${profMonth >= 0 ? '' : '-'}€${profMonth.abs().toStringAsFixed(2)}',
               icon: Icons.calendar_month_outlined,
               highlight: _tab == 2,
+              positive: profMonth >= 0,
               onTap: () => setState(() => _tab = 2),
             ),
             _ProfitKpiTile(
-              label: 'Shpenzime totale',
-              value: '\$${m.totalExpenses.toStringAsFixed(2)}',
-              icon: Icons.receipt_long_outlined,
+              label: 'Shitje totale (sesion)',
+              value: '€${m.waiterSales.values.fold(0.0, (s, v) => s + v).toStringAsFixed(2)}',
+              icon: Icons.point_of_sale_outlined,
               highlight: false,
+              positive: true,
               onTap: null,
             ),
           ],
         ),
         const SizedBox(height: 20),
+
+        // ── detail card ───────────────────────────────────────────────────
         Card(
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -2999,15 +3029,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Zgjidh periudhën',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.darkGreenText,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                // period selector
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: SegmentedButton<int>(
@@ -3020,26 +3042,63 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // big profit number
                 Text(
-                  'Fitimi ${labels[_tab].toLowerCase()}',
+                  'Fitimi — ${labels[_tab]}',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.mediumGreenText,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  '\$${values[_tab].toStringAsFixed(2)}',
-                  style: const TextStyle(
+                  '${selProfit >= 0 ? '' : '-'}€${selProfit.abs().toStringAsFixed(2)}',
+                  style: TextStyle(
                     fontSize: 44,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.darkGreenText,
+                    color: profitColor,
                     height: 1.05,
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // revenue vs expenses row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ProfitStatCell(
+                        label: 'Shitje',
+                        value: '€${selRev.toStringAsFixed(2)}',
+                        icon: Icons.arrow_upward_rounded,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ProfitStatCell(
+                        label: 'Shpenzime',
+                        value: '€${selExp.toStringAsFixed(2)}',
+                        icon: Icons.arrow_downward_rounded,
+                        color: AppColors.negativeText,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ProfitStatCell(
+                        label: 'Transaksione',
+                        value: '${m.salesHistory.where(_inPeriod(_tab)).length}',
+                        icon: Icons.receipt_outlined,
+                        color: AppColors.mediumGreenText,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // bar chart (revenue per period)
                 Text(
-                  'Krahasim relativ (shkallëzim sipas vlerës më të lartë)',
+                  'Shitjet sipas periudhës',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.lightGreenText,
@@ -3059,7 +3118,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Text(
-                                  '\$${values[i].toStringAsFixed(0)}',
+                                  '€${revenues[i].toStringAsFixed(0)}',
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -3071,21 +3130,17 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                                   child: Align(
                                     alignment: Alignment.bottomCenter,
                                     child: AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
+                                      duration: const Duration(milliseconds: 300),
                                       width: 40,
                                       height: 12 + norm[i] * 72,
                                       decoration: BoxDecoration(
                                         color: _tab == i
                                             ? AppColors.primaryGreen
-                                            : AppColors.primaryGreen.withValues(
-                                                alpha: 0.45,
-                                              ),
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                              top: Radius.circular(8),
-                                            ),
+                                            : AppColors.primaryGreen
+                                                .withValues(alpha: 0.35),
+                                        borderRadius: const BorderRadius.vertical(
+                                          top: Radius.circular(8),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -3110,6 +3165,8 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
           ),
         ),
         const SizedBox(height: 18),
+
+        // ── breakdown table ────────────────────────────────────────────────
         Card(
           elevation: 0,
           color: AppColors.beige,
@@ -3125,38 +3182,44 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                 1: FlexColumnWidth(1),
               },
               children: [
-                TableRow(
-                  children: [
-                    _profitTblHead('Metrika'),
-                    _profitTblHead('Vlera', right: true),
-                  ],
-                ),
-                _profitTblRow(
-                  'Fitim ditor (demo)',
-                  '\$${daily.toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Fitim javor (demo)',
-                  '\$${weekly.toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Fitim mujor (demo)',
-                  '\$${monthly.toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Shpenzime të regjistruara',
-                  '\$${m.totalExpenses.toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Rreshta në regjistrin e shpenzimeve',
-                  '${m.expenses.length}',
-                ),
+                TableRow(children: [
+                  _profitTblHead('Metrika'),
+                  _profitTblHead('Vlera', right: true),
+                ]),
+                _profitTblRow('Shitje sot',         '€${revDay.toStringAsFixed(2)}'),
+                _profitTblRow('Shitje kjo javë',     '€${revWeek.toStringAsFixed(2)}'),
+                _profitTblRow('Shitje ky muaj',      '€${revMonth.toStringAsFixed(2)}'),
+                _profitTblRow('Shpenzime sot',       '€${expDay.toStringAsFixed(2)}'),
+                _profitTblRow('Shpenzime kjo javë',  '€${expWeek.toStringAsFixed(2)}'),
+                _profitTblRow('Shpenzime ky muaj',   '€${expMonth.toStringAsFixed(2)}'),
+                _profitTblRow('Fitim sot',           '${profDay >= 0 ? '' : '-'}€${profDay.abs().toStringAsFixed(2)}'),
+                _profitTblRow('Fitim kjo javë',      '${profWeek >= 0 ? '' : '-'}€${profWeek.abs().toStringAsFixed(2)}'),
+                _profitTblRow('Fitim ky muaj',       '${profMonth >= 0 ? '' : '-'}€${profMonth.abs().toStringAsFixed(2)}'),
+                _profitTblRow('Transaksione gjithsej', '${m.salesHistory.length}'),
               ],
             ),
           ),
         ),
       ],
     );
+  }
+
+  /// Returns a predicate that checks whether a [SaleRow] falls in period [tab].
+  bool Function(SaleRow) _inPeriod(int tab) {
+    final now = DateTime.now();
+    final DateTime from;
+    switch (tab) {
+      case 1:
+        from = DateTime(now.year, now.month, now.day)
+            .subtract(Duration(days: now.weekday - 1));
+        break;
+      case 2:
+        from = DateTime(now.year, now.month, 1);
+        break;
+      default:
+        from = DateTime(now.year, now.month, now.day);
+    }
+    return (s) => !s.timestamp.isBefore(from);
   }
 
   static Widget _profitTblHead(String s, {bool right = false}) {
@@ -3178,22 +3241,19 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
     return TableRow(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             a,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.darkGreenText,
-            ),
+            style: const TextStyle(fontSize: 13, color: AppColors.darkGreenText),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             b,
             textAlign: TextAlign.right,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
               color: AppColors.darkGreenText,
             ),
@@ -3210,6 +3270,7 @@ class _ProfitKpiTile extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.highlight,
+    required this.positive,
     this.onTap,
   });
 
@@ -3217,10 +3278,12 @@ class _ProfitKpiTile extends StatelessWidget {
   final String value;
   final IconData icon;
   final bool highlight;
+  final bool positive;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final valueColor = positive ? AppColors.primaryGreen : AppColors.negativeText;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -3243,7 +3306,7 @@ class _ProfitKpiTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: AppColors.primaryGreen, size: 22),
+              Icon(icon, color: valueColor, size: 22),
               const SizedBox(height: 10),
               Text(
                 label,
@@ -3252,10 +3315,10 @@ class _ProfitKpiTile extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreenText,
+                  color: valueColor,
                 ),
               ),
               if (onTap != null) ...[
@@ -3271,6 +3334,55 @@ class _ProfitKpiTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ProfitStatCell extends StatelessWidget {
+  const _ProfitStatCell({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.beige,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: AppColors.mediumGreenText),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

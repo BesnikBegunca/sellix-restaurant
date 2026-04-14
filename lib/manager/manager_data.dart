@@ -35,6 +35,31 @@ class ExpenseRow {
       );
 }
 
+/// Single completed sale, persisted in the [sales] SQLite table.
+class SaleRow {
+  const SaleRow({
+    this.dbId,
+    required this.waiterName,
+    required this.tableId,
+    required this.total,
+    required this.timestamp,
+  });
+
+  final int? dbId;
+  final String waiterName;
+  final int tableId;
+  final double total;
+  final DateTime timestamp;
+
+  factory SaleRow.fromMap(Map<String, dynamic> m) => SaleRow(
+        dbId: m['id'] as int?,
+        waiterName: m['waiterName'] as String,
+        tableId: m['tableId'] as int,
+        total: (m['total'] as num).toDouble(),
+        timestamp: DateTime.parse(m['timestamp'] as String),
+      );
+}
+
 /// Waiter with name and PIN, persisted in the [waiters] SQLite table.
 class WaiterInfo {
   WaiterInfo({this.dbId, required this.name, required this.pin});
@@ -87,8 +112,9 @@ class ManagerData extends ChangeNotifier {
   List<CategoryData> _categories = [];
   List<WaiterInfo> _waiters = [];
   List<ExpenseRow> _expenses = [];
+  List<SaleRow> _salesHistory = [];
 
-  /// Sales per waiter for the current session (waiterName → total).
+  /// Sales per waiter accumulated since last shift close (waiterName → total).
   Map<String, double> waiterSales = {};
 
   int tableCount = 15;
@@ -100,6 +126,7 @@ class ManagerData extends ChangeNotifier {
   List<CategoryData> get categories => List.unmodifiable(_categories);
   List<WaiterInfo> get waiters => List.unmodifiable(_waiters);
   List<ExpenseRow> get expenses => List.unmodifiable(_expenses);
+  List<SaleRow> get salesHistory => List.unmodifiable(_salesHistory);
 
   // ─────────────────────────────── init ─────────────────────────────────────
 
@@ -162,14 +189,13 @@ class ManagerData extends ChangeNotifier {
         .toList();
   }
 
-  /// Rebuilds the [waiterSales] map from every row in the sales table.
+  /// Rebuilds [_salesHistory] and [waiterSales] from every row in the sales table.
   Future<void> _reloadSales(DatabaseService db) async {
     final rows = await db.fetchSales();
+    _salesHistory = rows.map(SaleRow.fromMap).toList();
     waiterSales = {};
-    for (final row in rows) {
-      final name = row['waiterName'] as String;
-      waiterSales[name] = (waiterSales[name] ?? 0) +
-          (row['total'] as num).toDouble();
+    for (final s in _salesHistory) {
+      waiterSales[s.waiterName] = (waiterSales[s.waiterName] ?? 0) + s.total;
     }
   }
 
@@ -220,6 +246,7 @@ class ManagerData extends ChangeNotifier {
     // Clear all sales so totals start fresh from zero.
     await DatabaseService.instance.clearSales();
     waiterSales.clear();
+    _salesHistory.clear();
     notifyListeners();
   }
 
@@ -290,26 +317,91 @@ class ManagerData extends ChangeNotifier {
   double get totalExpenses =>
       _expenses.fold<double>(0, (s, e) => s + e.amount);
 
-  // ─────────────────────────── profits ──────────────────────────────────────
+  // ─────────────────────────── profits (real DB data) ───────────────────────
 
-  static const double _baseDaily = 1850;
-  static const double _baseWeekly = 11200;
-  static const double _baseMonthly = 46800;
+  /// Total revenue from [_salesHistory] whose timestamp falls within [from]..[to].
+  double revenueInRange(DateTime from, DateTime to) => _salesHistory
+      .where((s) => !s.timestamp.isBefore(from) && !s.timestamp.isAfter(to))
+      .fold(0.0, (sum, s) => sum + s.total);
 
-  double profitDaily() => _baseDaily - totalExpenses * 0.15;
-  double profitWeekly() => _baseWeekly - totalExpenses;
-  double profitMonthly() => _baseMonthly - totalExpenses * 2.2;
+  /// Total expenses from [_expenses] whose date falls within [from]..[to].
+  double expensesInRange(DateTime from, DateTime to) => _expenses
+      .where((e) => !e.date.isBefore(from) && !e.date.isAfter(to))
+      .fold(0.0, (sum, e) => sum + e.amount);
+
+  /// Profit = revenue − expenses for a given range.
+  double profitInRange(DateTime from, DateTime to) =>
+      revenueInRange(from, to) - expensesInRange(from, to);
+
+  // Convenience helpers for the three standard periods.
+
+  static DateTime _startOfDay(DateTime d) =>
+      DateTime(d.year, d.month, d.day);
+
+  static DateTime _endOfDay(DateTime d) =>
+      DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
+
+  double get revenueToday {
+    final now = DateTime.now();
+    return revenueInRange(_startOfDay(now), _endOfDay(now));
+  }
+
+  double get revenueThisWeek {
+    final now = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    return revenueInRange(_startOfDay(monday), _endOfDay(now));
+  }
+
+  double get revenueThisMonth {
+    final now = DateTime.now();
+    return revenueInRange(DateTime(now.year, now.month, 1), _endOfDay(now));
+  }
+
+  double get expensesToday {
+    final now = DateTime.now();
+    return expensesInRange(_startOfDay(now), _endOfDay(now));
+  }
+
+  double get expensesThisWeek {
+    final now = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    return expensesInRange(_startOfDay(monday), _endOfDay(now));
+  }
+
+  double get expensesThisMonth {
+    final now = DateTime.now();
+    return expensesInRange(DateTime(now.year, now.month, 1), _endOfDay(now));
+  }
+
+  double get profitToday => revenueToday - expensesToday;
+  double get profitThisWeek => revenueThisWeek - expensesThisWeek;
+  double get profitThisMonth => revenueThisMonth - expensesThisMonth;
+
+  double profitDaily() => profitToday;
+  double profitWeekly() => profitThisWeek;
+  double profitMonthly() => profitThisMonth;
 
   // ─────────────────────────── sales / top employee ─────────────────────────
 
-  Future<void> recordSale(String waiterName, double amount) async {
+  Future<void> recordSale(
+    String waiterName,
+    double amount, {
+    int tableId = 0,
+  }) async {
     if (waiterName.trim().isEmpty) return;
-    // Determine which table the sale came from (best-effort — tableId = 0 when unknown)
+    final now = DateTime.now();
     await DatabaseService.instance.insertSale(
       waiterName: waiterName,
-      tableId: 0,
+      tableId: tableId,
       total: amount,
     );
+    final sale = SaleRow(
+      waiterName: waiterName,
+      tableId: tableId,
+      total: amount,
+      timestamp: now,
+    );
+    _salesHistory.insert(0, sale);
     waiterSales[waiterName] = (waiterSales[waiterName] ?? 0) + amount;
     notifyListeners();
   }
@@ -317,6 +409,7 @@ class ManagerData extends ChangeNotifier {
   Future<void> clearWaiterSales() async {
     await DatabaseService.instance.clearSales();
     waiterSales.clear();
+    _salesHistory.clear();
     notifyListeners();
   }
 
