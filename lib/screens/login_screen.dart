@@ -22,6 +22,22 @@ class _LoginScreenState extends State<LoginScreen> {
   /// null = hyrje në PIN; 0 = fatura; 1 = pagesa.
   int? _calcField;
 
+  @override
+  void initState() {
+    super.initState();
+    ManagerData.instance.addListener(_onDataChanged);
+  }
+
+  @override
+  void dispose() {
+    ManagerData.instance.removeListener(_onDataChanged);
+    super.dispose();
+  }
+
+  void _onDataChanged() {
+    setState(() {});
+  }
+
   bool get _pinConfirmEnabled => _pin.length >= 4 && _pin.length <= 6;
 
   void _setCalcField(int? field) {
@@ -205,6 +221,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildHeaderGroup() {
+    final companyName = ManagerData.instance.companyName;
+    final title = companyName != null && companyName.isNotEmpty
+        ? companyName
+        : 'POS System';
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -219,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'POS System',
+                  title,
                   style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.w500,
