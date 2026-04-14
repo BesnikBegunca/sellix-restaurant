@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
@@ -322,13 +324,21 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                 PosGrid.cellWidth(constraints.maxWidth);
                             final cellH =
                                 PosGrid.cellHeight(constraints.maxWidth);
+                            final categoryWidth = math.min(
+                              cellW,
+                              (constraints.maxWidth -
+                                      (cats.length - 1) * PosGrid.spacing) /
+                                  cats.length,
+                            );
+                            final categoryHeight =
+                                categoryWidth / PosGrid.childAspectRatio;
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _categoryRow(
                                   cats,
-                                  cellW,
-                                  cellH,
+                                  categoryWidth,
+                                  categoryHeight,
                                   ix,
                                 ),
                                 const SizedBox(height: PosGrid.spacing),
