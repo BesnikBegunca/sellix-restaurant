@@ -291,6 +291,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
               children: [
                 GgAppHeader(
                   showBack: true,
+                  showLogo: false,
+                  title: 'Porosia',
                   onBack: () => Navigator.of(context).maybePop(),
                 ),
                 const Expanded(
@@ -315,6 +317,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
             children: [
               GgAppHeader(
                 showBack: true,
+                showLogo: false,
+                title: 'Porosia',
                 onBack: () => Navigator.of(context).maybePop(),
               ),
               Expanded(

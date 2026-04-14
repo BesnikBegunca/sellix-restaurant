@@ -22,12 +22,7 @@ class GgLogoBox extends StatelessWidget {
       clipBehavior: logo != null ? Clip.hardEdge : Clip.none,
       alignment: Alignment.center,
       child: logo != null
-          ? Image.memory(
-              logo,
-              width: size,
-              height: size,
-              fit: BoxFit.contain,
-            )
+          ? Image.memory(logo, width: size, height: size, fit: BoxFit.contain)
           : Icon(
               Icons.local_cafe,
               color: AppColors.white,
@@ -45,12 +40,14 @@ class GgAppHeader extends StatelessWidget {
     this.onBack,
     this.title,
     this.logoSize = 40,
+    this.showLogo = true,
   });
 
   final bool showBack;
   final VoidCallback? onBack;
   final String? title;
   final double logoSize;
+  final bool showLogo;
 
   static String formattedDate(DateTime d) {
     const days = [
@@ -94,8 +91,10 @@ class GgAppHeader extends StatelessWidget {
             _BackButton(onPressed: onBack),
             const SizedBox(width: 16),
           ],
-          GgLogoBox(size: logoSize, radius: 12),
-          const SizedBox(width: 12),
+          if (showLogo) ...[
+            GgLogoBox(size: logoSize, radius: 12),
+            const SizedBox(width: 12),
+          ],
           Text(
             title ?? ManagerData.instance.companyName ?? 'POS System',
             style: const TextStyle(
