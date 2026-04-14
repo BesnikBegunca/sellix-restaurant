@@ -1484,7 +1484,7 @@ class _WaitersPanelState extends State<_WaitersPanel> {
                     ),
                   ),
                   subtitle: Text(
-                    'PIN: ${'●' * w.pin.length}',
+                    'PIN: ${w.pin}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.lightGreenText,
