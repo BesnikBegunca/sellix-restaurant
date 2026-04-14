@@ -222,8 +222,8 @@ class _LoginScreenState extends State<LoginScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const GgLogoBox(size: 48, radius: 12),
-        const SizedBox(width: 12),
+        const GgLogoBox(size: 80, radius: 16),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
