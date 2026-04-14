@@ -219,120 +219,336 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle('10. Company Settings'),
-        const SizedBox(height: 16),
-        Text(
-          'Vendos emrin e firmës/kompanisë. Përdoret në krejt aplikacionin.',
-          style: TextStyle(color: AppColors.mediumGreenText),
-        ),
-        const SizedBox(height: 24),
-        Card(
-          elevation: 0,
-          color: AppColors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.lightGreenBg.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.borderSubtle(0.1),
+            ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _nameCtrl,
-                  decoration: _inputDeco('Emri i kompanisë (i detyrueshëm)'),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _save(),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Logo e kompanisë',
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: AppColors.primaryGreen,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Këto cilësime përcaktojnë identitetin e kompanisë suaj. Emri dhe logo shfaqen në ekranin e hyrjes dhe në krejt aplikacionin.',
                   style: TextStyle(
-                    color: AppColors.darkGreenText,
-                    fontWeight: FontWeight.w600,
+                    color: AppColors.mediumGreenText,
+                    fontSize: 14,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 112,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 112,
-                        height: 112,
-                        decoration: BoxDecoration(
-                          color: AppColors.beige,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.borderSubtle(0.2),
-                          ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // Company Name Section
+        _buildSectionCard(
+          title: 'Emri i Kompanisë',
+          icon: Icons.business,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _nameCtrl,
+                decoration: _inputDeco('Shkruani emrin e kompanisë'),
+                style: const TextStyle(fontSize: 16),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _save(),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Ky emër do të shfaqet në ekranin e hyrjes dhe në titujt e aplikacionit.',
+                style: TextStyle(
+                  color: AppColors.lightGreenText,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Company Logo Section
+        _buildSectionCard(
+          title: 'Logo e Kompanisë',
+          icon: Icons.image,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Logo Preview and Upload Area
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.beige,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.borderSubtle(0.15),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    // Logo Preview
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.borderSubtle(0.2),
                         ),
-                        clipBehavior: Clip.hardEdge,
-                        child: widget.m.companyLogoBytes != null
-                            ? Image.memory(
-                                widget.m.companyLogoBytes!,
-                                fit: BoxFit.cover,
-                              )
-                            : const Center(
-                                child: Icon(
-                                  Icons.image_outlined,
-                                  color: AppColors.mediumGreenText,
-                                  size: 40,
-                                ),
-                              ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            FilledButton.icon(
-                              onPressed: _pickLogo,
-                              icon: const Icon(Icons.upload_file_outlined),
-                              label: const Text('Ngarko logo'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.primaryGreen,
-                                foregroundColor: AppColors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
+                      clipBehavior: Clip.hardEdge,
+                      child: widget.m.companyLogoBytes != null
+                          ? Image.memory(
+                              widget.m.companyLogoBytes!,
+                              fit: BoxFit.cover,
+                            )
+                          : Center(
+                              child: Icon(
+                                Icons.business,
+                                color: AppColors.mediumGreenText,
+                                size: 32,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            if (widget.m.companyLogoBytes != null)
-                              OutlinedButton.icon(
-                                onPressed: _clearLogo,
-                                icon: const Icon(Icons.delete_outline),
-                                label: const Text('Fshi logo'),
+                    ),
+                    const SizedBox(width: 20),
+                    // Upload Controls
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.m.companyLogoBytes != null
+                                ? 'Logo është ngarkuar'
+                                : 'Nuk ka logo të ngarkuar',
+                            style: TextStyle(
+                              color: AppColors.darkGreenText,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Logo duhet të jetë në format PNG, JPG ose JPEG. Madhësia ideale është 512x512 piksel.',
+                            style: TextStyle(
+                              color: AppColors.lightGreenText,
+                              fontSize: 13,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              FilledButton.icon(
+                                onPressed: _pickLogo,
+                                icon: const Icon(Icons.upload_file, size: 18),
+                                label: Text(
+                                  widget.m.companyLogoBytes != null
+                                      ? 'Ndrysho logo'
+                                      : 'Ngarko logo',
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  foregroundColor: AppColors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                  textStyle: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                          ],
+                              if (widget.m.companyLogoBytes != null) ...[
+                                const SizedBox(width: 12),
+                                OutlinedButton.icon(
+                                  onPressed: _clearLogo,
+                                  icon: const Icon(Icons.delete_outline, size: 18),
+                                  label: const Text('Fshi'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.negativeText,
+                                    side: BorderSide(color: AppColors.negativeText.withValues(alpha: 0.3)),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
+                                    textStyle: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 32),
+
+        // Save Button
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.borderSubtle(0.1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilledButton.icon(
+                onPressed: _save,
+                icon: const Icon(Icons.save, size: 20),
+                label: const Text('Ruaj Cilësimet'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.negativeText.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.negativeText.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: AppColors.negativeText,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMsg!,
+                          style: TextStyle(
+                            color: AppColors.negativeText,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: _save,
-                  icon: const Icon(Icons.save_outlined),
-                  label: const Text('Ruaj'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-                if (_errorMsg != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMsg!,
-                    style: const TextStyle(color: AppColors.negativeText),
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.borderSubtle(0.1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.lightGreenBg.withValues(alpha: 0.5),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: AppColors.primaryGreen,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: AppColors.darkGreenText,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: child,
+          ),
+        ],
+      ),
     );
   }
 }
