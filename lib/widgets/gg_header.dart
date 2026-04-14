@@ -38,13 +38,13 @@ class GgAppHeader extends StatelessWidget {
     super.key,
     this.showBack = false,
     this.onBack,
-    this.title = 'POS System',
+    this.title,
     this.logoSize = 40,
   });
 
   final bool showBack;
   final VoidCallback? onBack;
-  final String title;
+  final String? title;
   final double logoSize;
 
   static String formattedDate(DateTime d) {
@@ -92,7 +92,7 @@ class GgAppHeader extends StatelessWidget {
           GgLogoBox(size: logoSize, radius: 12),
           const SizedBox(width: 12),
           Text(
-            title,
+            title ?? ManagerData.instance.companyName ?? 'POS System',
             style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w500,

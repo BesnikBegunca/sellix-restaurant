@@ -27,12 +27,12 @@ class ExpenseRow {
   final DateTime date;
 
   factory ExpenseRow.fromMap(Map<String, dynamic> m) => ExpenseRow(
-        dbId: m['id'] as int?,
-        type: m['type'] as String,
-        description: m['description'] as String,
-        amount: (m['amount'] as num).toDouble(),
-        date: DateTime.parse(m['timestamp'] as String),
-      );
+    dbId: m['id'] as int?,
+    type: m['type'] as String,
+    description: m['description'] as String,
+    amount: (m['amount'] as num).toDouble(),
+    date: DateTime.parse(m['timestamp'] as String),
+  );
 }
 
 /// Single completed sale, persisted in the [sales] SQLite table.
@@ -52,12 +52,12 @@ class SaleRow {
   final DateTime timestamp;
 
   factory SaleRow.fromMap(Map<String, dynamic> m) => SaleRow(
-        dbId: m['id'] as int?,
-        waiterName: m['waiterName'] as String,
-        tableId: m['tableId'] as int,
-        total: (m['total'] as num).toDouble(),
-        timestamp: DateTime.parse(m['timestamp'] as String),
-      );
+    dbId: m['id'] as int?,
+    waiterName: m['waiterName'] as String,
+    tableId: m['tableId'] as int,
+    total: (m['total'] as num).toDouble(),
+    timestamp: DateTime.parse(m['timestamp'] as String),
+  );
 }
 
 /// Waiter with name and PIN, persisted in the [waiters] SQLite table.
@@ -71,10 +71,10 @@ class WaiterInfo {
   final String pin;
 
   factory WaiterInfo.fromMap(Map<String, dynamic> m) => WaiterInfo(
-        dbId: m['id'] as int?,
-        name: m['name'] as String,
-        pin: m['pin'] as String,
-      );
+    dbId: m['id'] as int?,
+    name: m['name'] as String,
+    pin: m['pin'] as String,
+  );
 }
 
 // ───────────────────────────── ManagerData ────────────────────────────────────
@@ -138,7 +138,9 @@ class ManagerData extends ChangeNotifier {
     if (company != null) {
       companyName = company['companyName'] as String?;
       final blob = company['companyLogo'];
-      companyLogoBytes = blob != null ? Uint8List.fromList(blob as List<int>) : null;
+      companyLogoBytes = blob != null
+          ? Uint8List.fromList(blob as List<int>)
+          : null;
     }
 
     // Shift — system is always active; only load last-closed timestamp for display.
@@ -314,8 +316,7 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  double get totalExpenses =>
-      _expenses.fold<double>(0, (s, e) => s + e.amount);
+  double get totalExpenses => _expenses.fold<double>(0, (s, e) => s + e.amount);
 
   // ─────────────────────────── profits (real DB data) ───────────────────────
 
@@ -335,8 +336,7 @@ class ManagerData extends ChangeNotifier {
 
   // Convenience helpers for the three standard periods.
 
-  static DateTime _startOfDay(DateTime d) =>
-      DateTime(d.year, d.month, d.day);
+  static DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
 
   static DateTime _endOfDay(DateTime d) =>
       DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
@@ -589,10 +589,7 @@ class ManagerData extends ChangeNotifier {
 
   // ─────────────────────────── tables ───────────────────────────────────────
 
-  Future<void> setTableLayout({
-    required int count,
-    required int perRow,
-  }) async {
+  Future<void> setTableLayout({required int count, required int perRow}) async {
     tableCount = count.clamp(1, 48);
     tablesPerRow = perRow.clamp(2, 12);
 
