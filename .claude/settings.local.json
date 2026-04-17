@@ -17,7 +17,9 @@
       "Bash(\"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" run:*)",
       "Bash(powershell -Command \"& 'C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat' compile exe lib/main.dart -o /tmp/test_build.exe 2>&1 | Select-Object -First 50\")",
       "Bash(\"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" pub:*)",
-      "Bash(dart analyze:*)"
+      "Bash(dart analyze:*)",
+      "Bash(\"C:\\\\Program Files\\\\flutter\\\\bin\\\\flutter.bat\" pub get)",
+      "Bash(/c/flutter/src/flutter/bin/dart pub *)"
     ]
   }
 }

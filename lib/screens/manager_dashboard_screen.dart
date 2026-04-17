@@ -12,6 +12,7 @@ import '../services/expenses_pdf_export.dart';
 import '../services/manager_summary_pdf.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
+import '../utils/image_utils.dart';
 
 /// Të dhënat që barten me drag nga një produkt.
 typedef _ProductDrag = ({String fromCatId, ProductItem product});
@@ -3976,6 +3977,69 @@ class _TopEmployeePanel extends StatelessWidget {
   }
 }
 
+// ── Image source picker (assets OR file from PC) ────────────────────────────
+
+/// Shows a small dialog asking whether to pick from app assets or upload from
+/// the PC. Returns the chosen path, '' to clear, or null if cancelled.
+Future<String?> _showImageSourcePicker(
+  BuildContext context,
+  String? current,
+) async {
+  final choice = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text(
+        'Zgjidh burimin e fotos',
+        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
+      ),
+      contentPadding: const EdgeInsets.fromLTRB(8, 16, 8, 0),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Nga asetat e aplikacionit'),
+            subtitle: const Text('Foto të parakonfighuruara'),
+            onTap: () => Navigator.pop(ctx, 'assets'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.upload_file_outlined),
+            title: const Text('Ngarko nga kompjuteri'),
+            subtitle: const Text('PNG, JPG, WEBP…'),
+            onTap: () => Navigator.pop(ctx, 'pc'),
+          ),
+          if (current != null && current.isNotEmpty)
+            ListTile(
+              leading: Icon(
+                Icons.hide_image_outlined,
+                color: AppColors.negativeText,
+              ),
+              title: Text(
+                'Hiq foton',
+                style: TextStyle(color: AppColors.negativeText),
+              ),
+              onTap: () => Navigator.pop(ctx, 'clear'),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Anulo'),
+        ),
+      ],
+    ),
+  );
+  if (choice == null) return null;
+  if (choice == 'clear') return '';
+  if (choice == 'assets') {
+    if (!context.mounted) return null;
+    return _showAssetPicker(context, current);
+  }
+  // 'pc'
+  return pickAndCopyImageFromPC();
+}
+
 // ── Asset image picker (dynamic — reads AssetManifest at runtime) ──────────
 
 const _kImageExtensions = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'};
@@ -4191,7 +4255,7 @@ class _MenuPanelState extends State<_MenuPanel> {
   }
 
   Future<void> _pickNewImage() async {
-    final picked = await _showAssetPicker(context, _newProductImage);
+    final picked = await _showImageSourcePicker(context, _newProductImage);
     if (picked != null) {
       setState(() => _newProductImage = picked.isEmpty ? null : picked);
     }
@@ -4250,12 +4314,12 @@ class _MenuPanelState extends State<_MenuPanel> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: editImage != null
-                            ? Image.asset(
-                                editImage!,
+                            ? productImage(
+                                editImage,
                                 width: 64,
                                 height: 64,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, _) => _noImageBox(),
+                                placeholder: _noImageBox,
                               )
                             : _noImageBox(),
                       ),
@@ -4273,7 +4337,7 @@ class _MenuPanelState extends State<_MenuPanel> {
                           const SizedBox(height: 6),
                           OutlinedButton.icon(
                             onPressed: () async {
-                              final picked = await _showAssetPicker(
+                              final picked = await _showImageSourcePicker(
                                 context,
                                 editImage,
                               );
@@ -4493,10 +4557,10 @@ class _MenuPanelState extends State<_MenuPanel> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(9),
                             child: _newProductImage != null
-                                ? Image.asset(
-                                    _newProductImage!,
+                                ? productImage(
+                                    _newProductImage,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, _) => const Icon(
+                                    placeholder: () => const Icon(
                                       Icons.add_photo_alternate_outlined,
                                       size: 22,
                                       color: AppColors.primaryGreen,
@@ -4828,12 +4892,12 @@ class _ProductTableRowState extends State<_ProductTableRow> {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: p.imagePath != null
-                  ? Image.asset(
-                      p.imagePath!,
+                  ? productImage(
+                      p.imagePath,
                       width: 52,
                       height: 52,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, _) => _thumbPlaceholder(),
+                      placeholder: _thumbPlaceholder,
                     )
                   : _thumbPlaceholder(),
             ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../manager/manager_data.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
+import '../utils/image_utils.dart';
 import '../theme/pos_grid.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_interaction.dart';
@@ -573,8 +574,8 @@ class _ProductTileState extends State<_ProductTile> {
               Expanded(
                 child: Center(
                   child: widget.product.imagePath != null
-                      ? Image.asset(
-                          widget.product.imagePath!,
+                      ? productImage(
+                          widget.product.imagePath,
                           fit: BoxFit.contain,
                         )
                       : FittedBox(
@@ -837,8 +838,8 @@ class _OrderLineRow extends StatelessWidget {
             child: line.product.imagePath != null
                 ? Padding(
                     padding: const EdgeInsets.all(4),
-                    child: Image.asset(
-                      line.product.imagePath!,
+                    child: productImage(
+                      line.product.imagePath,
                       fit: BoxFit.contain,
                     ),
                   )
