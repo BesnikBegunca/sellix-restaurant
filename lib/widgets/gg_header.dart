@@ -22,7 +22,7 @@ class GgLogoBox extends StatelessWidget {
       clipBehavior: logo != null ? Clip.hardEdge : Clip.none,
       alignment: Alignment.center,
       child: logo != null
-          ? Image.memory(logo, width: size, height: size, fit: BoxFit.cover)
+          ? Image.memory(logo, width: size, height: size, fit: BoxFit.contain)
           : Icon(
               Icons.local_cafe,
               color: AppColors.white,
@@ -38,14 +38,18 @@ class GgAppHeader extends StatelessWidget {
     super.key,
     this.showBack = false,
     this.onBack,
-    this.title = 'POS System',
+    this.title,
     this.logoSize = 40,
+    this.showLogo = true,
+    this.userName,
   });
 
   final bool showBack;
   final VoidCallback? onBack;
-  final String title;
+  final String? title;
   final double logoSize;
+  final bool showLogo;
+  final String? userName;
 
   static String formattedDate(DateTime d) {
     const days = [
@@ -89,10 +93,12 @@ class GgAppHeader extends StatelessWidget {
             _BackButton(onPressed: onBack),
             const SizedBox(width: 16),
           ],
-          GgLogoBox(size: logoSize, radius: 12),
-          const SizedBox(width: 12),
+          if (showLogo) ...[
+            GgLogoBox(size: logoSize, radius: 12),
+            const SizedBox(width: 12),
+          ],
           Text(
-            title,
+            title ?? ManagerData.instance.companyName ?? 'POS System',
             style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w500,
@@ -100,7 +106,7 @@ class GgAppHeader extends StatelessWidget {
             ),
           ),
           const Expanded(child: Center(child: _DateLabel())),
-          const _UserSection(),
+          _UserSection(userName: userName),
         ],
       ),
     );
@@ -120,7 +126,9 @@ class _DateLabel extends StatelessWidget {
 }
 
 class _UserSection extends StatelessWidget {
-  const _UserSection();
+  const _UserSection({this.userName});
+
+  final String? userName;
 
   @override
   Widget build(BuildContext context) {
@@ -140,9 +148,9 @@ class _UserSection extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        const Text(
-          'Cashier',
-          style: TextStyle(fontSize: 16, color: AppColors.darkGreenText),
+        Text(
+          userName ?? 'Cashier',
+          style: const TextStyle(fontSize: 16, color: AppColors.darkGreenText),
         ),
       ],
     );

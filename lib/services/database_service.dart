@@ -26,34 +26,32 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
-    // Tables (physical restaurant tables)
+  /// Ensures every table exists. Safe to call on any existing database because
+  /// every statement uses CREATE TABLE IF NOT EXISTS.
+  Future<void> _ensureTables(Database db) async {
     await db.execute('''
-      CREATE TABLE tables (
+      CREATE TABLE IF NOT EXISTS tables (
         id            INTEGER PRIMARY KEY,
         occupied      INTEGER NOT NULL DEFAULT 0,
         currentTotal  REAL
       )
     ''');
-
-    // Menu categories
     await db.execute('''
-      CREATE TABLE categories (
+      CREATE TABLE IF NOT EXISTS categories (
         id            TEXT    PRIMARY KEY,
         name          TEXT    NOT NULL,
         iconCodePoint INTEGER NOT NULL,
         sortOrder     INTEGER NOT NULL DEFAULT 0
       )
     ''');
-
-    // Menu products
     await db.execute('''
-      CREATE TABLE products (
+      CREATE TABLE IF NOT EXISTS products (
         id         TEXT PRIMARY KEY,
         name       TEXT NOT NULL,
         price      REAL NOT NULL,
@@ -63,19 +61,15 @@ class DatabaseService {
         FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE CASCADE
       )
     ''');
-
-    // Waiters
     await db.execute('''
-      CREATE TABLE waiters (
+      CREATE TABLE IF NOT EXISTS waiters (
         id   INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT    NOT NULL,
         pin  TEXT    NOT NULL UNIQUE
       )
     ''');
-
-    // Sales — one row per completed payment
     await db.execute('''
-      CREATE TABLE sales (
+      CREATE TABLE IF NOT EXISTS sales (
         id         INTEGER PRIMARY KEY AUTOINCREMENT,
         waiterName TEXT    NOT NULL,
         tableId    INTEGER NOT NULL,
@@ -83,10 +77,8 @@ class DatabaseService {
         timestamp  TEXT    NOT NULL
       )
     ''');
-
-    // Expenses / salaries
     await db.execute('''
-      CREATE TABLE expenses (
+      CREATE TABLE IF NOT EXISTS expenses (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         type        TEXT NOT NULL,
         description TEXT NOT NULL,
@@ -94,25 +86,56 @@ class DatabaseService {
         timestamp   TEXT NOT NULL
       )
     ''');
-
-    // Shift — single row (id = 1)
     await db.execute('''
-      CREATE TABLE shift (
+      CREATE TABLE IF NOT EXISTS shift (
         id       INTEGER PRIMARY KEY,
         openedAt TEXT,
         closedAt TEXT,
         status   TEXT NOT NULL DEFAULT 'closed'
       )
     ''');
-
-    // Company branding — single row (id = 1)
     await db.execute('''
-      CREATE TABLE company (
+      CREATE TABLE IF NOT EXISTS company (
         id          INTEGER PRIMARY KEY,
         companyName TEXT,
         companyLogo BLOB
       )
     ''');
+  }
+
+  /// Called when upgrading from any older version. Creates missing tables and
+  /// inserts singleton rows that may not exist yet.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    await _ensureTables(db);
+    // Insert singleton rows only if they are missing.
+    final shiftRows = await db.query('shift', where: 'id = 1');
+    if (shiftRows.isEmpty) {
+      await db.insert('shift', {'id': 1, 'status': 'closed'});
+    }
+    final companyRows = await db.query('company', where: 'id = 1');
+    if (companyRows.isEmpty) {
+      await db.insert('company', {'id': 1});
+    }
+    // Seed default tables if none exist.
+    final tableCount = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM tables'),
+    );
+    if (tableCount == 0) {
+      for (var i = 1; i <= 15; i++) {
+        await db.insert('tables', {'id': i, 'occupied': 0, 'currentTotal': null});
+      }
+    }
+    // Seed default menu if no categories exist.
+    final catCount = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM categories'),
+    );
+    if (catCount == 0) {
+      await _seedDefaultMenu(db);
+    }
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
+    await _ensureTables(db);
 
     // Seed required singleton rows
     await db.insert('shift',   {'id': 1, 'status': 'closed'});

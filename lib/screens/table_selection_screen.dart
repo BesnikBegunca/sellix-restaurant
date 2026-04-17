@@ -38,10 +38,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
   Widget build(BuildContext context) {
     final tables = _m.cashierTables;
     final occupied = tables.where((t) => t.occupied).length;
-    final total = tables.fold<double>(
-      0,
-      (s, t) => s + (t.currentTotal ?? 0),
-    );
+    final total = tables.fold<double>(0, (s, t) => s + (t.currentTotal ?? 0));
 
     return Scaffold(
       backgroundColor: AppColors.beige,
@@ -49,6 +46,9 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
         children: [
           GgAppHeader(
             showBack: true,
+            showLogo: false,
+            title: 'Tavolinat',
+            userName: widget.waiterName,
             onBack: () => Navigator.of(context).maybePop(),
           ),
           Expanded(
@@ -79,8 +79,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                           final rows = (itemCount / columns).ceil();
                           final cellW = (W - (columns - 1) * spacing) / columns;
                           final cellH = cellW / ratio;
-                          final needed =
-                              rows * cellH + (rows - 1) * spacing;
+                          final needed = rows * cellH + (rows - 1) * spacing;
                           if (needed <= H) break;
                           columns++;
                         }
@@ -89,11 +88,11 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: columns,
-                            crossAxisSpacing: spacing,
-                            mainAxisSpacing: spacing,
-                            childAspectRatio: ratio,
-                          ),
+                                crossAxisCount: columns,
+                                crossAxisSpacing: spacing,
+                                mainAxisSpacing: spacing,
+                                childAspectRatio: ratio,
+                              ),
                           itemCount: itemCount,
                           itemBuilder: (context, i) {
                             if (i == tables.length) {
@@ -184,48 +183,6 @@ class _TableScreenHeaderRow extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.lightGreenBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.badge_outlined,
-                      size: 16, color: AppColors.primaryGreen),
-                  const SizedBox(width: 6),
-                  Text(
-                    waiterName,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Select Table',
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: AppColors.darkGreenText,
-                height: 1.1,
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -246,10 +203,7 @@ class _OccupiedCountBadge extends StatelessWidget {
       ),
       child: Text(
         '$occupied occupied',
-        style: const TextStyle(
-          fontSize: 14,
-          color: AppColors.primaryGreen,
-        ),
+        style: const TextStyle(fontSize: 14, color: AppColors.primaryGreen),
       ),
     );
   }
@@ -381,67 +335,64 @@ class _TableCardState extends State<_TableCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Table ${widget.table.id}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.darkGreenText,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Table ${widget.table.id}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.darkGreenText,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _StatusPill(occupied: o),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(height: 1, color: AppColors.borderSubtle(0.1)),
+                    const SizedBox(height: 8),
+                    if (o && widget.table.currentTotal != null) ...[
+                      const Text(
+                        'Current Total',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.lightGreenText,
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  _StatusPill(occupied: o),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 1,
-                color: AppColors.borderSubtle(0.1),
-              ),
-              const SizedBox(height: 8),
-              if (o && widget.table.currentTotal != null) ...[
-                const Text(
-                  'Current Total',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '\$${widget.table.currentTotal!.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.darkGreenText,
-                    ),
-                  ),
-                ),
-              ] else
-                const Text(
-                  'No active orders',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-            ],
-                  ),
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '\$${widget.table.currentTotal!.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.darkGreenText,
+                          ),
+                        ),
+                      ),
+                    ] else
+                      const Text(
+                        'No active orders',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.lightGreenText,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
+      ),
     );
   }
 }

@@ -11,7 +11,15 @@
       "Bash(powershell -Command \"Get-Command git -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
       "Bash(powershell -Command 'Get-Command dart | Select-Object -ExpandProperty Source')",
       "Bash(powershell -Command 'Set-Location \"C:\\\\Users\\\\PC\\\\Desktop\\\\pos_system\"; & \"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" pub get 2>&1')",
-      "Bash(powershell -Command 'Set-Location \"C:\\\\Users\\\\PC\\\\Desktop\\\\pos_system\"; $env:PATH += \";C:\\\\Windows\\\\System32\"; & \"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" analyze lib 2>&1')"
+      "Bash(powershell -Command 'Set-Location \"C:\\\\Users\\\\PC\\\\Desktop\\\\pos_system\"; $env:PATH += \";C:\\\\Windows\\\\System32\"; & \"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" analyze lib 2>&1')",
+      "Bash(\"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" analyze:*)",
+      "Bash(\"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\flutter.bat\" run:*)",
+      "Bash(\"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" run:*)",
+      "Bash(powershell -Command \"& 'C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat' compile exe lib/main.dart -o /tmp/test_build.exe 2>&1 | Select-Object -First 50\")",
+      "Bash(\"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" pub:*)",
+      "Bash(dart analyze:*)",
+      "Bash(\"C:\\\\Program Files\\\\flutter\\\\bin\\\\flutter.bat\" pub get)",
+      "Bash(/c/flutter/src/flutter/bin/dart pub *)"
     ]
   }
 }
