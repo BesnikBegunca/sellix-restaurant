@@ -77,8 +77,7 @@ class _PinInputDialogState extends State<_PinInputDialog> {
   }
 }
 
-/// Waiter Selection Screen - displays list of waiters for NAME mode login.
-/// Waiters click their name to access their tables.
+/// Waiter Selection Screen
 class WaiterSelectionScreen extends StatefulWidget {
   const WaiterSelectionScreen({super.key});
 
@@ -145,8 +144,10 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                     hint: 'Enter admin PIN',
                     onSubmit: (pin) async {
                       Navigator.of(context).pop();
+
                       if (pin == '9999') {
                         if (!mounted) return;
+
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const ManagerDashboardScreen(),
@@ -154,6 +155,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                         );
                       } else {
                         if (!mounted) return;
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Admin PIN i gabuar.')),
                         );
@@ -166,20 +168,24 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
           ),
         ],
       ),
+
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            const SizedBox(height: 10),
+
             const Text(
               'Welcome! Please select your name',
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: AppColors.darkGreenText,
               ),
             ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 35),
 
             Expanded(
               child: waiters.isEmpty
@@ -189,7 +195,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                         children: const [
                           Icon(
                             Icons.person_outline,
-                            size: 64,
+                            size: 70,
                             color: AppColors.primaryGreen,
                           ),
                           SizedBox(height: 16),
@@ -203,22 +209,20 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                         ],
                       ),
                     )
-                  : GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.85,
-                          ),
-                      itemCount: waiters.length,
-                      itemBuilder: (context, index) {
-                        final waiter = waiters[index];
-                        return _buildWaiterButton(
-                          name: waiter.name,
-                          onTap: () => _selectWaiter(waiter.name),
-                        );
-                      },
+                  : SingleChildScrollView(
+                      child: Center(
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 24,
+                          runSpacing: 24,
+                          children: waiters.map((waiter) {
+                            return _buildWaiterButton(
+                              name: waiter.name,
+                              onTap: () => _selectWaiter(waiter.name),
+                            );
+                          }).toList(),
+                        ),
+                      ),
                     ),
             ),
           ],
@@ -231,37 +235,55 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
     required String name,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 2,
-      color: AppColors.white,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.primaryGreen, width: 1),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.person, size: 38, color: AppColors.primaryGreen),
-              const SizedBox(height: 8),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  name,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.darkGreenText,
+    return SizedBox(
+      width: 230,
+      height: 200,
+      child: Card(
+        elevation: 5,
+        color: AppColors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.primaryGreen, width: 1.5),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    size: 42,
+                    color: AppColors.primaryGreen,
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 18),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
