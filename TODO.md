@@ -1,7 +1,7 @@
-# TODO
+- [x] Implement Admin PIN-protected access on WaiterSelectionScreen
+- [x] Add Admin button and PIN entry dialog
+- [x] Navigate to ManagerDashboardScreen on correct PIN (hardcoded 9999)
+- [x] Show error snackbar on wrong PIN
+- [ ] Run flutter run and manually test flow (Admin + waiter select)
 
-- [ ] Create edit plan after inspecting login_screen.dart and waiter_selection_screen.dart and relevant dependencies.
-- [ ] Apply fixes to `lib/screens/login_screen.dart`.
-- [ ] Apply fixes to `lib/screens/waiter_selection_screen.dart`.
-- [ ] Run `flutter analyze` and/or `flutter test` to confirm no remaining errors.
 

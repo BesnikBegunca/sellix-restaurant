@@ -1,8 +1,81 @@
 import 'package:flutter/material.dart';
+
 import '../manager/manager_data.dart';
 import '../theme/app_colors.dart';
-import '../widgets/hover_interaction.dart';
+
+import 'manager_dashboard_screen.dart';
 import 'table_selection_screen.dart';
+
+class _PinInputDialog extends StatefulWidget {
+  const _PinInputDialog({
+    required this.title,
+    required this.hint,
+    required this.onSubmit,
+  });
+
+  final String title;
+  final String hint;
+  final ValueChanged<String> onSubmit;
+
+  @override
+  State<_PinInputDialog> createState() => _PinInputDialogState();
+}
+
+class _PinInputDialogState extends State<_PinInputDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _enabled => _controller.text.length >= 4;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _controller,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              obscureText: true,
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                counterText: '',
+              ),
+              autofocus: true,
+              onSubmitted: (_) {
+                if (_enabled) {
+                  widget.onSubmit(_controller.text);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (_enabled) widget.onSubmit(_controller.text);
+                    },
+                    child: const Text('Confirm'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 /// Waiter Selection Screen - displays list of waiters for NAME mode login.
 /// Waiters click their name to access their tables.
@@ -58,6 +131,40 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: _backToLogin,
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Admin',
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            onPressed: () {
+              showDialog<void>(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) {
+                  return _PinInputDialog(
+                    title: 'Admin PIN',
+                    hint: 'Enter admin PIN',
+                    onSubmit: (pin) async {
+                      Navigator.of(context).pop();
+                      if (pin == '9999') {
+                        if (!mounted) return;
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ManagerDashboardScreen(),
+                          ),
+                        );
+                      } else {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Admin PIN i gabuar.')),
+                        );
+                      }
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
