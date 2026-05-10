@@ -124,6 +124,7 @@ class ManagerData extends ChangeNotifier {
 
   String? companyName;
   Uint8List? companyLogoBytes;
+  String loginMode = 'PINMODE'; // 'PINMODE' or 'NAMEMODE'
 
   // ── shift ──────────────────────────────────────────────────────────────────
 
@@ -176,6 +177,7 @@ class ManagerData extends ChangeNotifier {
       companyLogoBytes = blob != null
           ? Uint8List.fromList(blob as List<int>)
           : null;
+      loginMode = (company['loginMode'] as String?) ?? 'PINMODE';
     }
 
     // Shift — system is always active; only load last-closed timestamp for display.
@@ -268,6 +270,13 @@ class ManagerData extends ChangeNotifier {
   Future<void> clearCompanyLogo() async {
     companyLogoBytes = null;
     await DatabaseService.instance.updateCompanyLogo(null);
+    notifyListeners();
+  }
+
+  Future<void> setLoginMode(String mode) async {
+    if (mode != 'PINMODE' && mode != 'NAMEMODE') return;
+    loginMode = mode;
+    await DatabaseService.instance.updateLoginMode(mode);
     notifyListeners();
   }
 
@@ -380,14 +389,17 @@ class ManagerData extends ChangeNotifier {
   // ─────────────────────────── advances ─────────────────────────────────────
 
   List<AdvanceRow> advancesFor(String waiterName, DateTime from, DateTime to) =>
-      _advances.where((a) =>
-        a.waiterName == waiterName &&
-        !a.date.isBefore(from) &&
-        !a.date.isAfter(to)).toList();
+      _advances
+          .where(
+            (a) =>
+                a.waiterName == waiterName &&
+                !a.date.isBefore(from) &&
+                !a.date.isAfter(to),
+          )
+          .toList();
 
   double totalAdvancesFor(String waiterName, DateTime from, DateTime to) =>
-      advancesFor(waiterName, from, to)
-          .fold(0.0, (s, a) => s + a.amount);
+      advancesFor(waiterName, from, to).fold(0.0, (s, a) => s + a.amount);
 
   Future<void> addAdvance(AdvanceRow row) async {
     final newId = await DatabaseService.instance.insertAdvance(
@@ -552,25 +564,35 @@ class ManagerData extends ChangeNotifier {
 
   // ─────────────────────────────── menu ─────────────────────────────────────
 
-  Future<void> addCategory(String name) async {
+  Future<void> addCategoryWithIcon({
+    required String name,
+    required int iconCodePoint,
+  }) async {
     final id = 'cat_${DateTime.now().millisecondsSinceEpoch}';
     final sortOrder = _categories.length;
+
     await DatabaseService.instance.insertCategory(
       id: id,
       name: name.trim(),
-      iconCodePoint: Icons.restaurant_menu_outlined.codePoint,
+      iconCodePoint: iconCodePoint,
       sortOrder: sortOrder,
     );
+
+    final icon = IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+
     _categories = [
       ..._categories,
-      CategoryData(
-        id: id,
-        name: name.trim(),
-        icon: Icons.restaurant_menu_outlined,
-        products: const [],
-      ),
+      CategoryData(id: id, name: name.trim(), icon: icon, products: const []),
     ];
     notifyListeners();
+  }
+
+  // Backward compatible helper (keeps older code compiling if present).
+  Future<void> addCategory(String name) async {
+    await addCategoryWithIcon(
+      name: name,
+      iconCodePoint: Icons.restaurant_menu_outlined.codePoint,
+    );
   }
 
   Future<void> removeCategory(String categoryId) async {

@@ -147,15 +147,19 @@ class _CompanySettingsPanel extends StatefulWidget {
 class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
   final _nameCtrl = TextEditingController();
   String? _errorMsg;
+  late String _selectedLoginMode;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl.text = widget.m.companyName ?? '';
+    _selectedLoginMode = widget.m.loginMode;
     widget.m.addListener(_onM);
   }
 
-  void _onM() => setState(() {});
+  void _onM() => setState(() {
+    _selectedLoginMode = widget.m.loginMode;
+  });
 
   @override
   void dispose() {
@@ -217,6 +221,86 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
     }
   }
 
+  Future<void> _changeLoginMode(String newMode) async {
+    await widget.m.setLoginMode(newMode);
+    setState(() => _selectedLoginMode = newMode);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login mode changed to ${newMode == 'PINMODE' ? 'PIN' : 'Name'} Mode'),
+          backgroundColor: AppColors.primaryGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Widget _buildLoginModeOption({
+    required String mode,
+    required String title,
+    required String description,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: () => _changeLoginMode(mode),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : AppColors.lightGreenText,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? AppColors.lightGreenBg : AppColors.white,
+        ),
+        child: Row(
+          children: [
+            Radio<String>(
+              value: mode,
+              groupValue: _selectedLoginMode,
+              onChanged: (value) {
+                if (value != null) _changeLoginMode(value);
+              },
+              activeColor: AppColors.primaryGreen,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected
+                          ? AppColors.primaryGreen
+                          : AppColors.darkGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.lightGreenText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.primaryGreen,
+                size: 24,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -248,6 +332,40 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
             ],
           ),
         ),
+
+        const SizedBox(height: 32),
+
+        // Login Mode Section
+        _buildSectionCard(
+          title: 'Login Mode',
+          icon: Icons.security,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Select how waiters log into the system:',
+                style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+              ),
+              const SizedBox(height: 16),
+              // PIN Mode Option
+              _buildLoginModeOption(
+                mode: 'PINMODE',
+                title: '🔐 PIN Mode',
+                description: 'Waiters enter their PIN (4-6 digits)',
+                isSelected: _selectedLoginMode == 'PINMODE',
+              ),
+              const SizedBox(height: 12),
+              // Name Mode Option
+              _buildLoginModeOption(
+                mode: 'NAMEMODE',
+                title: '👤 Name Mode',
+                description: 'Waiters select their name from a list',
+                isSelected: _selectedLoginMode == 'NAMEMODE',
+              ),
+            ],
+          ),
+        ),
+
         const SizedBox(height: 32),
 
         // Company Name Section
