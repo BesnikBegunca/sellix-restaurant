@@ -2,10 +2,42 @@ import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
 import '../theme/app_colors.dart';
-import '../widgets/hover_interaction.dart';
 import '../widgets/gg_header.dart';
+import '../widgets/hover_interaction.dart';
+
+// Reuse hover widgets already defined in `hover_interaction.dart`.
+// (HoverInteraction might not exist in this project version.)
+
 import 'manager_dashboard_screen.dart';
 import 'table_selection_screen.dart';
+import 'waiter_selection_screen.dart';
+
+class _HoverCardButton extends StatefulWidget {
+  const _HoverCardButton({required this.onPressed, required this.builder});
+
+  final VoidCallback onPressed;
+  final Widget Function(BuildContext context, bool isHovered) builder;
+
+  @override
+  State<_HoverCardButton> createState() => _HoverCardButtonState();
+}
+
+class _HoverCardButtonState extends State<_HoverCardButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onPressed,
+        child: widget.builder(context, _hovered),
+      ),
+    );
+  }
+}
 
 /// Ekrani 1: PIN + kalkulator ndrysi; tastiera kryesore shërben për të dy sipas fokusit.
 class LoginScreen extends StatefulWidget {
@@ -136,26 +168,50 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final waiter = ManagerData.instance.findWaiterByPin(_pin);
-    setState(() => _pin = '');
+    // In PINMODE, check for waiter PIN
+    if (ManagerData.instance.loginMode == 'PINMODE') {
+      final waiter = ManagerData.instance.findWaiterByPin(_pin);
+      setState(() => _pin = '');
 
-    if (waiter != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => TableSelectionScreen(waiterName: waiter.name),
+      if (waiter != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => TableSelectionScreen(waiterName: waiter.name),
+          ),
+        );
+        return;
+      }
+
+      // PIN i panjohur
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('PIN i gabuar. Kontakto menaxherin.'),
+          backgroundColor: AppColors.negativeText,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
-      return;
+    } else {
+      // NAMEMODE: Only accept admin PIN
+      setState(() => _pin = '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('PIN i gabuar. Kontakto menaxherin.'),
+          backgroundColor: AppColors.negativeText,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
+  }
 
-    // PIN i panjohur
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('PIN i gabuar. Kontakto menaxherin.'),
-        backgroundColor: AppColors.negativeText,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+  void _goToWaiterSelection() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const WaiterSelectionScreen()),
     );
   }
 
@@ -197,7 +253,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Expanded(flex: 3, child: _pinCard(context)),
                                 const SizedBox(width: 24),
-                                SizedBox(width: 320, child: _calcCard(context)),
+                                SizedBox(
+                                  width: 320,
+                                  child:
+                                      ManagerData.instance.loginMode ==
+                                          'NAMEMODE'
+                                      ? _waiterSelectionCard(context)
+                                      : _calcCard(context),
+                                ),
                               ],
                             ),
                           ),
@@ -254,6 +317,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _pinCard(BuildContext context) {
+    final isNameMode = ManagerData.instance.loginMode == 'NAMEMODE';
+
     return GestureDetector(
       onTap: () => _setCalcField(null),
       child: Container(
@@ -273,15 +338,33 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Enter PIN',
-              style: TextStyle(
+            Text(
+              isNameMode ? 'Administrator Login' : 'Enter PIN',
+              style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w500,
                 color: AppColors.darkGreenText,
               ),
             ),
             const SizedBox(height: 24),
+            if (isNameMode) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '👤 Waiters: Click the button below to select your name',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.darkGreenText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             Center(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
@@ -300,12 +383,26 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 32),
             _keypadSection(context),
             const SizedBox(height: 16),
-            const Center(
-              child: Text(
-                'Enter 4-6 digit PIN to continue',
-                style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+            if (isNameMode)
+              const Center(
+                child: Text(
+                  'Enter admin PIN to continue',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
+              )
+            else
+              const Center(
+                child: Text(
+                  'Enter 4-6 digit PIN to continue',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -444,6 +541,78 @@ class _LoginScreenState extends State<LoginScreen> {
               style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _waiterSelectionCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderSubtle(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.person, size: 48, color: AppColors.primaryGreen),
+          const SizedBox(height: 16),
+          const Text(
+            'Are you a waiter?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Click below to select your name',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+          ),
+          const SizedBox(height: 24),
+          _HoverCardButton(
+            onPressed: _goToWaiterSelection,
+            builder: (context, isHovered) {
+              return Container(
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isHovered
+                      ? AppColors.primaryGreen
+                      : AppColors.lightGreenBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primaryGreen,
+                    width: isHovered ? 2 : 1,
+                  ),
+                ),
+                child: Text(
+                  '👤 Select Your Name',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isHovered
+                        ? AppColors.white
+                        : AppColors.darkGreenText,
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

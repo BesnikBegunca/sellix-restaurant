@@ -98,7 +98,8 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS company (
         id          INTEGER PRIMARY KEY,
         companyName TEXT,
-        companyLogo BLOB
+        companyLogo BLOB,
+        loginMode   TEXT NOT NULL DEFAULT 'PINMODE'
       )
     ''');
     await db.execute('''
@@ -145,7 +146,11 @@ class DatabaseService {
     );
     if (tableCount == 0) {
       for (var i = 1; i <= 15; i++) {
-        await db.insert('tables', {'id': i, 'occupied': 0, 'currentTotal': null});
+        await db.insert('tables', {
+          'id': i,
+          'occupied': 0,
+          'currentTotal': null,
+        });
       }
     }
     // Seed default menu if no categories exist.
@@ -161,7 +166,7 @@ class DatabaseService {
     await _ensureTables(db);
 
     // Seed required singleton rows
-    await db.insert('shift',   {'id': 1, 'status': 'closed'});
+    await db.insert('shift', {'id': 1, 'status': 'closed'});
     await db.insert('company', {'id': 1});
 
     // Seed default 15 restaurant tables
@@ -206,31 +211,185 @@ class DatabaseService {
 
     final products = [
       // Coffee
-      {'id': 'c1', 'name': 'Espresso',   'price': 2.50, 'emoji': '☕', 'imagePath': 'assets/images/espreso.webp', 'categoryId': 'coffee'},
-      {'id': 'c2', 'name': 'Macchiato',  'price': 4.00, 'emoji': '☕', 'imagePath': 'assets/images/makiato.png',  'categoryId': 'coffee'},
-      {'id': 'c3', 'name': 'Cappuccino', 'price': 4.25, 'emoji': '☕', 'imagePath': 'assets/images/kapuqino.png', 'categoryId': 'coffee'},
+      {
+        'id': 'c1',
+        'name': 'Espresso',
+        'price': 2.50,
+        'emoji': '☕',
+        'imagePath': 'assets/images/espreso.webp',
+        'categoryId': 'coffee',
+      },
+      {
+        'id': 'c2',
+        'name': 'Macchiato',
+        'price': 4.00,
+        'emoji': '☕',
+        'imagePath': 'assets/images/makiato.png',
+        'categoryId': 'coffee',
+      },
+      {
+        'id': 'c3',
+        'name': 'Cappuccino',
+        'price': 4.25,
+        'emoji': '☕',
+        'imagePath': 'assets/images/kapuqino.png',
+        'categoryId': 'coffee',
+      },
       // Spirits
-      {'id': 'sp9',  'name': 'Coca Cola', 'price': 2.50, 'emoji': '🥤', 'imagePath': 'assets/images/cocacola.png', 'categoryId': 'spirits'},
-      {'id': 'sp10', 'name': 'Fanta',     'price': 2.50, 'emoji': '🥤', 'imagePath': 'assets/images/fanta.webp',   'categoryId': 'spirits'},
-      {'id': 'sp11', 'name': 'Sprite',    'price': 2.50, 'emoji': '🥤', 'imagePath': 'assets/images/sprite.png',   'categoryId': 'spirits'},
-      {'id': 'sp12', 'name': 'Heineken',  'price': 3.50, 'emoji': '🍺', 'imagePath': 'assets/images/heineken.png', 'categoryId': 'spirits'},
-      {'id': 'sp13', 'name': 'Peja',      'price': 3.00, 'emoji': '🍺', 'imagePath': 'assets/images/peja.png',     'categoryId': 'spirits'},
-      {'id': 'sp14', 'name': 'Shkupi',    'price': 3.00, 'emoji': '🍺', 'imagePath': 'assets/images/shkupi.png',   'categoryId': 'spirits'},
-      {'id': 'sp15', 'name': 'Tuborg',    'price': 3.50, 'emoji': '🍺', 'imagePath': 'assets/images/tuborg.png',   'categoryId': 'spirits'},
+      {
+        'id': 'sp9',
+        'name': 'Coca Cola',
+        'price': 2.50,
+        'emoji': '🥤',
+        'imagePath': 'assets/images/cocacola.png',
+        'categoryId': 'spirits',
+      },
+      {
+        'id': 'sp10',
+        'name': 'Fanta',
+        'price': 2.50,
+        'emoji': '🥤',
+        'imagePath': 'assets/images/fanta.webp',
+        'categoryId': 'spirits',
+      },
+      {
+        'id': 'sp11',
+        'name': 'Sprite',
+        'price': 2.50,
+        'emoji': '🥤',
+        'imagePath': 'assets/images/sprite.png',
+        'categoryId': 'spirits',
+      },
+      {
+        'id': 'sp12',
+        'name': 'Heineken',
+        'price': 3.50,
+        'emoji': '🍺',
+        'imagePath': 'assets/images/heineken.png',
+        'categoryId': 'spirits',
+      },
+      {
+        'id': 'sp13',
+        'name': 'Peja',
+        'price': 3.00,
+        'emoji': '🍺',
+        'imagePath': 'assets/images/peja.png',
+        'categoryId': 'spirits',
+      },
+      {
+        'id': 'sp14',
+        'name': 'Shkupi',
+        'price': 3.00,
+        'emoji': '🍺',
+        'imagePath': 'assets/images/shkupi.png',
+        'categoryId': 'spirits',
+      },
+      {
+        'id': 'sp15',
+        'name': 'Tuborg',
+        'price': 3.50,
+        'emoji': '🍺',
+        'imagePath': 'assets/images/tuborg.png',
+        'categoryId': 'spirits',
+      },
       // Cocktails
-      {'id': 'ck1', 'name': 'Mojito',        'price': 9.00,  'emoji': '🍹', 'imagePath': null, 'categoryId': 'cocktails'},
-      {'id': 'ck2', 'name': 'Margarita',     'price': 9.50,  'emoji': '🍸', 'imagePath': null, 'categoryId': 'cocktails'},
-      {'id': 'ck3', 'name': 'Martini',       'price': 10.00, 'emoji': '🍸', 'imagePath': null, 'categoryId': 'cocktails'},
-      {'id': 'ck4', 'name': 'Cosmopolitan',  'price': 9.75,  'emoji': '🍸', 'imagePath': null, 'categoryId': 'cocktails'},
-      {'id': 'ck5', 'name': 'Old Fashioned', 'price': 10.50, 'emoji': '🥃', 'imagePath': null, 'categoryId': 'cocktails'},
-      {'id': 'ck6', 'name': 'Negroni',       'price': 10.00, 'emoji': '🍹', 'imagePath': null, 'categoryId': 'cocktails'},
-      {'id': 'ck7', 'name': 'Aperol Spritz', 'price': 9.25,  'emoji': '🧡', 'imagePath': null, 'categoryId': 'cocktails'},
-      {'id': 'ck8', 'name': 'Moscow Mule',   'price': 9.00,  'emoji': '🫚', 'imagePath': null, 'categoryId': 'cocktails'},
+      {
+        'id': 'ck1',
+        'name': 'Mojito',
+        'price': 9.00,
+        'emoji': '🍹',
+        'imagePath': null,
+        'categoryId': 'cocktails',
+      },
+      {
+        'id': 'ck2',
+        'name': 'Margarita',
+        'price': 9.50,
+        'emoji': '🍸',
+        'imagePath': null,
+        'categoryId': 'cocktails',
+      },
+      {
+        'id': 'ck3',
+        'name': 'Martini',
+        'price': 10.00,
+        'emoji': '🍸',
+        'imagePath': null,
+        'categoryId': 'cocktails',
+      },
+      {
+        'id': 'ck4',
+        'name': 'Cosmopolitan',
+        'price': 9.75,
+        'emoji': '🍸',
+        'imagePath': null,
+        'categoryId': 'cocktails',
+      },
+      {
+        'id': 'ck5',
+        'name': 'Old Fashioned',
+        'price': 10.50,
+        'emoji': '🥃',
+        'imagePath': null,
+        'categoryId': 'cocktails',
+      },
+      {
+        'id': 'ck6',
+        'name': 'Negroni',
+        'price': 10.00,
+        'emoji': '🍹',
+        'imagePath': null,
+        'categoryId': 'cocktails',
+      },
+      {
+        'id': 'ck7',
+        'name': 'Aperol Spritz',
+        'price': 9.25,
+        'emoji': '🧡',
+        'imagePath': null,
+        'categoryId': 'cocktails',
+      },
+      {
+        'id': 'ck8',
+        'name': 'Moscow Mule',
+        'price': 9.00,
+        'emoji': '🫚',
+        'imagePath': null,
+        'categoryId': 'cocktails',
+      },
       // Snack
-      {'id': 's1', 'name': 'Croissant', 'price': 3.50, 'emoji': '🥐', 'imagePath': null, 'categoryId': 'snack'},
-      {'id': 's2', 'name': 'Muffin',    'price': 3.00, 'emoji': '🧁', 'imagePath': null, 'categoryId': 'snack'},
-      {'id': 's3', 'name': 'Bagel',     'price': 2.75, 'emoji': '🥯', 'imagePath': null, 'categoryId': 'snack'},
-      {'id': 's4', 'name': 'Brownie',   'price': 3.25, 'emoji': '🍫', 'imagePath': null, 'categoryId': 'snack'},
+      {
+        'id': 's1',
+        'name': 'Croissant',
+        'price': 3.50,
+        'emoji': '🥐',
+        'imagePath': null,
+        'categoryId': 'snack',
+      },
+      {
+        'id': 's2',
+        'name': 'Muffin',
+        'price': 3.00,
+        'emoji': '🧁',
+        'imagePath': null,
+        'categoryId': 'snack',
+      },
+      {
+        'id': 's3',
+        'name': 'Bagel',
+        'price': 2.75,
+        'emoji': '🥯',
+        'imagePath': null,
+        'categoryId': 'snack',
+      },
+      {
+        'id': 's4',
+        'name': 'Brownie',
+        'price': 3.25,
+        'emoji': '🍫',
+        'imagePath': null,
+        'categoryId': 'snack',
+      },
     ];
     for (final p in products) {
       await db.insert('products', p);
@@ -246,11 +405,11 @@ class DatabaseService {
 
   Future<void> insertTable(int id) async {
     final db = await database;
-    await db.insert(
-      'tables',
-      {'id': id, 'occupied': 0, 'currentTotal': null},
-      conflictAlgorithm: ConflictAlgorithm.ignore,
-    );
+    await db.insert('tables', {
+      'id': id,
+      'occupied': 0,
+      'currentTotal': null,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
   Future<void> updateTable(
@@ -326,10 +485,7 @@ class DatabaseService {
     });
   }
 
-  Future<void> updateProduct(
-    String id,
-    Map<String, dynamic> fields,
-  ) async {
+  Future<void> updateProduct(String id, Map<String, dynamic> fields) async {
     final db = await database;
     await db.update('products', fields, where: 'id = ?', whereArgs: [id]);
   }
@@ -436,11 +592,11 @@ class DatabaseService {
     required String status,
   }) async {
     final db = await database;
-    await db.update(
-      'shift',
-      {'openedAt': openedAt, 'closedAt': closedAt, 'status': status},
-      where: 'id = 1',
-    );
+    await db.update('shift', {
+      'openedAt': openedAt,
+      'closedAt': closedAt,
+      'status': status,
+    }, where: 'id = 1');
   }
 
   // ─────────────────────────── COMPANY ──────────────────────────────────────
@@ -453,20 +609,35 @@ class DatabaseService {
 
   Future<void> updateCompanyName(String name) async {
     final db = await database;
-    await db.update(
-      'company',
-      {'companyName': name},
-      where: 'id = 1',
-    );
+    await db.update('company', {'companyName': name}, where: 'id = 1');
   }
 
   Future<void> updateCompanyLogo(Uint8List? bytes) async {
     final db = await database;
-    await db.update(
-      'company',
-      {'companyLogo': bytes},
-      where: 'id = 1',
-    );
+    await db.update('company', {'companyLogo': bytes}, where: 'id = 1');
+  }
+
+  Future<String> fetchLoginMode() async {
+    final db = await database;
+    final rows = await db.query('company', where: 'id = 1');
+    if (rows.isEmpty) return 'PINMODE';
+    return (rows.first['loginMode'] as String?) ?? 'PINMODE';
+  }
+
+  Future<void> updateLoginMode(String mode) async {
+    final db = await database;
+
+    // Backward compatible: older DBs may not have `company.loginMode`.
+    // If missing, recreate the column via ALTER TABLE.
+    try {
+      await db.update('company', {'loginMode': mode}, where: 'id = 1');
+    } catch (e) {
+      // Best-effort schema repair.
+      await db.execute(
+        "ALTER TABLE company ADD COLUMN loginMode TEXT NOT NULL DEFAULT 'PINMODE'",
+      );
+      await db.update('company', {'loginMode': mode}, where: 'id = 1');
+    }
   }
 
   // ─────────────────────── WAITER SALARIES ──────────────────────────────────
@@ -474,16 +645,18 @@ class DatabaseService {
   Future<Map<String, double>> fetchAllSalaries() async {
     final db = await database;
     final rows = await db.query('waiter_salaries');
-    return {for (final r in rows) r['waiterName'] as String: (r['dailyRate'] as num).toDouble()};
+    return {
+      for (final r in rows)
+        r['waiterName'] as String: (r['dailyRate'] as num).toDouble(),
+    };
   }
 
   Future<void> upsertWaiterSalary(String waiterName, double dailyRate) async {
     final db = await database;
-    await db.insert(
-      'waiter_salaries',
-      {'waiterName': waiterName, 'dailyRate': dailyRate},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('waiter_salaries', {
+      'waiterName': waiterName,
+      'dailyRate': dailyRate,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   // ───────────────────────── ADVANCES ───────────────────────────────────────
@@ -520,15 +693,13 @@ class DatabaseService {
     return db.query('waiter_worked_days');
   }
 
-  Future<void> setWorkedDay(
-      String waiterName, String date, bool worked) async {
+  Future<void> setWorkedDay(String waiterName, String date, bool worked) async {
     final db = await database;
     if (worked) {
-      await db.insert(
-        'waiter_worked_days',
-        {'waiterName': waiterName, 'workDate': date},
-        conflictAlgorithm: ConflictAlgorithm.ignore,
-      );
+      await db.insert('waiter_worked_days', {
+        'waiterName': waiterName,
+        'workDate': date,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
     } else {
       await db.delete(
         'waiter_worked_days',

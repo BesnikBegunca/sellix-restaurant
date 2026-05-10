@@ -1,9 +1,7 @@
-# POS System Manager Dashboard PIN Visibility Fix
+- [x] Implement Admin PIN-protected access on WaiterSelectionScreen
+- [x] Add Admin button and PIN entry dialog
+- [x] Navigate to ManagerDashboardScreen on correct PIN (hardcoded 9999)
+- [x] Show error snackbar on wrong PIN
+- [ ] Run flutter run and manually test flow (Admin + waiter select)
 
-## Plan Steps:
-- [x] 1. Create TODO.md with tracking steps
-- [x] 2. Edit lib/screens/manager_dashboard_screen.dart to show plain PIN
-- [ ] 3. Verify change with read_file
-- [x] 4. Test UI (add waiter, check display)
-- [x] 5. Complete task with attempt_completion
 
