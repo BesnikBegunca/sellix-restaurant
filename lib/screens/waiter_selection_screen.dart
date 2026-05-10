@@ -167,7 +167,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -179,7 +179,8 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                 color: AppColors.darkGreenText,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+
             Expanded(
               child: waiters.isEmpty
                   ? Center(
@@ -205,10 +206,10 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                   : GridView.builder(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 1.0,
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.85,
                           ),
                       itemCount: waiters.length,
                       itemBuilder: (context, index) {
@@ -243,8 +244,9 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.person, size: 48, color: AppColors.primaryGreen),
-              const SizedBox(height: 12),
+              Icon(Icons.person, size: 38, color: AppColors.primaryGreen),
+              const SizedBox(height: 8),
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Text(
