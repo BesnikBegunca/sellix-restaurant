@@ -60,6 +60,31 @@ class SaleRow {
   );
 }
 
+/// Advance (avans) given to a waiter, persisted in the [advances] SQLite table.
+class AdvanceRow {
+  AdvanceRow({
+    this.dbId,
+    required this.waiterName,
+    required this.amount,
+    this.note = '',
+    DateTime? date,
+  }) : date = date ?? DateTime.now();
+
+  final int? dbId;
+  final String waiterName;
+  final double amount;
+  final String note;
+  final DateTime date;
+
+  factory AdvanceRow.fromMap(Map<String, dynamic> m) => AdvanceRow(
+    dbId: m['id'] as int?,
+    waiterName: m['waiterName'] as String,
+    amount: (m['amount'] as num).toDouble(),
+    note: m['note'] as String? ?? '',
+    date: DateTime.parse(m['timestamp'] as String),
+  );
+}
+
 /// Waiter with name and PIN, persisted in the [waiters] SQLite table.
 class WaiterInfo {
   WaiterInfo({this.dbId, required this.name, required this.pin});
@@ -113,6 +138,13 @@ class ManagerData extends ChangeNotifier {
   List<WaiterInfo> _waiters = [];
   List<ExpenseRow> _expenses = [];
   List<SaleRow> _salesHistory = [];
+  List<AdvanceRow> _advances = [];
+
+  /// Daily rate per waiter (waiterName → €/day).
+  Map<String, double> _salaries = {};
+
+  /// Worked days per waiter (waiterName → set of "YYYY-MM-DD" strings).
+  Map<String, Set<String>> _workedDays = {};
 
   /// Sales per waiter accumulated since last shift close (waiterName → total).
   Map<String, double> waiterSales = {};
@@ -127,6 +159,9 @@ class ManagerData extends ChangeNotifier {
   List<WaiterInfo> get waiters => List.unmodifiable(_waiters);
   List<ExpenseRow> get expenses => List.unmodifiable(_expenses);
   List<SaleRow> get salesHistory => List.unmodifiable(_salesHistory);
+  List<AdvanceRow> get advances => List.unmodifiable(_advances);
+  Map<String, double> get salaries => Map.unmodifiable(_salaries);
+  Map<String, Set<String>> get workedDays => Map.unmodifiable(_workedDays);
 
   // ─────────────────────────────── init ─────────────────────────────────────
 
@@ -169,6 +204,20 @@ class ManagerData extends ChangeNotifier {
 
     // Sales → rebuild waiterSales map
     await _reloadSales(db);
+
+    // Salaries + advances
+    _salaries = await db.fetchAllSalaries();
+    final advanceRows = await db.fetchAdvances();
+    _advances = advanceRows.map(AdvanceRow.fromMap).toList();
+
+    // Worked days
+    final workedRows = await db.fetchWorkedDays();
+    _workedDays = {};
+    for (final r in workedRows) {
+      final name = r['waiterName'] as String;
+      final date = r['workDate'] as String;
+      (_workedDays[name] ??= {}).add(date);
+    }
 
     isLoading = false;
     notifyListeners();
@@ -317,6 +366,83 @@ class ManagerData extends ChangeNotifier {
   }
 
   double get totalExpenses => _expenses.fold<double>(0, (s, e) => s + e.amount);
+
+  // ─────────────────────────── salaries ─────────────────────────────────────
+
+  double getSalary(String waiterName) => _salaries[waiterName] ?? 0.0;
+
+  Future<void> setSalary(String waiterName, double dailyRate) async {
+    await DatabaseService.instance.upsertWaiterSalary(waiterName, dailyRate);
+    _salaries = {..._salaries, waiterName: dailyRate};
+    notifyListeners();
+  }
+
+  // ─────────────────────────── advances ─────────────────────────────────────
+
+  List<AdvanceRow> advancesFor(String waiterName, DateTime from, DateTime to) =>
+      _advances.where((a) =>
+        a.waiterName == waiterName &&
+        !a.date.isBefore(from) &&
+        !a.date.isAfter(to)).toList();
+
+  double totalAdvancesFor(String waiterName, DateTime from, DateTime to) =>
+      advancesFor(waiterName, from, to)
+          .fold(0.0, (s, a) => s + a.amount);
+
+  Future<void> addAdvance(AdvanceRow row) async {
+    final newId = await DatabaseService.instance.insertAdvance(
+      waiterName: row.waiterName,
+      amount: row.amount,
+      note: row.note,
+      date: row.date,
+    );
+    _advances.insert(
+      0,
+      AdvanceRow(
+        dbId: newId,
+        waiterName: row.waiterName,
+        amount: row.amount,
+        note: row.note,
+        date: row.date,
+      ),
+    );
+    notifyListeners();
+  }
+
+  Future<void> deleteAdvance(int id) async {
+    await DatabaseService.instance.deleteAdvanceById(id);
+    _advances.removeWhere((a) => a.dbId == id);
+    notifyListeners();
+  }
+
+  // ─────────────────────── worked days ──────────────────────────────────────
+
+  static String _dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  bool isDayWorked(String waiterName, DateTime date) =>
+      _workedDays[waiterName]?.contains(_dateKey(date)) ?? false;
+
+  int workedDaysInMonth(String waiterName, int year, int month) {
+    final prefix = '$year-${month.toString().padLeft(2, '0')}-';
+    return (_workedDays[waiterName] ?? {})
+        .where((d) => d.startsWith(prefix))
+        .length;
+  }
+
+  Future<void> toggleWorkedDay(String waiterName, DateTime date) async {
+    final key = _dateKey(date);
+    final currentSet = Set<String>.from(_workedDays[waiterName] ?? {});
+    final nowWorked = !currentSet.contains(key);
+    await DatabaseService.instance.setWorkedDay(waiterName, key, nowWorked);
+    if (nowWorked) {
+      currentSet.add(key);
+    } else {
+      currentSet.remove(key);
+    }
+    _workedDays = {..._workedDays, waiterName: currentSet};
+    notifyListeners();
+  }
 
   // ─────────────────────────── profits (real DB data) ───────────────────────
 
