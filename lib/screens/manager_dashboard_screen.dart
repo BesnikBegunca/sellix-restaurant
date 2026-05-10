@@ -28,6 +28,7 @@ const _kSectionTitles = <String>[
   'Menu',
   'Tavolinat',
   'Company Settings',
+  'Pagat & Avans',
 ];
 
 /// Dashboard menaxheri (PIN 9999). Seksionet 1–8 sipas kërkesës.
@@ -126,6 +127,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         return _TablesConfigPanel(m: _m);
       case 9:
         return _CompanySettingsPanel(m: _m);
+      case 10:
+        return _StaffPayrollPanel(m: _m);
       default:
         return const SizedBox.shrink();
     }
@@ -579,6 +582,7 @@ class _ManagerSideNav extends StatelessWidget {
     (icon: Icons.menu_book_outlined, sel: Icons.menu_book, label: 'Menu'),
     (icon: Icons.grid_view_outlined, sel: Icons.grid_view, label: 'Tavolinat'),
     (icon: Icons.settings_outlined, sel: Icons.settings, label: 'Company'),
+    (icon: Icons.payments_outlined, sel: Icons.payments, label: 'Pagat'),
   ];
 
   @override
@@ -1124,11 +1128,13 @@ class _OverviewTrendAndOccupancyCard extends StatelessWidget {
     final bars = List.generate(7, (i) {
       final day = today.subtract(Duration(days: 6 - i));
       final from = DateTime(day.year, day.month, day.day);
-      final to   = DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
+      final to = DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
       return m.revenueInRange(from, to);
     });
     final hi = bars.fold(0.0, math.max);
-    final norm = hi > 0 ? bars.map((b) => b / hi).toList() : List.filled(7, 0.0);
+    final norm = hi > 0
+        ? bars.map((b) => b / hi).toList()
+        : List.filled(7, 0.0);
 
     return _OverviewSectionCard(
       title: 'Trend & kapacitet tavolinash',
@@ -2897,34 +2903,34 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
     final m = widget.m;
 
     // Revenue (shitjet nga kamarierët)
-    final revDay   = m.revenueToday;
-    final revWeek  = m.revenueThisWeek;
+    final revDay = m.revenueToday;
+    final revWeek = m.revenueThisWeek;
     final revMonth = m.revenueThisMonth;
 
     // Expenses (shpenzimet) për periudhën
-    final expDay   = m.expensesToday;
-    final expWeek  = m.expensesThisWeek;
+    final expDay = m.expensesToday;
+    final expWeek = m.expensesThisWeek;
     final expMonth = m.expensesThisMonth;
 
     // Profit = revenue – expenses
-    final profDay   = m.profitToday;
-    final profWeek  = m.profitThisWeek;
+    final profDay = m.profitToday;
+    final profWeek = m.profitThisWeek;
     final profMonth = m.profitThisMonth;
 
-    final labels    = ['Sot', 'Kjo javë', 'Ky muaj'];
-    final revenues  = [revDay, revWeek, revMonth];
-    final expenses  = [expDay, expWeek, expMonth];
-    final profits   = [profDay, profWeek, profMonth];
+    final labels = ['Sot', 'Kjo javë', 'Ky muaj'];
+    final revenues = [revDay, revWeek, revMonth];
+    final expenses = [expDay, expWeek, expMonth];
+    final profits = [profDay, profWeek, profMonth];
 
     // Normalise bar heights by the largest revenue value.
     final maxRev = revenues.fold(0.0, math.max);
-    final norm   = maxRev > 0
+    final norm = maxRev > 0
         ? revenues.map((v) => v / maxRev).toList()
         : [0.0, 0.0, 0.0];
 
-    final selProfit  = profits[_tab];
-    final selRev     = revenues[_tab];
-    final selExp     = expenses[_tab];
+    final selProfit = profits[_tab];
+    final selRev = revenues[_tab];
+    final selExp = expenses[_tab];
     final profitColor = selProfit >= 0
         ? AppColors.primaryGreen
         : AppColors.negativeText;
@@ -2984,7 +2990,8 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
           children: [
             _ProfitKpiTile(
               label: 'Fitim sot',
-              value: '${profDay >= 0 ? '' : '-'}€${profDay.abs().toStringAsFixed(2)}',
+              value:
+                  '${profDay >= 0 ? '' : '-'}€${profDay.abs().toStringAsFixed(2)}',
               icon: Icons.today_outlined,
               highlight: _tab == 0,
               positive: profDay >= 0,
@@ -2992,7 +2999,8 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
             ),
             _ProfitKpiTile(
               label: 'Fitim kjo javë',
-              value: '${profWeek >= 0 ? '' : '-'}€${profWeek.abs().toStringAsFixed(2)}',
+              value:
+                  '${profWeek >= 0 ? '' : '-'}€${profWeek.abs().toStringAsFixed(2)}',
               icon: Icons.date_range_outlined,
               highlight: _tab == 1,
               positive: profWeek >= 0,
@@ -3000,7 +3008,8 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
             ),
             _ProfitKpiTile(
               label: 'Fitim ky muaj',
-              value: '${profMonth >= 0 ? '' : '-'}€${profMonth.abs().toStringAsFixed(2)}',
+              value:
+                  '${profMonth >= 0 ? '' : '-'}€${profMonth.abs().toStringAsFixed(2)}',
               icon: Icons.calendar_month_outlined,
               highlight: _tab == 2,
               positive: profMonth >= 0,
@@ -3008,7 +3017,8 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
             ),
             _ProfitKpiTile(
               label: 'Shitje totale (sesion)',
-              value: '€${m.waiterSales.values.fold(0.0, (s, v) => s + v).toStringAsFixed(2)}',
+              value:
+                  '€${m.waiterSales.values.fold(0.0, (s, v) => s + v).toStringAsFixed(2)}',
               icon: Icons.point_of_sale_outlined,
               highlight: false,
               positive: true,
@@ -3088,7 +3098,8 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                     Expanded(
                       child: _ProfitStatCell(
                         label: 'Transaksione',
-                        value: '${m.salesHistory.where(_inPeriod(_tab)).length}',
+                        value:
+                            '${m.salesHistory.where(_inPeriod(_tab)).length}',
                         icon: Icons.receipt_outlined,
                         color: AppColors.mediumGreenText,
                       ),
@@ -3131,17 +3142,21 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                                   child: Align(
                                     alignment: Alignment.bottomCenter,
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 300),
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
                                       width: 40,
                                       height: 12 + norm[i] * 72,
                                       decoration: BoxDecoration(
                                         color: _tab == i
                                             ? AppColors.primaryGreen
-                                            : AppColors.primaryGreen
-                                                .withValues(alpha: 0.35),
-                                        borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(8),
-                                        ),
+                                            : AppColors.primaryGreen.withValues(
+                                                alpha: 0.35,
+                                              ),
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(8),
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -3183,20 +3198,46 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                 1: FlexColumnWidth(1),
               },
               children: [
-                TableRow(children: [
-                  _profitTblHead('Metrika'),
-                  _profitTblHead('Vlera', right: true),
-                ]),
-                _profitTblRow('Shitje sot',         '€${revDay.toStringAsFixed(2)}'),
-                _profitTblRow('Shitje kjo javë',     '€${revWeek.toStringAsFixed(2)}'),
-                _profitTblRow('Shitje ky muaj',      '€${revMonth.toStringAsFixed(2)}'),
-                _profitTblRow('Shpenzime sot',       '€${expDay.toStringAsFixed(2)}'),
-                _profitTblRow('Shpenzime kjo javë',  '€${expWeek.toStringAsFixed(2)}'),
-                _profitTblRow('Shpenzime ky muaj',   '€${expMonth.toStringAsFixed(2)}'),
-                _profitTblRow('Fitim sot',           '${profDay >= 0 ? '' : '-'}€${profDay.abs().toStringAsFixed(2)}'),
-                _profitTblRow('Fitim kjo javë',      '${profWeek >= 0 ? '' : '-'}€${profWeek.abs().toStringAsFixed(2)}'),
-                _profitTblRow('Fitim ky muaj',       '${profMonth >= 0 ? '' : '-'}€${profMonth.abs().toStringAsFixed(2)}'),
-                _profitTblRow('Transaksione gjithsej', '${m.salesHistory.length}'),
+                TableRow(
+                  children: [
+                    _profitTblHead('Metrika'),
+                    _profitTblHead('Vlera', right: true),
+                  ],
+                ),
+                _profitTblRow('Shitje sot', '€${revDay.toStringAsFixed(2)}'),
+                _profitTblRow(
+                  'Shitje kjo javë',
+                  '€${revWeek.toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Shitje ky muaj',
+                  '€${revMonth.toStringAsFixed(2)}',
+                ),
+                _profitTblRow('Shpenzime sot', '€${expDay.toStringAsFixed(2)}'),
+                _profitTblRow(
+                  'Shpenzime kjo javë',
+                  '€${expWeek.toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Shpenzime ky muaj',
+                  '€${expMonth.toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Fitim sot',
+                  '${profDay >= 0 ? '' : '-'}€${profDay.abs().toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Fitim kjo javë',
+                  '${profWeek >= 0 ? '' : '-'}€${profWeek.abs().toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Fitim ky muaj',
+                  '${profMonth >= 0 ? '' : '-'}€${profMonth.abs().toStringAsFixed(2)}',
+                ),
+                _profitTblRow(
+                  'Transaksione gjithsej',
+                  '${m.salesHistory.length}',
+                ),
               ],
             ),
           ),
@@ -3211,8 +3252,11 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
     final DateTime from;
     switch (tab) {
       case 1:
-        from = DateTime(now.year, now.month, now.day)
-            .subtract(Duration(days: now.weekday - 1));
+        from = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: now.weekday - 1));
         break;
       case 2:
         from = DateTime(now.year, now.month, 1);
@@ -3245,7 +3289,10 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             a,
-            style: const TextStyle(fontSize: 13, color: AppColors.darkGreenText),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.darkGreenText,
+            ),
           ),
         ),
         Padding(
@@ -3284,7 +3331,9 @@ class _ProfitKpiTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final valueColor = positive ? AppColors.primaryGreen : AppColors.negativeText;
+    final valueColor = positive
+        ? AppColors.primaryGreen
+        : AppColors.negativeText;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -3370,7 +3419,10 @@ class _ProfitStatCell extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: TextStyle(fontSize: 11, color: AppColors.mediumGreenText),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.mediumGreenText,
+                ),
               ),
             ],
           ),
@@ -4444,6 +4496,8 @@ class _MenuPanelState extends State<_MenuPanel> {
     final m = widget.m;
     final cats = m.categories;
 
+    // If user removed all categories, keep "Add category" UI visible.
+    // Products require at least one category, so they stay hidden.
     if (cats.isEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4451,8 +4505,39 @@ class _MenuPanelState extends State<_MenuPanel> {
           _sectionTitle('7. Menu / kategori dinamike'),
           const SizedBox(height: 16),
           Text(
-            'Shto të paktën një kategori.',
+            'Nuk ka kategori. Shto një kategori për të vazhduar.',
             style: TextStyle(color: AppColors.lightGreenText),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _catCtrl,
+                  decoration: _inputDeco('Emri i kategorisë së re'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              FilledButton(
+                onPressed: () {
+                  final txt = _catCtrl.text.trim();
+                  if (txt.isEmpty) return;
+                  m.addCategory(txt);
+                  _catCtrl.clear();
+                  setState(() => _selectedCatId = null);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: AppColors.white,
+                ),
+                child: const Text('Shto kategori'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'Për të shtuar produkte, duhet të ekzistojë të paktën një kategori.',
+            style: TextStyle(color: AppColors.mediumGreenText),
           ),
         ],
       );
@@ -5498,6 +5583,994 @@ class _TableStatPill extends StatelessWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.darkGreenText,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────── Staff Payroll ────────────────────────────────
+
+class _StaffPayrollPanel extends StatefulWidget {
+  const _StaffPayrollPanel({required this.m});
+  final ManagerData m;
+  @override
+  State<_StaffPayrollPanel> createState() => _StaffPayrollPanelState();
+}
+
+class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
+  late DateTime _viewMonth;
+  WaiterInfo? _selectedWaiter;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _viewMonth = DateTime(now.year, now.month);
+    widget.m.addListener(_onData);
+  }
+
+  void _onData() {
+    if (_selectedWaiter != null) {
+      final still = widget.m.waiters.where(
+        (w) => w.name == _selectedWaiter!.name,
+      );
+      if (still.isEmpty) _selectedWaiter = null;
+    }
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.m.removeListener(_onData);
+    super.dispose();
+  }
+
+  static const _monthNames = [
+    'Janar',
+    'Shkurt',
+    'Mars',
+    'Prill',
+    'Maj',
+    'Qershor',
+    'Korrik',
+    'Gusht',
+    'Shtator',
+    'Tetor',
+    'Nëntor',
+    'Dhjetor',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final m = widget.m;
+
+    if (_selectedWaiter != null) {
+      return _WaiterPayrollDetail(
+        waiter: _selectedWaiter!,
+        m: m,
+        viewMonth: _viewMonth,
+        onMonthChanged: (dt) => setState(() => _viewMonth = dt),
+        onBack: () => setState(() => _selectedWaiter = null),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('11. Pagat & Avans'),
+        const SizedBox(height: 12),
+        _buildMonthNav(),
+        const SizedBox(height: 16),
+        if (m.waiters.isEmpty)
+          _buildEmptyState()
+        else
+          ...m.waiters.map(
+            (w) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _WaiterSummaryCard(
+                waiter: w,
+                m: m,
+                viewMonth: _viewMonth,
+                onTap: () => setState(() => _selectedWaiter = w),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildMonthNav() {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => setState(
+            () => _viewMonth = DateTime(_viewMonth.year, _viewMonth.month - 1),
+          ),
+          icon: const Icon(Icons.chevron_left),
+          color: AppColors.primaryGreen,
+        ),
+        Text(
+          '${_monthNames[_viewMonth.month - 1]} ${_viewMonth.year}',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: AppColors.darkGreenText,
+          ),
+        ),
+        IconButton(
+          onPressed: () => setState(
+            () => _viewMonth = DateTime(_viewMonth.year, _viewMonth.month + 1),
+          ),
+          icon: const Icon(Icons.chevron_right),
+          color: AppColors.primaryGreen,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSubtle()),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            const Icon(
+              Icons.badge_outlined,
+              size: 48,
+              color: AppColors.lightGreenText,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Nuk ka kamarierë të regjistruar.',
+              style: TextStyle(color: AppColors.mediumGreenText, fontSize: 15),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Shko te "Kamarierët" për të shtuar punonjës.',
+              style: TextStyle(color: AppColors.lightGreenText, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────── Waiter Summary Card (list view) ─────────────────────
+
+class _WaiterSummaryCard extends StatelessWidget {
+  const _WaiterSummaryCard({
+    required this.waiter,
+    required this.m,
+    required this.viewMonth,
+    required this.onTap,
+  });
+
+  final WaiterInfo waiter;
+  final ManagerData m;
+  final DateTime viewMonth;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final worked = m.workedDaysInMonth(
+      waiter.name,
+      viewMonth.year,
+      viewMonth.month,
+    );
+    final rate = m.getSalary(waiter.name);
+    final gross = rate * worked;
+    final periodStart = DateTime(viewMonth.year, viewMonth.month, 1);
+    final periodEnd = DateTime(
+      viewMonth.year,
+      viewMonth.month + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+    final totalAdv = m.totalAdvancesFor(waiter.name, periodStart, periodEnd);
+    final net = gross - totalAdv;
+
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderSubtle()),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryGreen.withValues(alpha: 0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.15),
+                radius: 24,
+                child: Text(
+                  waiter.name.isNotEmpty ? waiter.name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: AppColors.primaryGreen,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      waiter.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      rate > 0
+                          ? '€${rate.toStringAsFixed(2)}/ditë'
+                          : 'Pa pagë të caktuar',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.mediumGreenText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  _chip(
+                    '$worked ditë',
+                    Icons.calendar_today_outlined,
+                    AppColors.primaryGreen,
+                  ),
+                  _chip(
+                    '€${gross.toStringAsFixed(0)} bruto',
+                    Icons.account_balance_wallet_outlined,
+                    AppColors.darkGreenText,
+                  ),
+                  if (totalAdv > 0)
+                    _chip(
+                      '-€${totalAdv.toStringAsFixed(0)} avans',
+                      Icons.money_off_outlined,
+                      AppColors.negativeText,
+                    ),
+                  _chip(
+                    '€${net.toStringAsFixed(0)} mbetet',
+                    Icons.check_circle_outline,
+                    net >= 0 ? AppColors.primaryGreen : AppColors.negativeText,
+                  ),
+                ],
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: AppColors.mediumGreenText),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String label, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ──────────────────────── Waiter Payroll Detail (calendar view) ───────────────
+
+class _WaiterPayrollDetail extends StatefulWidget {
+  const _WaiterPayrollDetail({
+    required this.waiter,
+    required this.m,
+    required this.viewMonth,
+    required this.onMonthChanged,
+    required this.onBack,
+  });
+
+  final WaiterInfo waiter;
+  final ManagerData m;
+  final DateTime viewMonth;
+  final ValueChanged<DateTime> onMonthChanged;
+  final VoidCallback onBack;
+
+  @override
+  State<_WaiterPayrollDetail> createState() => _WaiterPayrollDetailState();
+}
+
+class _WaiterPayrollDetailState extends State<_WaiterPayrollDetail> {
+  bool _editingRate = false;
+  bool _advancesExpanded = false;
+  late final TextEditingController _rateCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    final rate = widget.m.getSalary(widget.waiter.name);
+    _rateCtrl = TextEditingController(
+      text: rate > 0 ? rate.toStringAsFixed(2) : '',
+    );
+    widget.m.addListener(_onData);
+  }
+
+  void _onData() => setState(() {});
+
+  @override
+  void dispose() {
+    widget.m.removeListener(_onData);
+    _rateCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveRate() async {
+    final val = double.tryParse(_rateCtrl.text.replaceAll(',', '.'));
+    if (val != null && val >= 0) {
+      await widget.m.setSalary(widget.waiter.name, val);
+    }
+    if (mounted) setState(() => _editingRate = false);
+  }
+
+  Future<void> _showAddAdvanceDialog() async {
+    final amountCtrl = TextEditingController();
+    final noteCtrl = TextEditingController();
+    DateTime pickedDate = DateTime.now();
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          title: Text(
+            'Avans — ${widget.waiter.name}',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          content: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: amountCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: _inputDeco('Shuma (€)'),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: noteCtrl,
+                  decoration: _inputDeco('Shënim (opsional)'),
+                  maxLength: 80,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 18,
+                      color: AppColors.mediumGreenText,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${pickedDate.day.toString().padLeft(2, '0')}.${pickedDate.month.toString().padLeft(2, '0')}.${pickedDate.year}',
+                      style: const TextStyle(
+                        color: AppColors.darkGreenText,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () async {
+                        final d = await showDatePicker(
+                          context: ctx,
+                          initialDate: pickedDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2100),
+                        );
+                        if (d != null) setDlg(() => pickedDate = d);
+                      },
+                      child: const Text('Ndrysho'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Anulo',
+                style: TextStyle(color: AppColors.mediumGreenText),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+              ),
+              onPressed: () async {
+                final amount = double.tryParse(
+                  amountCtrl.text.replaceAll(',', '.'),
+                );
+                if (amount == null || amount <= 0) return;
+                await widget.m.addAdvance(
+                  AdvanceRow(
+                    waiterName: widget.waiter.name,
+                    amount: amount,
+                    note: noteCtrl.text.trim(),
+                    date: pickedDate,
+                  ),
+                );
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Regjistro'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static const _monthNames = [
+    'Janar',
+    'Shkurt',
+    'Mars',
+    'Prill',
+    'Maj',
+    'Qershor',
+    'Korrik',
+    'Gusht',
+    'Shtator',
+    'Tetor',
+    'Nëntor',
+    'Dhjetor',
+  ];
+  static const _dayLabels = ['Hën', 'Mar', 'Mër', 'Enj', 'Pre', 'Sht', 'Die'];
+
+  @override
+  Widget build(BuildContext context) {
+    final m = widget.m;
+    final w = widget.waiter;
+    final month = widget.viewMonth;
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final worked = m.workedDaysInMonth(w.name, month.year, month.month);
+    final rate = m.getSalary(w.name);
+    final gross = rate * worked;
+    final periodStart = DateTime(month.year, month.month, 1);
+    final periodEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59, 999);
+    final totalAdv = m.totalAdvancesFor(w.name, periodStart, periodEnd);
+    final net = gross - totalAdv;
+    final monthAdvances = m.advancesFor(w.name, periodStart, periodEnd);
+    final firstWeekday = DateTime(month.year, month.month, 1).weekday;
+    final totalCells = (firstWeekday - 1) + daysInMonth;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── top bar ──────────────────────────────────────────────────────────
+        Row(
+          children: [
+            IconButton(
+              onPressed: widget.onBack,
+              icon: const Icon(Icons.arrow_back),
+              color: AppColors.primaryGreen,
+              tooltip: 'Kthehu',
+            ),
+            CircleAvatar(
+              backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.15),
+              radius: 18,
+              child: Text(
+                w.name.isNotEmpty ? w.name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              w.name,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppColors.darkGreenText,
+              ),
+            ),
+            const Spacer(),
+            FilledButton.icon(
+              onPressed: _showAddAdvanceDialog,
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('+ Avans'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                textStyle: const TextStyle(fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // ── calendar card ─────────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderSubtle()),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryGreen.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // month nav
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () => widget.onMonthChanged(
+                      DateTime(month.year, month.month - 1),
+                    ),
+                    icon: const Icon(Icons.chevron_left),
+                    color: AppColors.primaryGreen,
+                  ),
+                  Text(
+                    '${_monthNames[month.month - 1]} ${month.year}',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => widget.onMonthChanged(
+                      DateTime(month.year, month.month + 1),
+                    ),
+                    icon: const Icon(Icons.chevron_right),
+                    color: AppColors.primaryGreen,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // weekday labels
+              Row(
+                children: _dayLabels
+                    .map(
+                      (d) => Expanded(
+                        child: Center(
+                          child: Text(
+                            d,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.mediumGreenText,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 6),
+              // day grid — click to toggle worked
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  childAspectRatio: 1.3,
+                  mainAxisSpacing: 4,
+                  crossAxisSpacing: 4,
+                ),
+                itemCount: totalCells,
+                itemBuilder: (_, i) {
+                  if (i < firstWeekday - 1) return const SizedBox.shrink();
+                  final day = i - (firstWeekday - 1) + 1;
+                  final date = DateTime(month.year, month.month, day);
+                  final isWorked = m.isDayWorked(w.name, date);
+                  return GestureDetector(
+                    onTap: () async => m.toggleWorkedDay(w.name, date),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      decoration: BoxDecoration(
+                        color: isWorked ? AppColors.primaryGreen : null,
+                        borderRadius: BorderRadius.circular(8),
+                        border: isWorked
+                            ? null
+                            : Border.all(
+                                color: AppColors.borderSubtle(0.08),
+                                width: 0.5,
+                              ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$day',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isWorked
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isWorked
+                                ? AppColors.white
+                                : AppColors.darkGreenText,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              // summary banner
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Ditë të punuara: $worked / $daysInMonth  •  ${_monthNames[month.month - 1]} ${month.year}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.primaryGreen,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── payroll card ──────────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderSubtle()),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // daily rate row
+              Row(
+                children: [
+                  const Icon(
+                    Icons.euro_outlined,
+                    size: 18,
+                    color: AppColors.mediumGreenText,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Paga ditore:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (_editingRate)
+                    SizedBox(
+                      width: 110,
+                      height: 36,
+                      child: TextField(
+                        controller: _rateCtrl,
+                        autofocus: true,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: AppColors.primaryGreen,
+                              width: 2,
+                            ),
+                          ),
+                          prefixText: '€',
+                        ),
+                        onSubmitted: (_) => _saveRate(),
+                      ),
+                    )
+                  else
+                    Text(
+                      rate > 0
+                          ? '€${rate.toStringAsFixed(2)}/ditë'
+                          : 'E pacaktuar',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: rate > 0
+                            ? AppColors.darkGreenText
+                            : AppColors.lightGreenText,
+                      ),
+                    ),
+                  const SizedBox(width: 4),
+                  if (_editingRate) ...[
+                    IconButton(
+                      onPressed: _saveRate,
+                      icon: const Icon(Icons.check, size: 18),
+                      color: AppColors.primaryGreen,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => setState(() => _editingRate = false),
+                      icon: const Icon(Icons.close, size: 18),
+                      color: AppColors.negativeText,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                    ),
+                  ] else
+                    IconButton(
+                      onPressed: () => setState(() => _editingRate = true),
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      color: AppColors.mediumGreenText,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 28,
+                        minHeight: 28,
+                      ),
+                      tooltip: 'Ndrysho pagën ditore',
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // KPI chips
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _payKpi(
+                    'Ditë të punuara',
+                    '$worked',
+                    Icons.calendar_month_outlined,
+                  ),
+                  _payKpi(
+                    'Paga bruto',
+                    '€${gross.toStringAsFixed(2)}',
+                    Icons.account_balance_wallet_outlined,
+                  ),
+                  _payKpi(
+                    'Avanse',
+                    '€${totalAdv.toStringAsFixed(2)}',
+                    Icons.money_off_outlined,
+                    negative: true,
+                  ),
+                  _payKpi(
+                    'Mbetet',
+                    '€${net.toStringAsFixed(2)}',
+                    Icons.check_circle_outline,
+                    positive: net >= 0,
+                  ),
+                ],
+              ),
+              // advances list (expandable)
+              if (monthAdvances.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _advancesExpanded = !_advancesExpanded),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _advancesExpanded
+                            ? Icons.expand_less
+                            : Icons.expand_more,
+                        size: 18,
+                        color: AppColors.mediumGreenText,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Avanse (${monthAdvances.length})',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.mediumGreenText,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_advancesExpanded) ...[
+                  const SizedBox(height: 8),
+                  ...monthAdvances.map(_buildAdvanceRow),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdvanceRow(AdvanceRow a) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.negativeBg.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: AppColors.negativeText.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.arrow_downward,
+              size: 14,
+              color: AppColors.negativeText,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '€${a.amount.toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.negativeText,
+              ),
+            ),
+            if (a.note.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  a.note,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.mediumGreenText,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ] else
+              const Spacer(),
+            Text(
+              '${a.date.day.toString().padLeft(2, '0')}.${a.date.month.toString().padLeft(2, '0')}.${a.date.year}',
+              style: TextStyle(fontSize: 11, color: AppColors.lightGreenText),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              onPressed: () async {
+                if (a.dbId != null) await widget.m.deleteAdvance(a.dbId!);
+              },
+              icon: const Icon(Icons.delete_outline, size: 16),
+              color: AppColors.negativeText,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              tooltip: 'Fshi avancin',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _payKpi(
+    String label,
+    String value,
+    IconData icon, {
+    bool negative = false,
+    bool? positive,
+  }) {
+    final Color col = positive != null
+        ? (positive ? AppColors.primaryGreen : AppColors.negativeText)
+        : negative
+        ? AppColors.negativeText
+        : AppColors.darkGreenText;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: negative
+            ? AppColors.negativeBg.withValues(alpha: 0.4)
+            : AppColors.lightGreenBg.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: negative
+              ? AppColors.negativeText.withValues(alpha: 0.12)
+              : AppColors.borderSubtle(0.12),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: col),
+          const SizedBox(width: 6),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(fontSize: 10, color: AppColors.lightGreenText),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: col,
                 ),
               ),
             ],

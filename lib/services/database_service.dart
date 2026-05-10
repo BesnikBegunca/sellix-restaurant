@@ -26,7 +26,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -99,6 +99,29 @@ class DatabaseService {
         id          INTEGER PRIMARY KEY,
         companyName TEXT,
         companyLogo BLOB
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS waiter_salaries (
+        waiterName TEXT PRIMARY KEY,
+        dailyRate  REAL NOT NULL DEFAULT 0
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS advances (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        waiterName TEXT NOT NULL,
+        amount     REAL NOT NULL,
+        note       TEXT NOT NULL DEFAULT '',
+        timestamp  TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS waiter_worked_days (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        waiterName TEXT NOT NULL,
+        workDate   TEXT NOT NULL,
+        UNIQUE(waiterName, workDate)
       )
     ''');
   }
@@ -444,5 +467,74 @@ class DatabaseService {
       {'companyLogo': bytes},
       where: 'id = 1',
     );
+  }
+
+  // ─────────────────────── WAITER SALARIES ──────────────────────────────────
+
+  Future<Map<String, double>> fetchAllSalaries() async {
+    final db = await database;
+    final rows = await db.query('waiter_salaries');
+    return {for (final r in rows) r['waiterName'] as String: (r['dailyRate'] as num).toDouble()};
+  }
+
+  Future<void> upsertWaiterSalary(String waiterName, double dailyRate) async {
+    final db = await database;
+    await db.insert(
+      'waiter_salaries',
+      {'waiterName': waiterName, 'dailyRate': dailyRate},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // ───────────────────────── ADVANCES ───────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchAdvances() async {
+    final db = await database;
+    return db.query('advances', orderBy: 'timestamp DESC');
+  }
+
+  Future<int> insertAdvance({
+    required String waiterName,
+    required double amount,
+    required String note,
+    required DateTime date,
+  }) async {
+    final db = await database;
+    return db.insert('advances', {
+      'waiterName': waiterName,
+      'amount': amount,
+      'note': note,
+      'timestamp': date.toIso8601String(),
+    });
+  }
+
+  Future<void> deleteAdvanceById(int id) async {
+    final db = await database;
+    await db.delete('advances', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ─────────────────────── WORKED DAYS ──────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchWorkedDays() async {
+    final db = await database;
+    return db.query('waiter_worked_days');
+  }
+
+  Future<void> setWorkedDay(
+      String waiterName, String date, bool worked) async {
+    final db = await database;
+    if (worked) {
+      await db.insert(
+        'waiter_worked_days',
+        {'waiterName': waiterName, 'workDate': date},
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    } else {
+      await db.delete(
+        'waiter_worked_days',
+        where: 'waiterName = ? AND workDate = ?',
+        whereArgs: [waiterName, date],
+      );
+    }
   }
 }

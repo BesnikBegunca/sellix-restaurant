@@ -19,7 +19,8 @@
       "Bash(\"C:\\\\flutter\\\\src\\\\flutter\\\\bin\\\\dart.bat\" pub:*)",
       "Bash(dart analyze:*)",
       "Bash(\"C:\\\\Program Files\\\\flutter\\\\bin\\\\flutter.bat\" pub get)",
-      "Bash(/c/flutter/src/flutter/bin/dart pub *)"
+      "Bash(/c/flutter/src/flutter/bin/dart pub *)",
+      "Bash(/c/flutter/src/flutter/bin/dart analyze *)"
     ]
   }
 }
