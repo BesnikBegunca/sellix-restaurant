@@ -54,7 +54,9 @@ Add-Type -AssemblyName System.Drawing
 # Use the printer's own paper profile (usually 80mm receipt on POS80 driver).
 \$doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0)
 
-\$font = New-Object System.Drawing.Font('Consolas', 11, [System.Drawing.FontStyle]::Regular)
+\$fontRegular = New-Object System.Drawing.Font('Consolas', 11, [System.Drawing.FontStyle]::Regular)
+\$fontBold = New-Object System.Drawing.Font('Consolas', 11, [System.Drawing.FontStyle]::Bold)
+\$lineHeight = \$fontRegular.GetHeight() + 2
 
 \$doc.add_PrintPage({
   param(\$sender, \$e)
@@ -62,7 +64,16 @@ Add-Type -AssemblyName System.Drawing
   \$x = 0
   \$y = 0
   \$e.Graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::SingleBitPerPixelGridFit
-  \$e.Graphics.DrawString(\$text, \$font, \$brush, \$x, \$y)
+  \$lines = \$text -split \"`r?`n\"
+  foreach (\$line in \$lines) {
+    if (\$line.StartsWith('[[B]]') -and \$line.EndsWith('[[/B]]')) {
+      \$clean = \$line.Substring(5, \$line.Length - 11)
+      \$e.Graphics.DrawString(\$clean, \$fontBold, \$brush, \$x, \$y)
+    } else {
+      \$e.Graphics.DrawString(\$line, \$fontRegular, \$brush, \$x, \$y)
+    }
+    \$y += \$lineHeight
+  }
   \$e.HasMorePages = \$false
 })
 

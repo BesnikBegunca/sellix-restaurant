@@ -37,12 +37,14 @@ class _CartLine {
 
 class _PosOrderScreenState extends State<PosOrderScreen> {
   int _categoryIndex = 0;
+  late int _activeOrderNumber;
   final List<_CartLine> _lines = [];
   bool _hydrated = false;
 
   @override
   void initState() {
     super.initState();
+    _activeOrderNumber = widget.orderNumber;
     ManagerData.instance.addListener(_onMenuChanged);
     _loadPersistedOrder();
   }
@@ -65,35 +67,44 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   double get _total => _lines.fold(0, (s, l) => s + l.product.price * l.qty);
 
   Future<void> _loadPersistedOrder() async {
-    final persisted = await ManagerData.instance.loadCurrentOrderLines(
-      widget.tableNumber,
-      widget.waiterName,
-    );
     if (!mounted) return;
     setState(() {
-      _lines
-        ..clear()
-        ..addAll(
-          persisted.map((l) {
-            final line = _CartLine(product: l.product);
-            line.qty = l.qty;
-            return line;
-          }),
-        );
+      // Current order UI must always start empty (no autofill).
+      _lines.clear();
       _hydrated = true;
     });
   }
 
-  Future<void> _persistOrder() async {
-    if (!_hydrated) return;
-    await ManagerData.instance.saveCurrentOrder(
-      tableId: widget.tableNumber,
-      orderNumber: widget.orderNumber,
-      waiterName: widget.waiterName,
-      lines: _lines
-          .map((l) => CurrentOrderLine(product: l.product, qty: l.qty))
-          .toList(),
-    );
+  List<CurrentOrderLine> _toCurrentLines(List<_CartLine> lines) {
+    return lines
+        .map((l) => CurrentOrderLine(product: l.product, qty: l.qty))
+        .toList();
+  }
+
+  List<CurrentOrderLine> _mergeLines(
+    List<CurrentOrderLine> base,
+    List<CurrentOrderLine> add,
+  ) {
+    final map = <String, CurrentOrderLine>{};
+    for (final l in base) {
+      map[l.product.id] = CurrentOrderLine(product: l.product, qty: l.qty);
+    }
+    for (final l in add) {
+      final existing = map[l.product.id];
+      if (existing == null) {
+        map[l.product.id] = CurrentOrderLine(product: l.product, qty: l.qty);
+      } else {
+        map[l.product.id] = CurrentOrderLine(
+          product: existing.product,
+          qty: existing.qty + l.qty,
+        );
+      }
+    }
+    return map.values.toList();
+  }
+
+  double _sumCurrentLines(List<CurrentOrderLine> lines) {
+    return lines.fold<double>(0, (s, l) => s + (l.product.price * l.qty));
   }
 
   void _addProduct(ProductItem p) {
@@ -105,7 +116,6 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         _lines.add(_CartLine(product: p));
       }
     });
-    _persistOrder();
   }
 
   void _deltaQty(ProductItem p, int delta) {
@@ -115,23 +125,28 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       _lines[i].qty += delta;
       if (_lines[i].qty <= 0) _lines.removeAt(i);
     });
-    _persistOrder();
   }
 
   Future<void> _payTable() async {
     final data = ManagerData.instance;
-    final tableTotal = _total;
+    final persisted = await ManagerData.instance.loadCurrentOrderLines(
+      widget.tableNumber,
+      widget.waiterName,
+    );
+    final combined = _mergeLines(persisted, _toCurrentLines(_lines));
+    final tableTotal = _sumCurrentLines(combined);
     try {
-      if (_lines.isNotEmpty) {
+      if (combined.isNotEmpty) {
         await ReceiptPrinter.printKitchenOrder(
           companyName: ManagerData.instance.companyName ?? 'POS System',
           waiterName: widget.waiterName,
           tableNumber: widget.tableNumber,
-          orderNumber: widget.orderNumber,
-          lines: _lines
+          orderNumber: _activeOrderNumber,
+          lines: combined
               .map((l) => ReceiptLine(product: l.product, qty: l.qty))
               .toList(),
           total: tableTotal,
+          paymentReceipt: true,
         );
       }
     } catch (_) {}
@@ -232,7 +247,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         );
       },
     );
-    ManagerData.instance.clearTable(widget.tableNumber, widget.waiterName);
+    await ManagerData.instance.clearTable(widget.tableNumber, widget.waiterName);
     if (mounted) {
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
@@ -240,12 +255,24 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   Future<void> _sendOrder() async {
     if (_lines.isEmpty) return;
-    ManagerData.instance.updateTableTotal(
+    final persisted = await ManagerData.instance.loadCurrentOrderLines(
       widget.tableNumber,
-      _total,
       widget.waiterName,
     );
-    await _persistOrder();
+    final merged = _mergeLines(persisted, _toCurrentLines(_lines));
+    final mergedTotal = _sumCurrentLines(merged);
+
+    ManagerData.instance.updateTableTotal(
+      widget.tableNumber,
+      mergedTotal,
+      widget.waiterName,
+    );
+    await ManagerData.instance.saveCurrentOrder(
+      tableId: widget.tableNumber,
+      orderNumber: _activeOrderNumber,
+      waiterName: widget.waiterName,
+      lines: merged,
+    );
 
     // Printo kuponin termik / POS80 (tekst i formatum per POS80).
     try {
@@ -253,7 +280,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         companyName: ManagerData.instance.companyName ?? 'POS System',
         waiterName: widget.waiterName,
         tableNumber: widget.tableNumber,
-        orderNumber: widget.orderNumber,
+        orderNumber: _activeOrderNumber,
         lines: _lines
             .map((l) => ReceiptLine(product: l.product, qty: l.qty))
             .toList(),
@@ -317,7 +344,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Order #${widget.orderNumber}',
+                    'Order #$_activeOrderNumber',
                     style: const TextStyle(
                       fontSize: 16,
                       color: AppColors.lightGreenText,
@@ -449,7 +476,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                         width: 380,
                         child: _OrderPanel(
                           tableNumber: widget.tableNumber,
-                          orderNumber: widget.orderNumber,
+                          orderNumber: _activeOrderNumber,
                           lines: _lines,
                           total: _total,
                           onDelta: _deltaQty,
@@ -778,7 +805,7 @@ class _OrderPanel extends StatelessWidget {
           Row(
             children: [
               Text(
-                '#$orderNumber',
+                '#${orderNumber.toString().padLeft(2, '0')}',
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.lightGreenText,

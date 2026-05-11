@@ -12,6 +12,7 @@ class ReceiptPrinter {
     required int orderNumber,
     required List<ReceiptLine> lines,
     required double total,
+    bool paymentReceipt = false,
   }) async {
     final text = buildKitchenOrderReceiptText(
       companyName: companyName,
@@ -20,6 +21,7 @@ class ReceiptPrinter {
       orderNumber: orderNumber,
       lines: lines,
       total: total,
+      paymentReceipt: paymentReceipt,
     );
 
     final selectedPrinter = await PrinterSettingsStore.loadSelectedPrinterName();

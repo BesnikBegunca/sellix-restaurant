@@ -316,8 +316,20 @@ class ManagerData extends ChangeNotifier {
     );
     // Clear all sales so totals start fresh from zero.
     await DatabaseService.instance.clearSales();
+    await DatabaseService.instance.clearAllCurrentOrdersAndResetTables();
     waiterSales.clear();
     _salesHistory.clear();
+    _cashierTables = _cashierTables
+        .map(
+          (t) => TableInfo(
+            id: t.id,
+            occupied: false,
+            currentTotal: null,
+            assignedWaiterName: null,
+            currentOrderNumber: 0,
+          ),
+        )
+        .toList();
     notifyListeners();
   }
 
@@ -799,17 +811,27 @@ class ManagerData extends ChangeNotifier {
   }
 
   Future<void> clearTable(int tableId, String waiterName) async {
+    final current = _cashierTables.firstWhere(
+      (t) => t.id == tableId,
+      orElse: () => TableInfo(id: tableId, occupied: false),
+    );
     await DatabaseService.instance.updateTable(
       tableId,
       occupied: false,
       currentTotal: null,
       assignedWaiterName: null,
-      currentOrderNumber: null,
+      currentOrderNumber: current.currentOrderNumber ?? 0,
     );
     await DatabaseService.instance.clearCurrentOrder(tableId, waiterName);
     _cashierTables = _cashierTables.map((t) {
       if (t.id != tableId) return t;
-      return TableInfo(id: t.id, occupied: false);
+      return TableInfo(
+        id: t.id,
+        occupied: false,
+        currentTotal: null,
+        assignedWaiterName: null,
+        currentOrderNumber: t.currentOrderNumber ?? 0,
+      );
     }).toList();
     notifyListeners();
   }
@@ -919,7 +941,12 @@ class ManagerData extends ChangeNotifier {
     return _cashierTables.map((t) {
       final m = byTable[t.id];
       if (m == null) {
-        return TableInfo(id: t.id, occupied: false, currentTotal: null);
+        return TableInfo(
+          id: t.id,
+          occupied: false,
+          currentTotal: null,
+          currentOrderNumber: t.currentOrderNumber ?? 0,
+        );
       }
       return TableInfo(
         id: t.id,

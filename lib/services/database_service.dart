@@ -590,6 +590,20 @@ class DatabaseService {
     );
   }
 
+  Future<void> clearAllCurrentOrdersAndResetTables() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('current_orders');
+      await txn.delete('current_order_lines');
+      await txn.update('tables', {
+        'occupied': 0,
+        'currentTotal': null,
+        'assignedWaiterName': null,
+        'currentOrderNumber': 0,
+      });
+    });
+  }
+
   // ─────────────────────────── CATEGORIES ───────────────────────────────────
 
   Future<List<Map<String, dynamic>>> fetchCategories() async {
