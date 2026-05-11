@@ -10,6 +10,8 @@ import 'package:printing/printing.dart';
 import '../manager/manager_data.dart';
 import '../services/expenses_pdf_export.dart';
 import '../services/manager_summary_pdf.dart';
+import '../services/printer_settings_store.dart';
+import '../services/windows_printers_service.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
 import '../utils/image_utils.dart';
@@ -148,6 +150,9 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
   final _nameCtrl = TextEditingController();
   String? _errorMsg;
   late String _selectedLoginMode;
+  List<String> _printers = const [];
+  String _selectedPrinter = '';
+  bool _loadingPrinters = true;
 
   @override
   void initState() {
@@ -155,6 +160,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
     _nameCtrl.text = widget.m.companyName ?? '';
     _selectedLoginMode = widget.m.loginMode;
     widget.m.addListener(_onM);
+    _loadPrinters();
   }
 
   void _onM() => setState(() {
@@ -233,6 +239,31 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
         ),
       );
     }
+  }
+
+  Future<void> _loadPrinters() async {
+    setState(() => _loadingPrinters = true);
+    final selected = await PrinterSettingsStore.loadSelectedPrinterName();
+    final printers = await WindowsPrintersService.listInstalledPrinters();
+    if (!mounted) return;
+    setState(() {
+      _printers = printers;
+      _selectedPrinter = selected;
+      _loadingPrinters = false;
+    });
+  }
+
+  Future<void> _savePrinter(String printerName) async {
+    await PrinterSettingsStore.saveSelectedPrinterName(printerName);
+    if (!mounted) return;
+    setState(() => _selectedPrinter = printerName);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Printer selected: $printerName'),
+        backgroundColor: AppColors.primaryGreen,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Widget _buildLoginModeOption({
@@ -361,6 +392,65 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
                 title: '👤 Name Mode',
                 description: 'Waiters select their name from a list',
                 isSelected: _selectedLoginMode == 'NAMEMODE',
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 32),
+
+        _buildSectionCard(
+          title: 'Printers',
+          icon: Icons.print,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Select Windows printer for POS80 receipts.',
+                style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+              ),
+              const SizedBox(height: 16),
+              if (_loadingPrinters)
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                )
+              else if (_printers.isEmpty)
+                const Text(
+                  'No Windows printers found.',
+                  style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+                )
+              else
+                DropdownButtonFormField<String>(
+                  value: _printers.contains(_selectedPrinter)
+                      ? _selectedPrinter
+                      : null,
+                  items: _printers
+                      .map(
+                        (name) => DropdownMenuItem<String>(
+                          value: name,
+                          child: Text(name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    _savePrinter(v);
+                  },
+                  decoration: _inputDeco('Select printer'),
+                ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _loadPrinters,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Refresh Printers'),
+                ),
               ),
             ],
           ),

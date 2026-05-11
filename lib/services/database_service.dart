@@ -617,6 +617,18 @@ class DatabaseService {
     await db.update('company', {'companyLogo': bytes}, where: 'id = 1');
   }
 
+  Future<void> updateCompanyPrinterName(String printerName) async {
+    final db = await database;
+
+    // Backward compatible: oudere DB may not have the column.
+    try {
+      await db.update('company', {'printerName': printerName}, where: 'id = 1');
+    } catch (_) {
+      await db.execute("ALTER TABLE company ADD COLUMN printerName TEXT");
+      await db.update('company', {'printerName': printerName}, where: 'id = 1');
+    }
+  }
+
   Future<String> fetchLoginMode() async {
     final db = await database;
     final rows = await db.query('company', where: 'id = 1');
