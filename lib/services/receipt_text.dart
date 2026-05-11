@@ -48,8 +48,12 @@ String buildKitchenOrderReceiptText({
   out.add(rule());
   out.add(center(companyName));
   out.add(rule());
-  out.add('Kamarjeri : $waiterName');
-  out.add('');
+  final waiterPart = 'Kamarjeri : $waiterName';
+  final tablePart = 'Table $tableNumber';
+  final waiterTableLine = '$waiterPart  |  $tablePart';
+  out.add(waiterTableLine.length > width
+      ? waiterTableLine.substring(0, width)
+      : waiterTableLine);
   out.add(
     padRight('Produkti', productCol) +
         padLeft('Sasia', qtyCol) +
@@ -69,7 +73,7 @@ String buildKitchenOrderReceiptText({
   out.add('');
   out.add(rule());
   out.add(padRight('Total:', productCol + qtyCol) + padLeft(fmtMoney(total), priceCol));
-  out.add('Table $tableNumber | Order #$orderNumber');
+  out.add('Order #$orderNumber');
   final now = DateTime.now();
   out.add(
     'Date: ${two(now.day)}.${two(now.month)}.${now.year} ${two(now.hour)}:${two(now.minute)}',
