@@ -82,7 +82,7 @@ String buildKitchenOrderReceiptText({
   out.add('Order #$orderNumber');
   final now = DateTime.now();
   out.add(
-    'Date: ${two(now.day)}.${two(now.month)}.${now.year} ${two(now.hour)}:${two(now.minute)}',
+    'Date: ${two(now.day)}.${two(now.month)}.${now.year} ${two(now.hour)}:${two(now.minute)}:${two(now.second)}',
   );
   if (paymentReceipt) {
     out.add('');
