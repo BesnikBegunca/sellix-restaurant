@@ -67,6 +67,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   Future<void> _loadPersistedOrder() async {
     final persisted = await ManagerData.instance.loadCurrentOrderLines(
       widget.tableNumber,
+      widget.waiterName,
     );
     if (!mounted) return;
     setState(() {
@@ -119,15 +120,24 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   Future<void> _payTable() async {
     final data = ManagerData.instance;
-    final tableTotal = data.cashierTables
-        .firstWhere(
-          (t) => t.id == widget.tableNumber,
-          orElse: () => TableInfo(id: widget.tableNumber, occupied: false),
-        )
-        .currentTotal;
+    final tableTotal = _total;
+    try {
+      if (_lines.isNotEmpty) {
+        await ReceiptPrinter.printKitchenOrder(
+          companyName: ManagerData.instance.companyName ?? 'POS System',
+          waiterName: widget.waiterName,
+          tableNumber: widget.tableNumber,
+          orderNumber: widget.orderNumber,
+          lines: _lines
+              .map((l) => ReceiptLine(product: l.product, qty: l.qty))
+              .toList(),
+          total: tableTotal,
+        );
+      }
+    } catch (_) {}
 
     // Regjistro shitjen për kamarierin e loguar
-    if (tableTotal != null && widget.waiterName.isNotEmpty) {
+    if (tableTotal > 0 && widget.waiterName.isNotEmpty) {
       data.recordSale(widget.waiterName, tableTotal);
     }
 
@@ -191,7 +201,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                       color: AppColors.lightGreenText,
                     ),
                   ),
-                  if (tableTotal != null) ...[
+                  if (tableTotal > 0) ...[
                     const SizedBox(height: 12),
                     Text(
                       '\$${tableTotal.toStringAsFixed(2)}',
@@ -222,7 +232,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         );
       },
     );
-    ManagerData.instance.clearTable(widget.tableNumber);
+    ManagerData.instance.clearTable(widget.tableNumber, widget.waiterName);
     if (mounted) {
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
@@ -230,7 +240,11 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   Future<void> _sendOrder() async {
     if (_lines.isEmpty) return;
-    ManagerData.instance.updateTableTotal(widget.tableNumber, _total);
+    ManagerData.instance.updateTableTotal(
+      widget.tableNumber,
+      _total,
+      widget.waiterName,
+    );
     await _persistOrder();
 
     // Printo kuponin termik / POS80 (tekst i formatum per POS80).

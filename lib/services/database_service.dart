@@ -26,7 +26,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -129,9 +129,10 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS current_orders (
-        tableId      INTEGER PRIMARY KEY,
+        tableId      INTEGER NOT NULL,
         waiterName   TEXT NOT NULL,
         orderNumber  INTEGER NOT NULL,
+        currentTotal REAL NOT NULL DEFAULT 0,
         updatedAt    TEXT NOT NULL
       )
     ''');
@@ -139,6 +140,7 @@ class DatabaseService {
       CREATE TABLE IF NOT EXISTS current_order_lines (
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         tableId       INTEGER NOT NULL,
+        waiterName    TEXT NOT NULL DEFAULT '',
         productId     TEXT NOT NULL,
         productName   TEXT NOT NULL,
         productPrice  REAL NOT NULL,
@@ -147,6 +149,16 @@ class DatabaseService {
         qty           INTEGER NOT NULL
       )
     ''');
+    try {
+      await db.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_current_orders_waiter_table ON current_orders(waiterName, tableId)',
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE current_order_lines ADD COLUMN waiterName TEXT NOT NULL DEFAULT ''",
+      );
+    } catch (_) {}
   }
 
   /// Called when upgrading from any older version. Creates missing tables and
@@ -159,6 +171,14 @@ class DatabaseService {
     } catch (_) {}
     try {
       await db.execute("ALTER TABLE tables ADD COLUMN currentOrderNumber INTEGER");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE current_orders ADD COLUMN currentTotal REAL NOT NULL DEFAULT 0");
+    } catch (_) {}
+    try {
+      await db.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_current_orders_waiter_table ON current_orders(waiterName, tableId)',
+      );
     } catch (_) {}
     // Insert singleton rows only if they are missing.
     final shiftRows = await db.query('shift', where: 'id = 1');
@@ -479,41 +499,59 @@ class DatabaseService {
     required int tableId,
     required String waiterName,
     required int orderNumber,
+    required double currentTotal,
   }) async {
     final db = await database;
     await db.insert('current_orders', {
       'tableId': tableId,
       'waiterName': waiterName,
       'orderNumber': orderNumber,
+      'currentTotal': currentTotal,
       'updatedAt': DateTime.now().toIso8601String(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  Future<Map<String, dynamic>?> fetchCurrentOrderMeta(int tableId) async {
+  Future<Map<String, dynamic>?> fetchCurrentOrderMeta(
+    int tableId,
+    String waiterName,
+  ) async {
     final db = await database;
     final rows = await db.query(
       'current_orders',
-      where: 'tableId = ?',
-      whereArgs: [tableId],
+      where: 'tableId = ? AND waiterName = ?',
+      whereArgs: [tableId, waiterName],
       limit: 1,
     );
     return rows.isEmpty ? null : rows.first;
   }
 
+  Future<List<Map<String, dynamic>>> fetchCurrentOrderMetasForWaiter(
+    String waiterName,
+  ) async {
+    final db = await database;
+    return db.query(
+      'current_orders',
+      where: 'waiterName = ?',
+      whereArgs: [waiterName],
+    );
+  }
+
   Future<void> replaceCurrentOrderLines(
     int tableId,
+    String waiterName,
     List<Map<String, dynamic>> lines,
   ) async {
     final db = await database;
     await db.transaction((txn) async {
       await txn.delete(
         'current_order_lines',
-        where: 'tableId = ?',
-        whereArgs: [tableId],
+        where: 'tableId = ? AND waiterName = ?',
+        whereArgs: [tableId, waiterName],
       );
       for (final line in lines) {
         await txn.insert('current_order_lines', {
           'tableId': tableId,
+          'waiterName': waiterName,
           'productId': line['productId'],
           'productName': line['productName'],
           'productPrice': line['productPrice'],
@@ -525,23 +563,30 @@ class DatabaseService {
     });
   }
 
-  Future<List<Map<String, dynamic>>> fetchCurrentOrderLines(int tableId) async {
+  Future<List<Map<String, dynamic>>> fetchCurrentOrderLines(
+    int tableId,
+    String waiterName,
+  ) async {
     final db = await database;
     return db.query(
       'current_order_lines',
-      where: 'tableId = ?',
-      whereArgs: [tableId],
+      where: 'tableId = ? AND waiterName = ?',
+      whereArgs: [tableId, waiterName],
       orderBy: 'id ASC',
     );
   }
 
-  Future<void> clearCurrentOrder(int tableId) async {
+  Future<void> clearCurrentOrder(int tableId, String waiterName) async {
     final db = await database;
-    await db.delete('current_orders', where: 'tableId = ?', whereArgs: [tableId]);
+    await db.delete(
+      'current_orders',
+      where: 'tableId = ? AND waiterName = ?',
+      whereArgs: [tableId, waiterName],
+    );
     await db.delete(
       'current_order_lines',
-      where: 'tableId = ?',
-      whereArgs: [tableId],
+      where: 'tableId = ? AND waiterName = ?',
+      whereArgs: [tableId, waiterName],
     );
   }
 

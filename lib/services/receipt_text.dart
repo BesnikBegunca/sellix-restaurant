@@ -38,6 +38,7 @@ String buildKitchenOrderReceiptText({
 
   String rule() => '-' * width;
   String fmtMoney(double v) => v.toStringAsFixed(2);
+  String two(int v) => v.toString().padLeft(2, '0');
 
   const productCol = 16;
   const qtyCol = 6;
@@ -69,6 +70,10 @@ String buildKitchenOrderReceiptText({
   out.add(rule());
   out.add('Total: ${fmtMoney(total)}');
   out.add('Table $tableNumber | Order #$orderNumber');
+  final now = DateTime.now();
+  out.add(
+    'Date: ${two(now.day)}.${two(now.month)}.${now.year} ${two(now.hour)}:${two(now.minute)}',
+  );
 
   return out.join('\n');
 }

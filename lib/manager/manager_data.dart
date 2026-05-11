@@ -773,7 +773,7 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateTableTotal(int tableId, double total) async {
+  Future<void> updateTableTotal(int tableId, double total, String waiterName) async {
     final current = _cashierTables.firstWhere(
       (t) => t.id == tableId,
       orElse: () => TableInfo(id: tableId, occupied: false),
@@ -782,7 +782,7 @@ class ManagerData extends ChangeNotifier {
       tableId,
       occupied: true,
       currentTotal: total,
-      assignedWaiterName: current.assignedWaiterName,
+      assignedWaiterName: waiterName,
       currentOrderNumber: current.currentOrderNumber,
     );
     _cashierTables = _cashierTables.map((t) {
@@ -791,14 +791,14 @@ class ManagerData extends ChangeNotifier {
         id: t.id,
         occupied: true,
         currentTotal: total,
-        assignedWaiterName: t.assignedWaiterName,
+        assignedWaiterName: waiterName,
         currentOrderNumber: t.currentOrderNumber,
       );
     }).toList();
     notifyListeners();
   }
 
-  Future<void> clearTable(int tableId) async {
+  Future<void> clearTable(int tableId, String waiterName) async {
     await DatabaseService.instance.updateTable(
       tableId,
       occupied: false,
@@ -806,7 +806,7 @@ class ManagerData extends ChangeNotifier {
       assignedWaiterName: null,
       currentOrderNumber: null,
     );
-    await DatabaseService.instance.clearCurrentOrder(tableId);
+    await DatabaseService.instance.clearCurrentOrder(tableId, waiterName);
     _cashierTables = _cashierTables.map((t) {
       if (t.id != tableId) return t;
       return TableInfo(id: t.id, occupied: false);
@@ -833,14 +833,20 @@ class ManagerData extends ChangeNotifier {
     required String waiterName,
     required List<CurrentOrderLine> lines,
   }) async {
+    final currentTotal = lines.fold<double>(
+      0,
+      (sum, l) => sum + (l.product.price * l.qty),
+    );
     final db = DatabaseService.instance;
     await db.upsertCurrentOrderMeta(
       tableId: tableId,
       waiterName: waiterName,
       orderNumber: orderNumber,
+      currentTotal: currentTotal,
     );
     await db.replaceCurrentOrderLines(
       tableId,
+      waiterName,
       lines
           .map(
             (l) => {
@@ -861,8 +867,8 @@ class ManagerData extends ChangeNotifier {
     );
     await db.updateTable(
       tableId,
-      occupied: current.occupied || lines.isNotEmpty,
-      currentTotal: current.currentTotal,
+      occupied: lines.isNotEmpty,
+      currentTotal: currentTotal == 0 ? null : currentTotal,
       assignedWaiterName: waiterName,
       currentOrderNumber: orderNumber,
     );
@@ -870,8 +876,8 @@ class ManagerData extends ChangeNotifier {
       if (t.id != tableId) return t;
       return TableInfo(
         id: t.id,
-        occupied: t.occupied || lines.isNotEmpty,
-        currentTotal: t.currentTotal,
+        occupied: lines.isNotEmpty,
+        currentTotal: currentTotal == 0 ? null : currentTotal,
         assignedWaiterName: waiterName,
         currentOrderNumber: orderNumber,
       );
@@ -879,8 +885,14 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<CurrentOrderLine>> loadCurrentOrderLines(int tableId) async {
-    final rows = await DatabaseService.instance.fetchCurrentOrderLines(tableId);
+  Future<List<CurrentOrderLine>> loadCurrentOrderLines(
+    int tableId,
+    String waiterName,
+  ) async {
+    final rows = await DatabaseService.instance.fetchCurrentOrderLines(
+      tableId,
+      waiterName,
+    );
     return rows
         .map(
           (r) => CurrentOrderLine(
@@ -895,5 +907,27 @@ class ManagerData extends ChangeNotifier {
           ),
         )
         .toList();
+  }
+
+  Future<List<TableInfo>> tablesForWaiter(String waiterName) async {
+    final rows = await DatabaseService.instance.fetchCurrentOrderMetasForWaiter(
+      waiterName,
+    );
+    final byTable = <int, Map<String, dynamic>>{
+      for (final r in rows) (r['tableId'] as num).toInt(): r,
+    };
+    return _cashierTables.map((t) {
+      final m = byTable[t.id];
+      if (m == null) {
+        return TableInfo(id: t.id, occupied: false, currentTotal: null);
+      }
+      return TableInfo(
+        id: t.id,
+        occupied: true,
+        currentTotal: (m['currentTotal'] as num).toDouble(),
+        assignedWaiterName: waiterName,
+        currentOrderNumber: (m['orderNumber'] as num).toInt(),
+      );
+    }).toList();
   }
 }
