@@ -68,7 +68,7 @@ String buildKitchenOrderReceiptText({
 
   out.add('');
   out.add(rule());
-  out.add('Total: ${fmtMoney(total)}');
+  out.add(padRight('Total:', productCol + qtyCol) + padLeft(fmtMoney(total), priceCol));
   out.add('Table $tableNumber | Order #$orderNumber');
   final now = DateTime.now();
   out.add(
