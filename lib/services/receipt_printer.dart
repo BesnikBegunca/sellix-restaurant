@@ -5,6 +5,10 @@ import 'windows_printers_service.dart';
 class ReceiptPrinter {
   const ReceiptPrinter();
 
+  static String _stripStyleTags(String text) {
+    return text.replaceAll('[[B]]', '').replaceAll('[[/B]]', '');
+  }
+
   static Future<bool> printKitchenOrder({
     required String companyName,
     required String waiterName,
@@ -29,9 +33,17 @@ class ReceiptPrinter {
       return false;
     }
 
-    return WindowsPrintersService.printRawText(
+    final ok = await WindowsPrintersService.printRawText(
       printerName: selectedPrinter,
       text: '$text\n\n\n',
+    );
+    if (ok) return true;
+
+    // Fallback: retry without style markers so printing never blocks.
+    final plain = _stripStyleTags(text);
+    return WindowsPrintersService.printRawText(
+      printerName: selectedPrinter,
+      text: '$plain\n\n\n',
     );
   }
 

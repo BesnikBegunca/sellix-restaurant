@@ -26,7 +26,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -149,6 +149,12 @@ class DatabaseService {
         qty           INTEGER NOT NULL
       )
     ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_meta (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
     try {
       await db.execute(
         'CREATE UNIQUE INDEX IF NOT EXISTS idx_current_orders_waiter_table ON current_orders(waiterName, tableId)',
@@ -180,6 +186,10 @@ class DatabaseService {
         'CREATE UNIQUE INDEX IF NOT EXISTS idx_current_orders_waiter_table ON current_orders(waiterName, tableId)',
       );
     } catch (_) {}
+    await db.insert('app_meta', {
+      'key': 'global_order_number',
+      'value': '0',
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
     // Insert singleton rows only if they are missing.
     final shiftRows = await db.query('shift', where: 'id = 1');
     if (shiftRows.isEmpty) {
@@ -217,6 +227,10 @@ class DatabaseService {
     // Seed required singleton rows
     await db.insert('shift', {'id': 1, 'status': 'closed'});
     await db.insert('company', {'id': 1});
+    await db.insert('app_meta', {
+      'key': 'global_order_number',
+      'value': '0',
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
 
     // Seed default 15 restaurant tables
     for (var i = 1; i <= 15; i++) {
@@ -601,6 +615,26 @@ class DatabaseService {
         'assignedWaiterName': null,
         'currentOrderNumber': 0,
       });
+    });
+  }
+
+  Future<int> consumeNextGlobalOrderNumber() async {
+    final db = await database;
+    return db.transaction<int>((txn) async {
+      final rows = await txn.query(
+        'app_meta',
+        where: 'key = ?',
+        whereArgs: ['global_order_number'],
+        limit: 1,
+      );
+      final raw = rows.isEmpty ? '0' : rows.first['value']?.toString() ?? '0';
+      final current = int.tryParse(raw) ?? 0;
+      final next = current + 1;
+      await txn.insert('app_meta', {
+        'key': 'global_order_number',
+        'value': next.toString(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      return next;
     });
   }
 

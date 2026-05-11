@@ -255,6 +255,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   Future<void> _sendOrder() async {
     if (_lines.isEmpty) return;
+    if (_activeOrderNumber == 0) {
+      _activeOrderNumber = await ManagerData.instance.nextGlobalOrderNumber();
+    }
     final persisted = await ManagerData.instance.loadCurrentOrderLines(
       widget.tableNumber,
       widget.waiterName,
