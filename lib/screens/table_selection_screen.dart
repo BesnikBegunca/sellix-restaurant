@@ -19,14 +19,26 @@ class TableSelectionScreen extends StatefulWidget {
 
 class _TableSelectionScreenState extends State<TableSelectionScreen> {
   final ManagerData _m = ManagerData.instance;
+  List<TableInfo> _tables = const [];
 
   @override
   void initState() {
     super.initState();
     _m.addListener(_onManager);
+    _reloadTables();
   }
 
-  void _onManager() => setState(() {});
+  void _onManager() {
+    _reloadTables();
+  }
+
+  Future<void> _reloadTables() async {
+    final tables = await _m.tablesForWaiter(widget.waiterName);
+    if (!mounted) return;
+    setState(() {
+      _tables = tables;
+    });
+  }
 
   @override
   void dispose() {
@@ -36,7 +48,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tables = _m.cashierTables;
+    final tables = _tables;
     final occupied = tables.where((t) => t.occupied).length;
     final total = tables.fold<double>(0, (s, t) => s + (t.currentTotal ?? 0));
 
