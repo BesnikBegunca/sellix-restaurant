@@ -15,7 +15,8 @@ String buildKitchenOrderReceiptText({
   required List<ReceiptLine> lines,
   required double total,
 }) {
-  const width = 48;
+  // Conservative width so all 3 columns stay visible on most POS80 drivers.
+  const width = 32;
 
   String center(String s) {
     s = s.replaceAll('\n', ' ');
@@ -38,13 +39,13 @@ String buildKitchenOrderReceiptText({
   String rule() => '-' * width;
   String fmtMoney(double v) => v.toStringAsFixed(2);
 
-  const productCol = 24;
-  const qtyCol = 8;
+  const productCol = 16;
+  const qtyCol = 6;
   const priceCol = width - productCol - qtyCol;
 
   final out = <String>[];
   out.add(rule());
-  out.add(center('"$companyName"'));
+  out.add('"$companyName"');
   out.add(rule());
   out.add('Kamarjeri : $waiterName');
   out.add('');
@@ -57,16 +58,63 @@ String buildKitchenOrderReceiptText({
 
   for (final line in lines) {
     final p = line.product;
+    final lineTotal = p.price * line.qty;
     out.add(
       padRight(p.name, productCol) +
           padLeft(line.qty.toString(), qtyCol) +
-          padLeft(fmtMoney(p.price), priceCol),
+          padLeft(fmtMoney(lineTotal), priceCol),
     );
   }
 
   out.add('');
+  out.add(rule());
   out.add('Total: ${fmtMoney(total)}');
   out.add('Table $tableNumber | Order #$orderNumber');
 
+  return out.join('\n');
+}
+
+String buildShiftReceiptText({
+  required String companyName,
+  required Map<String, double> waiterTotals,
+}) {
+  const width = 32;
+
+  String padRight(String s, int n) {
+    if (s.length >= n) return s.substring(0, n);
+    return s + (' ' * (n - s.length));
+  }
+
+  String padLeft(String s, int n) {
+    if (s.length >= n) return s.substring(s.length - n);
+    return (' ' * (n - s.length)) + s;
+  }
+
+  String rule() => '-' * width;
+  String fmtMoney(double v) => v.toStringAsFixed(2);
+
+  const waiterCol = 20;
+  const totalCol = width - waiterCol;
+
+  final names = waiterTotals.keys.toList()..sort();
+  final grandTotal = names.fold<double>(0, (s, n) => s + (waiterTotals[n] ?? 0));
+
+  final out = <String>[];
+  out.add(rule());
+  out.add('"$companyName"');
+  out.add('GJENDJA');
+  out.add(rule());
+  out.add(padRight('Kamarjeri', waiterCol) + padLeft('Totali', totalCol));
+  out.add('');
+
+  for (final name in names) {
+    out.add(
+      padRight(name, waiterCol) +
+          padLeft(fmtMoney(waiterTotals[name] ?? 0), totalCol),
+    );
+  }
+
+  out.add(rule());
+  out.add(padRight('Totali', waiterCol) + padLeft(fmtMoney(grandTotal), totalCol));
   return out.join('\n');
 }

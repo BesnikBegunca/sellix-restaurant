@@ -32,4 +32,24 @@ class ReceiptPrinter {
       text: '$text\n\n\n',
     );
   }
+
+  static Future<bool> printShiftStatus({
+    required String companyName,
+    required Map<String, double> waiterTotals,
+  }) async {
+    final text = buildShiftReceiptText(
+      companyName: companyName,
+      waiterTotals: waiterTotals,
+    );
+
+    final selectedPrinter = await PrinterSettingsStore.loadSelectedPrinterName();
+    if (selectedPrinter.trim().isEmpty) {
+      return false;
+    }
+
+    return WindowsPrintersService.printRawText(
+      printerName: selectedPrinter,
+      text: '$text\n\n\n',
+    );
+  }
 }

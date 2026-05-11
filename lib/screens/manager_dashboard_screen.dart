@@ -11,6 +11,7 @@ import '../manager/manager_data.dart';
 import '../services/expenses_pdf_export.dart';
 import '../services/manager_summary_pdf.dart';
 import '../services/printer_settings_store.dart';
+import '../services/receipt_printer.dart';
 import '../services/windows_printers_service.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
@@ -1772,7 +1773,38 @@ class _ShiftPanel extends StatelessWidget {
 
   final ManagerData m;
 
-  void _showPrintDialog(BuildContext context) {
+  Future<void> _showPrintDialog(BuildContext context) async {
+    final sales = m.waiterSales;
+    final names = <String>{
+      ...m.waiters.map((w) => w.name),
+      ...sales.keys,
+    }.toList()
+      ..sort();
+    final waiterTotals = <String, double>{
+      for (final name in names) name: (sales[name] ?? 0.0),
+    };
+
+    final ok = await ReceiptPrinter.printShiftStatus(
+      companyName: m.companyName ?? 'POS System',
+      waiterTotals: waiterTotals,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? 'Gjendja u dërgua në printer.'
+                : 'Nuk u printua. Zgjidh printerin te Company Settings > Printers.',
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: ok
+              ? AppColors.primaryGreen
+              : AppColors.darkGreenText,
+        ),
+      );
+    }
+
     showDialog(
       context: context,
       builder: (_) => _GjendjaDialog(m: m, isClose: false),

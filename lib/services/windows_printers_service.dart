@@ -40,7 +40,34 @@ class WindowsPrintersService {
 
       final escapedPath = file.path.replaceAll("'", "''");
       final escapedPrinter = printerName.replaceAll("'", "''");
-      final cmd = "Get-Content -LiteralPath '$escapedPath' -Raw | Out-Printer -Name '$escapedPrinter'";
+      final cmd = '''
+\$printerName = '$escapedPrinter'
+\$textPath = '$escapedPath'
+\$text = Get-Content -LiteralPath \$textPath -Raw
+
+Add-Type -AssemblyName System.Drawing
+
+\$doc = New-Object System.Drawing.Printing.PrintDocument
+\$doc.PrinterSettings.PrinterName = \$printerName
+\$doc.PrintController = New-Object System.Drawing.Printing.StandardPrintController
+
+# Use the printer's own paper profile (usually 80mm receipt on POS80 driver).
+\$doc.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(0, 0, 0, 0)
+
+\$font = New-Object System.Drawing.Font('Consolas', 11, [System.Drawing.FontStyle]::Regular)
+
+\$doc.add_PrintPage({
+  param(\$sender, \$e)
+  \$brush = [System.Drawing.Brushes]::Black
+  \$x = 0
+  \$y = 0
+  \$e.Graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::SingleBitPerPixelGridFit
+  \$e.Graphics.DrawString(\$text, \$font, \$brush, \$x, \$y)
+  \$e.HasMorePages = \$false
+})
+
+\$doc.Print()
+''';
 
       final result = await Process.run('powershell', [
         '-NoProfile',
