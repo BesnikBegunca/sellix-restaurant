@@ -9,6 +9,8 @@ import '../utils/image_utils.dart';
 import '../theme/pos_grid.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_interaction.dart';
+import '../services/receipt_printer.dart';
+import '../services/receipt_text.dart';
 
 class PosOrderScreen extends StatefulWidget {
   const PosOrderScreen({
@@ -194,6 +196,23 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   Future<void> _sendOrder() async {
     if (_lines.isEmpty) return;
     ManagerData.instance.updateTableTotal(widget.tableNumber, _total);
+
+    // Printo kuponin termik / POS80 (tekst i formatum per POS80).
+    try {
+      await ReceiptPrinter.printKitchenOrder(
+        companyName: ManagerData.instance.companyName ?? 'POS System',
+        waiterName: widget.waiterName,
+        tableNumber: widget.tableNumber,
+        orderNumber: widget.orderNumber,
+        lines: _lines
+            .map((l) => ReceiptLine(product: l.product, qty: l.qty))
+            .toList(),
+        total: _total,
+      );
+    } catch (_) {
+      // mos e prish flow-in nese printeri dështon (p.sh. pa driver).
+    }
+
     await showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,

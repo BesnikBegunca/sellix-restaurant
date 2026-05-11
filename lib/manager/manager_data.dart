@@ -126,6 +126,9 @@ class ManagerData extends ChangeNotifier {
   Uint8List? companyLogoBytes;
   String loginMode = 'PINMODE'; // 'PINMODE' or 'NAMEMODE'
 
+  /// Emri i printerit (Windows) ku printohen receipt-et (POS80).
+  String? selectedPrinterName;
+
   // ── shift ──────────────────────────────────────────────────────────────────
 
   bool shiftOpen = false;
@@ -178,6 +181,7 @@ class ManagerData extends ChangeNotifier {
           ? Uint8List.fromList(blob as List<int>)
           : null;
       loginMode = (company['loginMode'] as String?) ?? 'PINMODE';
+      selectedPrinterName = company['printerName'] as String?;
     }
 
     // Shift — system is always active; only load last-closed timestamp for display.
