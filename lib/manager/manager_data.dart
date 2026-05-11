@@ -102,6 +102,13 @@ class WaiterInfo {
   );
 }
 
+class CurrentOrderLine {
+  const CurrentOrderLine({required this.product, required this.qty});
+
+  final ProductItem product;
+  final int qty;
+}
+
 // ───────────────────────────── ManagerData ────────────────────────────────────
 
 /// Global state singleton backed entirely by SQLite.
@@ -767,14 +774,26 @@ class ManagerData extends ChangeNotifier {
   }
 
   Future<void> updateTableTotal(int tableId, double total) async {
+    final current = _cashierTables.firstWhere(
+      (t) => t.id == tableId,
+      orElse: () => TableInfo(id: tableId, occupied: false),
+    );
     await DatabaseService.instance.updateTable(
       tableId,
       occupied: true,
       currentTotal: total,
+      assignedWaiterName: current.assignedWaiterName,
+      currentOrderNumber: current.currentOrderNumber,
     );
     _cashierTables = _cashierTables.map((t) {
       if (t.id != tableId) return t;
-      return TableInfo(id: t.id, occupied: true, currentTotal: total);
+      return TableInfo(
+        id: t.id,
+        occupied: true,
+        currentTotal: total,
+        assignedWaiterName: t.assignedWaiterName,
+        currentOrderNumber: t.currentOrderNumber,
+      );
     }).toList();
     notifyListeners();
   }
@@ -784,7 +803,10 @@ class ManagerData extends ChangeNotifier {
       tableId,
       occupied: false,
       currentTotal: null,
+      assignedWaiterName: null,
+      currentOrderNumber: null,
     );
+    await DatabaseService.instance.clearCurrentOrder(tableId);
     _cashierTables = _cashierTables.map((t) {
       if (t.id != tableId) return t;
       return TableInfo(id: t.id, occupied: false);
@@ -803,5 +825,75 @@ class ManagerData extends ChangeNotifier {
     ];
     tableCount = _cashierTables.length;
     notifyListeners();
+  }
+
+  Future<void> saveCurrentOrder({
+    required int tableId,
+    required int orderNumber,
+    required String waiterName,
+    required List<CurrentOrderLine> lines,
+  }) async {
+    final db = DatabaseService.instance;
+    await db.upsertCurrentOrderMeta(
+      tableId: tableId,
+      waiterName: waiterName,
+      orderNumber: orderNumber,
+    );
+    await db.replaceCurrentOrderLines(
+      tableId,
+      lines
+          .map(
+            (l) => {
+              'productId': l.product.id,
+              'productName': l.product.name,
+              'productPrice': l.product.price,
+              'productEmoji': l.product.emoji,
+              'imagePath': l.product.imagePath,
+              'qty': l.qty,
+            },
+          )
+          .toList(),
+    );
+
+    final current = _cashierTables.firstWhere(
+      (t) => t.id == tableId,
+      orElse: () => TableInfo(id: tableId, occupied: false),
+    );
+    await db.updateTable(
+      tableId,
+      occupied: current.occupied || lines.isNotEmpty,
+      currentTotal: current.currentTotal,
+      assignedWaiterName: waiterName,
+      currentOrderNumber: orderNumber,
+    );
+    _cashierTables = _cashierTables.map((t) {
+      if (t.id != tableId) return t;
+      return TableInfo(
+        id: t.id,
+        occupied: t.occupied || lines.isNotEmpty,
+        currentTotal: t.currentTotal,
+        assignedWaiterName: waiterName,
+        currentOrderNumber: orderNumber,
+      );
+    }).toList();
+    notifyListeners();
+  }
+
+  Future<List<CurrentOrderLine>> loadCurrentOrderLines(int tableId) async {
+    final rows = await DatabaseService.instance.fetchCurrentOrderLines(tableId);
+    return rows
+        .map(
+          (r) => CurrentOrderLine(
+            product: ProductItem(
+              id: r['productId'] as String,
+              name: r['productName'] as String,
+              price: (r['productPrice'] as num).toDouble(),
+              emoji: r['productEmoji'] as String? ?? '☕',
+              imagePath: r['imagePath'] as String?,
+            ),
+            qty: (r['qty'] as num).toInt(),
+          ),
+        )
+        .toList();
   }
 }

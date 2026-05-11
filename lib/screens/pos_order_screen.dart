@@ -38,11 +38,13 @@ class _CartLine {
 class _PosOrderScreenState extends State<PosOrderScreen> {
   int _categoryIndex = 0;
   final List<_CartLine> _lines = [];
+  bool _hydrated = false;
 
   @override
   void initState() {
     super.initState();
     ManagerData.instance.addListener(_onMenuChanged);
+    _loadPersistedOrder();
   }
 
   void _onMenuChanged() {
@@ -62,6 +64,37 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   double get _total => _lines.fold(0, (s, l) => s + l.product.price * l.qty);
 
+  Future<void> _loadPersistedOrder() async {
+    final persisted = await ManagerData.instance.loadCurrentOrderLines(
+      widget.tableNumber,
+    );
+    if (!mounted) return;
+    setState(() {
+      _lines
+        ..clear()
+        ..addAll(
+          persisted.map((l) {
+            final line = _CartLine(product: l.product);
+            line.qty = l.qty;
+            return line;
+          }),
+        );
+      _hydrated = true;
+    });
+  }
+
+  Future<void> _persistOrder() async {
+    if (!_hydrated) return;
+    await ManagerData.instance.saveCurrentOrder(
+      tableId: widget.tableNumber,
+      orderNumber: widget.orderNumber,
+      waiterName: widget.waiterName,
+      lines: _lines
+          .map((l) => CurrentOrderLine(product: l.product, qty: l.qty))
+          .toList(),
+    );
+  }
+
   void _addProduct(ProductItem p) {
     setState(() {
       final i = _lines.indexWhere((l) => l.product.id == p.id);
@@ -71,6 +104,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         _lines.add(_CartLine(product: p));
       }
     });
+    _persistOrder();
   }
 
   void _deltaQty(ProductItem p, int delta) {
@@ -80,6 +114,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       _lines[i].qty += delta;
       if (_lines[i].qty <= 0) _lines.removeAt(i);
     });
+    _persistOrder();
   }
 
   Future<void> _payTable() async {
@@ -196,6 +231,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   Future<void> _sendOrder() async {
     if (_lines.isEmpty) return;
     ManagerData.instance.updateTableTotal(widget.tableNumber, _total);
+    await _persistOrder();
 
     // Printo kuponin termik / POS80 (tekst i formatum per POS80).
     try {

@@ -8,16 +8,22 @@ class TableInfo {
     required this.id,
     required this.occupied,
     this.currentTotal,
+    this.assignedWaiterName,
+    this.currentOrderNumber,
   });
 
   final int id;
   final bool occupied;
   final double? currentTotal;
+  final String? assignedWaiterName;
+  final int? currentOrderNumber;
 
   factory TableInfo.fromMap(Map<String, dynamic> m) => TableInfo(
         id: m['id'] as int,
         occupied: (m['occupied'] as int) == 1,
         currentTotal: m['currentTotal'] as double?,
+        assignedWaiterName: m['assignedWaiterName'] as String?,
+        currentOrderNumber: m['currentOrderNumber'] as int?,
       );
 }
 
