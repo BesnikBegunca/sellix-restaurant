@@ -84,6 +84,10 @@ String buildKitchenOrderReceiptText({
   out.add(
     'Date: ${two(now.day)}.${two(now.month)}.${now.year} ${two(now.hour)}:${two(now.minute)}',
   );
+  if (paymentReceipt) {
+    out.add('');
+    out.add(center('Ju Faleminderit.'));
+  }
 
   return out.join('\n');
 }
