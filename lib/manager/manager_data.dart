@@ -957,4 +957,8 @@ class ManagerData extends ChangeNotifier {
       );
     }).toList();
   }
+
+  Future<int> nextGlobalOrderNumber() async {
+    return DatabaseService.instance.consumeNextGlobalOrderNumber();
+  }
 }
