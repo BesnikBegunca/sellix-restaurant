@@ -46,7 +46,7 @@ String buildKitchenOrderReceiptText({
 
   final out = <String>[];
   out.add(rule());
-  out.add('"$companyName"');
+  out.add(center(companyName));
   out.add(rule());
   out.add('Kamarjeri : $waiterName');
   out.add('');
@@ -105,7 +105,14 @@ String buildShiftReceiptText({
 
   final out = <String>[];
   out.add(rule());
-  out.add('"$companyName"');
+  final centeredCompany = (() {
+    final s = companyName.replaceAll('\n', ' ');
+    if (s.length >= width) return s.substring(0, width);
+    final left = ((width - s.length) / 2).floor();
+    final right = width - s.length - left;
+    return '${' ' * left}$s${' ' * right}';
+  })();
+  out.add(centeredCompany);
   out.add('GJENDJA');
   out.add(rule());
   out.add(padRight('Kamarjeri', waiterCol) + padLeft('Totali', totalCol));
