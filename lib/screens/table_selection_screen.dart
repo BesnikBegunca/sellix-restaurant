@@ -114,11 +114,14 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                             return _TableCard(
                               table: t,
                               onTap: () {
+                                final orderNo = t.occupied
+                                    ? (t.currentOrderNumber ?? 1)
+                                    : 0;
                                 Navigator.of(context).push(
                                   MaterialPageRoute<void>(
                                     builder: (_) => PosOrderScreen(
                                       tableNumber: t.id,
-                                      orderNumber: 10042 + t.id,
+                                      orderNumber: orderNo,
                                       waiterName: widget.waiterName,
                                     ),
                                   ),

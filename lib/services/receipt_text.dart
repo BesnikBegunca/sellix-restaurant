@@ -14,6 +14,7 @@ String buildKitchenOrderReceiptText({
   required int orderNumber,
   required List<ReceiptLine> lines,
   required double total,
+  bool paymentReceipt = false,
 }) {
   // Conservative width so all 3 columns stay visible on most POS80 drivers.
   const width = 32;
@@ -45,6 +46,10 @@ String buildKitchenOrderReceiptText({
   const priceCol = width - productCol - qtyCol;
 
   final out = <String>[];
+  if (paymentReceipt) {
+    out.add('[[B]]${center('Fakture per Pagese')}[[/B]]');
+    out.add('');
+  }
   out.add(rule());
   out.add(center(companyName));
   out.add(rule());
@@ -54,6 +59,7 @@ String buildKitchenOrderReceiptText({
   out.add(waiterTableLine.length > width
       ? waiterTableLine.substring(0, width)
       : waiterTableLine);
+  out.add('');
   out.add(
     padRight('Produkti', productCol) +
         padLeft('Sasia', qtyCol) +
