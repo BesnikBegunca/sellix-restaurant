@@ -58,11 +58,10 @@ String buildKitchenOrderReceiptText({
 
   for (final line in lines) {
     final p = line.product;
-    final lineTotal = p.price * line.qty;
     out.add(
       padRight(p.name, productCol) +
           padLeft(line.qty.toString(), qtyCol) +
-          padLeft(fmtMoney(lineTotal), priceCol),
+          padLeft(fmtMoney(p.price), priceCol),
     );
   }
 
