@@ -236,6 +236,14 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Re-fetches all data from the database and notifies listeners.
+  ///
+  /// Call this after a database restore to bring in-memory state in sync with
+  /// the newly installed database file.
+  Future<void> reload() async {
+    await _init();
+  }
+
   /// Reloads categories and their products from the DB.
   Future<void> _reloadMenu(DatabaseService db) async {
     final catRows = await db.fetchCategories();
