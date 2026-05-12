@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../models/mock_data.dart';
+import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
 
 // ─────────────────────────────── models ───────────────────────────────────────
@@ -284,6 +285,15 @@ class ManagerData extends ChangeNotifier {
   /// Emri i printerit (Windows) ku printohen receipt-et (POS80).
   String? selectedPrinterName;
 
+  // ── ESC/POS + receipt settings ─────────────────────────────────────────────
+
+  bool useEscPos          = true;
+  bool cashDrawerEnabled  = false;
+  int  paperWidthMm       = 80;
+  String receiptFooter    = 'Ju Faleminderit!';
+  String? businessAddress;
+  String? businessPhone;
+
   // ── shift ──────────────────────────────────────────────────────────────────
 
   bool shiftOpen = false;
@@ -342,6 +352,12 @@ class ManagerData extends ChangeNotifier {
           : null;
       loginMode = (company['loginMode'] as String?) ?? 'PINMODE';
       selectedPrinterName = company['printerName'] as String?;
+      useEscPos         = ((company['useEscPos']         as int?) ?? 1) == 1;
+      cashDrawerEnabled = ((company['cashDrawerEnabled'] as int?) ?? 0) == 1;
+      paperWidthMm      = (company['paperWidthMm']       as int?) ?? 80;
+      receiptFooter     = (company['receiptFooter']  as String?) ?? 'Ju Faleminderit!';
+      businessAddress   = company['businessAddress'] as String?;
+      businessPhone     = company['businessPhone']   as String?;
     }
 
     // Shift — ensure a permanent shift record exists in [shifts] table.
@@ -442,8 +458,10 @@ class ManagerData extends ChangeNotifier {
 
   Future<void> saveCompanyName(String name) async {
     if (name.trim().isEmpty) return;
+    final old = companyName;
     companyName = name.trim();
     await DatabaseService.instance.updateCompanyName(companyName!);
+    AuditLogService.instance.logCompanyNameChanged(oldName: old, newName: companyName!);
     notifyListeners();
   }
 
@@ -466,6 +484,32 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Persist ESC/POS + receipt settings. Pass only the fields you want to change.
+  Future<void> saveEscPosSettings({
+    bool? useEscPos,
+    bool? cashDrawerEnabled,
+    int? paperWidthMm,
+    String? receiptFooter,
+    String? businessAddress,
+    String? businessPhone,
+  }) async {
+    if (useEscPos != null)         this.useEscPos         = useEscPos;
+    if (cashDrawerEnabled != null) this.cashDrawerEnabled = cashDrawerEnabled;
+    if (paperWidthMm != null)      this.paperWidthMm      = paperWidthMm;
+    if (receiptFooter != null)     this.receiptFooter     = receiptFooter;
+    if (businessAddress != null)   this.businessAddress   = businessAddress;
+    if (businessPhone != null)     this.businessPhone     = businessPhone;
+    await DatabaseService.instance.updateEscPosSettings(
+      useEscPos:         useEscPos,
+      cashDrawerEnabled: cashDrawerEnabled,
+      paperWidthMm:      paperWidthMm,
+      receiptFooter:     receiptFooter,
+      businessAddress:   businessAddress,
+      businessPhone:     businessPhone,
+    );
+    notifyListeners();
+  }
+
   // ─────────────────────────────── shift ────────────────────────────────────
 
   Future<void> openShift() async {
@@ -482,6 +526,7 @@ class ManagerData extends ChangeNotifier {
     _currentShiftId = await DatabaseService.instance.insertShiftRecord(
       openedAt: shiftOpenedAt!,
     );
+    AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
     waiterSales = {};
     notifyListeners();
   }
@@ -519,8 +564,16 @@ class ManagerData extends ChangeNotifier {
       status: 'open',
     );
 
+    // Log close before opening the next one.
+    AuditLogService.instance.logShiftClosed(
+      shiftId:       _currentShiftId ?? 0,
+      totalSales:    shiftSalesTotal,
+      totalExpenses: shiftExpensesTotal,
+    );
+
     // Open the next shift immediately so sales are never orphaned.
     _currentShiftId = await db.insertShiftRecord(openedAt: now);
+    AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
     shiftOpenedAt = now;
 
     // Reset tables (clear active orders) but do NOT delete historical sales.
@@ -551,6 +604,7 @@ class ManagerData extends ChangeNotifier {
 
     final newId = await DatabaseService.instance.insertWaiter(n, p);
     _waiters.add(WaiterInfo(dbId: newId, name: n, pin: p));
+    AuditLogService.instance.logWaiterAdded(waiterName: n);
     notifyListeners();
   }
 
@@ -560,6 +614,7 @@ class ManagerData extends ChangeNotifier {
     if (w.dbId != null) {
       await DatabaseService.instance.deleteWaiterById(w.dbId!);
     }
+    AuditLogService.instance.logWaiterRemoved(waiterName: w.name);
     _waiters.removeAt(index);
     notifyListeners();
   }
@@ -593,6 +648,13 @@ class ManagerData extends ChangeNotifier {
         shiftId: _currentShiftId,
       ),
     );
+    AuditLogService.instance.logExpenseAdded(
+      expenseId: newId,
+      type:      row.type,
+      description: row.description,
+      amount:    row.amount,
+      shiftId:   _currentShiftId,
+    );
     notifyListeners();
   }
 
@@ -602,6 +664,12 @@ class ManagerData extends ChangeNotifier {
     if (e.dbId != null) {
       await DatabaseService.instance.deleteExpenseById(e.dbId!);
     }
+    AuditLogService.instance.logExpenseDeleted(
+      expenseId:   e.dbId ?? 0,
+      description: e.description,
+      amount:      e.amount,
+      shiftId:     e.shiftId,
+    );
     _expenses.removeAt(index);
     notifyListeners();
   }
@@ -613,8 +681,14 @@ class ManagerData extends ChangeNotifier {
   double getSalary(String waiterName) => _salaries[waiterName] ?? 0.0;
 
   Future<void> setSalary(String waiterName, double dailyRate) async {
+    final old = _salaries[waiterName];
     await DatabaseService.instance.upsertWaiterSalary(waiterName, dailyRate);
     _salaries = {..._salaries, waiterName: dailyRate};
+    AuditLogService.instance.logSalaryChanged(
+      waiterName: waiterName,
+      oldRate:    old,
+      newRate:    dailyRate,
+    );
     notifyListeners();
   }
 
@@ -836,6 +910,14 @@ class ManagerData extends ChangeNotifier {
     );
     _salesHistory.insert(0, sale);
     waiterSales[waiterName] = (waiterSales[waiterName] ?? 0) + total;
+    AuditLogService.instance.logSale(
+      waiterName: waiterName,
+      saleId:     saleId,
+      tableId:    tableId,
+      total:      total,
+      itemCount:  lines.length,
+      shiftId:    _currentShiftId,
+    );
     notifyListeners();
   }
 
@@ -867,6 +949,14 @@ class ManagerData extends ChangeNotifier {
       amount: amount,
       reason: reason,
       createdBy: createdBy,
+    );
+    AuditLogService.instance.logAdjustment(
+      adjustmentType: adjustmentType,
+      saleId:         saleId,
+      amount:         amount,
+      reason:         reason,
+      performedBy:    createdBy,
+      shiftId:        _currentShiftId,
     );
     return SaleAdjustmentRow(
       id: newId,
@@ -915,6 +1005,10 @@ class ManagerData extends ChangeNotifier {
       ..._categories,
       CategoryData(id: id, name: name.trim(), icon: icon, products: const []),
     ];
+    AuditLogService.instance.logCategoryCreated(
+      categoryId:   id,
+      categoryName: name.trim(),
+    );
     notifyListeners();
   }
 
@@ -927,8 +1021,16 @@ class ManagerData extends ChangeNotifier {
   }
 
   Future<void> removeCategory(String categoryId) async {
+    final cat = _categories.firstWhere(
+      (c) => c.id == categoryId,
+      orElse: () => CategoryData(id: categoryId, name: '', icon: Icons.category, products: []),
+    );
     await DatabaseService.instance.deleteCategory(categoryId);
     _categories = _categories.where((c) => c.id != categoryId).toList();
+    AuditLogService.instance.logCategoryDeleted(
+      categoryId:   categoryId,
+      categoryName: cat.name,
+    );
     notifyListeners();
   }
 
@@ -964,10 +1066,27 @@ class ManagerData extends ChangeNotifier {
         products: [...c.products, product],
       );
     }).toList();
+    final catName = _categories
+        .firstWhere((c) => c.id == categoryId, orElse: () => CategoryData(id: '', name: '', icon: Icons.category, products: []))
+        .name;
+    AuditLogService.instance.logProductCreated(
+      productId:    pid,
+      productName:  name.trim(),
+      price:        price,
+      categoryName: catName,
+    );
     notifyListeners();
   }
 
   Future<void> removeProduct(String categoryId, String productId) async {
+    final cat = _categories.firstWhere(
+      (c) => c.id == categoryId,
+      orElse: () => CategoryData(id: '', name: '', icon: Icons.category, products: []),
+    );
+    final prod = cat.products.firstWhere(
+      (p) => p.id == productId,
+      orElse: () => ProductItem(id: productId, name: '', price: 0, emoji: ''),
+    );
     await DatabaseService.instance.deleteProduct(productId);
     _categories = _categories.map((c) {
       if (c.id != categoryId) return c;
@@ -978,6 +1097,11 @@ class ManagerData extends ChangeNotifier {
         products: c.products.where((p) => p.id != productId).toList(),
       );
     }).toList();
+    AuditLogService.instance.logProductDeleted(
+      productId:    productId,
+      productName:  prod.name,
+      categoryName: cat.name,
+    );
     notifyListeners();
   }
 
@@ -997,6 +1121,15 @@ class ManagerData extends ChangeNotifier {
     } else if (imagePath != null) {
       fields['imagePath'] = imagePath;
     }
+    // Capture old values before update for audit snapshot.
+    ProductItem? oldProduct;
+    for (final c in _categories) {
+      if (c.id == categoryId) {
+        try { oldProduct = c.products.firstWhere((p) => p.id == productId); } catch (_) {}
+        break;
+      }
+    }
+
     if (fields.isNotEmpty) {
       await DatabaseService.instance.updateProduct(productId, fields);
     }
@@ -1019,6 +1152,19 @@ class ManagerData extends ChangeNotifier {
         }).toList(),
       );
     }).toList();
+
+    AuditLogService.instance.logProductEdited(
+      productId:   productId,
+      productName: name ?? oldProduct?.name ?? productId,
+      oldValues:   {
+        if (oldProduct != null && name  != null) 'name':  oldProduct.name,
+        if (oldProduct != null && price != null) 'price': oldProduct.price,
+      },
+      newValues: {
+        if (name  != null) 'name':  name,
+        if (price != null) 'price': price,
+      },
+    );
     notifyListeners();
   }
 

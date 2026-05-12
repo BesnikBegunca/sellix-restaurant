@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
+import '../services/audit_log_service.dart';
 import '../services/backup_service.dart';
 import '../services/database_backup_manager.dart';
+import '../services/escpos/escpos_printer_service.dart';
+import '../services/escpos/printer_profile.dart';
 import '../services/printer_settings_store.dart';
 import '../services/restore_service.dart';
 import '../services/windows_printers_service.dart';
@@ -31,10 +34,26 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   bool _hasRestoreUndo = false;
   bool _useCompression = false;
 
+  // ── ESC/POS + receipt settings ────────────────────────────────────────────
+  bool _useEscPos         = true;
+  bool _cashDrawerEnabled = false;
+  int  _paperWidthMm      = 80;
+  final _footerCtrl  = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  final _phoneCtrl   = TextEditingController();
+  bool _isTesting = false;
+  bool _isOpeningDrawer = false;
+
   @override
   void initState() {
     super.initState();
-    _selectedMode = _m.loginMode;
+    _selectedMode       = _m.loginMode;
+    _useEscPos          = _m.useEscPos;
+    _cashDrawerEnabled  = _m.cashDrawerEnabled;
+    _paperWidthMm       = _m.paperWidthMm;
+    _footerCtrl.text    = _m.receiptFooter;
+    _addressCtrl.text   = _m.businessAddress ?? '';
+    _phoneCtrl.text     = _m.businessPhone ?? '';
     _m.addListener(_onDataChanged);
     _loadPrinters();
     _loadBackupInfo();
@@ -44,12 +63,18 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   @override
   void dispose() {
     _m.removeListener(_onDataChanged);
+    _footerCtrl.dispose();
+    _addressCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
   void _onDataChanged() {
     setState(() {
-      _selectedMode = _m.loginMode;
+      _selectedMode      = _m.loginMode;
+      _useEscPos         = _m.useEscPos;
+      _cashDrawerEnabled = _m.cashDrawerEnabled;
+      _paperWidthMm      = _m.paperWidthMm;
     });
   }
 
@@ -190,14 +215,307 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                         label: const Text('Refresh Printers'),
                       ),
                     ),
+                    if (_selectedPrinter.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      // Capability preview
+                      Builder(builder: (_) {
+                        final profile = PrinterProfile.detectFromName(_selectedPrinter);
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Detected profile: ${profile.name}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.darkGreenText,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Paper: ${profile.paperWidthMm}mm  ·  '
+                              'Cut: ${profile.supportsCut ? "✓" : "✗"}  ·  '
+                              'Drawer: ${profile.supportsDrawer ? "✓" : "✗"}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.lightGreenText,
+                              ),
+                            ),
+                          ],
+                        );
+                      }),
+                      const SizedBox(height: 12),
+                      // Test Print + Open Cash Drawer buttons
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 8,
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGreen,
+                              foregroundColor: AppColors.white,
+                            ),
+                            onPressed: _isTesting ? null : _testPrint,
+                            icon: _isTesting
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.print_outlined, size: 18),
+                            label: const Text('Test Print'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: _isOpeningDrawer ? null : _openDrawer,
+                            icon: _isOpeningDrawer
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.point_of_sale_outlined, size: 18),
+                            label: const Text('Open Cash Drawer'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildReceiptSettingsCard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Receipt settings card ─────────────────────────────────────────────────
+
+  Widget _buildReceiptSettingsCard() {
+    return Card(
+      elevation: 2,
+      color: AppColors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Receipt Settings',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.darkGreenText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Configure ESC/POS mode, paper size, cash drawer, and receipt content.',
+              style: TextStyle(fontSize: 14, color: AppColors.darkGreenText),
+            ),
+            const SizedBox(height: 20),
+
+            // ESC/POS toggle
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'ESC/POS mode',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+              subtitle: const Text(
+                'Send raw ESC/POS commands (recommended). Disable to use legacy text-mode printing.',
+                style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+              ),
+              value: _useEscPos,
+              activeColor: AppColors.primaryGreen,
+              onChanged: (v) async {
+                setState(() => _useEscPos = v);
+                await _m.saveEscPosSettings(useEscPos: v);
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // Cash drawer toggle
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Open cash drawer after payment',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+              subtitle: const Text(
+                'Sends ESC p command after a successful sale. Requires a compatible drawer.',
+                style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+              ),
+              value: _cashDrawerEnabled,
+              activeColor: AppColors.primaryGreen,
+              onChanged: (v) async {
+                setState(() => _cashDrawerEnabled = v);
+                await _m.saveEscPosSettings(cashDrawerEnabled: v);
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Paper width selector
+            const Text(
+              'Paper width',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.darkGreenText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _paperWidthChip(80),
+                const SizedBox(width: 12),
+                _paperWidthChip(58),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Footer text
+            TextField(
+              controller: _footerCtrl,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Receipt footer text',
+                hintText: 'Ju Faleminderit!',
+              ),
+              onSubmitted: (_) => _saveReceiptText(),
+              onEditingComplete: _saveReceiptText,
+            ),
+            const SizedBox(height: 12),
+
+            // Business address
+            TextField(
+              controller: _addressCtrl,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Business address (optional)',
+                hintText: 'Rruga Shembull Nr. 1, Tiranë',
+              ),
+              onSubmitted: (_) => _saveReceiptText(),
+              onEditingComplete: _saveReceiptText,
+            ),
+            const SizedBox(height: 12),
+
+            // Business phone
+            TextField(
+              controller: _phoneCtrl,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Business phone (optional)',
+                hintText: '+355 69 123 4567',
+              ),
+              onSubmitted: (_) => _saveReceiptText(),
+              onEditingComplete: _saveReceiptText,
+            ),
+            const SizedBox(height: 16),
+
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: AppColors.white,
+                ),
+                onPressed: _saveReceiptText,
+                icon: const Icon(Icons.save_outlined, size: 18),
+                label: const Text('Save Receipt Settings'),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _paperWidthChip(int mm) {
+    final selected = _paperWidthMm == mm;
+    return ChoiceChip(
+      label: Text('${mm}mm'),
+      selected: selected,
+      selectedColor: AppColors.primaryGreen,
+      labelStyle: TextStyle(
+        color: selected ? AppColors.white : AppColors.darkGreenText,
+        fontWeight: FontWeight.w600,
+      ),
+      onSelected: (_) async {
+        setState(() => _paperWidthMm = mm);
+        await _m.saveEscPosSettings(paperWidthMm: mm);
+      },
+    );
+  }
+
+  Future<void> _saveReceiptText() async {
+    await _m.saveEscPosSettings(
+      receiptFooter:   _footerCtrl.text.trim().isEmpty ? 'Ju Faleminderit!' : _footerCtrl.text.trim(),
+      businessAddress: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
+      businessPhone:   _phoneCtrl.text.trim().isEmpty  ? null : _phoneCtrl.text.trim(),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Receipt settings saved.'),
+        backgroundColor: AppColors.primaryGreen,
+      ),
+    );
+  }
+
+  Future<void> _testPrint() async {
+    if (_selectedPrinter.trim().isEmpty) return;
+    setState(() => _isTesting = true);
+    try {
+      final profile = PrinterProfile.detectFromName(_selectedPrinter)
+          .withPaperWidth(_paperWidthMm);
+      final ok = await EscPosPrinterService.instance.printTestPage(
+        printerName: _selectedPrinter,
+        companyName: _m.companyName ?? 'POS System',
+        profile: profile,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok ? 'Test page sent to printer.' : 'Test print failed. Check printer connection.'),
+          backgroundColor: ok ? AppColors.primaryGreen : AppColors.negativeText,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isTesting = false);
+    }
+  }
+
+  Future<void> _openDrawer() async {
+    if (_selectedPrinter.trim().isEmpty) return;
+    setState(() => _isOpeningDrawer = true);
+    try {
+      await EscPosPrinterService.instance.openCashDrawer(_selectedPrinter);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cash drawer command sent.'),
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isOpeningDrawer = false);
+    }
   }
 
   Widget _buildModeOption({
@@ -503,6 +821,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       );
       if (!mounted) return;
       if (path == null) return; // user cancelled folder picker
+      AuditLogService.instance.logBackupExported(
+        path: path,
+        compressed: opts.compressed,
+        encrypted: opts.password != null,
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Backup saved to:\n$path'),
@@ -798,6 +1121,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       );
       if (!mounted) return;
       if (!success) return;
+      AuditLogService.instance.logRestoreUndone();
 
       final newMode = ManagerData.instance.loginMode;
       Navigator.of(context).pushAndRemoveUntil(
@@ -874,6 +1198,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       );
       if (!mounted) return;
       if (!success) return; // user cancelled file picker or password dialog
+      AuditLogService.instance.logBackupRestored();
 
       // Refresh the undo indicator so the button appears immediately.
       final hasUndo = await RestoreService.instance.hasUndoAvailable();
@@ -896,6 +1221,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         ),
       );
     } catch (e) {
+      AuditLogService.instance.logFailedRestore(reason: e.toString());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -959,7 +1285,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _changeMode(String newMode) async {
+    final oldMode = _m.loginMode;
     await _m.setLoginMode(newMode);
+    AuditLogService.instance.logSettingChanged(
+      settingKey: 'loginMode',
+      oldValue: oldMode,
+      newValue: newMode,
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -972,7 +1304,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _savePrinter(String printerName) async {
+    final oldPrinter = _selectedPrinter;
     await PrinterSettingsStore.saveSelectedPrinterName(printerName);
+    AuditLogService.instance.logPrinterChanged(
+      oldPrinter: oldPrinter.isEmpty ? null : oldPrinter,
+      newPrinter: printerName,
+    );
     if (!mounted) return;
     setState(() => _selectedPrinter = printerName);
     ScaffoldMessenger.of(context).showSnackBar(

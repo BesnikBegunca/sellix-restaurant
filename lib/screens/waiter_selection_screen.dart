@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
+import '../services/audit_log_service.dart';
 import '../theme/app_colors.dart';
 
 import 'manager_dashboard_screen.dart';
@@ -105,6 +106,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
   }
 
   void _selectWaiter(String waiterName) {
+    AuditLogService.instance.logWaiterLogin(waiterName: waiterName);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => TableSelectionScreen(waiterName: waiterName),
@@ -146,6 +148,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                       Navigator.of(context).pop();
 
                       if (pin == '9999') {
+                        AuditLogService.instance.logManagerLogin();
                         if (!mounted) return;
 
                         Navigator.of(context).push(
@@ -154,6 +157,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                           ),
                         );
                       } else {
+                        AuditLogService.instance.logFailedPin();
                         if (!mounted) return;
 
                         ScaffoldMessenger.of(context).showSnackBar(

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 
 import '../manager/manager_data.dart';
+import '../screens/audit_log_screen.dart';
 import '../screens/sales_history_screen.dart';
 import '../services/expenses_pdf_export.dart';
 import '../services/manager_summary_pdf.dart';
@@ -34,6 +35,7 @@ const _kSectionTitles = <String>[
   'Company Settings',
   'Pagat & Avans',
   'Historiku i Shitjeve',
+  'Audit Logs',
 ];
 
 /// Dashboard menaxheri (PIN 9999). Seksionet 1–8 sipas kërkesës.
@@ -136,6 +138,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         return _StaffPayrollPanel(m: _m);
       case 11:
         return const SalesHistoryPanel();
+      case 12:
+        return const AuditLogPanel();
       default:
         return const SizedBox.shrink();
     }
@@ -797,6 +801,7 @@ class _ManagerSideNav extends StatelessWidget {
     (icon: Icons.settings_outlined, sel: Icons.settings, label: 'Company'),
     (icon: Icons.payments_outlined, sel: Icons.payments, label: 'Pagat'),
     (icon: Icons.history_outlined, sel: Icons.history, label: 'Historiku'),
+    (icon: Icons.security_outlined, sel: Icons.security, label: 'Audit'),
   ];
 
   @override
