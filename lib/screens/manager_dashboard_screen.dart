@@ -2243,12 +2243,11 @@ class _WaitersPanelState extends State<_WaitersPanel> {
             ),
             const SizedBox(width: 12),
             SizedBox(
-              width: 140,
+              width: 200,
               child: TextField(
                 controller: _pinCtrl,
                 decoration: _inputDeco('PIN (min. 4 shifra, pa limit)'),
                 keyboardType: TextInputType.number,
-                maxLength: 6,
                 obscureText: true,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _add(),
