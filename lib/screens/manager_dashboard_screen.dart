@@ -1955,23 +1955,34 @@ class _ShiftPanel extends StatelessWidget {
   final ManagerData m;
 
   Future<void> _showPrintDialog(BuildContext context) async {
-    final sales = m.waiterSales;
-    final names = <String>{
-      ...m.waiters.map((w) => w.name),
-      ...sales.keys,
-    }.toList()
-      ..sort();
-    final waiterTotals = <String, double>{
-      for (final name in names) name: (sales[name] ?? 0.0),
-    };
+    final messenger = ScaffoldMessenger.of(context);
+    final ShiftStatusReport report;
+    try {
+      report = await m.computeShiftStatusReport();
+    } catch (e) {
+      if (context.mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Nuk u lexua gjendja: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.darkGreenText,
+          ),
+        );
+      }
+      return;
+    }
 
+    final waiterTotals = report.waiterGrandTotalsForPrint();
     final ok = await ReceiptPrinter.printShiftStatus(
       companyName: m.companyName ?? 'POS System',
       waiterTotals: waiterTotals,
+      summaryPaid: report.grandPaid,
+      summaryOpen: report.grandOpen,
+      reportTime: report.generatedAt,
     );
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             ok
@@ -1986,10 +1997,16 @@ class _ShiftPanel extends StatelessWidget {
       );
     }
 
-    showDialog(
-      context: context,
-      builder: (_) => _GjendjaDialog(m: m, isClose: false),
-    );
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => _GjendjaDialog(
+          m: m,
+          isClose: false,
+          initialReport: report,
+        ),
+      );
+    }
   }
 
   void _showCloseDialog(BuildContext context) {
@@ -2074,99 +2091,316 @@ class _ShiftPanel extends StatelessWidget {
   }
 }
 
-/// Modal that shows all waiter totals.
-/// When [isClose] is true it adds a confirm button that finalises and resets.
-class _GjendjaDialog extends StatelessWidget {
-  const _GjendjaDialog({required this.m, required this.isClose});
+/// Modal që tregon totalet sipas kamarierit (paguar + hapur).
+/// Kur [isClose] është true, shton konfirmim për mbylljen përfundimtare të shift-it.
+class _GjendjaDialog extends StatefulWidget {
+  const _GjendjaDialog({
+    required this.m,
+    required this.isClose,
+    this.initialReport,
+  });
 
   final ManagerData m;
   final bool isClose;
+  final ShiftStatusReport? initialReport;
+
+  @override
+  State<_GjendjaDialog> createState() => _GjendjaDialogState();
+}
+
+class _GjendjaDialogState extends State<_GjendjaDialog> {
+  ShiftStatusReport? _report;
+  Object? _loadError;
+  bool _loading = false;
+  bool _closing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _report = widget.initialReport;
+    if (_report == null) {
+      _loading = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    }
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await widget.m.computeShiftStatusReport();
+      if (!mounted) return;
+      setState(() {
+        _report = r;
+        _loadError = null;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e;
+        _loading = false;
+      });
+    }
+  }
+
+  String _fmtTime(DateTime t) {
+    final d = t.day.toString().padLeft(2, '0');
+    final mo = t.month.toString().padLeft(2, '0');
+    final h = t.hour.toString().padLeft(2, '0');
+    final mi = t.minute.toString().padLeft(2, '0');
+    final s = t.second.toString().padLeft(2, '0');
+    return '$d.$mo.${t.year} $h:$mi:$s';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final sales = m.waiterSales;
+    if (_loading) {
+      return AlertDialog(
+        title: Text(
+          widget.isClose ? 'Mbyll gjendjen' : 'Gjendja aktuale',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: const SizedBox(
+          width: 280,
+          height: 100,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Anulo'),
+          ),
+        ],
+      );
+    }
 
-    // Union of registered waiters and any name that appears in sales map.
-    final names = <String>{
-      ...m.waiters.map((w) => w.name),
-      ...sales.keys,
-    }.toList()..sort();
+    if (_loadError != null) {
+      return AlertDialog(
+        title: const Text('Gabim'),
+        content: Text('$_loadError'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Mbyll'),
+          ),
+          FilledButton(
+            onPressed: () {
+              setState(() {
+                _loading = true;
+                _loadError = null;
+              });
+              _load();
+            },
+            child: const Text('Riprovo'),
+          ),
+        ],
+      );
+    }
 
-    final grandTotal = names.fold<double>(0, (s, n) => s + (sales[n] ?? 0));
+    final report = _report!;
+    final names = report.byWaiter.keys.toList()..sort();
+    final grandPaid = report.grandPaid;
+    final grandOpen = report.grandOpen;
+    final grandTotal = report.grandTotal;
+    final shiftLine = report.shiftId != null
+        ? 'Shift #${report.shiftId} · aktiv'
+        : 'Pa shift aktiv në DB';
 
     return AlertDialog(
       title: Text(
-        isClose ? 'Mbyll gjendjen' : 'Gjendja aktuale',
+        widget.isClose ? 'Mbyll gjendjen' : 'Gjendja aktuale',
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
-        width: 360,
-        child: names.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  'Nuk ka kamarierë të regjistruar.',
-                  style: TextStyle(color: AppColors.mediumGreenText),
+        width: 400,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                shiftLine,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mediumGreenText,
                 ),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
+              ),
+              Text(
+                'Përditësuar: ${_fmtTime(report.generatedAt)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mediumGreenText,
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (names.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Nuk ka shitje të regjistruara për shift-in dhe as porosi të hapura në tavolina.',
+                    style: TextStyle(color: AppColors.mediumGreenText),
+                  ),
+                )
+              else
+                ...names.map((name) {
+                  final w = report.byWaiter[name]!;
+                  return ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(name),
+                    subtitle: Text(
+                      'Paguar: ${w.paidTotal.toStringAsFixed(2)} € · '
+                      'Hapur: ${w.openTotal.toStringAsFixed(2)} € · '
+                      'Porosi: ${w.paidOrderCount} paguar, ${w.openOrderCount} hapur',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.mediumGreenText,
+                      ),
+                    ),
+                    trailing: Text(
+                      '${w.grandTotal.toStringAsFixed(2)} €',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  );
+                }),
+              const Divider(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ...names.map(
-                    (name) => ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(name),
-                      trailing: Text(
-                        '${(sales[name] ?? 0.0).toStringAsFixed(2)} €',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                  Text(
+                    'Paguar (gjithsej)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.mediumGreenText,
                     ),
                   ),
-                  const Divider(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      Text(
-                        '${grandTotal.toStringAsFixed(2)} €',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ],
+                  Text(
+                    '${grandPaid.toStringAsFixed(2)} €',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  if (isClose)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Text(
-                        'Pas konfirmimit të gjitha totalet resetohen në 0.00.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mediumGreenText,
-                        ),
-                      ),
-                    ),
                 ],
               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Hapur / pa paguar',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                  Text(
+                    '${grandOpen.toStringAsFixed(2)} €',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Totali',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    '${grandTotal.toStringAsFixed(2)} €',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+              if (widget.isClose)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    'Ky është veprim përfundimtar: ruhet snapshot-i i shift-it, '
+                    'mbyllen porositë e hapura në tavolina dhe nis shift i ri. '
+                    'Nuk mund të kthehet mbrapsht.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.darkGreenText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(isClose ? 'Anulo' : 'Mbyll'),
+          onPressed: _closing ? null : () => Navigator.of(context).pop(),
+          child: Text(widget.isClose ? 'Anulo' : 'Mbyll'),
         ),
-        if (isClose)
+        if (widget.isClose)
           FilledButton(
-            onPressed: () {
-              m.closeShift();
-              Navigator.of(context).pop();
-            },
+            onPressed: (_closing || _loading)
+                ? null
+                : () async {
+                    setState(() => _closing = true);
+                    final messenger = ScaffoldMessenger.of(context);
+                    final closureReport = _report!;
+                    try {
+                      await widget.m.closeShift();
+                      if (!context.mounted) return;
+
+                      final waiterTotals =
+                          closureReport.waiterGrandTotalsForPrint();
+                      final printed = await ReceiptPrinter.printShiftStatus(
+                        companyName:
+                            widget.m.companyName ?? 'POS System',
+                        waiterTotals: waiterTotals,
+                        summaryPaid: closureReport.grandPaid,
+                        summaryOpen: closureReport.grandOpen,
+                        reportTime: closureReport.generatedAt,
+                      );
+
+                      if (!context.mounted) return;
+                      Navigator.of(context).pop();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            printed
+                                ? 'Shift-i u mbyll. Përmbledhja e të gjithë '
+                                    'punonjësve u printua (si te “Shtyp gjendjen”).'
+                                : 'Shift-i u mbyll, por përmbledhja nuk u printua. '
+                                    'Kontrollo printerin te Company Settings > Printers.',
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: printed
+                              ? AppColors.primaryGreen
+                              : AppColors.darkGreenText,
+                        ),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Mbyllja dështoi (shift-i mbeti aktiv): $e',
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: AppColors.darkGreenText,
+                        ),
+                      );
+                    } finally {
+                      if (mounted) setState(() => _closing = false);
+                    }
+                  },
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.darkGreenText,
               foregroundColor: AppColors.white,
             ),
-            child: const Text('Konfirmo & Reseto'),
+            child: _closing
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Konfirmo mbylljen'),
           ),
       ],
     );
@@ -5540,6 +5774,26 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
   late double _count;
   late double _perRow;
 
+  /// null = pamja globale e kasës; emri = okupimi sipas porosive të atij kamarieri.
+  String? _tableViewWaiter;
+  List<TableInfo>? _waiterTablesSnapshot;
+
+  List<TableInfo> _displayTables(ManagerData m) {
+    if (_tableViewWaiter == null) return m.cashierTables;
+    return _waiterTablesSnapshot ?? m.cashierTables;
+  }
+
+  Future<void> _syncWaiterTables() async {
+    final w = _tableViewWaiter;
+    if (w == null) {
+      if (mounted) setState(() => _waiterTablesSnapshot = null);
+      return;
+    }
+    final list = await widget.m.tablesForWaiter(w);
+    if (!mounted || _tableViewWaiter != w) return;
+    setState(() => _waiterTablesSnapshot = list);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -5548,7 +5802,12 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
     widget.m.addListener(_onM);
   }
 
-  void _onM() => setState(() {});
+  void _onM() {
+    setState(() {});
+    if (_tableViewWaiter != null) {
+      _syncWaiterTables();
+    }
+  }
 
   @override
   void didUpdateWidget(covariant _TablesConfigPanel oldWidget) {
@@ -5571,8 +5830,9 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
     final n = _count.round();
     final pr = _perRow.round();
     final rows = (n / pr).ceil();
-    final occupied = m.cashierTables.where((t) => t.occupied).length;
-    final openTotal = m.cashierTables.fold<double>(
+    final displayTables = _displayTables(m);
+    final occupied = displayTables.where((t) => t.occupied).length;
+    final openTotal = displayTables.fold<double>(
       0,
       (s, t) => s + (t.currentTotal ?? 0),
     );
@@ -5622,6 +5882,62 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
             ),
           ],
         ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.borderSubtle(0.1)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Parapamja sipas kamarierit',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkGreenText,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Zgjidh kamarierin për të parë okupimin sipas porosive të hapura të tij. «Pamja globale e kasës» përdor gjendjen e sinkronizuar të tavolinave.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: AppColors.mediumGreenText,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String?>(
+                  value: _tableViewWaiter,
+                  decoration: _inputDeco('Kamarieri për parapamje'),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('Pamja globale e kasës'),
+                    ),
+                    for (final w in m.waiters)
+                      DropdownMenuItem<String?>(
+                        value: w.name,
+                        child: Text(w.name),
+                      ),
+                  ],
+                  onChanged: (v) {
+                    setState(() {
+                      _tableViewWaiter = v;
+                      _waiterTablesSnapshot = null;
+                    });
+                    _syncWaiterTables();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 22),
         Wrap(
           spacing: 12,
@@ -5630,7 +5946,7 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
             _TableStatPill(
               icon: Icons.event_seat_outlined,
               label: 'Tavolina (aktualisht)',
-              value: '${m.cashierTables.length}',
+              value: '${displayTables.length}',
             ),
             _TableStatPill(
               icon: Icons.event_available_outlined,
@@ -5640,7 +5956,7 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
             _TableStatPill(
               icon: Icons.event_busy_outlined,
               label: 'Të lira',
-              value: '${m.cashierTables.length - occupied}',
+              value: '${displayTables.length - occupied}',
             ),
             _TableStatPill(
               icon: Icons.receipt_outlined,
@@ -5840,7 +6156,7 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                     final id = i + 1;
                     TableInfo? info;
                     try {
-                      info = m.cashierTables.firstWhere((t) => t.id == id);
+                      info = displayTables.firstWhere((t) => t.id == id);
                     } catch (_) {
                       info = null;
                     }
@@ -5894,15 +6210,15 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
           runSpacing: 8,
           children: [
             StatusBadge(
-              label: 'Free',
+              label: 'E lirë',
               variant: StatusBadgeVariant.success,
             ),
             StatusBadge(
-              label: 'Occupied',
+              label: 'E zënë',
               variant: StatusBadgeVariant.warning,
             ),
             StatusBadge(
-              label: 'Reserved',
+              label: 'Rezervuar',
               variant: StatusBadgeVariant.info,
             ),
           ],
@@ -5939,13 +6255,13 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                     DataColumn(label: Text('Total'), numeric: true),
                   ],
                   rows: [
-                    for (final t in m.cashierTables)
+                    for (final t in displayTables)
                       DataRow(
                         cells: [
                           DataCell(Text('${t.id}')),
                           DataCell(
                             StatusBadge(
-                              label: t.occupied ? 'Occupied' : 'Free',
+                              label: t.occupied ? 'E zënë' : 'E lirë',
                               variant: t.occupied
                                   ? StatusBadgeVariant.warning
                                   : StatusBadgeVariant.success,

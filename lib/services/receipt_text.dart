@@ -95,6 +95,9 @@ String buildKitchenOrderReceiptText({
 String buildShiftReceiptText({
   required String companyName,
   required Map<String, double> waiterTotals,
+  double? summaryPaid,
+  double? summaryOpen,
+  DateTime? reportTime,
 }) {
   const width = 32;
 
@@ -110,6 +113,7 @@ String buildShiftReceiptText({
 
   String rule() => '-' * width;
   String fmtMoney(double v) => v.toStringAsFixed(2);
+  String two(int v) => v.toString().padLeft(2, '0');
 
   const waiterCol = 20;
   const totalCol = width - waiterCol;
@@ -141,5 +145,17 @@ String buildShiftReceiptText({
 
   out.add(rule());
   out.add(padRight('Totali', waiterCol) + padLeft(fmtMoney(grandTotal), totalCol));
+  if (summaryPaid != null && summaryOpen != null) {
+    out.add('');
+    out.add(padRight('Paguar', waiterCol) + padLeft(fmtMoney(summaryPaid), totalCol));
+    out.add(padRight('Hapur', waiterCol) + padLeft(fmtMoney(summaryOpen), totalCol));
+  }
+  if (reportTime != null) {
+    final t = reportTime;
+    out.add(
+      '${two(t.day)}.${two(t.month)}.${t.year} '
+      '${two(t.hour)}:${two(t.minute)}',
+    );
+  }
   return out.join('\n');
 }
