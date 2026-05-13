@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -67,7 +69,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 9,
+      version: 12,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -144,10 +146,17 @@ class DatabaseService {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS company (
-        id          INTEGER PRIMARY KEY,
-        companyName TEXT,
-        companyLogo BLOB,
-        loginMode   TEXT NOT NULL DEFAULT 'PINMODE'
+        id                 INTEGER PRIMARY KEY,
+        companyName        TEXT,
+        companyLogo        BLOB,
+        loginMode          TEXT    NOT NULL DEFAULT 'PINMODE',
+        printerName        TEXT,
+        useEscPos          INTEGER NOT NULL DEFAULT 1,
+        cashDrawerEnabled  INTEGER NOT NULL DEFAULT 0,
+        paperWidthMm       INTEGER NOT NULL DEFAULT 80,
+        receiptFooter      TEXT    NOT NULL DEFAULT 'Ju Faleminderit!',
+        businessAddress    TEXT,
+        businessPhone      TEXT
       )
     ''');
     await db.execute('''
@@ -259,6 +268,82 @@ class DatabaseService {
         "ALTER TABLE current_order_lines ADD COLUMN waiterName TEXT NOT NULL DEFAULT ''",
       );
     } catch (_) {}
+
+    // ── Audit log table (append-only, tamper-resistant) ──────────────────────
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS audit_logs (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        actionType    TEXT    NOT NULL,
+        entityType    TEXT,
+        entityId      TEXT,
+        performedBy   TEXT,
+        performedRole TEXT,
+        shiftId       INTEGER,
+        saleId        INTEGER,
+        tableId       INTEGER,
+        detailsJson   TEXT,
+        createdAt     TEXT    NOT NULL,
+        prevHash      TEXT,
+        rowHash       TEXT,
+        deviceId      TEXT,
+        sessionId     TEXT,
+        terminalName  TEXT,
+        appVersion    TEXT,
+        platform      TEXT
+      )
+    ''');
+
+    // ── Immutability triggers — block UPDATE/DELETE at DB level ───────────────
+    try {
+      await db.execute('''
+        CREATE TRIGGER IF NOT EXISTS trg_audit_no_update
+        BEFORE UPDATE ON audit_logs
+        BEGIN
+          SELECT RAISE(FAIL, 'audit_logs is immutable: UPDATE not permitted');
+        END
+      ''');
+    } catch (_) {}
+    try {
+      await db.execute('''
+        CREATE TRIGGER IF NOT EXISTS trg_audit_no_delete
+        BEFORE DELETE ON audit_logs
+        BEGIN
+          SELECT RAISE(FAIL, 'audit_logs is immutable: DELETE not permitted');
+        END
+      ''');
+    } catch (_) {}
+
+    // ── Performance indexes ───────────────────────────────────────────────────
+    try {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_created_at   ON audit_logs(createdAt DESC)',
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_action_type  ON audit_logs(actionType)',
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_performed_by ON audit_logs(performedBy)',
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_sale_id      ON audit_logs(saleId)',
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_shift_id     ON audit_logs(shiftId)',
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_table_id     ON audit_logs(tableId)',
+      );
+    } catch (_) {}
   }
 
   /// Called when upgrading from any older version. Creates missing tables and
@@ -285,6 +370,50 @@ class DatabaseService {
     } catch (_) {}
     try {
       await db.execute("ALTER TABLE expenses ADD COLUMN shiftId INTEGER");
+    } catch (_) {}
+    // audit_logs new columns (v10 → v11 migration; safe no-op on fresh DBs)
+    try {
+      await db.execute("ALTER TABLE audit_logs ADD COLUMN prevHash TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE audit_logs ADD COLUMN rowHash TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE audit_logs ADD COLUMN deviceId TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE audit_logs ADD COLUMN sessionId TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE audit_logs ADD COLUMN terminalName TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE audit_logs ADD COLUMN appVersion TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE audit_logs ADD COLUMN platform TEXT");
+    } catch (_) {}
+    // v12: new ESC/POS + receipt settings columns on company table
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN printerName TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN useEscPos INTEGER NOT NULL DEFAULT 1");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN cashDrawerEnabled INTEGER NOT NULL DEFAULT 0");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN paperWidthMm INTEGER NOT NULL DEFAULT 80");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN receiptFooter TEXT NOT NULL DEFAULT 'Ju Faleminderit!'");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN businessAddress TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN businessPhone TEXT");
     } catch (_) {}
     await db.insert('app_meta', {
       'key': 'global_order_number',
@@ -1070,6 +1199,27 @@ class DatabaseService {
     }
   }
 
+  /// Update any subset of ESC/POS + receipt settings in the company row.
+  Future<void> updateEscPosSettings({
+    bool? useEscPos,
+    bool? cashDrawerEnabled,
+    int? paperWidthMm,
+    String? receiptFooter,
+    String? businessAddress,
+    String? businessPhone,
+  }) async {
+    final db = await database;
+    final map = <String, Object?>{};
+    if (useEscPos != null)         map['useEscPos']         = useEscPos ? 1 : 0;
+    if (cashDrawerEnabled != null) map['cashDrawerEnabled'] = cashDrawerEnabled ? 1 : 0;
+    if (paperWidthMm != null)      map['paperWidthMm']      = paperWidthMm;
+    if (receiptFooter != null)     map['receiptFooter']     = receiptFooter;
+    if (businessAddress != null)   map['businessAddress']   = businessAddress;
+    if (businessPhone != null)     map['businessPhone']     = businessPhone;
+    if (map.isEmpty) return;
+    await db.update('company', map, where: 'id = 1');
+  }
+
   // ─────────────────────── WAITER SALARIES ──────────────────────────────────
 
   Future<Map<String, double>> fetchAllSalaries() async {
@@ -1238,6 +1388,151 @@ class DatabaseService {
     return db.rawQuery(
       'SELECT * FROM sale_adjustments WHERE saleId IN ($placeholders) ORDER BY saleId ASC, id ASC',
       saleIds,
+    );
+  }
+
+  // ────────────────────────── APP META ──────────────────────────────────────
+
+  Future<String?> getAppMeta(String key) async {
+    final db = await database;
+    final rows = await db.query(
+      'app_meta',
+      where: 'key = ?',
+      whereArgs: [key],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first['value'] as String?;
+  }
+
+  Future<void> setAppMeta(String key, String value) async {
+    final db = await database;
+    await db.insert(
+      'app_meta',
+      {'key': key, 'value': value},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // ─────────────────────────── AUDIT LOGS ───────────────────────────────────
+
+  /// Appends one immutable audit log entry.
+  ///
+  /// Computes a SHA-256 hash chain: each row stores the previous row's hash
+  /// ([prevHash]) and its own hash ([rowHash]) so gaps or edits are detectable.
+  /// The entire SELECT + INSERT is wrapped in a transaction to guarantee
+  /// sequential IDs and a coherent chain even under concurrent writes.
+  Future<int> insertAuditLog({
+    required String actionType,
+    String? entityType,
+    String? entityId,
+    String? performedBy,
+    String? performedRole,
+    int? shiftId,
+    int? saleId,
+    int? tableId,
+    String? detailsJson,
+    String? deviceId,
+    String? sessionId,
+    String? terminalName,
+    String? appVersion,
+    String? platform,
+  }) async {
+    final db = await database;
+    return db.transaction((txn) async {
+      final now = DateTime.now().toIso8601String();
+
+      // Fetch previous row hash to form the chain.
+      final prevRows = await txn.rawQuery(
+        'SELECT rowHash FROM audit_logs ORDER BY id DESC LIMIT 1',
+      );
+      final prevHash = prevRows.isEmpty
+          ? 'genesis'
+          : (prevRows.first['rowHash'] as String? ?? 'genesis');
+
+      // Deterministic SHA-256 over the fields that matter for forensics.
+      final hashInput = [
+        actionType,
+        entityType ?? '',
+        entityId ?? '',
+        performedBy ?? '',
+        now,
+        detailsJson ?? '',
+        prevHash,
+      ].join('|');
+      final rowHash = sha256.convert(utf8.encode(hashInput)).toString();
+
+      return txn.insert('audit_logs', {
+        'actionType':   actionType,
+        'entityType':   entityType,
+        'entityId':     entityId,
+        'performedBy':  performedBy,
+        'performedRole': performedRole,
+        'shiftId':      shiftId,
+        'saleId':       saleId,
+        'tableId':      tableId,
+        'detailsJson':  detailsJson,
+        'createdAt':    now,
+        'prevHash':     prevHash,
+        'rowHash':      rowHash,
+        'deviceId':     deviceId,
+        'sessionId':    sessionId,
+        'terminalName': terminalName,
+        'appVersion':   appVersion,
+        'platform':     platform,
+      });
+    });
+  }
+
+  /// Fetches audit logs with optional filters, newest-first.
+  Future<List<Map<String, dynamic>>> fetchAuditLogs({
+    DateTime? from,
+    DateTime? to,
+    String? actionType,
+    String? performedBy,
+    int? shiftId,
+    int? saleId,
+    int? tableId,
+    int limit = 200,
+    int offset = 0,
+  }) async {
+    final db = await database;
+    final where = <String>[];
+    final args = <dynamic>[];
+    if (from != null) {
+      where.add('createdAt >= ?');
+      args.add(from.toIso8601String());
+    }
+    if (to != null) {
+      where.add('createdAt <= ?');
+      args.add(to.toIso8601String());
+    }
+    if (actionType != null && actionType.isNotEmpty) {
+      where.add('actionType = ?');
+      args.add(actionType);
+    }
+    if (performedBy != null && performedBy.isNotEmpty) {
+      where.add('performedBy = ?');
+      args.add(performedBy);
+    }
+    if (shiftId != null) {
+      where.add('shiftId = ?');
+      args.add(shiftId);
+    }
+    if (saleId != null) {
+      where.add('saleId = ?');
+      args.add(saleId);
+    }
+    if (tableId != null) {
+      where.add('tableId = ?');
+      args.add(tableId);
+    }
+    return db.query(
+      'audit_logs',
+      where: where.isEmpty ? null : where.join(' AND '),
+      whereArgs: args.isEmpty ? null : args,
+      orderBy: 'id DESC',
+      limit: limit,
+      offset: offset,
     );
   }
 }

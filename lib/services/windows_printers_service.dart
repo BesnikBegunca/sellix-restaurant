@@ -3,6 +3,55 @@ import 'dart:io';
 class WindowsPrintersService {
   const WindowsPrintersService._();
 
+  // ── Printer discovery ────────────────────────────────────────────────────
+
+  /// Returns the name of the system default printer, or null if none is set
+  /// or the platform is not Windows.
+  static Future<String?> getDefaultPrinter() async {
+    if (!Platform.isWindows) return null;
+    try {
+      final result = await Process.run('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        r'(Get-Printer | Where-Object { $_.Default -eq $true } | Select-Object -First 1 -ExpandProperty Name)',
+      ]).timeout(const Duration(seconds: 5), onTimeout: () => ProcessResult(-1, 1, '', ''));
+      if (result.exitCode != 0) return null;
+      final name = (result.stdout as String).trim();
+      return name.isEmpty ? null : name;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Returns true when the named printer exists in the Windows spooler AND
+  /// reports a status of "Normal" (i.e. online, no error).
+  ///
+  /// A return value of false means the printer is offline, paused, in an
+  /// error state, or does not exist — the caller should warn the user before
+  /// attempting to print.
+  static Future<bool> isPrinterOnline(String printerName) async {
+    if (!Platform.isWindows) return false;
+    if (printerName.trim().isEmpty) return false;
+    final escaped = printerName.replaceAll("'", "''");
+    try {
+      final result = await Process.run('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        '''
+try {
+  \$p = Get-Printer -Name '$escaped' -ErrorAction Stop
+  if (\$p.PrinterStatus -eq 'Normal') { exit 0 } else { exit 1 }
+} catch { exit 2 }
+''',
+      ]).timeout(const Duration(seconds: 5), onTimeout: () => ProcessResult(-1, 1, '', ''));
+      return result.exitCode == 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<List<String>> listInstalledPrinters() async {
     if (!Platform.isWindows) return const [];
 

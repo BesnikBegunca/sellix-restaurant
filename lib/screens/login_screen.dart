@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
+import '../services/audit_log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_interaction.dart';
@@ -162,6 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (_pin == '9999') {
       setState(() => _pin = '');
+      AuditLogService.instance.logManagerLogin();
       Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const ManagerDashboardScreen()),
       );
@@ -174,6 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _pin = '');
 
       if (waiter != null) {
+        AuditLogService.instance.logWaiterLogin(waiterName: waiter.name);
         Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => TableSelectionScreen(waiterName: waiter.name),
@@ -182,6 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
+      AuditLogService.instance.logFailedPin();
       // PIN i panjohur
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -196,6 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       // NAMEMODE: Only accept admin PIN
       setState(() => _pin = '');
+      AuditLogService.instance.logFailedPin();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('PIN i gabuar. Kontakto menaxherin.'),

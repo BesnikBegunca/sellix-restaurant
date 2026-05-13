@@ -9,6 +9,8 @@ import '../utils/image_utils.dart';
 import '../theme/pos_grid.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_interaction.dart';
+import '../services/escpos/escpos_printer_service.dart';
+import '../services/printer_settings_store.dart';
 import '../services/receipt_printer.dart';
 import '../services/receipt_text.dart';
 
@@ -155,6 +157,13 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
             total: tableTotal,
             paymentReceipt: true,
           );
+          // Auto-kick cash drawer if enabled.
+          if (data.cashDrawerEnabled) {
+            final printer = await PrinterSettingsStore.loadSelectedPrinterName();
+            if (printer.isNotEmpty) {
+              EscPosPrinterService.instance.openCashDrawer(printer);
+            }
+          }
         }
       } catch (_) {}
 
