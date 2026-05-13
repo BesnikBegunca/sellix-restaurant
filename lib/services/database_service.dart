@@ -67,9 +67,12 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 7,
+      version: 9,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
+      onOpen: (db) async {
+        await db.execute('PRAGMA foreign_keys = ON');
+      },
     );
   }
 
@@ -117,7 +120,8 @@ class DatabaseService {
         waiterName TEXT    NOT NULL,
         tableId    INTEGER NOT NULL,
         total      REAL    NOT NULL,
-        timestamp  TEXT    NOT NULL
+        timestamp  TEXT    NOT NULL,
+        shiftId    INTEGER
       )
     ''');
     await db.execute('''
@@ -126,7 +130,8 @@ class DatabaseService {
         type        TEXT NOT NULL,
         description TEXT NOT NULL,
         amount      REAL NOT NULL,
-        timestamp   TEXT NOT NULL
+        timestamp   TEXT NOT NULL,
+        shiftId     INTEGER
       )
     ''');
     await db.execute('''
@@ -196,6 +201,54 @@ class DatabaseService {
         value TEXT NOT NULL
       )
     ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sale_lines (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        saleId           INTEGER NOT NULL,
+        productId        TEXT,
+        productName      TEXT    NOT NULL,
+        productEmoji     TEXT    NOT NULL DEFAULT '☕',
+        productImagePath TEXT,
+        productPrice     REAL    NOT NULL,
+        quantity         INTEGER NOT NULL,
+        lineTotal        REAL    NOT NULL,
+        categoryName     TEXT,
+        tableName        TEXT,
+        waiterName       TEXT,
+        createdAt        TEXT    NOT NULL,
+        FOREIGN KEY (saleId) REFERENCES sales(id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS shifts (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        openedAt       TEXT    NOT NULL,
+        closedAt       TEXT,
+        openedBy       TEXT,
+        closedBy       TEXT,
+        openingCash    REAL    NOT NULL DEFAULT 0,
+        closingCash    REAL,
+        totalSales     REAL    NOT NULL DEFAULT 0,
+        totalExpenses  REAL    NOT NULL DEFAULT 0,
+        netProfit      REAL    NOT NULL DEFAULT 0,
+        status         TEXT    NOT NULL DEFAULT 'open'
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sale_adjustments (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        saleId         INTEGER NOT NULL,
+        saleLineId     INTEGER,
+        adjustmentType TEXT    NOT NULL,
+        productName    TEXT,
+        quantity       INTEGER,
+        amount         REAL    NOT NULL,
+        reason         TEXT,
+        createdBy      TEXT,
+        createdAt      TEXT    NOT NULL,
+        FOREIGN KEY (saleId) REFERENCES sales(id)
+      )
+    ''');
     try {
       await db.execute(
         'CREATE UNIQUE INDEX IF NOT EXISTS idx_current_orders_waiter_table ON current_orders(waiterName, tableId)',
@@ -226,6 +279,12 @@ class DatabaseService {
       await db.execute(
         'CREATE UNIQUE INDEX IF NOT EXISTS idx_current_orders_waiter_table ON current_orders(waiterName, tableId)',
       );
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE sales ADD COLUMN shiftId INTEGER");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE expenses ADD COLUMN shiftId INTEGER");
     } catch (_) {}
     await db.insert('app_meta', {
       'key': 'global_order_number',
@@ -796,7 +855,116 @@ class DatabaseService {
 
   Future<void> clearSales() async {
     final db = await database;
-    await db.delete('sales');
+    await db.transaction((txn) async {
+      await txn.delete('sale_lines');
+      await txn.delete('sales');
+    });
+  }
+
+  // ──────────────────────────── SALE LINES ──────────────────────────────────
+
+  /// Inserts a sale header + its line items atomically.
+  /// Returns the new sale row's primary key.
+  /// Rolls back automatically if any insert fails.
+  Future<int> insertSaleWithLines({
+    required String waiterName,
+    required int tableId,
+    required double total,
+    required List<Map<String, dynamic>> lines,
+    int? shiftId,
+  }) async {
+    final db = await database;
+    return db.transaction<int>((txn) async {
+      final timestamp = DateTime.now().toIso8601String();
+      final saleId = await txn.insert('sales', {
+        'waiterName': waiterName,
+        'tableId': tableId,
+        'total': total,
+        'timestamp': timestamp,
+        'shiftId': shiftId,
+      });
+      for (final line in lines) {
+        await txn.insert('sale_lines', {
+          'saleId': saleId,
+          'productId': line['productId'],
+          'productName': line['productName'],
+          'productEmoji': line['productEmoji'] ?? '☕',
+          'productImagePath': line['productImagePath'],
+          'productPrice': line['productPrice'],
+          'quantity': line['quantity'],
+          'lineTotal': line['lineTotal'],
+          'categoryName': line['categoryName'],
+          'tableName': line['tableName'],
+          'waiterName': line['waiterName'],
+          'createdAt': timestamp,
+        });
+      }
+      return saleId;
+    });
+  }
+
+  /// Returns all sale_lines for a single sale, ordered by insertion order.
+  Future<List<Map<String, dynamic>>> fetchSaleLines(int saleId) async {
+    final db = await database;
+    return db.query(
+      'sale_lines',
+      where: 'saleId = ?',
+      whereArgs: [saleId],
+      orderBy: 'id ASC',
+    );
+  }
+
+  /// Batch-fetches all sale_lines whose saleId is in [saleIds].
+  /// Returns an empty list when [saleIds] is empty (avoids malformed SQL).
+  Future<List<Map<String, dynamic>>> fetchSaleLinesForSales(
+    List<int> saleIds,
+  ) async {
+    if (saleIds.isEmpty) return [];
+    final db = await database;
+    final placeholders = List.filled(saleIds.length, '?').join(',');
+    return db.rawQuery(
+      'SELECT * FROM sale_lines WHERE saleId IN ($placeholders) ORDER BY saleId ASC, id ASC',
+      saleIds,
+    );
+  }
+
+  /// Returns sales matching optional date, waiter, table, and ID filters.
+  Future<List<Map<String, dynamic>>> fetchFilteredSales({
+    DateTime? from,
+    DateTime? to,
+    String? waiterName,
+    int? tableId,
+    int? saleId,
+  }) async {
+    final db = await database;
+    final where = <String>[];
+    final args = <dynamic>[];
+    if (from != null) {
+      where.add('timestamp >= ?');
+      args.add(from.toIso8601String());
+    }
+    if (to != null) {
+      where.add('timestamp <= ?');
+      args.add(to.toIso8601String());
+    }
+    if (waiterName != null && waiterName.isNotEmpty) {
+      where.add('waiterName = ?');
+      args.add(waiterName);
+    }
+    if (tableId != null) {
+      where.add('tableId = ?');
+      args.add(tableId);
+    }
+    if (saleId != null) {
+      where.add('id = ?');
+      args.add(saleId);
+    }
+    return db.query(
+      'sales',
+      where: where.isEmpty ? null : where.join(' AND '),
+      whereArgs: args.isEmpty ? null : args,
+      orderBy: 'timestamp DESC',
+    );
   }
 
   // ─────────────────────────── EXPENSES ─────────────────────────────────────
@@ -811,6 +979,7 @@ class DatabaseService {
     required String description,
     required double amount,
     required DateTime date,
+    int? shiftId,
   }) async {
     final db = await database;
     return db.insert('expenses', {
@@ -818,6 +987,7 @@ class DatabaseService {
       'description': description,
       'amount': amount,
       'timestamp': date.toIso8601String(),
+      'shiftId': shiftId,
     });
   }
 
@@ -967,5 +1137,107 @@ class DatabaseService {
         whereArgs: [waiterName, date],
       );
     }
+  }
+
+  // ─────────────────────────── SHIFTS (permanent archive) ───────────────────
+
+  /// Opens a new shift record and returns its primary key.
+  Future<int> insertShiftRecord({
+    required DateTime openedAt,
+    String? openedBy,
+    double openingCash = 0,
+  }) async {
+    final db = await database;
+    return db.insert('shifts', {
+      'openedAt': openedAt.toIso8601String(),
+      'openedBy': openedBy,
+      'openingCash': openingCash,
+      'status': 'open',
+    });
+  }
+
+  /// Archives a shift by writing the closing summary. Does not delete any data.
+  Future<void> closeShiftRecord({
+    required int shiftId,
+    required DateTime closedAt,
+    String? closedBy,
+    double? closingCash,
+    required double totalSales,
+    required double totalExpenses,
+    required double netProfit,
+  }) async {
+    final db = await database;
+    await db.update(
+      'shifts',
+      {
+        'closedAt': closedAt.toIso8601String(),
+        'closedBy': closedBy,
+        'closingCash': closingCash,
+        'totalSales': totalSales,
+        'totalExpenses': totalExpenses,
+        'netProfit': netProfit,
+        'status': 'closed',
+      },
+      where: 'id = ?',
+      whereArgs: [shiftId],
+    );
+  }
+
+  /// Returns the most recently opened shift with status='open', or null.
+  Future<Map<String, dynamic>?> fetchOpenShift() async {
+    final db = await database;
+    final rows = await db.query(
+      'shifts',
+      where: "status = 'open'",
+      orderBy: 'id DESC',
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  /// Returns all shift records ordered newest-first.
+  Future<List<Map<String, dynamic>>> fetchAllShifts() async {
+    final db = await database;
+    return db.query('shifts', orderBy: 'id DESC');
+  }
+
+  // ─────────────────────── SALE ADJUSTMENTS ─────────────────────────────────
+
+  /// Records a refund, void, or discount against an existing sale.
+  Future<int> insertSaleAdjustment({
+    required int saleId,
+    int? saleLineId,
+    required String adjustmentType,
+    String? productName,
+    int? quantity,
+    required double amount,
+    String? reason,
+    String? createdBy,
+  }) async {
+    final db = await database;
+    return db.insert('sale_adjustments', {
+      'saleId': saleId,
+      'saleLineId': saleLineId,
+      'adjustmentType': adjustmentType,
+      'productName': productName,
+      'quantity': quantity,
+      'amount': amount,
+      'reason': reason,
+      'createdBy': createdBy,
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Batch-fetches all adjustments whose saleId is in [saleIds].
+  Future<List<Map<String, dynamic>>> fetchAdjustmentsForSales(
+    List<int> saleIds,
+  ) async {
+    if (saleIds.isEmpty) return [];
+    final db = await database;
+    final placeholders = List.filled(saleIds.length, '?').join(',');
+    return db.rawQuery(
+      'SELECT * FROM sale_adjustments WHERE saleId IN ($placeholders) ORDER BY saleId ASC, id ASC',
+      saleIds,
+    );
   }
 }

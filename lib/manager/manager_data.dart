@@ -16,6 +16,7 @@ class ExpenseRow {
     required this.description,
     required this.amount,
     DateTime? date,
+    this.shiftId,
   }) : date = date ?? DateTime.now();
 
   /// Primary key from SQLite — null until after first DB insert.
@@ -25,6 +26,7 @@ class ExpenseRow {
   final String description;
   final double amount;
   final DateTime date;
+  final int? shiftId;
 
   factory ExpenseRow.fromMap(Map<String, dynamic> m) => ExpenseRow(
     dbId: m['id'] as int?,
@@ -32,6 +34,149 @@ class ExpenseRow {
     description: m['description'] as String,
     amount: (m['amount'] as num).toDouble(),
     date: DateTime.parse(m['timestamp'] as String),
+    shiftId: m['shiftId'] as int?,
+  );
+}
+
+/// Archived shift record from the [shifts] SQLite table.
+class ShiftRecord {
+  const ShiftRecord({
+    required this.id,
+    required this.openedAt,
+    this.closedAt,
+    this.openedBy,
+    this.closedBy,
+    this.openingCash = 0,
+    this.closingCash,
+    required this.totalSales,
+    required this.totalExpenses,
+    required this.netProfit,
+    required this.status,
+  });
+
+  final int id;
+  final DateTime openedAt;
+  final DateTime? closedAt;
+  final String? openedBy;
+  final String? closedBy;
+  final double openingCash;
+  final double? closingCash;
+  final double totalSales;
+  final double totalExpenses;
+  final double netProfit;
+  final String status;
+
+  bool get isOpen => status == 'open';
+
+  factory ShiftRecord.fromMap(Map<String, dynamic> m) => ShiftRecord(
+    id: (m['id'] as num).toInt(),
+    openedAt: DateTime.parse(m['openedAt'] as String),
+    closedAt: m['closedAt'] != null
+        ? DateTime.tryParse(m['closedAt'] as String)
+        : null,
+    openedBy: m['openedBy'] as String?,
+    closedBy: m['closedBy'] as String?,
+    openingCash: (m['openingCash'] as num?)?.toDouble() ?? 0,
+    closingCash: (m['closingCash'] as num?)?.toDouble(),
+    totalSales: (m['totalSales'] as num?)?.toDouble() ?? 0,
+    totalExpenses: (m['totalExpenses'] as num?)?.toDouble() ?? 0,
+    netProfit: (m['netProfit'] as num?)?.toDouble() ?? 0,
+    status: m['status'] as String? ?? 'open',
+  );
+}
+
+/// A refund, void, or discount recorded against a sale, in [sale_adjustments].
+class SaleAdjustmentRow {
+  const SaleAdjustmentRow({
+    required this.id,
+    required this.saleId,
+    this.saleLineId,
+    required this.adjustmentType,
+    this.productName,
+    this.quantity,
+    required this.amount,
+    this.reason,
+    this.createdBy,
+    required this.createdAt,
+  });
+
+  final int id;
+  final int saleId;
+  final int? saleLineId;
+  final String adjustmentType;
+  final String? productName;
+  final int? quantity;
+  final double amount;
+  final String? reason;
+  final String? createdBy;
+  final DateTime createdAt;
+
+  factory SaleAdjustmentRow.fromMap(Map<String, dynamic> m) =>
+      SaleAdjustmentRow(
+        id: (m['id'] as num).toInt(),
+        saleId: (m['saleId'] as num).toInt(),
+        saleLineId: m['saleLineId'] != null
+            ? (m['saleLineId'] as num).toInt()
+            : null,
+        adjustmentType: m['adjustmentType'] as String,
+        productName: m['productName'] as String?,
+        quantity: m['quantity'] != null ? (m['quantity'] as num).toInt() : null,
+        amount: (m['amount'] as num).toDouble(),
+        reason: m['reason'] as String?,
+        createdBy: m['createdBy'] as String?,
+        createdAt: DateTime.parse(m['createdAt'] as String),
+      );
+}
+
+/// Immutable snapshot of one ordered product, persisted in [sale_lines].
+///
+/// All fields are copied at payment time — future edits to the product
+/// catalogue never alter historical records.
+class SaleLineRow {
+  const SaleLineRow({
+    this.dbId,
+    required this.saleId,
+    this.productId,
+    required this.productName,
+    required this.productEmoji,
+    this.productImagePath,
+    required this.productPrice,
+    required this.quantity,
+    required this.lineTotal,
+    this.categoryName,
+    this.tableName,
+    this.waiterName,
+    required this.createdAt,
+  });
+
+  final int? dbId;
+  final int saleId;
+  final String? productId;
+  final String productName;
+  final String productEmoji;
+  final String? productImagePath;
+  final double productPrice;
+  final int quantity;
+  final double lineTotal;
+  final String? categoryName;
+  final String? tableName;
+  final String? waiterName;
+  final DateTime createdAt;
+
+  factory SaleLineRow.fromMap(Map<String, dynamic> m) => SaleLineRow(
+    dbId: m['id'] as int?,
+    saleId: (m['saleId'] as num).toInt(),
+    productId: m['productId'] as String?,
+    productName: m['productName'] as String,
+    productEmoji: m['productEmoji'] as String? ?? '☕',
+    productImagePath: m['productImagePath'] as String?,
+    productPrice: (m['productPrice'] as num).toDouble(),
+    quantity: (m['quantity'] as num).toInt(),
+    lineTotal: (m['lineTotal'] as num).toDouble(),
+    categoryName: m['categoryName'] as String?,
+    tableName: m['tableName'] as String?,
+    waiterName: m['waiterName'] as String?,
+    createdAt: DateTime.parse(m['createdAt'] as String),
   );
 }
 
@@ -43,6 +188,7 @@ class SaleRow {
     required this.tableId,
     required this.total,
     required this.timestamp,
+    this.shiftId,
   });
 
   final int? dbId;
@@ -50,6 +196,7 @@ class SaleRow {
   final int tableId;
   final double total;
   final DateTime timestamp;
+  final int? shiftId;
 
   factory SaleRow.fromMap(Map<String, dynamic> m) => SaleRow(
     dbId: m['id'] as int?,
@@ -57,6 +204,7 @@ class SaleRow {
     tableId: m['tableId'] as int,
     total: (m['total'] as num).toDouble(),
     timestamp: DateTime.parse(m['timestamp'] as String),
+    shiftId: m['shiftId'] as int?,
   );
 }
 
@@ -142,6 +290,11 @@ class ManagerData extends ChangeNotifier {
   DateTime? shiftOpenedAt;
   DateTime? shiftClosedAt;
 
+  /// Primary key of the currently open shift in the [shifts] table.
+  /// Null only during the brief window before [_init] completes.
+  int? _currentShiftId;
+  int? get currentShiftId => _currentShiftId;
+
   // ── cached lists (always in sync with SQLite) ──────────────────────────────
 
   List<TableInfo> _cashierTables = [];
@@ -191,13 +344,9 @@ class ManagerData extends ChangeNotifier {
       selectedPrinterName = company['printerName'] as String?;
     }
 
-    // Shift — system is always active; only load last-closed timestamp for display.
+    // Shift — ensure a permanent shift record exists in [shifts] table.
     shiftOpen = true;
-    final shift = await db.fetchShift();
-    if (shift != null) {
-      final ca = shift['closedAt'] as String?;
-      shiftClosedAt = ca != null ? DateTime.tryParse(ca) : null;
-    }
+    await _ensureOpenShift(db);
 
     // Waiters
     final waiterRows = await db.fetchWaiters();
@@ -215,7 +364,7 @@ class ManagerData extends ChangeNotifier {
     final expenseRows = await db.fetchExpenses();
     _expenses = expenseRows.map(ExpenseRow.fromMap).toList();
 
-    // Sales → rebuild waiterSales map
+    // Sales → rebuild waiterSales map (current shift only)
     await _reloadSales(db);
 
     // Salaries + advances
@@ -261,13 +410,31 @@ class ManagerData extends ChangeNotifier {
         .toList();
   }
 
-  /// Rebuilds [_salesHistory] and [waiterSales] from every row in the sales table.
+  /// Rebuilds [_salesHistory] (all-time) and [waiterSales] (current shift only).
   Future<void> _reloadSales(DatabaseService db) async {
     final rows = await db.fetchSales();
     _salesHistory = rows.map(SaleRow.fromMap).toList();
     waiterSales = {};
     for (final s in _salesHistory) {
-      waiterSales[s.waiterName] = (waiterSales[s.waiterName] ?? 0) + s.total;
+      if (s.shiftId != null && s.shiftId == _currentShiftId) {
+        waiterSales[s.waiterName] = (waiterSales[s.waiterName] ?? 0) + s.total;
+      }
+    }
+  }
+
+  /// Loads or auto-creates the open shift record in the [shifts] table.
+  /// Sets [_currentShiftId] so every subsequent sale is linked to this shift.
+  Future<void> _ensureOpenShift(DatabaseService db) async {
+    final open = await db.fetchOpenShift();
+    if (open != null) {
+      _currentShiftId = (open['id'] as num).toInt();
+      final oa = open['openedAt'] as String?;
+      shiftOpenedAt = oa != null ? DateTime.tryParse(oa) : null;
+    } else {
+      // Auto-create a shift so the system is always in a valid state.
+      final now = DateTime.now();
+      _currentShiftId = await db.insertShiftRecord(openedAt: now);
+      shiftOpenedAt = now;
     }
   }
 
@@ -305,28 +472,60 @@ class ManagerData extends ChangeNotifier {
     shiftOpen = true;
     shiftOpenedAt = DateTime.now();
     shiftClosedAt = null;
+    // Legacy singleton shift record (kept for backward compat with older UI).
     await DatabaseService.instance.updateShift(
       openedAt: shiftOpenedAt!.toIso8601String(),
       closedAt: null,
       status: 'open',
     );
+    // Permanent shift archive — open a new record in [shifts] table.
+    _currentShiftId = await DatabaseService.instance.insertShiftRecord(
+      openedAt: shiftOpenedAt!,
+    );
+    waiterSales = {};
     notifyListeners();
   }
 
-  /// Finalises the current period: records the close timestamp, resets all
-  /// waiter totals to zero, and keeps the system active for the next period.
+  /// Archives the current shift, resets waiter totals, and keeps the system
+  /// active. Historical sales and line items are NEVER deleted.
   Future<void> closeShift() async {
-    shiftClosedAt = DateTime.now();
-    await DatabaseService.instance.updateShift(
+    final db = DatabaseService.instance;
+    final now = DateTime.now();
+    shiftClosedAt = now;
+
+    // Compute totals from the current shift's in-memory data.
+    final shiftSalesTotal = _salesHistory
+        .where((s) => s.shiftId == _currentShiftId)
+        .fold<double>(0, (sum, s) => sum + s.total);
+    final shiftExpensesTotal = _expenses
+        .where((e) => e.shiftId == _currentShiftId)
+        .fold<double>(0, (sum, e) => sum + e.amount);
+
+    // Archive the shift — no data deleted.
+    if (_currentShiftId != null) {
+      await db.closeShiftRecord(
+        shiftId: _currentShiftId!,
+        closedAt: now,
+        totalSales: shiftSalesTotal,
+        totalExpenses: shiftExpensesTotal,
+        netProfit: shiftSalesTotal - shiftExpensesTotal,
+      );
+    }
+
+    // Update legacy singleton shift record.
+    await db.updateShift(
       openedAt: null,
-      closedAt: shiftClosedAt!.toIso8601String(),
+      closedAt: now.toIso8601String(),
       status: 'open',
     );
-    // Clear all sales so totals start fresh from zero.
-    await DatabaseService.instance.clearSales();
-    await DatabaseService.instance.clearAllCurrentOrdersAndResetTables();
-    waiterSales.clear();
-    _salesHistory.clear();
+
+    // Open the next shift immediately so sales are never orphaned.
+    _currentShiftId = await db.insertShiftRecord(openedAt: now);
+    shiftOpenedAt = now;
+
+    // Reset tables (clear active orders) but do NOT delete historical sales.
+    await db.clearAllCurrentOrdersAndResetTables();
+    waiterSales = {};
     _cashierTables = _cashierTables
         .map(
           (t) => TableInfo(
@@ -381,6 +580,7 @@ class ManagerData extends ChangeNotifier {
       description: row.description,
       amount: row.amount,
       date: row.date,
+      shiftId: _currentShiftId,
     );
     _expenses.insert(
       0,
@@ -390,6 +590,7 @@ class ManagerData extends ChangeNotifier {
         description: row.description,
         amount: row.amount,
         date: row.date,
+        shiftId: _currentShiftId,
       ),
     );
     notifyListeners();
@@ -575,11 +776,110 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> clearWaiterSales() async {
-    await DatabaseService.instance.clearSales();
-    waiterSales.clear();
-    _salesHistory.clear();
+  /// Records a sale together with its per-product line items in one atomic
+  /// transaction.  If the DB write fails the exception propagates to the caller
+  /// (the payment UI) and neither the sale header nor any line row is written.
+  ///
+  /// All product fields (name, price, emoji, category) are snapshotted at call
+  /// time, so future catalogue edits never alter historical records.
+  Future<void> recordSaleWithLines({
+    required String waiterName,
+    required double total,
+    required int tableId,
+    required String tableName,
+    required List<CurrentOrderLine> lines,
+  }) async {
+    if (waiterName.trim().isEmpty) return;
+
+    // Build categoryName snapshot from the current in-memory menu.
+    final categoryByProductId = <String, String>{};
+    for (final cat in _categories) {
+      for (final p in cat.products) {
+        categoryByProductId[p.id] = cat.name;
+      }
+    }
+
+    final lineMaps = lines.map((l) {
+      final lineTotal = double.parse(
+        (l.product.price * l.qty).toStringAsFixed(2),
+      );
+      return <String, dynamic>{
+        'productId': l.product.id,
+        'productName': l.product.name,
+        'productEmoji': l.product.emoji,
+        'productImagePath': l.product.imagePath,
+        'productPrice': l.product.price,
+        'quantity': l.qty,
+        'lineTotal': lineTotal,
+        'categoryName': categoryByProductId[l.product.id],
+        'tableName': tableName,
+        'waiterName': waiterName,
+      };
+    }).toList();
+
+    final now = DateTime.now();
+    final saleId = await DatabaseService.instance.insertSaleWithLines(
+      waiterName: waiterName,
+      tableId: tableId,
+      total: total,
+      lines: lineMaps,
+      shiftId: _currentShiftId,
+    );
+
+    final sale = SaleRow(
+      dbId: saleId,
+      waiterName: waiterName,
+      tableId: tableId,
+      total: total,
+      timestamp: now,
+      shiftId: _currentShiftId,
+    );
+    _salesHistory.insert(0, sale);
+    waiterSales[waiterName] = (waiterSales[waiterName] ?? 0) + total;
     notifyListeners();
+  }
+
+  /// Resets waiter totals for the current view without deleting any DB records.
+  /// Historical sales are permanently preserved in [_salesHistory].
+  Future<void> clearWaiterSales() async {
+    waiterSales = {};
+    notifyListeners();
+  }
+
+  /// Records a refund, void, or discount against an existing sale.
+  /// The original sale and its line items are never modified.
+  Future<SaleAdjustmentRow> recordAdjustment({
+    required int saleId,
+    int? saleLineId,
+    required String adjustmentType,
+    String? productName,
+    int? quantity,
+    required double amount,
+    String? reason,
+    String? createdBy,
+  }) async {
+    final newId = await DatabaseService.instance.insertSaleAdjustment(
+      saleId: saleId,
+      saleLineId: saleLineId,
+      adjustmentType: adjustmentType,
+      productName: productName,
+      quantity: quantity,
+      amount: amount,
+      reason: reason,
+      createdBy: createdBy,
+    );
+    return SaleAdjustmentRow(
+      id: newId,
+      saleId: saleId,
+      saleLineId: saleLineId,
+      adjustmentType: adjustmentType,
+      productName: productName,
+      quantity: quantity,
+      amount: amount,
+      reason: reason,
+      createdBy: createdBy,
+      createdAt: DateTime.now(),
+    );
   }
 
   List<MapEntry<String, double>> get employeeSalesSorted {

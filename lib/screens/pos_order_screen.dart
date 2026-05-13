@@ -40,6 +40,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   late int _activeOrderNumber;
   final List<_CartLine> _lines = [];
   bool _hydrated = false;
+  bool _isPaying = false;
 
   @override
   void initState() {
@@ -128,128 +129,154 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   }
 
   Future<void> _payTable() async {
-    final data = ManagerData.instance;
-    final persisted = await ManagerData.instance.loadCurrentOrderLines(
-      widget.tableNumber,
-      widget.waiterName,
-    );
-    final combined = _mergeLines(persisted, _toCurrentLines(_lines));
-    final tableTotal = _sumCurrentLines(combined);
+    if (_isPaying) return;
+    setState(() => _isPaying = true);
+
     try {
-      if (combined.isNotEmpty) {
-        await ReceiptPrinter.printKitchenOrder(
-          companyName: ManagerData.instance.companyName ?? 'POS System',
+      final data = ManagerData.instance;
+      final persisted = await data.loadCurrentOrderLines(
+        widget.tableNumber,
+        widget.waiterName,
+      );
+      final combined = _mergeLines(persisted, _toCurrentLines(_lines));
+      final tableTotal = _sumCurrentLines(combined);
+
+      // Print payment receipt (non-fatal if printer is unavailable).
+      try {
+        if (combined.isNotEmpty) {
+          await ReceiptPrinter.printKitchenOrder(
+            companyName: data.companyName ?? 'POS System',
+            waiterName: widget.waiterName,
+            tableNumber: widget.tableNumber,
+            orderNumber: _activeOrderNumber,
+            lines: combined
+                .map((l) => ReceiptLine(product: l.product, qty: l.qty))
+                .toList(),
+            total: tableTotal,
+            paymentReceipt: true,
+          );
+        }
+      } catch (_) {}
+
+      // Regjistro shitjen me linjat e produkteve në një transaksion atomik.
+      if (tableTotal > 0 && widget.waiterName.isNotEmpty) {
+        await data.recordSaleWithLines(
           waiterName: widget.waiterName,
-          tableNumber: widget.tableNumber,
-          orderNumber: _activeOrderNumber,
-          lines: combined
-              .map((l) => ReceiptLine(product: l.product, qty: l.qty))
-              .toList(),
           total: tableTotal,
-          paymentReceipt: true,
+          tableId: widget.tableNumber,
+          tableName: 'Table ${widget.tableNumber}',
+          lines: combined,
         );
       }
-    } catch (_) {}
 
-    // Regjistro shitjen për kamarierin e loguar
-    if (tableTotal > 0 && widget.waiterName.isNotEmpty) {
-      data.recordSale(widget.waiterName, tableTotal);
-    }
-
-    await showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: Colors.black.withValues(alpha: 0.2),
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (ctx, anim, sec) {
-        final nav = Navigator.of(ctx);
-        Future.delayed(const Duration(milliseconds: 1800), () {
-          if (nav.canPop()) nav.pop();
-        });
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 40,
-                    offset: const Offset(0, 20),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: const BoxDecoration(
-                      color: AppColors.lightGreenBg,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.payments_outlined,
-                      color: AppColors.primaryGreen,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Pagesa u krye!',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.darkGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Table ${widget.tableNumber} u lirua',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.lightGreenText,
-                    ),
-                  ),
-                  if (tableTotal > 0) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      '\$${tableTotal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryGreen,
-                      ),
+      await showGeneralDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel:
+            MaterialLocalizations.of(context).modalBarrierDismissLabel,
+        barrierColor: Colors.black.withValues(alpha: 0.2),
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (ctx, anim, sec) {
+          final nav = Navigator.of(ctx);
+          Future.delayed(const Duration(milliseconds: 1800), () {
+            if (nav.canPop()) nav.pop();
+          });
+          return Center(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 40,
+                      offset: const Offset(0, 20),
                     ),
                   ],
-                ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: const BoxDecoration(
+                        color: AppColors.lightGreenBg,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.payments_outlined,
+                        color: AppColors.primaryGreen,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Pagesa u krye!',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Table ${widget.tableNumber} u lirua',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: AppColors.lightGreenText,
+                      ),
+                    ),
+                    if (tableTotal > 0) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        '\$${tableTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
+          );
+        },
+        transitionBuilder: (ctx, anim, sec, child) {
+          final curved = CurvedAnimation(
+            parent: anim,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+              child: child,
+            ),
+          );
+        },
+      );
+      await data.clearTable(widget.tableNumber, widget.waiterName);
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pagesa dështoi: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
         );
-      },
-      transitionBuilder: (ctx, anim, sec, child) {
-        final curved = CurvedAnimation(
-          parent: anim,
-          curve: Curves.easeOutCubic,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
-            child: child,
-          ),
-        );
-      },
-    );
-    await ManagerData.instance.clearTable(widget.tableNumber, widget.waiterName);
-    if (mounted) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } finally {
+      if (mounted) setState(() => _isPaying = false);
     }
   }
 
