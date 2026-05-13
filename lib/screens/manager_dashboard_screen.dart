@@ -400,7 +400,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
               _buildLoginModeOption(
                 mode: 'PINMODE',
                 title: '🔐 PIN Mode',
-                description: 'Waiters enter their PIN (4-6 digits)',
+                description: 'Waiters enter their PIN (min. 4 digits, no max)',
                 isSelected: _selectedLoginMode == 'PINMODE',
               ),
               const SizedBox(height: 12),
@@ -2201,8 +2201,11 @@ class _WaitersPanelState extends State<_WaitersPanel> {
       setState(() => _errorMsg = 'Shkruaj emrin e kamarierit.');
       return;
     }
-    if (pin.length < 4 || pin.length > 6 || int.tryParse(pin) == null) {
-      setState(() => _errorMsg = 'PIN duhet të jetë 4–6 shifra.');
+    if (pin.length < 4 || !RegExp(r'^\d+$').hasMatch(pin)) {
+      setState(
+        () => _errorMsg =
+            'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
+      );
       return;
     }
     if (pin == '9999') {
@@ -2243,7 +2246,7 @@ class _WaitersPanelState extends State<_WaitersPanel> {
               width: 140,
               child: TextField(
                 controller: _pinCtrl,
-                decoration: _inputDeco('PIN (4–6 shifra)'),
+                decoration: _inputDeco('PIN (min. 4 shifra, pa limit)'),
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 obscureText: true,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
 import '../services/audit_log_service.dart';
@@ -49,7 +50,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String _pin = '';
+  final TextEditingController _pinController = TextEditingController();
+  final FocusNode _pinFocus = FocusNode();
   String _bill = '';
   String _paid = '';
 
@@ -60,10 +62,13 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     ManagerData.instance.addListener(_onDataChanged);
+    _pinController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
+    _pinController.dispose();
+    _pinFocus.dispose();
     ManagerData.instance.removeListener(_onDataChanged);
     super.dispose();
   }
@@ -72,7 +77,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {});
   }
 
-  bool get _pinConfirmEnabled => _pin.length >= 4 && _pin.length <= 6;
+  static final RegExp _pinDigitsOnly = RegExp(r'^\d+$');
+
+  bool get _pinConfirmEnabled {
+    final p = _pinController.text;
+    return p.length >= 4 && _pinDigitsOnly.hasMatch(p);
+  }
 
   void _setCalcField(int? field) {
     setState(() => _calcField = field);
@@ -82,8 +92,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       if (_calcField != null) {
         _appendMoney(_calcField!, d);
-      } else if (_pin.length < 6) {
-        _pin += d;
+      } else {
+        final t = _pinController.text + d;
+        _pinController.value = TextEditingValue(
+          text: t,
+          selection: TextSelection.collapsed(offset: t.length),
+        );
       }
     });
   }
@@ -122,8 +136,13 @@ class _LoginScreenState extends State<LoginScreen> {
             _paid = s.substring(0, s.length - 1);
           }
         }
-      } else if (_pin.isNotEmpty) {
-        _pin = _pin.substring(0, _pin.length - 1);
+      } else if (_pinController.text.isNotEmpty) {
+        final t = _pinController.text;
+        final nt = t.substring(0, t.length - 1);
+        _pinController.value = TextEditingValue(
+          text: nt,
+          selection: TextSelection.collapsed(offset: nt.length),
+        );
       }
     });
   }
@@ -160,9 +179,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submitPin() {
     if (!_pinConfirmEnabled) return;
+    final pin = _pinController.text;
 
-    if (_pin == '9999') {
-      setState(() => _pin = '');
+    if (pin == '9999') {
+      _pinController.clear();
       AuditLogService.instance.logManagerLogin();
       Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const ManagerDashboardScreen()),
@@ -172,8 +192,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // In PINMODE, check for waiter PIN
     if (ManagerData.instance.loginMode == 'PINMODE') {
-      final waiter = ManagerData.instance.findWaiterByPin(_pin);
-      setState(() => _pin = '');
+      final waiter = ManagerData.instance.findWaiterByPin(pin);
+      _pinController.clear();
 
       if (waiter != null) {
         AuditLogService.instance.logWaiterLogin(waiterName: waiter.name);
@@ -199,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } else {
       // NAMEMODE: Only accept admin PIN
-      setState(() => _pin = '');
+      _pinController.clear();
       AuditLogService.instance.logFailedPin();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -325,7 +345,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final isNameMode = ManagerData.instance.loginMode == 'NAMEMODE';
 
     return GestureDetector(
-      onTap: () => _setCalcField(null),
+      onTap: () {
+        _setCalcField(null);
+        _pinFocus.requestFocus();
+      },
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
@@ -370,20 +393,56 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
             ],
-            Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(6, (i) {
-                    final filled = i < _pin.length;
-                    return Padding(
-                      padding: EdgeInsets.only(left: i == 0 ? 0 : 12),
-                      child: _pinSlot(filled),
-                    );
-                  }),
+            TextField(
+              controller: _pinController,
+              focusNode: _pinFocus,
+              obscureText: true,
+              obscuringCharacter: '•',
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              maxLines: 1,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 6,
+                color: AppColors.darkGreenText,
+              ),
+              decoration: InputDecoration(
+                hintText: 'PIN!',
+                hintStyle: TextStyle(
+                  fontSize: 18,
+                  color: AppColors.lightGreenText.withValues(alpha: 0.7),
+                ),
+                filled: true,
+                fillColor: AppColors.beige,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 18,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppColors.lightGreenBorderEmpty(),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppColors.lightGreenBorderEmpty(),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: AppColors.primaryGreen,
+                    width: 2,
+                  ),
                 ),
               ),
+              onSubmitted: (_) => _submitPin(),
             ),
             const SizedBox(height: 32),
             _keypadSection(context),
@@ -401,7 +460,7 @@ class _LoginScreenState extends State<LoginScreen> {
             else
               const Center(
                 child: Text(
-                  'Enter 4-6 digit PIN to continue',
+                  'Minimum 4 shifra, sa të duash gjatë · tastiera ose fusha · Enter për të hyrë',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.lightGreenText,
@@ -411,39 +470,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _pinSlot(bool filled) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 56,
-      height: 56,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: filled ? AppColors.lightGreenBg : AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: filled
-              ? AppColors.primaryGreen
-              : AppColors.lightGreenBorderEmpty(),
-          width: filled ? 2 : 2,
-        ),
-      ),
-      child: filled
-          ? const Text(
-              '●',
-              style: TextStyle(
-                fontSize: 32,
-                color: AppColors.darkGreenText,
-                height: 1,
-              ),
-            )
-          : Icon(
-              Icons.circle_outlined,
-              size: 22,
-              color: AppColors.lightGreenText.withValues(alpha: 0.5),
-            ),
     );
   }
 
