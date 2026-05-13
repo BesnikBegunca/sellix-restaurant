@@ -74,8 +74,27 @@ class DatabaseService {
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
+        await _ensureShiftsSnapshotColumn(db);
       },
     );
+  }
+
+  /// Kolona [snapshotJson] në [shifts] u shtua më vonë; bazat në v12 pa këtë
+  /// kolonë dështojnë në UPDATE. Sigurohemi në çdo hapje lidhjeje (pa u varur
+  /// nga ri-migrimi i versionit).
+  Future<void> _ensureShiftsSnapshotColumn(Database db) async {
+    try {
+      final cols = await db.rawQuery('PRAGMA table_info(shifts)');
+      if (cols.isEmpty) return;
+      final has = cols.any(
+        (r) => (r['name'] as String?) == 'snapshotJson',
+      );
+      if (!has) {
+        await db.execute(
+          'ALTER TABLE shifts ADD COLUMN snapshotJson TEXT',
+        );
+      }
+    } catch (_) {}
   }
 
   /// Ensures every table exists. Safe to call on any existing database because
@@ -240,7 +259,8 @@ class DatabaseService {
         totalSales     REAL    NOT NULL DEFAULT 0,
         totalExpenses  REAL    NOT NULL DEFAULT 0,
         netProfit      REAL    NOT NULL DEFAULT 0,
-        status         TEXT    NOT NULL DEFAULT 'open'
+        status         TEXT    NOT NULL DEFAULT 'open',
+        snapshotJson   TEXT
       )
     ''');
     await db.execute('''
@@ -370,6 +390,9 @@ class DatabaseService {
     } catch (_) {}
     try {
       await db.execute("ALTER TABLE expenses ADD COLUMN shiftId INTEGER");
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE shifts ADD COLUMN snapshotJson TEXT');
     } catch (_) {}
     // audit_logs new columns (v10 → v11 migration; safe no-op on fresh DBs)
     try {
@@ -972,6 +995,7 @@ class DatabaseService {
     required String waiterName,
     required int tableId,
     required double total,
+    int? shiftId,
   }) async {
     final db = await database;
     await db.insert('sales', {
@@ -979,6 +1003,7 @@ class DatabaseService {
       'tableId': tableId,
       'total': total,
       'timestamp': DateTime.now().toIso8601String(),
+      if (shiftId != null) 'shiftId': shiftId,
     });
   }
 
@@ -1315,22 +1340,62 @@ class DatabaseService {
     required double totalSales,
     required double totalExpenses,
     required double netProfit,
+    String? snapshotJson,
   }) async {
     final db = await database;
+    await _ensureShiftsSnapshotColumn(db);
+    final row = <String, Object?>{
+      'closedAt': closedAt.toIso8601String(),
+      'closedBy': closedBy,
+      'closingCash': closingCash,
+      'totalSales': totalSales,
+      'totalExpenses': totalExpenses,
+      'netProfit': netProfit,
+      'status': 'closed',
+    };
+    if (snapshotJson != null) {
+      row['snapshotJson'] = snapshotJson;
+    }
     await db.update(
       'shifts',
-      {
-        'closedAt': closedAt.toIso8601String(),
-        'closedBy': closedBy,
-        'closingCash': closingCash,
-        'totalSales': totalSales,
-        'totalExpenses': totalExpenses,
-        'netProfit': netProfit,
-        'status': 'closed',
-      },
+      row,
       where: 'id = ?',
       whereArgs: [shiftId],
     );
+  }
+
+  /// Shuma e [currentTotal] për çdo kamarier (porosi të hapura në tavolina).
+  Future<Map<String, double>> fetchCurrentOrderTotalsByWaiter() async {
+    final db = await database;
+    final rows = await db.rawQuery('''
+      SELECT TRIM(waiterName) AS w, SUM(currentTotal) AS t
+      FROM current_orders
+      GROUP BY TRIM(waiterName)
+    ''');
+    final out = <String, double>{};
+    for (final r in rows) {
+      var name = (r['w'] as String?)?.trim() ?? '';
+      if (name.isEmpty) name = 'Panjohur';
+      out[name] = (r['t'] as num?)?.toDouble() ?? 0;
+    }
+    return out;
+  }
+
+  /// Numri i rreshtave në [current_orders] për çdo kamarier.
+  Future<Map<String, int>> fetchCurrentOrderCountsByWaiter() async {
+    final db = await database;
+    final rows = await db.rawQuery('''
+      SELECT TRIM(waiterName) AS w, COUNT(*) AS c
+      FROM current_orders
+      GROUP BY TRIM(waiterName)
+    ''');
+    final out = <String, int>{};
+    for (final r in rows) {
+      var name = (r['w'] as String?)?.trim() ?? '';
+      if (name.isEmpty) name = 'Panjohur';
+      out[name] = (r['c'] as num?)?.toInt() ?? 0;
+    }
+    return out;
   }
 
   /// Returns the most recently opened shift with status='open', or null.

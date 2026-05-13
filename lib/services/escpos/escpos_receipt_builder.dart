@@ -101,6 +101,9 @@ class EscPosReceiptBuilder {
     required PrinterProfile profile,
     required String companyName,
     required Map<String, double> waiterTotals,
+    double? summaryPaid,
+    double? summaryOpen,
+    DateTime? reportTime,
   }) {
     final b = EscPosBytes(paperWidthMm: profile.paperWidthMm);
     final w = b.lineWidth;
@@ -131,6 +134,25 @@ class EscPosReceiptBuilder {
     b.textLine(
       b.col('TOTALI', colW) + b.col(_money(grand), colW, rightAlign: true),
     );
+    if (summaryPaid != null && summaryOpen != null) {
+      b.lf();
+      b.textLine(
+        b.col('Paguar', colW) +
+            b.col(_money(summaryPaid), colW, rightAlign: true),
+      );
+      b.textLine(
+        b.col('Hapur', colW) +
+            b.col(_money(summaryOpen), colW, rightAlign: true),
+      );
+    }
+    if (reportTime != null) {
+      final t = reportTime;
+      final ts =
+          '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year} '
+          '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+      b.lf();
+      b.textLine(ts);
+    }
     b.lf(4);
 
     if (profile.supportsCut) b.partialCut();
