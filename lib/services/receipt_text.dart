@@ -54,7 +54,7 @@ String buildKitchenOrderReceiptText({
   out.add(center(companyName));
   out.add(rule());
   final waiterPart = 'Kamarjeri : $waiterName';
-  final tablePart = 'Table $tableNumber';
+  final tablePart = 'Tavolina $tableNumber';
   final waiterTableLine = '$waiterPart  |  $tablePart';
   out.add(waiterTableLine.length > width
       ? waiterTableLine.substring(0, width)

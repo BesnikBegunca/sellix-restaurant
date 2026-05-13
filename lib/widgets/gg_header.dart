@@ -53,27 +53,27 @@ class GgAppHeader extends StatelessWidget {
 
   static String formattedDate(DateTime d) {
     const days = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
+      'E hënë',
+      'E martë',
+      'E mërkurë',
+      'E enjte',
+      'E premte',
+      'E shtunë',
+      'E diel',
     ];
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      'Janar',
+      'Shkurt',
+      'Mars',
+      'Prill',
+      'Maj',
+      'Qershor',
+      'Korrik',
+      'Gusht',
+      'Shtator',
+      'Tetor',
+      'Nëntor',
+      'Dhjetor',
     ];
     return '${days[d.weekday - 1]}, ${d.day} ${months[d.month - 1]}';
   }

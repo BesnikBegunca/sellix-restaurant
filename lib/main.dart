@@ -7,6 +7,7 @@ import 'manager/manager_data.dart';
 import 'screens/login_screen.dart';
 import 'screens/waiter_selection_screen.dart';
 import 'theme/app_colors.dart';
+import 'theme/app_tokens.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,13 +40,83 @@ class PosSystemApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.beige,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryGreen,
-          primary: AppColors.primaryGreen,
-          surface: AppColors.white,
+          seedColor: AppColors.deepForestGreen,
+          brightness: Brightness.light,
+          primary: AppColors.deepForestGreen,
+          onPrimary: AppColors.pureWhite,
+          surface: AppColors.pureWhite,
+          onSurface: AppColors.charcoalText,
         ),
         textTheme: const TextTheme().apply(
-          bodyColor: AppColors.darkGreenText,
-          displayColor: AppColors.darkGreenText,
+          bodyColor: AppColors.charcoalText,
+          displayColor: AppColors.charcoalText,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: AppColors.pureWhite,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.cardRadius),
+            side: const BorderSide(color: AppColors.lightGreenBorder),
+          ),
+        ),
+        dividerTheme: const DividerThemeData(
+          color: AppColors.lightGreenBorder,
+          thickness: 1,
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            backgroundColor: AppColors.deepForestGreen,
+            foregroundColor: AppColors.pureWhite,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+            ),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            foregroundColor: AppColors.deepForestGreen,
+            side: const BorderSide(color: AppColors.lightGreenBorder),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.pureWhite,
+          hintStyle: TextStyle(
+            color: AppColors.mutedGray.withValues(alpha: 0.85),
+            fontSize: AppTokens.tableTextSize,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+            borderSide: const BorderSide(
+              color: AppColors.deepForestGreen,
+              width: 2,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
+        snackBarTheme: const SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.deepForestGreen,
+          contentTextStyle: TextStyle(
+            color: AppColors.pureWhite,
+            fontSize: AppTokens.tableTextSize,
+          ),
         ),
       ),
       home: mode == 'NAMEMODE'

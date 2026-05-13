@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -17,25 +16,28 @@ import '../services/receipt_printer.dart';
 import '../services/windows_printers_service.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_tokens.dart';
 import '../utils/image_utils.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
+import '../widgets/gg_header.dart';
 
 /// Të dhënat që barten me drag nga një produkt.
 typedef _ProductDrag = ({String fromCatId, ProductItem product});
 
 const _kSectionTitles = <String>[
-  'Përmbledhje',
-  'Gjendja',
-  'Kamarierët',
-  'Shpenzime',
-  'Fitime',
-  'Raporte',
-  'Top puntor',
+  'Overview',
+  'Shift',
+  'Staff',
+  'Expenses',
+  'Profits',
+  'Reports',
+  'Leaderboard',
   'Menu',
-  'Tavolinat',
-  'Company Settings',
-  'Pagat & Avans',
-  'Historiku i Shitjeve',
-  'Audit Logs',
+  'Tables',
+  'Company settings',
+  'Payroll & advances',
+  'Orders & history',
+  'Audit logs',
 ];
 
 /// Dashboard menaxheri (PIN 9999). Seksionet 1–8 sipas kërkesës.
@@ -48,6 +50,7 @@ class ManagerDashboardScreen extends StatefulWidget {
 
 class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   final ManagerData _m = ManagerData.instance;
+  final TextEditingController _headerSearchController = TextEditingController();
   int _railIndex = 0;
   bool _sidebarExpanded = true;
 
@@ -61,6 +64,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
   @override
   void dispose() {
+    _headerSearchController.dispose();
     _m.removeListener(_onData);
     super.dispose();
   }
@@ -83,19 +87,24 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             onDestinationSelected: (i) => setState(() => _railIndex = i),
             onLogout: _exitToLogin,
           ),
-          const VerticalDivider(width: 1, thickness: 1),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ManagerTopBar(sectionTitle: _kSectionTitles[_railIndex]),
+                _ManagerTopBar(
+                  sectionTitle: _kSectionTitles[_railIndex],
+                  searchController: _headerSearchController,
+                  managerData: _m,
+                ),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppTokens.mainPadding),
                     child: Align(
                       alignment: Alignment.topLeft,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1280),
+                        constraints: const BoxConstraints(
+                          maxWidth: AppTokens.maxContentWidth,
+                        ),
                         child: _buildSection(),
                       ),
                     ),
@@ -391,7 +400,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
               _buildLoginModeOption(
                 mode: 'PINMODE',
                 title: '🔐 PIN Mode',
-                description: 'Waiters enter their PIN (4-6 digits)',
+                description: 'Waiters enter their PIN (min. 4 digits, no max)',
                 isSelected: _selectedLoginMode == 'PINMODE',
               ),
               const SizedBox(height: 12),
@@ -776,150 +785,381 @@ class _ManagerSideNav extends StatelessWidget {
     (
       icon: Icons.dashboard_outlined,
       sel: Icons.dashboard,
-      label: 'Përmbledhje',
+      label: 'Overview',
     ),
-    (icon: Icons.schedule_outlined, sel: Icons.schedule, label: 'Gjendja'),
-    (icon: Icons.badge_outlined, sel: Icons.badge, label: 'Kamarierët'),
+    (icon: Icons.schedule_outlined, sel: Icons.schedule, label: 'Shift'),
+    (icon: Icons.badge_outlined, sel: Icons.badge, label: 'Staff'),
     (
-      icon: Icons.table_rows_outlined,
-      sel: Icons.table_rows,
-      label: 'Shpenzime',
+      icon: Icons.account_balance_wallet_outlined,
+      sel: Icons.account_balance_wallet,
+      label: 'Expenses',
     ),
-    (icon: Icons.trending_up_outlined, sel: Icons.trending_up, label: 'Fitime'),
+    (icon: Icons.trending_up_outlined, sel: Icons.trending_up, label: 'Profits'),
     (
       icon: Icons.description_outlined,
       sel: Icons.description,
-      label: 'Raporte',
+      label: 'Reports',
     ),
     (
       icon: Icons.emoji_events_outlined,
       sel: Icons.emoji_events,
-      label: 'Top puntor',
+      label: 'Leaderboard',
     ),
     (icon: Icons.menu_book_outlined, sel: Icons.menu_book, label: 'Menu'),
-    (icon: Icons.grid_view_outlined, sel: Icons.grid_view, label: 'Tavolinat'),
-    (icon: Icons.settings_outlined, sel: Icons.settings, label: 'Company'),
-    (icon: Icons.payments_outlined, sel: Icons.payments, label: 'Pagat'),
-    (icon: Icons.history_outlined, sel: Icons.history, label: 'Historiku'),
+    (icon: Icons.grid_view_outlined, sel: Icons.grid_view, label: 'Tables'),
+    (icon: Icons.settings_outlined, sel: Icons.settings, label: 'Settings'),
+    (icon: Icons.payments_outlined, sel: Icons.payments, label: 'Payroll'),
+    (icon: Icons.receipt_long_outlined, sel: Icons.receipt_long, label: 'Orders'),
     (icon: Icons.security_outlined, sel: Icons.security, label: 'Audit'),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final m = ManagerData.instance;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOutCubic,
-      width: expanded ? 256 : 72,
-      color: AppColors.white,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 56,
-            child: Align(
-              alignment: expanded ? Alignment.centerRight : Alignment.center,
-              child: IconButton(
-                tooltip: expanded
-                    ? 'Mbyll menunë anësore'
-                    : 'Hap menunë anësore',
-                onPressed: onToggle,
-                icon: Icon(
-                  expanded ? Icons.keyboard_double_arrow_left : Icons.menu,
-                  color: AppColors.primaryGreen,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              itemCount: _items.length,
-              itemBuilder: (context, i) {
-                final it = _items[i];
-                final sel = i == selectedIndex;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Material(
-                    color: sel ? AppColors.lightGreenBg : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => onDestinationSelected(i),
-                      child: SizedBox(
-                        height: 48,
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: expanded ? 44 : 56,
-                              child: Center(
-                                child: Icon(
-                                  sel ? it.sel : it.icon,
-                                  size: 22,
-                                  color: sel
-                                      ? AppColors.primaryGreen
-                                      : AppColors.mediumGreenText,
-                                ),
-                              ),
+      width: expanded ? AppTokens.sidebarWidth : 72,
+      decoration: const BoxDecoration(
+        color: AppColors.pureWhite,
+        border: Border(
+          right: BorderSide(color: AppColors.lightGreenBorder),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (expanded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 8, 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const GgLogoBox(size: 44, radius: 12),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            m.companyName ?? 'Green Leaf',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.charcoalText,
                             ),
-                            if (expanded)
-                              Expanded(
-                                child: Text(
-                                  it.label,
-                                  style: TextStyle(
-                                    fontWeight: sel
-                                        ? FontWeight.w600
-                                        : FontWeight.w500,
-                                    color: sel
-                                        ? AppColors.darkGreenText
-                                        : AppColors.mediumGreenText,
-                                    fontSize: 14,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Hospitality POS',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.mutedGray.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Tooltip(
+                      message: 'Collapse sidebar',
+                      child: IconButton(
+                        onPressed: onToggle,
+                        icon: const Icon(
+                          Icons.keyboard_double_arrow_left_rounded,
+                          color: AppColors.deepForestGreen,
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Divider(height: 1, thickness: 1, color: AppColors.borderSubtle(0.12)),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
-            child: expanded
-                ? SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: onLogout,
-                      icon: const Icon(Icons.logout, size: 20),
-                      label: const Text('Dil'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryGreen,
-                        side: BorderSide(color: AppColors.borderVisible(0.25)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  children: [
+                    const Center(child: GgLogoBox(size: 40, radius: 12)),
+                    const SizedBox(height: 8),
+                    Tooltip(
+                      message: 'Expand sidebar',
+                      child: IconButton(
+                        onPressed: onToggle,
+                        icon: const Icon(
+                          Icons.menu_rounded,
+                          color: AppColors.deepForestGreen,
+                        ),
                       ),
                     ),
-                  )
-                : Tooltip(
-                    message: 'Dil',
+                  ],
+                ),
+              ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                itemCount: _items.length,
+                itemBuilder: (context, i) {
+                  final it = _items[i];
+                  final sel = i == selectedIndex;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
                     child: Material(
-                      color: Colors.transparent,
+                      color: sel
+                          ? AppColors.softGreenTint
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
                       child: InkWell(
-                        onTap: onLogout,
                         borderRadius: BorderRadius.circular(12),
-                        child: const SizedBox(
+                        hoverColor: AppColors.softGreenTint.withValues(
+                          alpha: 0.45,
+                        ),
+                        onTap: () => onDestinationSelected(i),
+                        child: SizedBox(
                           height: 48,
-                          width: 48,
-                          child: Icon(
-                            Icons.logout,
-                            color: AppColors.primaryGreen,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: expanded ? 44 : 56,
+                                child: Center(
+                                  child: Icon(
+                                    sel ? it.sel : it.icon,
+                                    size: 22,
+                                    color: sel
+                                        ? AppColors.deepForestGreen
+                                        : AppColors.mutedGray,
+                                  ),
+                                ),
+                              ),
+                              if (expanded)
+                                Expanded(
+                                  child: Text(
+                                    it.label,
+                                    style: TextStyle(
+                                      fontWeight: sel
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                      color: sel
+                                          ? AppColors.deepForestGreen
+                                          : AppColors.mutedGray,
+                                      fontSize: 14,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
                     ),
+                  );
+                },
+              ),
+            ),
+            if (expanded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 10,
                   ),
+                  decoration: BoxDecoration(
+                    color: AppColors.softGreenTint,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.lightGreenBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      const UserAvatar(
+                        name: 'Manager',
+                        tooltip: 'Manager account',
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Manager',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.charcoalText,
+                              ),
+                            ),
+                            Text(
+                              'Signed in',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.mutedGray.withValues(
+                                  alpha: 0.9,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Tooltip(
+                        message: 'Sign out',
+                        child: IconButton(
+                          visualDensity: VisualDensity.compact,
+                          onPressed: onLogout,
+                          icon: const Icon(
+                            Icons.logout_rounded,
+                            color: AppColors.deepForestGreen,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Tooltip(
+                  message: 'Sign out',
+                  child: Center(
+                    child: IconButton(
+                      onPressed: onLogout,
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                        color: AppColors.deepForestGreen,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ManagerTopBar extends StatelessWidget {
+  const _ManagerTopBar({
+    required this.sectionTitle,
+    required this.searchController,
+    required this.managerData,
+  });
+
+  final String sectionTitle;
+  final TextEditingController searchController;
+  final ManagerData managerData;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.pureWhite,
+      elevation: 0,
+      child: Container(
+        height: AppTokens.headerHeight,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: AppColors.lightGreenBorder),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                sectionTitle,
+                style: const TextStyle(
+                  fontSize: AppTokens.pageTitleSize,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.charcoalText,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  SearchField(
+                    controller: searchController,
+                    hintText: 'Search…',
+                  ),
+                  const SizedBox(width: 12),
+                  _ManagerBusinessPill(managerData: managerData),
+                  const SizedBox(width: 12),
+                  _ManagerShiftPill(managerData: managerData),
+                  const SizedBox(width: 4),
+                  Tooltip(
+                    message: 'Notifications',
+                    child: IconButton(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No new notifications.'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      icon: Icon(
+                        Icons.notifications_none_rounded,
+                        color: AppColors.mutedGray.withValues(alpha: 0.95),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const UserAvatar(
+                    name: 'Manager',
+                    tooltip: 'Manager account',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ManagerBusinessPill extends StatelessWidget {
+  const _ManagerBusinessPill({required this.managerData});
+
+  final ManagerData managerData;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite,
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+        border: Border.all(color: AppColors.lightGreenBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.store_mall_directory_outlined,
+            size: 20,
+            color: AppColors.mutedGray.withValues(alpha: 0.95),
+          ),
+          const SizedBox(width: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
+            child: Text(
+              managerData.companyName ?? 'Main location',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.charcoalText,
+              ),
+            ),
           ),
         ],
       ),
@@ -927,72 +1167,39 @@ class _ManagerSideNav extends StatelessWidget {
   }
 }
 
-class _ManagerTopBar extends StatelessWidget {
-  const _ManagerTopBar({required this.sectionTitle});
+class _ManagerShiftPill extends StatelessWidget {
+  const _ManagerShiftPill({required this.managerData});
 
-  final String sectionTitle;
+  final ManagerData managerData;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      elevation: 0,
-      child: Container(
-        height: 72,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: AppColors.borderSubtle(0.1)),
+    final open = managerData.shiftOpen;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.softGreenTint,
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+        border: Border.all(color: AppColors.lightGreenBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 20,
+            color: AppColors.deepForestGreen,
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.lightGreenBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'MANAGER',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryGreen,
-                  letterSpacing: 1.2,
-                ),
-              ),
+          const SizedBox(width: 8),
+          Text(
+            open ? 'Shift open' : 'Shift closed',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: AppColors.charcoalText,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    sectionTitle,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    'Dashboard menaxheri · POS System',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.lightGreenText,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1033,20 +1240,20 @@ class _OverviewPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Përmbledhje operacioni',
+                    'Operations overview',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: AppTokens.pageTitleSize,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
+                      color: AppColors.charcoalText,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'PIN menaxheri: 9999 · Menu dinamike, tavolina dhe raporte në një vend.',
+                    'Manager PIN 9999 · Live floor, menu, and reports in one calm workspace.',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: AppTokens.bodySize,
                       height: 1.35,
-                      color: AppColors.lightGreenText,
+                      color: AppColors.mutedGray,
                     ),
                   ),
                 ],
@@ -1056,77 +1263,106 @@ class _OverviewPanel extends StatelessWidget {
             _OverviewLiveClockChip(),
           ],
         ),
-        const SizedBox(height: 24),
-        Wrap(
-          spacing: 14,
-          runSpacing: 14,
-          children: [
-            _StatCard(
-              title: 'Gjendja',
-              value: m.shiftOpen ? 'E hapur' : 'E mbyllur',
-              icon: Icons.schedule,
-            ),
-            _StatCard(
-              title: 'Kamarierë aktivë',
-              value: '${m.waiters.length}',
-              icon: Icons.badge,
-            ),
-            _StatCard(
-              title: 'Shpenzime totale',
-              value: '\$${m.totalExpenses.toStringAsFixed(2)}',
-              icon: Icons.payments_outlined,
-            ),
-            _StatCard(
-              title: 'Fitim sot',
-              value: '€${m.profitToday.toStringAsFixed(0)}',
-              icon: Icons.trending_up,
-            ),
-            _StatCard(
-              title: 'Fitim kjo javë',
-              value: '€${m.profitThisWeek.toStringAsFixed(0)}',
-              icon: Icons.calendar_view_week_outlined,
-            ),
-            _StatCard(
-              title: 'Top puntor',
-              value: top.key == '—' ? '—' : top.key,
-              subtitle: top.key == '—'
-                  ? null
-                  : '\$${top.value.toStringAsFixed(0)}',
-              icon: Icons.emoji_events,
-            ),
-            _StatCard(
-              title: 'Tavolina',
-              value: '${m.cashierTables.length} · ${m.tablesPerRow}/rresht',
-              icon: Icons.grid_view,
-            ),
-            _StatCard(
-              title: 'Tavolina të zëna',
-              value: '$occupied / ${m.cashierTables.length}',
-              icon: Icons.event_seat_outlined,
-            ),
-            _StatCard(
-              title: 'Hapësirë e hapur',
-              value: '\$${openCheck.toStringAsFixed(2)}',
-              icon: Icons.receipt_long_outlined,
-            ),
-            _StatCard(
-              title: 'Kategori menuje',
-              value: '$categoryCount',
-              icon: Icons.category_outlined,
-            ),
-            _StatCard(
-              title: 'Produkte në menu',
-              value: '$productCount',
-              icon: Icons.inventory_2_outlined,
-            ),
-            _StatCard(
-              title: 'Shitje stafi (sesioni)',
-              value: '\$${totalStaffSales.toStringAsFixed(2)}',
-              icon: Icons.point_of_sale_outlined,
-            ),
-          ],
+        const SizedBox(height: AppTokens.cardGap),
+        LayoutBuilder(
+          builder: (context, c) {
+            final w = c.maxWidth;
+            var cols = 1;
+            if (w >= 1440) {
+              cols = 4;
+            } else if (w >= 1200) {
+              cols = 3;
+            } else if (w >= 900) {
+              cols = 2;
+            }
+            const gap = AppTokens.cardGap;
+            final usable = w <= 0 ? 320.0 : w;
+            final raw = (usable - gap * (cols - 1)) / cols;
+            final cardW = raw.clamp(200.0, 480.0);
+            return Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: [
+                _StatCard(
+                  width: cardW,
+                  title: 'Shift',
+                  value: m.shiftOpen ? 'Open' : 'Closed',
+                  icon: Icons.schedule_rounded,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Active staff',
+                  value: '${m.waiters.length}',
+                  icon: Icons.badge_outlined,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Total expenses',
+                  value: '\$${m.totalExpenses.toStringAsFixed(2)}',
+                  icon: Icons.payments_outlined,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Profit today',
+                  value: '€${m.profitToday.toStringAsFixed(0)}',
+                  icon: Icons.trending_up,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Profit this week',
+                  value: '€${m.profitThisWeek.toStringAsFixed(0)}',
+                  icon: Icons.calendar_view_week_outlined,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Top server',
+                  value: top.key == '—' ? '—' : top.key,
+                  subtitle: top.key == '—'
+                      ? null
+                      : '\$${top.value.toStringAsFixed(0)}',
+                  icon: Icons.emoji_events_outlined,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Tables',
+                  value: '${m.cashierTables.length} · ${m.tablesPerRow}/row',
+                  icon: Icons.grid_view_rounded,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Occupied tables',
+                  value: '$occupied / ${m.cashierTables.length}',
+                  icon: Icons.event_seat_outlined,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Open checks',
+                  value: '\$${openCheck.toStringAsFixed(2)}',
+                  icon: Icons.receipt_long_outlined,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Menu categories',
+                  value: '$categoryCount',
+                  icon: Icons.category_outlined,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Menu products',
+                  value: '$productCount',
+                  icon: Icons.inventory_2_outlined,
+                ),
+                _StatCard(
+                  width: cardW,
+                  title: 'Staff sales (session)',
+                  value: '\$${totalStaffSales.toStringAsFixed(2)}',
+                  icon: Icons.point_of_sale_outlined,
+                ),
+              ],
+            );
+          },
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: AppTokens.cardGap),
         LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth > 920;
@@ -1196,39 +1432,44 @@ class _OverviewLiveClockChipState extends State<_OverviewLiveClockChip> {
     final now = DateTime.now();
     final t =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-    return Material(
-      color: AppColors.lightGreenBg,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.schedule, size: 20, color: AppColors.primaryGreen),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  t,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: AppColors.darkGreenText,
-                  ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.softGreenTint,
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+        border: Border.all(color: AppColors.lightGreenBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 22,
+            color: AppColors.deepForestGreen,
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                t,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  color: AppColors.charcoalText,
                 ),
-                Text(
-                  '${now.day}.${now.month}.${now.year}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.lightGreenText,
-                  ),
+              ),
+              Text(
+                '${now.day}.${now.month}.${now.year}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mutedGray,
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1243,19 +1484,15 @@ class _OverviewSalesBarsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final entries = m.employeeSalesSorted.take(6).toList();
     return _OverviewSectionCard(
-      title: 'Shitje sipas kamarierit',
+      title: 'Sales by server',
       subtitle:
-          'Total i mbledhur nga pagesat në POS (sesioni aktual në memorie).',
+          'Totals from completed payments on POS (current in-memory session).',
       child: entries.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: Text(
-                  'Nuk ka shitje të regjistruara ende. Finalizo një pagesë nga kasieri.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.mediumGreenText),
-                ),
-              ),
+          ? const DashboardEmptyState(
+              title: 'No sales yet',
+              message:
+                  'Complete a payment from the cashier to see server totals here.',
+              icon: Icons.bar_chart_rounded,
             )
           : _OverviewSalesBarsInner(entries: entries),
     );
@@ -1299,7 +1536,7 @@ class _OverviewSalesBarsInner extends StatelessWidget {
                           width: 36,
                           height: maxV > 0 ? (e.value / maxV) * maxBar : 4.0,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGreen,
+                            color: AppColors.oliveGreen,
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(8),
                             ),
@@ -1677,40 +1914,10 @@ class _OverviewSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: AppColors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.borderSubtle(0.12)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.darkGreenText,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.35,
-                color: AppColors.mediumGreenText,
-              ),
-            ),
-            const SizedBox(height: 16),
-            child,
-          ],
-        ),
-      ),
+    return AppCard(
+      title: title,
+      subtitle: subtitle,
+      child: child,
     );
   }
 }
@@ -1721,59 +1928,23 @@ class _StatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     this.subtitle,
+    this.width,
   });
 
   final String title;
   final String value;
   final String? subtitle;
   final IconData icon;
+  final double? width;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 200,
-      child: Card(
-        elevation: 0,
-        color: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppColors.borderSubtle(0.12)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: AppColors.primaryGreen, size: 28),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.lightGreenText,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.mediumGreenText,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
+    return KpiCard(
+      label: title,
+      value: value,
+      icon: icon,
+      subtitle: subtitle,
+      width: width,
     );
   }
 }
@@ -2030,8 +2201,11 @@ class _WaitersPanelState extends State<_WaitersPanel> {
       setState(() => _errorMsg = 'Shkruaj emrin e kamarierit.');
       return;
     }
-    if (pin.length < 4 || pin.length > 6 || int.tryParse(pin) == null) {
-      setState(() => _errorMsg = 'PIN duhet të jetë 4–6 shifra.');
+    if (pin.length < 4 || !RegExp(r'^\d+$').hasMatch(pin)) {
+      setState(
+        () => _errorMsg =
+            'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
+      );
       return;
     }
     if (pin == '9999') {
@@ -2072,7 +2246,7 @@ class _WaitersPanelState extends State<_WaitersPanel> {
               width: 140,
               child: TextField(
                 controller: _pinCtrl,
-                decoration: _inputDeco('PIN (4–6 shifra)'),
+                decoration: _inputDeco('PIN (min. 4 shifra, pa limit)'),
                 keyboardType: TextInputType.number,
                 maxLength: 6,
                 obscureText: true,
@@ -5676,13 +5850,13 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: occ
-                            ? AppColors.primaryGreen.withValues(alpha: 0.2)
-                            : AppColors.white,
-                        borderRadius: BorderRadius.circular(10),
+                            ? AppColors.accentOrange.withValues(alpha: 0.2)
+                            : AppColors.softGreenTint,
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: occ
-                              ? AppColors.primaryGreen
-                              : AppColors.borderSubtle(0.15),
+                              ? AppColors.accentOrange.withValues(alpha: 0.65)
+                              : AppColors.lightGreenBorder,
                           width: occ ? 1.5 : 1,
                         ),
                       ),
@@ -5691,18 +5865,18 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                         children: [
                           Text(
                             '$id',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
-                              color: AppColors.darkGreenText,
+                              color: AppColors.charcoalText,
                             ),
                           ),
                           if (occ)
                             Text(
                               '\$${(info?.currentTotal ?? 0).toStringAsFixed(0)}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 10,
-                                color: AppColors.primaryGreen,
+                                color: AppColors.deepForestGreen,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -5714,6 +5888,25 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
               },
             ),
           ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          children: [
+            StatusBadge(
+              label: 'Free',
+              variant: StatusBadgeVariant.success,
+            ),
+            StatusBadge(
+              label: 'Occupied',
+              variant: StatusBadgeVariant.warning,
+            ),
+            StatusBadge(
+              label: 'Reserved',
+              variant: StatusBadgeVariant.info,
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         Text(
@@ -5752,27 +5945,11 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                         cells: [
                           DataCell(Text('${t.id}')),
                           DataCell(
-                            Row(
-                              children: [
-                                Icon(
-                                  t.occupied
-                                      ? Icons.circle
-                                      : Icons.circle_outlined,
-                                  size: 12,
-                                  color: t.occupied
-                                      ? AppColors.primaryGreen
-                                      : AppColors.lightGreenText,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  t.occupied ? 'E zënë' : 'E lirë',
-                                  style: TextStyle(
-                                    color: t.occupied
-                                        ? AppColors.darkGreenText
-                                        : AppColors.mediumGreenText,
-                                  ),
-                                ),
-                              ],
+                            StatusBadge(
+                              label: t.occupied ? 'Occupied' : 'Free',
+                              variant: t.occupied
+                                  ? StatusBadgeVariant.warning
+                                  : StatusBadgeVariant.success,
                             ),
                           ),
                           DataCell(
@@ -6835,9 +7012,9 @@ Widget _sectionTitle(String text) {
   return Text(
     text,
     style: const TextStyle(
-      fontSize: 24,
+      fontSize: AppTokens.sectionTitleSize,
       fontWeight: FontWeight.w600,
-      color: AppColors.darkGreenText,
+      color: AppColors.charcoalText,
     ),
   );
 }
@@ -6846,18 +7023,21 @@ InputDecoration _inputDeco(String hint) {
   return InputDecoration(
     hintText: hint,
     filled: true,
-    fillColor: AppColors.white,
+    fillColor: AppColors.pureWhite,
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: AppColors.borderVisible(0.2)),
+      borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+      borderSide: const BorderSide(color: AppColors.lightGreenBorder),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: AppColors.borderVisible(0.2)),
+      borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+      borderSide: const BorderSide(color: AppColors.lightGreenBorder),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+      borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+      borderSide: const BorderSide(
+        color: AppColors.deepForestGreen,
+        width: 2,
+      ),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
   );
