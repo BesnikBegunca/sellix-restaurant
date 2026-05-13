@@ -211,7 +211,7 @@ class EscPosReceiptBuilder {
     int w,
   ) {
     final left = 'Kamarjeri: $waiter';
-    final right = 'Tavol. $table';
+    final right = 'Tavolina $table';
     final line = left.length + 2 + right.length <= w
         ? '$left  $right'
         : left;

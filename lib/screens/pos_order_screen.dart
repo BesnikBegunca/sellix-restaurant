@@ -173,7 +173,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           waiterName: widget.waiterName,
           total: tableTotal,
           tableId: widget.tableNumber,
-          tableName: 'Table ${widget.tableNumber}',
+          tableName: 'Tavolina ${widget.tableNumber}',
           lines: combined,
         );
       }
@@ -233,7 +233,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Table ${widget.tableNumber} u lirua',
+                      'Tavolina ${widget.tableNumber} u lirua',
                       style: const TextStyle(
                         fontSize: 16,
                         color: AppColors.lightGreenText,
@@ -833,7 +833,7 @@ class _OrderPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Current Order',
+            'Porosia aktuale',
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w500,
@@ -869,7 +869,7 @@ class _OrderPanel extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Table $tableNumber',
+                      'Tavolina $tableNumber',
                       style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.primaryGreen,
@@ -885,7 +885,7 @@ class _OrderPanel extends StatelessWidget {
             child: empty
                 ? const Center(
                     child: Text(
-                      'No items yet',
+                      'Ende pa artikuj',
                       style: TextStyle(
                         fontSize: 16,
                         color: AppColors.lightGreenText,
@@ -914,7 +914,7 @@ class _OrderPanel extends StatelessWidget {
                 top: BorderSide(color: AppColors.borderSubtle(0.1)),
               ),
             ),
-            child: _moneyRow('Total', total, large: true),
+            child: _moneyRow('Totali', total, large: true),
           ),
           const SizedBox(height: 24),
           _SendOrderButton(enabled: !empty, onSend: onSend),
@@ -1125,7 +1125,7 @@ class _SendOrderButtonState extends State<_SendOrderButton> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Text(
-              'Send Order',
+              'PRINTO',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
