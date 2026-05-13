@@ -41,6 +41,9 @@ dependencies:
   sqflite_common_ffi: ^2.3.4+1
   path: ^1.9.0
   path_provider: ^2.1.4
+  archive: ^3.6.1
+  crypto: ^3.0.3
+  encrypt: ^5.0.3
 
 dev_dependencies:
   flutter_test:

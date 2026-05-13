@@ -19,6 +19,47 @@ class DatabaseService {
     return _db!;
   }
 
+  /// Closes the database connection and clears the cached instance so that the
+  /// next access to [database] triggers a fresh [_initDB] call.
+  ///
+  /// Called by [RestoreService] before replacing the database file.
+  Future<void> closeDatabase() async {
+    if (_db != null) {
+      await _db!.close();
+      _db = null;
+    }
+  }
+
+  /// Re-opens the database after [closeDatabase] was called.
+  ///
+  /// If the file was upgraded (restore of an older backup), sqflite's
+  /// [onUpgrade] callback fires automatically and brings the schema up to date.
+  Future<void> reopenDatabase() async {
+    _db ??= await _initDB();
+  }
+
+  /// Creates a consistent copy of the database using SQLite's VACUUM INTO
+  /// (available since SQLite 3.27.0, February 2019).
+  ///
+  /// VACUUM INTO is safer than a raw file copy because it:
+  /// - Produces a defragmented, single-file snapshot even in WAL mode
+  /// - Reads only committed data (no dirty pages)
+  /// - Never modifies the source database
+  ///
+  /// Returns [true] on success.  Returns [false] if the SQLite version is too
+  /// old to support VACUUM INTO — the caller should fall back to a file copy.
+  Future<bool> vacuumInto(String destPath) async {
+    final db = await database;
+    try {
+      // Single-quote escape for the path literal (standard SQLite escaping).
+      final safe = destPath.replaceAll("'", "''");
+      await db.execute("VACUUM INTO '$safe'");
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ──────────────────────────────── init ────────────────────────────────────
 
   Future<Database> _initDB() async {
