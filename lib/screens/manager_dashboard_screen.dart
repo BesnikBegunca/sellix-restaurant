@@ -5540,6 +5540,26 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
   late double _count;
   late double _perRow;
 
+  /// null = pamja globale e kasës; emri = okupimi sipas porosive të atij kamarieri.
+  String? _tableViewWaiter;
+  List<TableInfo>? _waiterTablesSnapshot;
+
+  List<TableInfo> _displayTables(ManagerData m) {
+    if (_tableViewWaiter == null) return m.cashierTables;
+    return _waiterTablesSnapshot ?? m.cashierTables;
+  }
+
+  Future<void> _syncWaiterTables() async {
+    final w = _tableViewWaiter;
+    if (w == null) {
+      if (mounted) setState(() => _waiterTablesSnapshot = null);
+      return;
+    }
+    final list = await widget.m.tablesForWaiter(w);
+    if (!mounted || _tableViewWaiter != w) return;
+    setState(() => _waiterTablesSnapshot = list);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -5548,7 +5568,12 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
     widget.m.addListener(_onM);
   }
 
-  void _onM() => setState(() {});
+  void _onM() {
+    setState(() {});
+    if (_tableViewWaiter != null) {
+      _syncWaiterTables();
+    }
+  }
 
   @override
   void didUpdateWidget(covariant _TablesConfigPanel oldWidget) {
@@ -5571,8 +5596,9 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
     final n = _count.round();
     final pr = _perRow.round();
     final rows = (n / pr).ceil();
-    final occupied = m.cashierTables.where((t) => t.occupied).length;
-    final openTotal = m.cashierTables.fold<double>(
+    final displayTables = _displayTables(m);
+    final occupied = displayTables.where((t) => t.occupied).length;
+    final openTotal = displayTables.fold<double>(
       0,
       (s, t) => s + (t.currentTotal ?? 0),
     );
@@ -5622,6 +5648,62 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
             ),
           ],
         ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppColors.borderSubtle(0.1)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Parapamja sipas kamarierit',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkGreenText,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Zgjidh kamarierin për të parë okupimin sipas porosive të hapura të tij. «Pamja globale e kasës» përdor gjendjen e sinkronizuar të tavolinave.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: AppColors.mediumGreenText,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String?>(
+                  value: _tableViewWaiter,
+                  decoration: _inputDeco('Kamarieri për parapamje'),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('Pamja globale e kasës'),
+                    ),
+                    for (final w in m.waiters)
+                      DropdownMenuItem<String?>(
+                        value: w.name,
+                        child: Text(w.name),
+                      ),
+                  ],
+                  onChanged: (v) {
+                    setState(() {
+                      _tableViewWaiter = v;
+                      _waiterTablesSnapshot = null;
+                    });
+                    _syncWaiterTables();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 22),
         Wrap(
           spacing: 12,
@@ -5630,7 +5712,7 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
             _TableStatPill(
               icon: Icons.event_seat_outlined,
               label: 'Tavolina (aktualisht)',
-              value: '${m.cashierTables.length}',
+              value: '${displayTables.length}',
             ),
             _TableStatPill(
               icon: Icons.event_available_outlined,
@@ -5640,7 +5722,7 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
             _TableStatPill(
               icon: Icons.event_busy_outlined,
               label: 'Të lira',
-              value: '${m.cashierTables.length - occupied}',
+              value: '${displayTables.length - occupied}',
             ),
             _TableStatPill(
               icon: Icons.receipt_outlined,
@@ -5840,7 +5922,7 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                     final id = i + 1;
                     TableInfo? info;
                     try {
-                      info = m.cashierTables.firstWhere((t) => t.id == id);
+                      info = displayTables.firstWhere((t) => t.id == id);
                     } catch (_) {
                       info = null;
                     }
@@ -5894,15 +5976,15 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
           runSpacing: 8,
           children: [
             StatusBadge(
-              label: 'Free',
+              label: 'E lirë',
               variant: StatusBadgeVariant.success,
             ),
             StatusBadge(
-              label: 'Occupied',
+              label: 'E zënë',
               variant: StatusBadgeVariant.warning,
             ),
             StatusBadge(
-              label: 'Reserved',
+              label: 'Rezervuar',
               variant: StatusBadgeVariant.info,
             ),
           ],
@@ -5939,13 +6021,13 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                     DataColumn(label: Text('Total'), numeric: true),
                   ],
                   rows: [
-                    for (final t in m.cashierTables)
+                    for (final t in displayTables)
                       DataRow(
                         cells: [
                           DataCell(Text('${t.id}')),
                           DataCell(
                             StatusBadge(
-                              label: t.occupied ? 'Occupied' : 'Free',
+                              label: t.occupied ? 'E zënë' : 'E lirë',
                               variant: t.occupied
                                   ? StatusBadgeVariant.warning
                                   : StatusBadgeVariant.success,
