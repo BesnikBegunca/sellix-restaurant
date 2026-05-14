@@ -537,8 +537,8 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: Text(
               change == null
-                  ? r'$0.00'
-                  : '\$${change.abs().toStringAsFixed(2)}${negative ? ' owed' : ''}',
+                  ? '0.00€'
+                  : '${change.abs().toStringAsFixed(2)}€${negative ? ' owed' : ''}',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w600,
@@ -683,7 +683,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               child: Text(
-                value.isEmpty ? r'$0.00' : '\$$value',
+                value.isEmpty ? '0.00€' : '€$value',
                 style: const TextStyle(
                   fontSize: 16,
                   color: AppColors.darkGreenText,

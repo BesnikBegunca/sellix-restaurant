@@ -472,7 +472,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
             child: _SHKpiCard(
               icon: Icons.attach_money_outlined,
               label: 'Të Ardhurat Totale',
-              value: '€${a.grossRevenue.toStringAsFixed(2)}',
+              value: '${a.grossRevenue.toStringAsFixed(2)}€',
               badge: a.totalSales > 0 ? '+${a.totalSales} orders' : null,
               accentColor: AppColors.primaryGreen,
             ),
@@ -490,7 +490,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
             child: _SHKpiCard(
               icon: Icons.trending_up_outlined,
               label: 'Vlera Mesatare',
-              value: '€${a.avgOrderValue.toStringAsFixed(2)}',
+              value: '${a.avgOrderValue.toStringAsFixed(2)}€',
             ),
           ),
           const SizedBox(width: 12),
@@ -730,7 +730,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                   ),
                 ),
                 Text(
-                  '€${p.revenue.toStringAsFixed(0)}',
+                  '${p.revenue.toStringAsFixed(0)}€',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -816,7 +816,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                 SizedBox(
                   width: 64,
                   child: Text(
-                    '€${cat.revenue.toStringAsFixed(0)}',
+                    '${cat.revenue.toStringAsFixed(0)}€',
                     textAlign: TextAlign.right,
                     style: const TextStyle(
                       fontSize: 12,
@@ -935,7 +935,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Shitja #${swl.sale.dbId}  ·  Totali: €${swl.sale.total.toStringAsFixed(2)}',
+                    'Shitja #${swl.sale.dbId}  ·  Totali: ${swl.sale.total.toStringAsFixed(2)}€',
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.mediumGreenText,
@@ -961,7 +961,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                     decoration: const InputDecoration(
                       labelText: 'Shuma (€)',
                       border: OutlineInputBorder(),
-                      prefixText: '€',
+                      suffixText: '€',
                     ),
                     validator: (v) {
                       final n = double.tryParse(v ?? '');
@@ -1224,7 +1224,7 @@ class _SaleCard extends StatelessWidget {
 
     final ts = sale.timestamp;
     final dateStr =
-        '${ts.year}-${ts.month.toString().padLeft(2, '0')}-${ts.day.toString().padLeft(2, '0')}';
+        '${ts.day.toString().padLeft(2, '0')}.${ts.month.toString().padLeft(2, '0')}.${ts.year}';
     final timeStr =
         '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
     final orderId =
@@ -1313,7 +1313,7 @@ class _SaleCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '€${sale.total.toStringAsFixed(2)}',
+                        '${sale.total.toStringAsFixed(2)}€',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -1435,7 +1435,7 @@ class _SaleCard extends StatelessWidget {
                   ),
                   // Unit price (small)
                   Text(
-                    '€${line.productPrice.toStringAsFixed(2)} × ${line.quantity}',
+                    '${line.productPrice.toStringAsFixed(2)}€ × ${line.quantity}',
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.lightGreenText,
@@ -1444,7 +1444,7 @@ class _SaleCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   // Line total
                   Text(
-                    '€${line.lineTotal.toStringAsFixed(2)}',
+                    '${line.lineTotal.toStringAsFixed(2)}€',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -1497,7 +1497,7 @@ class _SaleCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '€${linesTotal.toStringAsFixed(2)}',
+                            '${linesTotal.toStringAsFixed(2)}€',
                             style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.darkGreenText,
@@ -1516,7 +1516,7 @@ class _SaleCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '-€${adjTotal.toStringAsFixed(2)}',
+                            '-${adjTotal.toStringAsFixed(2)}€',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -1537,7 +1537,7 @@ class _SaleCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '€${(linesTotal - adjTotal).toStringAsFixed(2)}',
+                            '${(linesTotal - adjTotal).toStringAsFixed(2)}€',
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -1560,7 +1560,7 @@ class _SaleCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '€${linesTotal.toStringAsFixed(2)}',
+                        '${linesTotal.toStringAsFixed(2)}€',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -1642,7 +1642,7 @@ class _AdjustmentRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            '-€${adj.amount.toStringAsFixed(2)}',
+            '-${adj.amount.toStringAsFixed(2)}€',
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

@@ -9,7 +9,24 @@
       "Bash(grep -vE \"\\(//|AppColors|Icons\\\\.|€|m\\\\.|_|Dil|Ruaj|Anulo|Ndrysho|Shto|Hiq|Mbyll|Shtyp|Shkarko|Konfirmo|Regjistro|Zgjidh|Zgjidh|Pastro|Ç|Pasqyra|Gjendja|Fitime|Raporte|Menu|Tavolinat|Cilësimet|Historiku|Audit|Pagat|Menaxher|Menaxhimi|Menaxho|Kamarier|Tavolinë|Tavolina|Shpenzim|Shitje|Fitim|Staf|Paga|Avans|Porosi|Lirë|Zënë|Rezervuar|Planimetri|Numri|Mesatare|Kosto|Marzhi|Ardhura|Ndarja|Biznesi|Kompanisë|Informacion|Hyrjes|Printerit|Faturave|Kuzhinës|Automatikisht|Ndryshimet|Printo|Rifresko|Raporti|Javore|Ditore|Mujore|Trendi|Zënia|Kryesor|Veprime|Aktuale|Performanc|Inventar|Kategoritë|Produktet|Transaksione|Gjithsej|Neto|Bruto|Aktivë|Shtypni|Emri|Plotë|PIN|Ri,|Ri$|Punon|Punonjësi|Mirë|Lartë|Muaj|Restorantit|Rresht|Listën|Kodet|Anëtarë|Nuk|Pa foto|Shkruaj|Zgjidhni|Ngarko|Logo|Rrogë|Bonus|DATA|KATEGORIA|PËRSHKRIMI|MËNYRA|SHUMA|SHITJET|Të gjitha|Sot|Java|Javore|Mujore|Ditore|Turni|Turnit|Hapur|Mbyllur|Të gjitha|Gjithsej|Fundit|Kjo|Kjo Muaj|Kjo muaj|Muaj|Sot|Java\\)\")",
       "Bash(python3 -c \"import sys; [print\\(f'{i+837}: [{len\\(l\\) - len\\(l.lstrip\\(\\)\\)} sp] {l.rstrip\\(\\)}'\\) for i, l in enumerate\\(sys.stdin\\)]\")",
       "Bash(python3 -c \"import sys; [print\\(f'{i+960}: [{len\\(l\\) - len\\(l.lstrip\\(\\)\\)} sp] {l.rstrip\\(\\)}'\\) for i, l in enumerate\\(sys.stdin\\)]\")",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(grep -rn \"'\\\\\\\\\\\\$\\\\|\\\\\"\\\\\\\\\\\\\\\\$\\\\|'\\\\\\\\\\\\${\\\\|€\" /Users/urim/StudioProjects/pos_system/lib/)",
+      "Bash(grep -v \"//.*\\\\\\\\\\\\$\")",
+      "Bash(grep \"\\\\\\\\\\\\$\")",
+      "Bash(grep -rn '\\\\\\\\\\\\$[0-9]\\\\|\\\\\\\\\\\\${' /Users/urim/StudioProjects/pos_system/lib/)",
+      "Bash(grep -rPn \"'\\\\\\\\\\\\\\\\\\\\$|\\\\\"\\\\\\\\\\\\\\\\\\\\$|'\\\\\\\\\\\\$[0-9]\" /Users/urim/StudioProjects/pos_system/lib/)",
+      "Bash(grep -rn \"'\\\\\\\\\\\\$\" /Users/urim/StudioProjects/pos_system/lib/)",
+      "Bash(grep -rn \"'\\\\\\\\\\\\$\\\\$\\\\|'\\\\\\\\\\\\$[0-9]\\\\|r'\\\\\\\\\\\\$\\\\|'\\\\\\\\\\\\${\" /Users/urim/StudioProjects/pos_system/lib/)",
+      "Bash(grep -rn \"r'\\\\\\\\\\\\$\\\\|'\\\\\\\\\\\\\\\\\\\\$\\\\|\\\\\"\\\\\\\\\\\\\\\\\\\\\\\\$\" /Users/urim/StudioProjects/pos_system/lib/)",
+      "Bash(grep -rn \"'\\\\\\\\\\\\$[0-9]\\\\|'\\\\\\\\\\\\${[a-z]\\\\|r'\\\\\\\\\\\\$\" /Users/urim/StudioProjects/pos_system/lib/)",
+      "Bash(grep -rn \"'\\\\\\\\\\\\$\\\\|r'\\\\\\\\\\\\$\" /Users/urim/StudioProjects/pos_system/lib/services/)",
+      "Bash(grep -n \"€\\\\|\\\\\\\\\\\\$\\\\|USD\\\\|EUR\\\\|currency\" /Users/urim/StudioProjects/pos_system/lib/services/escpos/escpos_receipt_builder.dart /Users/urim/StudioProjects/pos_system/lib/services/receipt_text.dart)",
+      "Bash(grep -n \"€\\\\|'\\\\\\\\\\\\$\\\\|r'\\\\\\\\\\\\$\\\\|\\\\\\\\\\\\\\\\\\\\$\" /Users/urim/StudioProjects/pos_system/lib/services/escpos/escpos_receipt_builder.dart /Users/urim/StudioProjects/pos_system/lib/services/receipt_text.dart /Users/urim/StudioProjects/pos_system/lib/services/manager_summary_pdf.dart /Users/urim/StudioProjects/pos_system/lib/services/expenses_pdf_export.dart)",
+      "Bash(grep -n \"price\\\\|total\\\\|amount\\\\|€\\\\|\\\\\\\\\\\\$\" /Users/urim/StudioProjects/pos_system/lib/services/escpos/escpos_receipt_builder.dart)",
+      "Bash(grep -n \"price\\\\|total\\\\|amount\\\\|€\\\\|\\\\\\\\\\\\$\\\\|money\\\\|fmt\" /Users/urim/StudioProjects/pos_system/lib/services/receipt_text.dart)",
+      "Bash(grep -n \"€\\\\|\\\\\\\\\\\\$[0-9]\\\\|r'\\\\\\\\\\\\$\\\\|'\\\\\\\\\\\\\\\\\\\\$\" /Users/urim/StudioProjects/pos_system/lib/screens/pos_order_screen.dart /Users/urim/StudioProjects/pos_system/lib/screens/login_screen.dart)",
+      "Bash(cat)",
+      "Bash(python3 /tmp/euro_suffix.py)"
     ]
   }
 }

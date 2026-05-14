@@ -121,18 +121,18 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
           children: [
             hdr2('Metrika', 'Vlera'),
             _row2('Shitje gjithsej', '${a.totalSales}'),
-            _row2('Të ardhura bruto', '€${a.grossRevenue.toStringAsFixed(2)}'),
+            _row2('Të ardhura bruto', '${a.grossRevenue.toStringAsFixed(2)}€'),
             if (a.totalRefunded > 0)
-              _row2('Rimbursime', '-€${a.totalRefunded.toStringAsFixed(2)}'),
+              _row2('Rimbursime', '-${a.totalRefunded.toStringAsFixed(2)}€'),
             if (a.totalRefunded > 0)
-              _row2('Të ardhura neto', '€${a.netRevenue.toStringAsFixed(2)}'),
-            _row2('Mesatarja e porosisë', '€${a.avgOrderValue.toStringAsFixed(2)}'),
+              _row2('Të ardhura neto', '${a.netRevenue.toStringAsFixed(2)}€'),
+            _row2('Mesatarja e porosisë', '${a.avgOrderValue.toStringAsFixed(2)}€'),
             _row2('Artikuj të shitur', '${a.totalItemsSold}'),
             _row2(
               'Kamarieri top',
               a.topWaiterName == '—'
                   ? '—'
-                  : '${a.topWaiterName} (€${a.topWaiterRevenue.toStringAsFixed(2)})',
+                  : '${a.topWaiterName} (${a.topWaiterRevenue.toStringAsFixed(2)}€)',
             ),
           ],
         ),
@@ -158,7 +158,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
                 _row3(
                   p.name,
                   '${p.qty}',
-                  '€${p.revenue.toStringAsFixed(2)}',
+                  '${p.revenue.toStringAsFixed(2)}€',
                 ),
             ],
           ),
@@ -181,7 +181,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
             children: [
               hdr2('Kategoria', 'Të ardhura'),
               for (final c in a.topCategories)
-                _row2(c.name, '€${c.revenue.toStringAsFixed(2)}'),
+                _row2(c.name, '${c.revenue.toStringAsFixed(2)}€'),
             ],
           ),
           pw.SizedBox(height: 18),
@@ -230,7 +230,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
                   ),
                   pw.SizedBox(width: 12),
                   pw.Text(
-                    '€${s.sale.total.toStringAsFixed(2)}',
+                    '${s.sale.total.toStringAsFixed(2)}€',
                     style: pw.TextStyle(
                       fontSize: 9,
                       fontWeight: pw.FontWeight.bold,
@@ -274,8 +274,8 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
                       l.productName,
                       l.categoryName ?? '—',
                       '×${l.quantity}',
-                      '€${l.productPrice.toStringAsFixed(2)}',
-                      '€${l.lineTotal.toStringAsFixed(2)}',
+                      '${l.productPrice.toStringAsFixed(2)}€',
+                      '${l.lineTotal.toStringAsFixed(2)}€',
                     ),
                 ],
               )
@@ -373,7 +373,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
-                            '-€${adj.amount.toStringAsFixed(2)}',
+                            '-${adj.amount.toStringAsFixed(2)}€',
                             style: pw.TextStyle(
                               fontSize: 7,
                               fontWeight: pw.FontWeight.bold,

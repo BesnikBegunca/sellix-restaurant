@@ -932,7 +932,7 @@ class _AuditLogCard extends StatelessWidget {
 
     final ts = log.createdAt;
     final dateStr =
-        '${ts.year}-${ts.month.toString().padLeft(2, '0')}-${ts.day.toString().padLeft(2, '0')}'
+        '${ts.day.toString().padLeft(2, '0')}.${ts.month.toString().padLeft(2, '0')}.${ts.year}'
         ' ${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}:${ts.second.toString().padLeft(2, '0')}';
 
     final description = _logDescription(log);

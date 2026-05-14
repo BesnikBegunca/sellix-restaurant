@@ -53,15 +53,15 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
             _pdfRow('Kamarierë të regjistruar', '${m.waiters.length}'),
             _pdfRow('Tavolina (gjithsej)', '${m.cashierTables.length}'),
             _pdfRow('Tavolina të zëna', '$occupied'),
-            _pdfRow('Shpenzime totale (regjistër)', '€${m.totalExpenses.toStringAsFixed(2)}'),
-            _pdfRow('Fitim sot',        '€${m.profitToday.toStringAsFixed(2)}'),
-            _pdfRow('Fitim kjo javë',   '€${m.profitThisWeek.toStringAsFixed(2)}'),
-            _pdfRow('Fitim ky muaj',    '€${m.profitThisMonth.toStringAsFixed(2)}'),
+            _pdfRow('Shpenzime totale (regjistër)', '${m.totalExpenses.toStringAsFixed(2)}€'),
+            _pdfRow('Fitim sot',        '${m.profitToday.toStringAsFixed(2)}€'),
+            _pdfRow('Fitim kjo javë',   '${m.profitThisWeek.toStringAsFixed(2)}€'),
+            _pdfRow('Fitim ky muaj',    '${m.profitThisMonth.toStringAsFixed(2)}€'),
             _pdfRow(
               'Top puntor (sesion)',
               m.topEmployee.key == '—'
                   ? '—'
-                  : '${m.topEmployee.key} (€${m.topEmployee.value.toStringAsFixed(2)})',
+                  : '${m.topEmployee.key} (${m.topEmployee.value.toStringAsFixed(2)}€)',
             ),
           ],
         ),
@@ -86,7 +86,7 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
             children: [
               _pdfRow('Kamarieri', 'Shitje', header: true),
               for (final e in salesRows)
-                _pdfRow(e.key, '€${e.value.toStringAsFixed(2)}'),
+                _pdfRow(e.key, '${e.value.toStringAsFixed(2)}€'),
             ],
           ),
         pw.SizedBox(height: 22),
@@ -117,7 +117,7 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
                   e.description.length > 40
                       ? '${e.description.substring(0, 37)}...'
                       : e.description,
-                  '€${e.amount.toStringAsFixed(2)}',
+                  '${e.amount.toStringAsFixed(2)}€',
                   fmt(e.date),
                 ),
             ],

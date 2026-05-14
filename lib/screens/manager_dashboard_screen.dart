@@ -1461,7 +1461,7 @@ class _OverviewPanel extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   title: 'Shpenzime Sot',
-                  value: '€${m.totalExpenses.toStringAsFixed(0)}',
+                  value: '${m.totalExpenses.toStringAsFixed(0)}€',
                   icon: Icons.payments_outlined,
                   accentColor: AppColors.softRed,
                 ),
@@ -1470,7 +1470,7 @@ class _OverviewPanel extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   title: 'Fitim Ditor',
-                  value: '€${m.profitToday.toStringAsFixed(0)}',
+                  value: '${m.profitToday.toStringAsFixed(0)}€',
                   icon: Icons.trending_up,
                   accentColor: AppColors.warmGold,
                 ),
@@ -1479,7 +1479,7 @@ class _OverviewPanel extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   title: 'Fitim Javor',
-                  value: '€${m.profitThisWeek.toStringAsFixed(0)}',
+                  value: '${m.profitThisWeek.toStringAsFixed(0)}€',
                   icon: Icons.trending_up_outlined,
                   accentColor: AppColors.warmGold,
                 ),
@@ -1491,7 +1491,7 @@ class _OverviewPanel extends StatelessWidget {
                   value: top.key == '—' ? '—' : top.key,
                   subtitle: top.key == '—'
                       ? null
-                      : '€${top.value.toStringAsFixed(0)}',
+                      : '${top.value.toStringAsFixed(0)}€',
                   icon: Icons.emoji_events_outlined,
                   accentColor: AppColors.warmGold,
                 ),
@@ -1528,7 +1528,7 @@ class _OverviewPanel extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   title: 'Bilanci i Hapur',
-                  value: '€${openCheck.toStringAsFixed(0)}',
+                  value: '${openCheck.toStringAsFixed(0)}€',
                   icon: Icons.account_balance_wallet_outlined,
                 ),
               ),
@@ -1552,7 +1552,7 @@ class _OverviewPanel extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   title: 'Shitjet e Stafit',
-                  value: '€${totalStaffSales.toStringAsFixed(0)}',
+                  value: '${totalStaffSales.toStringAsFixed(0)}€',
                   icon: Icons.point_of_sale_outlined,
                   accentColor: AppColors.warmGold,
                 ),
@@ -1738,7 +1738,7 @@ class _TopPerformerCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '€${top.value.toStringAsFixed(0)}',
+                        '${top.value.toStringAsFixed(0)}€',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -1957,7 +1957,7 @@ class _TodaySummaryCard extends StatelessWidget {
           const SizedBox(height: 10),
           _SummaryRow(
             label: 'Porosia Mesatare',
-            value: '€${avgOrder.toStringAsFixed(2)}',
+            value: '${avgOrder.toStringAsFixed(2)}€',
           ),
           const SizedBox(height: 10),
           _SummaryRow(
@@ -1969,7 +1969,7 @@ class _TodaySummaryCard extends StatelessWidget {
           const SizedBox(height: 12),
           _SummaryRow(
             label: 'Të Ardhura Gjithsej',
-            value: '€${totalRevenue.toStringAsFixed(2)}',
+            value: '${totalRevenue.toStringAsFixed(2)}€',
             bold: true,
             valueColor: AppColors.primaryGreen,
           ),
@@ -2234,7 +2234,7 @@ class _WeeklySalesTrendChart extends StatelessWidget {
                     getTooltipColor: (_) => AppColors.primaryGreen,
                     tooltipRoundedRadius: 8,
                     getTooltipItem: (group, _, rod, __) => BarTooltipItem(
-                      '€${rod.toY.toStringAsFixed(0)}',
+                      '${rod.toY.toStringAsFixed(0)}€',
                       const TextStyle(
                         color: AppColors.white,
                         fontSize: 12,
@@ -2829,19 +2829,19 @@ class _ShiftPanel extends StatelessWidget {
           children: [
             _StatCard(
               title: 'Shitje (sesioni)',
-              value: '€${m.waiterSales.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)}',
+              value: '${m.waiterSales.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)}€',
               icon: Icons.point_of_sale_outlined,
               accentColor: AppColors.warmGold,
             ),
             _StatCard(
               title: 'Shpenzime',
-              value: '€${m.totalExpenses.toStringAsFixed(0)}',
+              value: '${m.totalExpenses.toStringAsFixed(0)}€',
               icon: Icons.payments_outlined,
               accentColor: AppColors.softRed,
             ),
             _StatCard(
               title: 'Fitim neto',
-              value: '€${m.profitToday.toStringAsFixed(0)}',
+              value: '${m.profitToday.toStringAsFixed(0)}€',
               icon: Icons.trending_up,
               accentColor: AppColors.primaryGreen,
             ),
@@ -3020,8 +3020,8 @@ class _GjendjaDialogState extends State<_GjendjaDialog> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(name),
                     subtitle: Text(
-                      'Paguar: ${w.paidTotal.toStringAsFixed(2)} € · '
-                      'Hapur: ${w.openTotal.toStringAsFixed(2)} € · '
+                      'Paguar: ${w.paidTotal.toStringAsFixed(2)}€ · '
+                      'Hapur: ${w.openTotal.toStringAsFixed(2)}€ · '
                       'Porosi: ${w.paidOrderCount} paguar, ${w.openOrderCount} hapur',
                       style: TextStyle(
                         fontSize: 11,
@@ -3029,7 +3029,7 @@ class _GjendjaDialogState extends State<_GjendjaDialog> {
                       ),
                     ),
                     trailing: Text(
-                      '${w.grandTotal.toStringAsFixed(2)} €',
+                      '${w.grandTotal.toStringAsFixed(2)}€',
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   );
@@ -3046,7 +3046,7 @@ class _GjendjaDialogState extends State<_GjendjaDialog> {
                     ),
                   ),
                   Text(
-                    '${grandPaid.toStringAsFixed(2)} €',
+                    '${grandPaid.toStringAsFixed(2)}€',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -3062,7 +3062,7 @@ class _GjendjaDialogState extends State<_GjendjaDialog> {
                     ),
                   ),
                   Text(
-                    '${grandOpen.toStringAsFixed(2)} €',
+                    '${grandOpen.toStringAsFixed(2)}€',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -3076,7 +3076,7 @@ class _GjendjaDialogState extends State<_GjendjaDialog> {
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   Text(
-                    '${grandTotal.toStringAsFixed(2)} €',
+                    '${grandTotal.toStringAsFixed(2)}€',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ],
@@ -3581,7 +3581,7 @@ class _WaiterGridCardState extends State<_WaiterGridCard> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '€${widget.salary.toStringAsFixed(0)}/d',
+                  '${widget.salary.toStringAsFixed(0)}€/d',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -3750,7 +3750,7 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
               Expanded(
                 child: _StatCard(
                   title: 'Shpenzime Gjithsej',
-                  value: '€${totalAll.toStringAsFixed(2)}',
+                  value: '${totalAll.toStringAsFixed(2)}€',
                   icon: Icons.attach_money,
                   accentColor: AppColors.softRed,
                 ),
@@ -3759,7 +3759,7 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
               Expanded(
                 child: _StatCard(
                   title: "Today's Expenses",
-                  value: '€${m.expensesToday.toStringAsFixed(2)}',
+                  value: '${m.expensesToday.toStringAsFixed(2)}€',
                   icon: Icons.trending_down_outlined,
                   accentColor: AppColors.softRed,
                 ),
@@ -3776,7 +3776,7 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
               Expanded(
                 child: _StatCard(
                   title: 'Këtë Muaj',
-                  value: '€${m.expensesThisMonth.toStringAsFixed(0)}',
+                  value: '${m.expensesThisMonth.toStringAsFixed(0)}€',
                   icon: Icons.calendar_month_outlined,
                   accentColor: AppColors.warmGold,
                 ),
@@ -4312,7 +4312,7 @@ class _ExpensesDataTable extends StatelessWidget {
                       SizedBox(
                         width: 100,
                         child: Text(
-                          '€${e.amount.toStringAsFixed(2)}',
+                          '${e.amount.toStringAsFixed(2)}€',
                           textAlign: TextAlign.right,
                           style: const TextStyle(
                             fontSize: 14,
@@ -4468,7 +4468,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
               Expanded(
                 child: _StatCard(
                   title: 'Fitim Ditor',
-                  value: '€${profDay.toStringAsFixed(0)}',
+                  value: '${profDay.toStringAsFixed(0)}€',
                   icon: Icons.attach_money,
                   accentColor: AppColors.warmGold,
                 ),
@@ -4477,7 +4477,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
               Expanded(
                 child: _StatCard(
                   title: 'Fitim Javor',
-                  value: '€${profWeek.toStringAsFixed(0)}',
+                  value: '${profWeek.toStringAsFixed(0)}€',
                   icon: Icons.trending_up_outlined,
                   accentColor: AppColors.warmGold,
                 ),
@@ -4486,7 +4486,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
               Expanded(
                 child: _StatCard(
                   title: 'Fitim Mujor',
-                  value: '€${profMonth.toStringAsFixed(0)}',
+                  value: '${profMonth.toStringAsFixed(0)}€',
                   icon: Icons.calendar_month_outlined,
                   accentColor: AppColors.warmGold,
                 ),
@@ -4495,7 +4495,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
               Expanded(
                 child: _StatCard(
                   title: 'Shitje Gjithsej',
-                  value: '€${totalSales.toStringAsFixed(0)}',
+                  value: '${totalSales.toStringAsFixed(0)}€',
                   icon: Icons.bar_chart_outlined,
                 ),
               ),
@@ -4679,7 +4679,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                               getTooltipItems: (spots) => spots
                                   .map(
                                     (s) => LineTooltipItem(
-                                      '€${s.y.toStringAsFixed(0)}',
+                                      '${s.y.toStringAsFixed(0)}€',
                                       const TextStyle(
                                         color: AppColors.white,
                                         fontSize: 12,
@@ -4723,7 +4723,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '€${avgDaily.toStringAsFixed(0)}',
+                            '${avgDaily.toStringAsFixed(0)}€',
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w700,
@@ -4758,14 +4758,14 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                           const SizedBox(height: 14),
                           _ProfitBreakdownRow(
                             label: 'Të Ardhura',
-                            value: '€${selRev.toStringAsFixed(0)}',
+                            value: '${selRev.toStringAsFixed(0)}€',
                           ),
                           const SizedBox(height: 10),
                           _ProfitBreakdownRow(
                             label: 'Kosto',
                             value: selExp > 0
-                                ? '-€${selExp.toStringAsFixed(0)}'
-                                : '€0',
+                                ? '-${selExp.toStringAsFixed(0)}€'
+                                : '0€',
                             valueColor: selExp > 0
                                 ? AppColors.softRed
                                 : AppColors.darkGreenText,
@@ -4783,7 +4783,7 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
                             ),
                             child: _ProfitBreakdownRow(
                               label: 'Fitim Neto',
-                              value: '€${selProfit.toStringAsFixed(0)}',
+                              value: '${selProfit.toStringAsFixed(0)}€',
                               valueColor: AppColors.primaryGreen,
                               bold: true,
                             ),
@@ -5451,7 +5451,7 @@ class _TopEmployeePanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '€${top.value.toStringAsFixed(2)}',
+                    '${top.value.toStringAsFixed(2)}€',
                     style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
@@ -5664,7 +5664,7 @@ class _TopEmployeeRow extends StatelessWidget {
           SizedBox(
             width: 100,
             child: Text(
-              '€${sales.toStringAsFixed(2)}',
+              '${sales.toStringAsFixed(2)}€',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -7027,7 +7027,7 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
                                       ),
                                     if ((info?.currentTotal ?? 0) > 0)
                                       Text(
-                                        '€${info!.currentTotal!.toStringAsFixed(0)}',
+                                        '${info!.currentTotal!.toStringAsFixed(0)}€',
                                         style: const TextStyle(
                                           fontSize: 11,
                                           color: AppColors.mediumGreenText,
@@ -7385,7 +7385,7 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
                 child: _StatCard(
                   icon: Icons.account_balance_wallet_outlined,
                   title: 'Pagesa Gjithsej',
-                  value: '€${totalGross.toStringAsFixed(0)}',
+                  value: '${totalGross.toStringAsFixed(0)}€',
                   accentColor: AppColors.primaryGreen,
                 ),
               ),
@@ -7394,7 +7394,7 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
                 child: _StatCard(
                   icon: Icons.money_off_outlined,
                   title: 'Avanse Gjithsej',
-                  value: '€${totalAdv.toStringAsFixed(0)}',
+                  value: '${totalAdv.toStringAsFixed(0)}€',
                   accentColor: AppColors.softRed,
                 ),
               ),
@@ -7411,7 +7411,7 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
                 child: _StatCard(
                   icon: Icons.check_circle_outline,
                   title: 'Pagesa Neto',
-                  value: '€${totalNet.toStringAsFixed(0)}',
+                  value: '${totalNet.toStringAsFixed(0)}€',
                   accentColor: totalNet >= 0
                       ? AppColors.primaryGreen
                       : AppColors.softRed,
@@ -7527,7 +7527,7 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '€${totalGross.toStringAsFixed(0)}',
+                                '${totalGross.toStringAsFixed(0)}€',
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
@@ -7540,7 +7540,7 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
                         const SizedBox(height: 20),
                         _PayrollSummaryRow(
                           label: 'Paga Mesatare',
-                          value: '€${avgSalary.toStringAsFixed(2)}',
+                          value: '${avgSalary.toStringAsFixed(2)}€',
                         ),
                         const Divider(
                           height: 24,
@@ -7548,7 +7548,7 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
                         ),
                         _PayrollSummaryRow(
                           label: 'Bruto Më i Lartë',
-                          value: '€${maxGross.toStringAsFixed(2)}',
+                          value: '${maxGross.toStringAsFixed(2)}€',
                         ),
                         const Divider(
                           height: 24,
@@ -7556,7 +7556,7 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
                         ),
                         _PayrollSummaryRow(
                           label: 'Avanse Gjithsej',
-                          value: '-€${totalAdv.toStringAsFixed(2)}',
+                          value: '-${totalAdv.toStringAsFixed(2)}€',
                           valueColor: totalAdv > 0
                               ? AppColors.softRed
                               : AppColors.mediumGreenText,
@@ -7746,7 +7746,7 @@ class _WaiterSummaryCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     rate > 0
-                        ? '€${rate.toStringAsFixed(2)}/ditë · $worked ditë'
+                        ? '${rate.toStringAsFixed(2)}€/ditë · $worked ditë'
                         : 'Pa pagë të caktuar',
                     style: const TextStyle(
                       fontSize: 12,
@@ -7760,16 +7760,16 @@ class _WaiterSummaryCard extends StatelessWidget {
             // Stats: Gross | Adv | Net
             Row(
               children: [
-                _statCell('Bruto', '€${gross.toStringAsFixed(0)}',
+                _statCell('Bruto', '${gross.toStringAsFixed(0)}€',
                     AppColors.darkGreenText),
                 const SizedBox(width: 20),
                 if (totalAdv > 0)
-                  _statCell('Avans', '-€${totalAdv.toStringAsFixed(0)}',
+                  _statCell('Avans', '-${totalAdv.toStringAsFixed(0)}€',
                       AppColors.softRed),
                 if (totalAdv > 0) const SizedBox(width: 20),
                 _statCell(
                   'Neto',
-                  '€${net.toStringAsFixed(0)}',
+                  '${net.toStringAsFixed(0)}€',
                   net >= 0 ? AppColors.primaryGreen : AppColors.softRed,
                 ),
               ],
@@ -8300,7 +8300,7 @@ class _WaiterPayrollDetailState extends State<_WaiterPayrollDetail> {
                               width: 2,
                             ),
                           ),
-                          prefixText: '€',
+                          suffixText: '€',
                         ),
                         onSubmitted: (_) => _saveRate(),
                       ),
@@ -8308,7 +8308,7 @@ class _WaiterPayrollDetailState extends State<_WaiterPayrollDetail> {
                   else
                     Text(
                       rate > 0
-                          ? '€${rate.toStringAsFixed(2)}/ditë'
+                          ? '${rate.toStringAsFixed(2)}€/ditë'
                           : 'E pacaktuar',
                       style: TextStyle(
                         fontSize: 14,
@@ -8367,18 +8367,18 @@ class _WaiterPayrollDetailState extends State<_WaiterPayrollDetail> {
                   ),
                   _payKpi(
                     'Paga bruto',
-                    '€${gross.toStringAsFixed(2)}',
+                    '${gross.toStringAsFixed(2)}€',
                     Icons.account_balance_wallet_outlined,
                   ),
                   _payKpi(
                     'Avanse',
-                    '€${totalAdv.toStringAsFixed(2)}',
+                    '${totalAdv.toStringAsFixed(2)}€',
                     Icons.money_off_outlined,
                     negative: true,
                   ),
                   _payKpi(
                     'Mbetet',
-                    '€${net.toStringAsFixed(2)}',
+                    '${net.toStringAsFixed(2)}€',
                     Icons.check_circle_outline,
                     positive: net >= 0,
                   ),
@@ -8444,7 +8444,7 @@ class _WaiterPayrollDetailState extends State<_WaiterPayrollDetail> {
             ),
             const SizedBox(width: 8),
             Text(
-              '€${a.amount.toStringAsFixed(2)}',
+              '${a.amount.toStringAsFixed(2)}€',
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
