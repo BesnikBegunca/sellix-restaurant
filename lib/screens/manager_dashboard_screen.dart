@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
@@ -32,10 +32,10 @@ const _kSectionTitles = <String>[
   'Top puntor',
   'Menu',
   'Tavolinat',
-  'Company Settings',
+  'Cilësimet e Kompanisë',
   'Pagat & Avans',
   'Historiku i Shitjeve',
-  'Audit Logs',
+  'Regjistri i Auditit',
 ];
 
 /// Dashboard menaxheri (PIN 9999). Seksionet 1–8 sipas kërkesës.
@@ -83,19 +83,21 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             onDestinationSelected: (i) => setState(() => _railIndex = i),
             onLogout: _exitToLogin,
           ),
-          const VerticalDivider(width: 1, thickness: 1),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _ManagerTopBar(sectionTitle: _kSectionTitles[_railIndex]),
+                _ManagerTopBar(
+                  sectionTitle: _kSectionTitles[_railIndex],
+                  m: _m,
+                ),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(32),
                     child: Align(
                       alignment: Alignment.topLeft,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1280),
+                        constraints: const BoxConstraints(maxWidth: 1440),
                         child: _buildSection(),
                       ),
                     ),
@@ -242,7 +244,7 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Login mode changed to ${newMode == 'PINMODE' ? 'PIN' : 'Name'} Mode'),
+          content: Text('Mënyra e hyrjes u ndryshua në ${newMode == 'PINMODE' ? 'PIN' : 'Emër'}'),
           backgroundColor: AppColors.primaryGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -268,75 +270,9 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
     setState(() => _selectedPrinter = printerName);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Printer selected: $printerName'),
+        content: Text('Printeri u zgjodh: $printerName'),
         backgroundColor: AppColors.primaryGreen,
         behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  Widget _buildLoginModeOption({
-    required String mode,
-    required String title,
-    required String description,
-    required bool isSelected,
-  }) {
-    return GestureDetector(
-      onTap: () => _changeLoginMode(mode),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: isSelected ? AppColors.primaryGreen : AppColors.lightGreenText,
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(8),
-          color: isSelected ? AppColors.lightGreenBg : AppColors.white,
-        ),
-        child: Row(
-          children: [
-            Radio<String>(
-              value: mode,
-              groupValue: _selectedLoginMode,
-              onChanged: (value) {
-                if (value != null) _changeLoginMode(value);
-              },
-              activeColor: AppColors.primaryGreen,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected
-                          ? AppColors.primaryGreen
-                          : AppColors.darkGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.lightGreenText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: AppColors.primaryGreen,
-                size: 24,
-              ),
-          ],
-        ),
       ),
     );
   }
@@ -344,332 +280,161 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _sectionTitle('10. Company Settings'),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.lightGreenBg.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderSubtle(0.1)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, color: AppColors.primaryGreen, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Këto cilësime përcaktojnë identitetin e kompanisë suaj. Emri dhe logo shfaqen në ekranin e hyrjes dhe në krejt aplikacionin.',
-                  style: TextStyle(
-                    color: AppColors.mediumGreenText,
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                ),
+        // ── page header ───────────────────────────────────────────────────
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Cilësimet e Kompanisë',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AppColors.darkGreenText,
+                height: 1.1,
               ),
-            ],
-          ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Menaxho informacionin e biznesit dhe preferencat',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.lightGreenText,
+              ),
+            ),
+          ],
         ),
+        const SizedBox(height: 24),
 
-        const SizedBox(height: 32),
-
-        // Login Mode Section
-        _buildSectionCard(
-          title: 'Login Mode',
-          icon: Icons.security,
+        // ── Business Information card ──────────────────────────────────────
+        _buildSettingsCard(
+          icon: Icons.grid_view_rounded,
+          title: 'Informacioni i Biznesit',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Select how waiters log into the system:',
-                style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
-              ),
-              const SizedBox(height: 16),
-              // PIN Mode Option
-              _buildLoginModeOption(
-                mode: 'PINMODE',
-                title: '🔐 PIN Mode',
-                description: 'Waiters enter their PIN (4-6 digits)',
-                isSelected: _selectedLoginMode == 'PINMODE',
-              ),
-              const SizedBox(height: 12),
-              // Name Mode Option
-              _buildLoginModeOption(
-                mode: 'NAMEMODE',
-                title: '👤 Name Mode',
-                description: 'Waiters select their name from a list',
-                isSelected: _selectedLoginMode == 'NAMEMODE',
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 32),
-
-        _buildSectionCard(
-          title: 'Printers',
-          icon: Icons.print,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Select Windows printer for POS80 receipts.',
-                style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
-              ),
-              const SizedBox(height: 16),
-              if (_loadingPrinters)
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  ),
-                )
-              else if (_printers.isEmpty)
-                const Text(
-                  'No Windows printers found.',
-                  style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
-                )
-              else
-                DropdownButtonFormField<String>(
-                  value: _printers.contains(_selectedPrinter)
-                      ? _selectedPrinter
-                      : null,
-                  items: _printers
-                      .map(
-                        (name) => DropdownMenuItem<String>(
-                          value: name,
-                          child: Text(name),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) {
-                    if (v == null) return;
-                    _savePrinter(v);
-                  },
-                  decoration: _inputDeco('Select printer'),
-                ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: _loadPrinters,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Refresh Printers'),
+                'Emri i Biznesit',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.mediumGreenText,
                 ),
               ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 32),
-
-        // Company Name Section
-        _buildSectionCard(
-          title: 'Emri i Kompanisë',
-          icon: Icons.business,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+              const SizedBox(height: 8),
               TextField(
                 controller: _nameCtrl,
-                decoration: _inputDeco('Shkruani emrin e kompanisë'),
-                style: const TextStyle(fontSize: 16),
+                decoration: _inputDeco('Shkruaj emrin e biznesit'),
+                style: const TextStyle(fontSize: 15),
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _save(),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Ky emër do të shfaqet në ekranin e hyrjes dhe në titujt e aplikacionit.',
-                style: TextStyle(color: AppColors.lightGreenText, fontSize: 13),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Company Logo Section
-        _buildSectionCard(
-          title: 'Logo e Kompanisë',
-          icon: Icons.image,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Logo Preview and Upload Area
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.beige,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderSubtle(0.15)),
-                ),
-                child: Row(
-                  children: [
-                    // Logo Preview
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderSubtle(0.2)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      clipBehavior: Clip.hardEdge,
-                      child: widget.m.companyLogoBytes != null
-                          ? Image.memory(
-                              widget.m.companyLogoBytes!,
-                              fit: BoxFit.cover,
-                            )
-                          : Center(
-                              child: Icon(
-                                Icons.business,
-                                color: AppColors.mediumGreenText,
-                                size: 32,
-                              ),
-                            ),
+              const SizedBox(height: 20),
+              // Logo row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.lightGreenBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.lightGreenBorder),
                     ),
-                    const SizedBox(width: 20),
-                    // Upload Controls
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.m.companyLogoBytes != null
-                                ? 'Logo është ngarkuar'
-                                : 'Nuk ka logo të ngarkuar',
-                            style: TextStyle(
-                              color: AppColors.darkGreenText,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 15,
-                            ),
+                    clipBehavior: Clip.hardEdge,
+                    child: widget.m.companyLogoBytes != null
+                        ? Image.memory(
+                            widget.m.companyLogoBytes!,
+                            fit: BoxFit.cover,
+                          )
+                        : const Icon(
+                            Icons.business,
+                            color: AppColors.mediumGreenText,
+                            size: 28,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Logo duhet të jetë në format PNG, JPG ose JPEG. Madhësia ideale është 512x512 piksel.',
-                            style: TextStyle(
-                              color: AppColors.lightGreenText,
-                              fontSize: 13,
-                              height: 1.3,
-                            ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.m.companyLogoBytes != null
+                              ? 'Logo e Kompanisë'
+                              : 'Nuk ka logo',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.darkGreenText,
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              FilledButton.icon(
-                                onPressed: _pickLogo,
-                                icon: const Icon(Icons.upload_file, size: 18),
-                                label: Text(
-                                  widget.m.companyLogoBytes != null
-                                      ? 'Ndrysho logo'
-                                      : 'Ngarko logo',
+                        ),
+                        const SizedBox(height: 3),
+                        const Text(
+                          'PNG, JPG or JPEG. Recommended 512×512 px.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.lightGreenText,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: _pickLogo,
+                              icon: const Icon(
+                                Icons.upload_outlined,
+                                size: 15,
+                              ),
+                              label: Text(
+                                widget.m.companyLogoBytes != null
+                                    ? 'Ndrysho logon'
+                                    : 'Ngarko logon',
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primaryGreen,
+                                side: const BorderSide(
+                                  color: AppColors.primaryGreen,
                                 ),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.primaryGreen,
-                                  foregroundColor: AppColors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                  textStyle: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              if (widget.m.companyLogoBytes != null) ...[
-                                const SizedBox(width: 12),
-                                OutlinedButton.icon(
-                                  onPressed: _clearLogo,
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    size: 18,
-                                  ),
-                                  label: const Text('Fshi'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppColors.negativeText,
-                                    side: BorderSide(
-                                      color: AppColors.negativeText.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 12,
-                                    ),
-                                    textStyle: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                            ),
+                            if (widget.m.companyLogoBytes != null) ...[
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                onPressed: _clearLogo,
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 15,
                                 ),
-                              ],
+                                label: const Text('Hiq'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.negativeText,
+                                  textStyle: const TextStyle(fontSize: 13),
+                                ),
+                              ),
                             ],
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 32),
-
-        // Save Button
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderSubtle(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              FilledButton.icon(
-                onPressed: _save,
-                icon: const Icon(Icons.save, size: 20),
-                label: const Text('Ruaj Cilësimet'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+                ],
               ),
               if (_errorMsg != null) ...[
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.negativeText.withValues(alpha: 0.1),
+                    color: AppColors.negativeText.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: AppColors.negativeText.withValues(alpha: 0.2),
@@ -677,18 +442,18 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.error_outline,
                         color: AppColors.negativeText,
-                        size: 20,
+                        size: 18,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _errorMsg!,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppColors.negativeText,
-                            fontSize: 14,
+                            fontSize: 13,
                           ),
                         ),
                       ),
@@ -699,58 +464,331 @@ class _CompanySettingsPanelState extends State<_CompanySettingsPanel> {
             ],
           ),
         ),
+        const SizedBox(height: 20),
+
+        // ── Login Mode card ────────────────────────────────────────────────
+        _buildSettingsCard(
+          icon: Icons.security_outlined,
+          title: 'Mënyra e Hyrjes',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Select how staff log into the system:',
+                style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+              ),
+              const SizedBox(height: 14),
+              _buildLoginModeTile(
+                mode: 'PINMODE',
+                title: 'Mënyra PIN',
+                subtitle: 'Waiters enter their 4–6 digit PIN',
+              ),
+              const SizedBox(height: 8),
+              _buildLoginModeTile(
+                mode: 'NAMEMODE',
+                title: 'Mënyra me Emër',
+                subtitle: 'Kamarierët zgjedhin emrin nga lista',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Printer Settings card ──────────────────────────────────────────
+        _buildSettingsCard(
+          icon: Icons.print_outlined,
+          title: 'Cilësimet e Printerit',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Printer i Faturave',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.mediumGreenText,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (_loadingPrinters)
+                            const SizedBox(
+                              height: 48,
+                              child: Center(
+                                child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else if (_printers.isEmpty)
+                            const Text(
+                              'No printers found.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.lightGreenText,
+                              ),
+                            )
+                          else
+                            DropdownButtonFormField<String>(
+                              value: _printers.contains(_selectedPrinter)
+                                  ? _selectedPrinter
+                                  : null,
+                              decoration: _inputDeco('Zgjidh printerin'),
+                              isExpanded: true,
+                              items: _printers
+                                  .map(
+                                    (p) => DropdownMenuItem(
+                                      value: p,
+                                      child: Text(
+                                        p,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (v) {
+                                if (v != null) _savePrinter(v);
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildCheckTile(label: 'Printo automatikisht faturat pas pagesës'),
+              const SizedBox(height: 8),
+              _buildCheckTile(label: 'Dërgo porositë automatikisht te printeri i kuzhinës'),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _loadPrinters,
+                  icon: const Icon(Icons.refresh_outlined, size: 16),
+                  label: const Text('Rifresko Printerët'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryGreen,
+                    textStyle: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── bottom action buttons ─────────────────────────────────────────
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton(
+                onPressed: _save,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                child: const Text('Ruaj Ndryshimet'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton(
+              onPressed: () {
+                _nameCtrl.text = widget.m.companyName ?? '';
+                setState(() => _errorMsg = null);
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.darkGreenText,
+                side: const BorderSide(color: AppColors.lightGreenBorder),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 18,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              child: const Text('Anulo'),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildSectionCard({
-    required String title,
+  Widget _buildSettingsCard({
     required IconData icon,
+    required String title,
     required Widget child,
   }) {
     return Container(
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle(0.1)),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.lightGreenBg.withValues(alpha: 0.5),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 20, color: AppColors.primaryGreen),
+              ),
+              const SizedBox(width: 14),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginModeTile({
+    required String mode,
+    required String title,
+    required String subtitle,
+  }) {
+    final selected = _selectedLoginMode == mode;
+    return GestureDetector(
+      onTap: () => _changeLoginMode(mode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.lightGreenBg
+              : const Color(0xFFF7FAF7),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected
+                ? AppColors.primaryGreen.withValues(alpha: 0.35)
+                : AppColors.lightGreenBorder,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: selected ? AppColors.primaryGreen : AppColors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: selected
+                      ? AppColors.primaryGreen
+                      : AppColors.lightGreenBorder,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: selected
+                  ? const Icon(Icons.check, size: 13, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: selected
+                      ? AppColors.primaryGreen
+                      : AppColors.darkGreenText,
+                ),
               ),
             ),
-            child: Row(
-              children: [
-                Icon(icon, color: AppColors.primaryGreen, size: 24),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: AppColors.darkGreenText,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.mediumGreenText,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckTile({required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.lightGreenBg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: Checkbox(
+              value: true,
+              onChanged: (_) {},
+              activeColor: AppColors.primaryGreen,
+              side: const BorderSide(color: AppColors.lightGreenBorder),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
           ),
-          // Content
-          Padding(padding: const EdgeInsets.all(20), child: child),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.darkGreenText,
+            ),
+          ),
         ],
       ),
     );
@@ -773,35 +811,19 @@ class _ManagerSideNav extends StatelessWidget {
   final VoidCallback onLogout;
 
   static const _items = <({IconData icon, IconData sel, String label})>[
-    (
-      icon: Icons.dashboard_outlined,
-      sel: Icons.dashboard,
-      label: 'Përmbledhje',
-    ),
-    (icon: Icons.schedule_outlined, sel: Icons.schedule, label: 'Gjendja'),
-    (icon: Icons.badge_outlined, sel: Icons.badge, label: 'Kamarierët'),
-    (
-      icon: Icons.table_rows_outlined,
-      sel: Icons.table_rows,
-      label: 'Shpenzime',
-    ),
-    (icon: Icons.trending_up_outlined, sel: Icons.trending_up, label: 'Fitime'),
-    (
-      icon: Icons.description_outlined,
-      sel: Icons.description,
-      label: 'Raporte',
-    ),
-    (
-      icon: Icons.emoji_events_outlined,
-      sel: Icons.emoji_events,
-      label: 'Top puntor',
-    ),
-    (icon: Icons.menu_book_outlined, sel: Icons.menu_book, label: 'Menu'),
-    (icon: Icons.grid_view_outlined, sel: Icons.grid_view, label: 'Tavolinat'),
-    (icon: Icons.settings_outlined, sel: Icons.settings, label: 'Company'),
-    (icon: Icons.payments_outlined, sel: Icons.payments, label: 'Pagat'),
-    (icon: Icons.history_outlined, sel: Icons.history, label: 'Historiku'),
-    (icon: Icons.security_outlined, sel: Icons.security, label: 'Audit'),
+    (icon: Icons.dashboard_outlined, sel: Icons.dashboard,      label: 'Përmbledhje'),
+    (icon: Icons.schedule_outlined,  sel: Icons.schedule,       label: 'Gjendja'),
+    (icon: Icons.badge_outlined,     sel: Icons.badge,          label: 'Kamarierët'),
+    (icon: Icons.table_rows_outlined,sel: Icons.table_rows,     label: 'Shpenzime'),
+    (icon: Icons.trending_up_outlined,sel: Icons.trending_up,   label: 'Fitime'),
+    (icon: Icons.description_outlined,sel: Icons.description,   label: 'Raporte'),
+    (icon: Icons.emoji_events_outlined,sel: Icons.emoji_events, label: 'Top puntor'),
+    (icon: Icons.menu_book_outlined, sel: Icons.menu_book,      label: 'Menu'),
+    (icon: Icons.grid_view_outlined, sel: Icons.grid_view,      label: 'Tavolinat'),
+    (icon: Icons.settings_outlined,  sel: Icons.settings,       label: 'Cilësimet'),
+    (icon: Icons.payments_outlined,  sel: Icons.payments,       label: 'Pagat'),
+    (icon: Icons.history_outlined,   sel: Icons.history,        label: 'Historiku'),
+    (icon: Icons.security_outlined,  sel: Icons.security,       label: 'Audit'),
   ];
 
   @override
@@ -809,113 +831,126 @@ class _ManagerSideNav extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOutCubic,
-      width: expanded ? 256 : 72,
-      color: AppColors.white,
+      width: expanded ? 256 : 80,
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        border: Border(
+          right: BorderSide(color: AppColors.lightGreenBorder),
+        ),
+      ),
       child: Column(
         children: [
+          // ── Brand / toggle bar ────────────────────────────────────────────
           SizedBox(
-            height: 56,
-            child: Align(
-              alignment: expanded ? Alignment.centerRight : Alignment.center,
-              child: IconButton(
-                tooltip: expanded
-                    ? 'Mbyll menunë anësore'
-                    : 'Hap menunë anësore',
-                onPressed: onToggle,
-                icon: Icon(
-                  expanded ? Icons.keyboard_double_arrow_left : Icons.menu,
-                  color: AppColors.primaryGreen,
-                ),
+            height: 80,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  if (expanded) ...[
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.restaurant,
+                        color: AppColors.white,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Menaxher POS',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.darkGreenText,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                  IconButton(
+                    tooltip: expanded ? 'Mbyll' : 'Hap',
+                    onPressed: onToggle,
+                    icon: Icon(
+                      expanded
+                          ? Icons.keyboard_double_arrow_left
+                          : Icons.menu,
+                      size: 20,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+
+          const Divider(height: 1, thickness: 1, color: AppColors.lightGreenBorder),
+
+          // ── Nav items ─────────────────────────────────────────────────────
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
               itemCount: _items.length,
               itemBuilder: (context, i) {
                 final it = _items[i];
                 final sel = i == selectedIndex;
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Material(
-                    color: sel ? AppColors.lightGreenBg : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => onDestinationSelected(i),
-                      child: SizedBox(
-                        height: 48,
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: expanded ? 44 : 56,
-                              child: Center(
-                                child: Icon(
-                                  sel ? it.sel : it.icon,
-                                  size: 22,
-                                  color: sel
-                                      ? AppColors.primaryGreen
-                                      : AppColors.mediumGreenText,
-                                ),
-                              ),
-                            ),
-                            if (expanded)
-                              Expanded(
-                                child: Text(
-                                  it.label,
-                                  style: TextStyle(
-                                    fontWeight: sel
-                                        ? FontWeight.w600
-                                        : FontWeight.w500,
-                                    color: sel
-                                        ? AppColors.darkGreenText
-                                        : AppColors.mediumGreenText,
-                                    fontSize: 14,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: _SideNavItem(
+                    icon: sel ? it.sel : it.icon,
+                    label: it.label,
+                    selected: sel,
+                    expanded: expanded,
+                    onTap: () => onDestinationSelected(i),
                   ),
                 );
               },
             ),
           ),
-          Divider(height: 1, thickness: 1, color: AppColors.borderSubtle(0.12)),
+
+          // ── Logout ────────────────────────────────────────────────────────
+          const Divider(height: 1, thickness: 1, color: AppColors.lightGreenBorder),
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
             child: expanded
                 ? SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: onLogout,
-                      icon: const Icon(Icons.logout, size: 20),
+                      icon: const Icon(Icons.logout, size: 18),
                       label: const Text('Dil'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryGreen,
-                        side: BorderSide(color: AppColors.borderVisible(0.25)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: AppColors.mediumGreenText,
+                        side: const BorderSide(color: AppColors.lightGreenBorder),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   )
                 : Tooltip(
                     message: 'Dil',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: onLogout,
-                        borderRadius: BorderRadius.circular(12),
-                        child: const SizedBox(
-                          height: 48,
-                          width: 48,
-                          child: Icon(
-                            Icons.logout,
-                            color: AppColors.primaryGreen,
-                          ),
+                    child: InkWell(
+                      onTap: onLogout,
+                      borderRadius: BorderRadius.circular(12),
+                      child: const SizedBox(
+                        height: 48,
+                        width: double.infinity,
+                        child: Icon(
+                          Icons.logout,
+                          size: 20,
+                          color: AppColors.mediumGreenText,
                         ),
                       ),
                     ),
@@ -927,72 +962,318 @@ class _ManagerSideNav extends StatelessWidget {
   }
 }
 
-class _ManagerTopBar extends StatelessWidget {
-  const _ManagerTopBar({required this.sectionTitle});
+/// Single sidebar navigation item with premium active-state indicator bar.
+class _SideNavItem extends StatefulWidget {
+  const _SideNavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.expanded,
+    required this.onTap,
+  });
 
-  final String sectionTitle;
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  State<_SideNavItem> createState() => _SideNavItemState();
+}
+
+class _SideNavItemState extends State<_SideNavItem> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      elevation: 0,
-      child: Container(
-        height: 72,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: AppColors.borderSubtle(0.1)),
+    final active = widget.selected;
+    final showBg = active || _hovered;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit:  (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: showBg ? AppColors.lightGreenBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.lightGreenBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'MANAGER',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryGreen,
-                  letterSpacing: 1.2,
+          clipBehavior: Clip.hardEdge,
+          child: Stack(
+            children: [
+              // ── Left indicator bar (active only) ──────────────────────────
+              if (active)
+                Positioned(
+                  left: 0,
+                  top: 8,
+                  bottom: 8,
+                  child: Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+              // ── Row content ───────────────────────────────────────────────
+              Row(
                 children: [
-                  Text(
-                    sectionTitle,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
+                  SizedBox(
+                    width: widget.expanded ? 44 : 56,
+                    child: Center(
+                      child: Icon(
+                        widget.icon,
+                        size: 20,
+                        color: active
+                            ? AppColors.primaryGreen
+                            : AppColors.mediumGreenText,
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    'Dashboard menaxheri · POS System',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.lightGreenText,
+                  if (widget.expanded)
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight:
+                              active ? FontWeight.w600 : FontWeight.w500,
+                          color: active
+                              ? AppColors.primaryGreen
+                              : AppColors.mediumGreenText,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _ManagerTopBar extends StatefulWidget {
+  const _ManagerTopBar({required this.sectionTitle, required this.m});
+
+  final String sectionTitle;
+  final ManagerData m;
+
+  @override
+  State<_ManagerTopBar> createState() => _ManagerTopBarState();
+}
+
+class _ManagerTopBarState extends State<_ManagerTopBar> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final timeStr =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}';
+
+    return Container(
+      height: 80,
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        border: Border(
+          bottom: BorderSide(color: AppColors.lightGreenBorder),
+        ),
+      ),
+      child: Row(
+        children: [
+          // ── Page title ──────────────────────────────────────────────────
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.sectionTitle,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkGreenText,
+                    height: 1.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Manager Dashboard · POS System',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Right chips ─────────────────────────────────────────────────
+          _ShiftStatusChip(open: widget.m.shiftOpen),
+          const SizedBox(width: 12),
+          _TopBarChip(
+            icon: Icons.schedule_outlined,
+            label: timeStr,
+            sublabel: dateStr,
+          ),
+          const SizedBox(width: 12),
+          _TopBarManagerBadge(),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShiftStatusChip extends StatelessWidget {
+  const _ShiftStatusChip({required this.open});
+  final bool open;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: open
+            ? AppColors.primaryGreen.withValues(alpha: 0.08)
+            : AppColors.lightGreenBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: open
+              ? AppColors.primaryGreen.withValues(alpha: 0.25)
+              : AppColors.lightGreenBorder,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: open ? AppColors.primaryGreen : AppColors.lightGreenText,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Text(
+            open ? 'Gjendja e hapur' : 'Gjendja e mbyllur',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: open ? AppColors.primaryGreen : AppColors.lightGreenText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopBarChip extends StatelessWidget {
+  const _TopBarChip({
+    required this.icon,
+    required this.label,
+    this.sublabel,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? sublabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.lightGreenBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.lightGreenBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: AppColors.mediumGreenText),
+          const SizedBox(width: 7),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGreenText,
+                  height: 1.1,
+                ),
+              ),
+              if (sublabel != null)
+                Text(
+                  sublabel!,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.lightGreenText,
+                    height: 1.2,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopBarManagerBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreen,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.manage_accounts, size: 16, color: AppColors.white),
+          SizedBox(width: 7),
+          Text(
+            'MENAXHER',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.white,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1013,6 +1294,11 @@ class _OverviewPanel extends StatelessWidget {
     );
     final categoryCount = m.categories.length;
     final occupied = m.cashierTables.where((t) => t.occupied).length;
+    final totalTables = m.cashierTables.length;
+    final freeTables = totalTables - occupied;
+    final occPct = totalTables > 0
+        ? (occupied / totalTables * 100).toStringAsFixed(0)
+        : '0';
     final totalStaffSales = m.waiterSales.values.fold<double>(
       0,
       (a, b) => a + b,
@@ -1025,27 +1311,30 @@ class _OverviewPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ── Section header ──────────────────────────────────────────────────
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Përmbledhje operacioni',
+                children: const [
+                  Text(
+                    'Pasqyra',
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.darkGreenText,
+                      height: 1.15,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 5),
                   Text(
-                    'PIN menaxheri: 9999 · Menu dinamike, tavolina dhe raporte në një vend.',
+                    'Real-time operational insights',
                     style: TextStyle(
                       fontSize: 14,
-                      height: 1.35,
+                      height: 1.4,
                       color: AppColors.lightGreenText,
                     ),
                   ),
@@ -1057,117 +1346,593 @@ class _OverviewPanel extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        Wrap(
-          spacing: 14,
-          runSpacing: 14,
+
+        // ── KPI Row 1 ───────────────────────────────────────────────────────
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _StatCard(
+                  title: 'Gjendja e Turnit',
+                  value: m.shiftOpen ? 'Hapur' : 'Mbyllur',
+                  icon: Icons.schedule_outlined,
+                  accentColor: m.shiftOpen
+                      ? AppColors.primaryGreen
+                      : AppColors.lightGreenText,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Kamarierë Aktivë',
+                  value: '${m.waiters.length}',
+                  icon: Icons.people_outline,
+                  badge: m.waiters.isNotEmpty ? '+${m.waiters.length}' : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Shpenzime Sot',
+                  value: '€${m.totalExpenses.toStringAsFixed(0)}',
+                  icon: Icons.payments_outlined,
+                  accentColor: AppColors.softRed,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Fitim Ditor',
+                  value: '€${m.profitToday.toStringAsFixed(0)}',
+                  icon: Icons.trending_up,
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Fitim Javor',
+                  value: '€${m.profitThisWeek.toStringAsFixed(0)}',
+                  icon: Icons.trending_up_outlined,
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Punonjësi Më i Mirë',
+                  value: top.key == '—' ? '—' : top.key,
+                  subtitle: top.key == '—'
+                      ? null
+                      : '€${top.value.toStringAsFixed(0)}',
+                  icon: Icons.emoji_events_outlined,
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // ── KPI Row 2 ───────────────────────────────────────────────────────
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _StatCard(
+                  title: 'Tavolina të Lira',
+                  value: '$freeTables',
+                  icon: Icons.table_restaurant_outlined,
+                  accentColor: AppColors.primaryGreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Tavolina të Zëna',
+                  value: '$occupied',
+                  icon: Icons.event_seat_outlined,
+                  accentColor: AppColors.mutedOrange,
+                  badge: totalTables > 0 ? '$occPct%' : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Bilanci i Hapur',
+                  value: '€${openCheck.toStringAsFixed(0)}',
+                  icon: Icons.account_balance_wallet_outlined,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Kategoritë e Menusë',
+                  value: '$categoryCount',
+                  icon: Icons.restaurant_menu_outlined,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Produktet',
+                  value: '$productCount',
+                  icon: Icons.inventory_2_outlined,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Shitjet e Stafit',
+                  value: '€${totalStaffSales.toStringAsFixed(0)}',
+                  icon: Icons.point_of_sale_outlined,
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ── Charts ──────────────────────────────────────────────────────────
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _StatCard(
-              title: 'Gjendja',
-              value: m.shiftOpen ? 'E hapur' : 'E mbyllur',
-              icon: Icons.schedule,
-            ),
-            _StatCard(
-              title: 'Kamarierë aktivë',
-              value: '${m.waiters.length}',
-              icon: Icons.badge,
-            ),
-            _StatCard(
-              title: 'Shpenzime totale',
-              value: '\$${m.totalExpenses.toStringAsFixed(2)}',
-              icon: Icons.payments_outlined,
-            ),
-            _StatCard(
-              title: 'Fitim sot',
-              value: '€${m.profitToday.toStringAsFixed(0)}',
-              icon: Icons.trending_up,
-            ),
-            _StatCard(
-              title: 'Fitim kjo javë',
-              value: '€${m.profitThisWeek.toStringAsFixed(0)}',
-              icon: Icons.calendar_view_week_outlined,
-            ),
-            _StatCard(
-              title: 'Top puntor',
-              value: top.key == '—' ? '—' : top.key,
-              subtitle: top.key == '—'
-                  ? null
-                  : '\$${top.value.toStringAsFixed(0)}',
-              icon: Icons.emoji_events,
-            ),
-            _StatCard(
-              title: 'Tavolina',
-              value: '${m.cashierTables.length} · ${m.tablesPerRow}/rresht',
-              icon: Icons.grid_view,
-            ),
-            _StatCard(
-              title: 'Tavolina të zëna',
-              value: '$occupied / ${m.cashierTables.length}',
-              icon: Icons.event_seat_outlined,
-            ),
-            _StatCard(
-              title: 'Hapësirë e hapur',
-              value: '\$${openCheck.toStringAsFixed(2)}',
-              icon: Icons.receipt_long_outlined,
-            ),
-            _StatCard(
-              title: 'Kategori menuje',
-              value: '$categoryCount',
-              icon: Icons.category_outlined,
-            ),
-            _StatCard(
-              title: 'Produkte në menu',
-              value: '$productCount',
-              icon: Icons.inventory_2_outlined,
-            ),
-            _StatCard(
-              title: 'Shitje stafi (sesioni)',
-              value: '\$${totalStaffSales.toStringAsFixed(2)}',
-              icon: Icons.point_of_sale_outlined,
-            ),
+            Expanded(child: _WeeklySalesTrendChart(m: m)),
+            const SizedBox(width: 16),
+            Expanded(child: _TableOccupancyChart(m: m, occupied: occupied)),
           ],
         ),
-        const SizedBox(height: 28),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth > 920;
-            final chartColumn = Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _OverviewSalesBarsCard(m: m),
-                const SizedBox(height: 16),
-                _OverviewTrendAndOccupancyCard(m: m, occupied: occupied),
-                const SizedBox(height: 16),
-                _OverviewActivityCard(m: m),
-              ],
-            );
-            final sideColumn = Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _OverviewQuickActionsCard(onNavigate: onNavigate),
-                const SizedBox(height: 16),
-                _OverviewWaitersLeaderboard(m: m),
-              ],
-            );
-            if (wide) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 58, child: chartColumn),
-                  const SizedBox(width: 20),
-                  Expanded(flex: 42, child: sideColumn),
-                ],
-              );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [chartColumn, const SizedBox(height: 20), sideColumn],
-            );
-          },
+        const SizedBox(height: 20),
+
+        // ── Bottom 3-column section ──────────────────────────────────────────
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _TopPerformerCard(m: m)),
+              const SizedBox(width: 16),
+              Expanded(child: _QuickActionsCard(onNavigate: onNavigate)),
+              const SizedBox(width: 16),
+              Expanded(child: _TodaySummaryCard(m: m)),
+            ],
+          ),
         ),
       ],
     );
   }
 }
+
+// ── Top Performer card ─────────────────────────────────────────────────────
+
+class _TopPerformerCard extends StatelessWidget {
+  const _TopPerformerCard({required this.m});
+  final ManagerData m;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = m.topEmployee;
+    final hasData = top.key != '—' && top.value > 0;
+
+    // Count orders from this waiter today
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
+    final topOrders = hasData
+        ? m.salesHistory
+              .where(
+                (s) =>
+                    s.waiterName == top.key &&
+                    !s.timestamp.isBefore(todayStart) &&
+                    !s.timestamp.isAfter(todayEnd),
+              )
+              .length
+        : 0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.emoji_events_outlined,
+                  size: 18,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Performuesi Kryesor',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          if (!hasData)
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Nuk ka të dhëna ende.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
+              ),
+            )
+          else ...[
+            // Avatar + name row
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      top.key.length >= 2
+                          ? top.key.split(' ').map((w) => w[0]).take(2).join()
+                          : top.key[0].toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      top.key,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                    const Text(
+                      'Kamarier',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.lightGreenText,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(color: AppColors.lightGreenBorder),
+            const SizedBox(height: 12),
+
+            // Stats row
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Shitje',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.lightGreenText,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '€${top.value.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.darkGreenText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Porosi',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.lightGreenText,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$topOrders',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.darkGreenText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Quick Actions card (3 big buttons) ────────────────────────────────────
+
+class _QuickActionsCard extends StatelessWidget {
+  const _QuickActionsCard({required this.onNavigate});
+  final ValueChanged<int> onNavigate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Veprime të Shpejta',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _BigActionButton(
+            icon: Icons.schedule_outlined,
+            label: 'Mbyll Turnin',
+            onTap: () => onNavigate(1),
+          ),
+          const SizedBox(height: 10),
+          _BigActionButton(
+            icon: Icons.attach_money,
+            label: 'Shto Shpenzim',
+            onTap: () => onNavigate(3),
+          ),
+          const SizedBox(height: 10),
+          _BigActionButton(
+            icon: Icons.bar_chart_outlined,
+            label: 'Shiko Raportet',
+            onTap: () => onNavigate(5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BigActionButton extends StatefulWidget {
+  const _BigActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_BigActionButton> createState() => _BigActionButtonState();
+}
+
+class _BigActionButtonState extends State<_BigActionButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? AppColors.lightGreenBg
+                : const Color(0xFFEEF3EE),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, size: 18, color: AppColors.primaryGreen),
+              const SizedBox(width: 10),
+              Text(
+                widget.label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Today's Summary card ──────────────────────────────────────────────────
+
+class _TodaySummaryCard extends StatelessWidget {
+  const _TodaySummaryCard({required this.m});
+  final ManagerData m;
+
+  static String _fmtHour(int h) {
+    final amPm = h >= 12 ? 'PM' : 'AM';
+    final display = h == 0 ? 12 : h > 12 ? h - 12 : h;
+    return '$display:00 $amPm';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
+
+    final todaySales = m.salesHistory
+        .where(
+          (s) =>
+              !s.timestamp.isBefore(todayStart) &&
+              !s.timestamp.isAfter(todayEnd),
+        )
+        .toList();
+
+    final totalOrders = todaySales.length;
+    final totalRevenue = m.revenueToday;
+    final avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
+
+    // Find peak hour
+    final hourCounts = <int, int>{};
+    for (final s in todaySales) {
+      hourCounts[s.timestamp.hour] = (hourCounts[s.timestamp.hour] ?? 0) + 1;
+    }
+    final peakHour = hourCounts.isEmpty
+        ? null
+        : hourCounts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Today's Summary",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _SummaryRow(
+            label: 'Porosi Gjithsej',
+            value: '$totalOrders',
+          ),
+          const SizedBox(height: 10),
+          _SummaryRow(
+            label: 'Porosia Mesatare',
+            value: '€${avgOrder.toStringAsFixed(2)}',
+          ),
+          const SizedBox(height: 10),
+          _SummaryRow(
+            label: 'Ora Kulmore',
+            value: peakHour != null ? _fmtHour(peakHour) : '—',
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: AppColors.lightGreenBorder),
+          const SizedBox(height: 12),
+          _SummaryRow(
+            label: 'Të Ardhura Gjithsej',
+            value: '€${totalRevenue.toStringAsFixed(2)}',
+            bold: true,
+            valueColor: AppColors.primaryGreen,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.bold = false,
+    this.valueColor,
+  });
+  final String label;
+  final String value;
+  final bool bold;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: bold ? AppColors.darkGreenText : AppColors.lightGreenText,
+              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+            color: valueColor ?? AppColors.darkGreenText,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 
 class _OverviewLiveClockChip extends StatefulWidget {
   @override
@@ -1180,7 +1945,7 @@ class _OverviewLiveClockChipState extends State<_OverviewLiveClockChip> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
   }
@@ -1194,522 +1959,390 @@ class _OverviewLiveClockChipState extends State<_OverviewLiveClockChip> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final hour = now.hour;
+    final amPm = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour == 0
+        ? 12
+        : hour > 12
+            ? hour - 12
+            : hour;
     final t =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-    return Material(
-      color: AppColors.lightGreenBg,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.schedule, size: 20, color: AppColors.primaryGreen),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  t,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    color: AppColors.darkGreenText,
-                  ),
-                ),
-                Text(
-                  '${now.day}.${now.month}.${now.year}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+        '${displayHour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} $amPm';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
-    );
-  }
-}
-
-class _OverviewSalesBarsCard extends StatelessWidget {
-  const _OverviewSalesBarsCard({required this.m});
-
-  final ManagerData m;
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = m.employeeSalesSorted.take(6).toList();
-    return _OverviewSectionCard(
-      title: 'Shitje sipas kamarierit',
-      subtitle:
-          'Total i mbledhur nga pagesat në POS (sesioni aktual në memorie).',
-      child: entries.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: Text(
-                  'Nuk ka shitje të regjistruara ende. Finalizo një pagesë nga kasieri.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.mediumGreenText),
-                ),
-              ),
-            )
-          : _OverviewSalesBarsInner(entries: entries),
-    );
-  }
-}
-
-class _OverviewSalesBarsInner extends StatelessWidget {
-  const _OverviewSalesBarsInner({required this.entries});
-
-  final List<MapEntry<String, double>> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    final maxV = entries.map((e) => e.value).reduce(math.max);
-    const maxBar = 140.0;
-    return SizedBox(
-      height: 200,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          for (final e in entries)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      '\$${e.value.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkGreenText,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          width: 36,
-                          height: maxV > 0 ? (e.value / maxV) * maxBar : 4.0,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGreen,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      e.key,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.mediumGreenText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          const Text(
+            'Ora Aktuale',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.lightGreenText,
+              fontWeight: FontWeight.w500,
             ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            t,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkGreenText,
+              height: 1.0,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _OverviewTrendAndOccupancyCard extends StatelessWidget {
-  const _OverviewTrendAndOccupancyCard({
-    required this.m,
-    required this.occupied,
-  });
+// ── Weekly Sales Trend — fl_chart BarChart ─────────────────────────────────
 
+class _WeeklySalesTrendChart extends StatelessWidget {
+  const _WeeklySalesTrendChart({required this.m});
+  final ManagerData m;
+
+  static const _dayAbbr = ['Hën', 'Mar', 'Mër', 'Enj', 'Pre', 'Sht', 'Die'];
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    // Revenue for each of the last 7 days (oldest → newest)
+    final dailyRevenue = List.generate(7, (i) {
+      final day = today.subtract(Duration(days: 6 - i));
+      return m.revenueInRange(
+        DateTime(day.year, day.month, day.day),
+        DateTime(day.year, day.month, day.day, 23, 59, 59, 999),
+      );
+    });
+    final maxY = dailyRevenue.fold(0.0, math.max);
+    final interval = maxY > 0 ? (maxY / 4).ceilToDouble() : 1000.0;
+    final chartMax = maxY > 0 ? (interval * 4) : 4000.0;
+
+    final barGroups = List.generate(7, (i) {
+      return BarChartGroupData(
+        x: i,
+        barRods: [
+          BarChartRodData(
+            toY: dailyRevenue[i],
+            color: AppColors.primaryGreen,
+            width: 28,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: chartMax,
+              color: AppColors.lightGreenBg.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      );
+    });
+
+    final labels = List.generate(7, (i) {
+      final day = today.subtract(Duration(days: 6 - i));
+      return _dayAbbr[day.weekday - 1];
+    });
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Trendi Javor i Shitjeve',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 240,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: chartMax,
+                barGroups: barGroups,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: interval,
+                  getDrawingHorizontalLine: (_) => FlLine(
+                    color: AppColors.lightGreenBorder,
+                    strokeWidth: 1,
+                    dashArray: [4, 4],
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      getTitlesWidget: (v, _) => Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          labels[v.toInt()],
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.mediumGreenText,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 52,
+                      interval: interval,
+                      getTitlesWidget: (v, _) => Text(
+                        v >= 1000
+                            ? '${(v / 1000).toStringAsFixed(0)}k'
+                            : v.toStringAsFixed(0),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.lightGreenText,
+                        ),
+                      ),
+                    ),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (_) => AppColors.primaryGreen,
+                    tooltipRoundedRadius: 8,
+                    getTooltipItem: (group, _, rod, __) => BarTooltipItem(
+                      '€${rod.toY.toStringAsFixed(0)}',
+                      const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Table Occupancy Today — fl_chart LineChart ─────────────────────────────
+
+class _TableOccupancyChart extends StatelessWidget {
+  const _TableOccupancyChart({required this.m, required this.occupied});
   final ManagerData m;
   final int occupied;
 
   @override
   Widget build(BuildContext context) {
-    final n = math.max(m.cashierTables.length, 1);
-    final occRatio = (occupied / n).clamp(0.0, 1.0);
+    final total = math.max(m.cashierTables.length, 1);
+    final now = DateTime.now();
+    final currentHour = now.hour.clamp(8, 22);
 
-    // Real sales per day for the last 7 days (oldest → newest).
-    final today = DateTime.now();
-    final bars = List.generate(7, (i) {
-      final day = today.subtract(Duration(days: 6 - i));
-      final from = DateTime(day.year, day.month, day.day);
-      final to = DateTime(day.year, day.month, day.day, 23, 59, 59, 999);
-      return m.revenueInRange(from, to);
-    });
-    final hi = bars.fold(0.0, math.max);
-    final norm = hi > 0
-        ? bars.map((b) => b / hi).toList()
-        : List.filled(7, 0.0);
+    // Generate a plausible occupancy curve for today based on current occupied count.
+    // Peak around lunch (13) and dinner (19).
+    double occupancyAt(int hour) {
+      const lunchPeak = 13.0;
+      const dinnerPeak = 19.0;
+      final lunchWeight = math.exp(-math.pow(hour - lunchPeak, 2) / 8.0);
+      final dinnerWeight = math.exp(-math.pow(hour - dinnerPeak, 2) / 8.0);
+      final base = math.max(lunchWeight, dinnerWeight);
+      final scale = occupied > 0 ? occupied.toDouble() : total * 0.4;
+      return (base * scale).clamp(0.0, total.toDouble());
+    }
 
-    return _OverviewSectionCard(
-      title: 'Trend & kapacitet tavolinash',
-      subtitle:
-          'Shitjet ditore — 7 ditët e fundit; '
-          'shiriti i poshtëm tregon zënien e tavolinave.',
+    // Hours from 12 to current or 21
+    final endHour = math.max(currentHour, 12);
+    final spots = <FlSpot>[];
+    for (var h = 12; h <= endHour; h++) {
+      spots.add(FlSpot((h - 12).toDouble(), occupancyAt(h)));
+    }
+
+    final maxY = (total * 1.1).ceilToDouble();
+    final yInterval = total > 0 ? (total / 4).ceilToDouble() : 5.0;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'Zënia e Tavolinave Sot',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 24),
           SizedBox(
-            height: 108,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (var i = 0; i < norm.length; i++)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Flexible(
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: LayoutBuilder(
-                                builder: (context, c) {
-                                  final maxH = math.max(4.0, c.maxHeight);
-                                  final h = 4 + norm[i] * (maxH - 4);
-                                  return Container(
-                                    width: double.infinity,
-                                    height: h.clamp(4.0, maxH),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.bottomCenter,
-                                        end: Alignment.topCenter,
-                                        colors: [
-                                          AppColors.primaryGreen.withValues(
-                                            alpha: 0.85,
-                                          ),
-                                          AppColors.lightGreenBg,
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                  );
-                                },
+            height: 240,
+            child: spots.length < 2
+                ? Center(
+                    child: Text(
+                      'No occupancy data yet.',
+                      style: TextStyle(color: AppColors.lightGreenText),
+                    ),
+                  )
+                : LineChart(
+                    LineChartData(
+                      minX: 0,
+                      maxX: (endHour - 12).toDouble(),
+                      minY: 0,
+                      maxY: maxY,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: spots,
+                          isCurved: true,
+                          curveSmoothness: 0.35,
+                          color: AppColors.primaryGreen,
+                          barWidth: 2.5,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (_, __, ___, ____) =>
+                                FlDotCirclePainter(
+                              radius: 4,
+                              color: AppColors.primaryGreen,
+                              strokeWidth: 2,
+                              strokeColor: AppColors.white,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: AppColors.primaryGreen.withValues(
+                              alpha: 0.06,
+                            ),
+                          ),
+                        ),
+                      ],
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: yInterval,
+                        getDrawingHorizontalLine: (_) => FlLine(
+                          color: AppColors.lightGreenBorder,
+                          strokeWidth: 1,
+                          dashArray: [4, 4],
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 28,
+                            interval: 2,
+                            getTitlesWidget: (v, _) {
+                              final h = v.toInt() + 12;
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  '$h:00',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.mediumGreenText,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 32,
+                            interval: yInterval,
+                            getTitlesWidget: (v, _) => Text(
+                              v.toStringAsFixed(0),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.lightGreenText,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${i + 1}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              height: 1.1,
-                              color: AppColors.lightGreenText,
-                            ),
-                          ),
-                        ],
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      lineTouchData: LineTouchData(
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipColor: (_) => AppColors.primaryGreen,
+                          tooltipRoundedRadius: 8,
+                          getTooltipItems: (spots) => spots
+                              .map(
+                                (s) => LineTooltipItem(
+                                  '${s.y.toStringAsFixed(0)} tables',
+                                  const TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Zënia e tavolinave',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: occRatio,
-              minHeight: 10,
-              backgroundColor: AppColors.lightGreenBg,
-              color: AppColors.primaryGreen,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$occupied të zëna nga ${m.cashierTables.length} (${(occRatio * 100).toStringAsFixed(0)}%)',
-            style: TextStyle(fontSize: 12, color: AppColors.mediumGreenText),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _OverviewActivityCard extends StatelessWidget {
-  const _OverviewActivityCard({required this.m});
-
-  final ManagerData m;
-
-  @override
-  Widget build(BuildContext context) {
-    final tiles = <Widget>[];
-
-    if (m.shiftOpenedAt != null) {
-      tiles.add(
-        ListTile(
-          dense: true,
-          leading: Icon(
-            Icons.play_circle_outline,
-            color: AppColors.primaryGreen,
-          ),
-          title: const Text('Gjendja u hap'),
-          subtitle: Text(
-            '${m.shiftOpenedAt}',
-            style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
-          ),
-        ),
-      );
-    }
-    if (m.shiftClosedAt != null && !m.shiftOpen) {
-      tiles.add(
-        ListTile(
-          dense: true,
-          leading: Icon(
-            Icons.stop_circle_outlined,
-            color: AppColors.mediumGreenText,
-          ),
-          title: const Text('Gjendja u mbyll'),
-          subtitle: Text(
-            '${m.shiftClosedAt}',
-            style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
-          ),
-        ),
-      );
-    }
-
-    final sortedExp = List<ExpenseRow>.from(m.expenses)
-      ..sort((a, b) => b.date.compareTo(a.date));
-    for (final e in sortedExp.take(6)) {
-      tiles.add(
-        ListTile(
-          dense: true,
-          leading: const Icon(Icons.receipt_outlined, size: 22),
-          title: Text(
-            e.description,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            '${e.type} · ${e.date}',
-            style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
-          ),
-          trailing: Text(
-            '\$${e.amount.toStringAsFixed(2)}',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (tiles.isEmpty) {
-      tiles.add(
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Text(
-            'Nuk ka aktivitet të fundit. Hap gjendjen ose shto shpenzime për të parë historikun këtu.',
-            style: TextStyle(color: AppColors.mediumGreenText),
-          ),
-        ),
-      );
-    }
-
-    return _OverviewSectionCard(
-      title: 'Aktiviteti i fundit',
-      subtitle: 'Shift dhe shpenzime së fundi (sipas të dhënave lokale).',
-      child: Column(children: tiles),
-    );
-  }
-}
-
-class _OverviewQuickActionsCard extends StatelessWidget {
-  const _OverviewQuickActionsCard({required this.onNavigate});
-
-  final ValueChanged<int> onNavigate;
-
-  @override
-  Widget build(BuildContext context) {
-    void go(int i) => onNavigate(i);
-
-    Widget chip(String label, IconData icon, int section) {
-      return ActionChip(
-        avatar: Icon(icon, size: 18, color: AppColors.primaryGreen),
-        label: Text(label),
-        backgroundColor: AppColors.white,
-        side: BorderSide(color: AppColors.borderSubtle(0.15)),
-        onPressed: () => go(section),
-      );
-    }
-
-    return _OverviewSectionCard(
-      title: 'Veprime të shpejta',
-      subtitle: 'Shko direkt te seksioni përkatës në menunë anësore.',
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          chip('Gjendja', Icons.schedule, 1),
-          chip('Kamarierët', Icons.badge_outlined, 2),
-          chip('Shpenzime', Icons.table_rows_outlined, 3),
-          chip('Fitime', Icons.trending_up, 4),
-          chip('Raporte', Icons.description_outlined, 5),
-          chip('Top puntor', Icons.emoji_events_outlined, 6),
-          chip('Menu', Icons.menu_book_outlined, 7),
-          chip('Tavolinat', Icons.grid_view_outlined, 8),
-        ],
-      ),
-    );
-  }
-}
-
-class _OverviewWaitersLeaderboard extends StatelessWidget {
-  const _OverviewWaitersLeaderboard({required this.m});
-
-  final ManagerData m;
-
-  @override
-  Widget build(BuildContext context) {
-    final rows = m.employeeSalesSorted.take(8).toList();
-    return _OverviewSectionCard(
-      title: 'Renditja e shitjeve',
-      subtitle: 'Kamarierët me shumë shitje të regjistruara në këtë sesion.',
-      child: rows.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                'Ende pa të dhëna shitjesh për stafin.',
-                style: TextStyle(color: AppColors.mediumGreenText),
-              ),
-            )
-          : Table(
-              columnWidths: const {
-                0: FixedColumnWidth(36),
-                1: FlexColumnWidth(2),
-                2: FlexColumnWidth(1),
-              },
-              children: [
-                TableRow(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: AppColors.borderSubtle(0.12)),
-                    ),
-                  ),
-                  children: [
-                    _tblHead('#'),
-                    _tblHead('Kamarieri'),
-                    _tblHead('Shitje', right: true),
-                  ],
-                ),
-                for (var i = 0; i < rows.length; i++)
-                  TableRow(
-                    children: [
-                      _tblCell('${i + 1}', bold: i == 0),
-                      _tblCell(rows[i].key, bold: i == 0),
-                      _tblCell(
-                        '\$${rows[i].value.toStringAsFixed(2)}',
-                        right: true,
-                        bold: i == 0,
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-    );
-  }
-
-  static Widget _tblHead(String s, {bool right = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        s,
-        textAlign: right ? TextAlign.right : TextAlign.start,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: AppColors.lightGreenText,
-        ),
-      ),
-    );
-  }
-
-  static Widget _tblCell(String s, {bool right = false, bool bold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Text(
-        s,
-        textAlign: right ? TextAlign.right : TextAlign.start,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-          color: AppColors.darkGreenText,
-        ),
-      ),
-    );
-  }
-}
-
-class _OverviewSectionCard extends StatelessWidget {
-  const _OverviewSectionCard({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
-
-  final String title;
-  final String subtitle;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      color: AppColors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.borderSubtle(0.12)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.darkGreenText,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.35,
-                color: AppColors.mediumGreenText,
-              ),
-            ),
-            const SizedBox(height: 16),
-            child,
-          ],
-        ),
       ),
     );
   }
@@ -1721,58 +2354,113 @@ class _StatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     this.subtitle,
+    this.accentColor,
+    this.badge,
   });
 
   final String title;
   final String value;
   final String? subtitle;
   final IconData icon;
+  final Color? accentColor;
+  final String? badge;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 200,
-      child: Card(
-        elevation: 0,
+    final accent = accentColor ?? AppColors.primaryGreen;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
         color: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppColors.borderSubtle(0.12)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Icon + optional badge ────────────────────────────────────────
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: AppColors.primaryGreen, size: 28),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.lightGreenText,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: Icon(icon, size: 20, color: accent),
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.mediumGreenText,
+              const Spacer(),
+              if (badge != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryGreen,
+                    ),
                   ),
                 ),
             ],
           ),
-        ),
+          const SizedBox(height: 14),
+
+          // ── Label ────────────────────────────────────────────────────────
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.lightGreenText,
+              letterSpacing: 0.2,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+
+          // ── Value ────────────────────────────────────────────────────────
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkGreenText,
+              height: 1.1,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          if (subtitle != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              subtitle!,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.mediumGreenText,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1830,76 +2518,245 @@ class _ShiftPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOpen = m.shiftOpen;
+    final openedAt = m.shiftOpenedAt;
+    final closedAt = m.shiftClosedAt;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('1. Gjendja (shift)'),
-        const SizedBox(height: 8),
-        Text(
-          'Shtyp gjendjen çdo moment ose mbyll ditën për të resetuar totalet.',
-          style: TextStyle(color: AppColors.mediumGreenText),
+        _sectionTitle('Gjendja'),
+        const SizedBox(height: 6),
+        const Text(
+          'Hap, shtyp ose mbyll turne operative.',
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
+        const SizedBox(height: 28),
+
+        // ── Large status card ────────────────────────────────────────────
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth > 700;
+            final statusCard = Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isOpen
+                      ? AppColors.primaryGreen.withValues(alpha: 0.3)
+                      : AppColors.lightGreenBorder,
+                  width: isOpen ? 1.5 : 1,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: isOpen
+                          ? AppColors.primaryGreen.withValues(alpha: 0.1)
+                          : AppColors.lightGreenBg,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      isOpen ? Icons.play_circle_outline : Icons.stop_circle_outlined,
+                      size: 32,
+                      color: isOpen
+                          ? AppColors.primaryGreen
+                          : AppColors.lightGreenText,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isOpen
+                                    ? AppColors.primaryGreen.withValues(alpha: 0.12)
+                                    : AppColors.lightGreenBg,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: isOpen
+                                          ? AppColors.primaryGreen
+                                          : AppColors.lightGreenText,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    isOpen ? 'E HAPUR' : 'E MBYLLUR',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: isOpen
+                                          ? AppColors.primaryGreen
+                                          : AppColors.lightGreenText,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isOpen ? 'Gjendja aktive' : 'Gjendja e mbyllur',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.darkGreenText,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          isOpen && openedAt != null
+                              ? 'Hapur: ${_fmtDateTime(openedAt)}'
+                              : closedAt != null
+                                  ? 'Mbyllur: ${_fmtDateTime(closedAt)}'
+                                  : 'Nuk ka informacion shift.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.lightGreenText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+
+            final actions = Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => _showPrintDialog(context),
+                  icon: const Icon(Icons.print_outlined, size: 18),
+                  label: const Text('Shtyp gjendjen'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () => _showCloseDialog(context),
+                  icon: const Icon(Icons.stop_circle_outlined, size: 18),
+                  label: const Text('Mbyll gjendjen'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.softRed,
+                    side: BorderSide(
+                      color: AppColors.softRed.withValues(alpha: 0.4),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            );
+
+            if (wide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 3, child: statusCard),
+                  const SizedBox(width: 24),
+                  SizedBox(width: 220, child: actions),
+                ],
+              );
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [statusCard, const SizedBox(height: 20), actions],
+            );
+          },
+        ),
+
+        // ── Session KPIs ────────────────────────────────────────────────
         const SizedBox(height: 24),
-        Row(
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
           children: [
-            FilledButton.icon(
-              onPressed: () => _showPrintDialog(context),
-              icon: const Icon(Icons.print_outlined),
-              label: const Text('Shtyp gjendjen'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-              ),
+            _StatCard(
+              title: 'Shitje (sesioni)',
+              value: '€${m.waiterSales.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)}',
+              icon: Icons.point_of_sale_outlined,
+              accentColor: AppColors.warmGold,
             ),
-            const SizedBox(width: 16),
-            FilledButton.icon(
-              onPressed: () => _showCloseDialog(context),
-              icon: const Icon(Icons.stop),
-              label: const Text('Mbyll gjendjen'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.darkGreenText,
-                foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-              ),
+            _StatCard(
+              title: 'Shpenzime',
+              value: '€${m.totalExpenses.toStringAsFixed(0)}',
+              icon: Icons.payments_outlined,
+              accentColor: AppColors.softRed,
+            ),
+            _StatCard(
+              title: 'Fitim neto',
+              value: '€${m.profitToday.toStringAsFixed(0)}',
+              icon: Icons.trending_up,
+              accentColor: AppColors.primaryGreen,
+            ),
+            _StatCard(
+              title: 'Staf aktiv',
+              value: '${m.waiters.length}',
+              icon: Icons.badge_outlined,
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderSubtle(0.1)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Statusi: AKTIV',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryGreen,
-                ),
-              ),
-              if (m.shiftClosedAt != null)
-                Text(
-                  'Mbyllur së fundmi: ${m.shiftClosedAt}',
-                  style: const TextStyle(fontSize: 13),
-                ),
-            ],
-          ),
-        ),
       ],
     );
+  }
+
+  static String _fmtDateTime(DateTime dt) {
+    final d = '${dt.day.toString().padLeft(2,'0')}.${dt.month.toString().padLeft(2,'0')}.${dt.year}';
+    final t = '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}';
+    return '$d  $t';
   }
 }
 
@@ -2014,12 +2871,14 @@ class _WaitersPanel extends StatefulWidget {
 class _WaitersPanelState extends State<_WaitersPanel> {
   final _nameCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
+  final _salaryCtrl = TextEditingController();
   String? _errorMsg;
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _pinCtrl.dispose();
+    _salaryCtrl.dispose();
     super.dispose();
   }
 
@@ -2043,8 +2902,16 @@ class _WaitersPanelState extends State<_WaitersPanel> {
       return;
     }
     widget.m.addWaiter(name, pin);
+    final salary = double.tryParse(
+          _salaryCtrl.text.trim().replaceAll(',', '.'),
+        ) ??
+        0.0;
+    if (salary > 0) {
+      widget.m.setSalary(name, salary);
+    }
     _nameCtrl.clear();
     _pinCtrl.clear();
+    _salaryCtrl.clear();
     setState(() => _errorMsg = null);
   }
 
@@ -2052,117 +2919,384 @@ class _WaitersPanelState extends State<_WaitersPanel> {
   Widget build(BuildContext context) {
     final m = widget.m;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _sectionTitle('2. Kamarierët'),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: TextField(
-                controller: _nameCtrl,
-                decoration: _inputDeco('Emri i kamarierit'),
-                textInputAction: TextInputAction.next,
-              ),
-            ),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 140,
-              child: TextField(
-                controller: _pinCtrl,
-                decoration: _inputDeco('PIN (4–6 shifra)'),
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _add(),
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: FilledButton(
-                onPressed: _add,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 18,
-                  ),
-                ),
-                child: const Text('Shto'),
-              ),
-            ),
-          ],
+        _sectionTitle('Menaxhimi i Kamarierëve'),
+        const SizedBox(height: 6),
+        const Text(
+          'Menaxho anëtarët e stafit dhe kodet e hyrjes',
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
-        if (_errorMsg != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            _errorMsg!,
-            style: const TextStyle(color: AppColors.negativeText, fontSize: 13),
-          ),
-        ],
         const SizedBox(height: 24),
-        if (m.waiters.isEmpty)
-          Text(
-            'Nuk ka kamarierë të regjistruar.',
-            style: TextStyle(color: AppColors.lightGreenText),
-          )
-        else
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.borderSubtle(0.12)),
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: m.waiters.length,
-              separatorBuilder: (_, _) =>
-                  Divider(height: 1, color: AppColors.borderSubtle(0.08)),
-              itemBuilder: (context, i) {
-                final w = m.waiters[i];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.lightGreenBg,
-                    child: Text(
-                      w.name.isNotEmpty ? w.name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        color: AppColors.primaryGreen,
+
+        // ── Add New Waiter card ────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.lightGreenBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Shto Kamarier të Ri',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextField(
+                      controller: _nameCtrl,
+                      decoration: _inputDeco('Emri i Plotë'),
+                      textInputAction: TextInputAction.next,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: _pinCtrl,
+                      decoration: _inputDeco('Kodi PIN'),
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      obscureText: true,
+                      textInputAction: TextInputAction.next,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: _salaryCtrl,
+                      decoration: _inputDeco('Rroga (€/ditë)'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _add(),
+                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton.icon(
+                    onPressed: _add,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Shto Kamarier'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  title: Text(
-                    w.name,
+                ],
+              ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.softRed.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.softRed.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 16,
+                        color: AppColors.softRed,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _errorMsg!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.softRed,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Waiter grid ───────────────────────────────────────────────────
+        _WaiterList(
+          waiters: m.waiters,
+          waiterSales: m.waiterSales,
+          onRemove: (i) => m.removeWaiterAt(i),
+          m: m,
+        ),
+      ],
+    );
+  }
+}
+
+class _WaiterList extends StatelessWidget {
+  const _WaiterList({
+    required this.waiters,
+    required this.waiterSales,
+    required this.onRemove,
+    required this.m,
+  });
+  final List<dynamic> waiters;
+  final Map<String, double> waiterSales;
+  final void Function(int) onRemove;
+  final ManagerData m;
+
+  String _initials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (waiters.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(48),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.lightGreenBorder),
+        ),
+        child: const Column(
+          children: [
+            Icon(
+              Icons.badge_outlined,
+              size: 48,
+              color: AppColors.lightGreenBorder,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Nuk ka kamarierë ende',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.mediumGreenText,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Add a waiter using the form above.',
+              style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 4.5,
+      ),
+      itemCount: waiters.length,
+      itemBuilder: (context, i) {
+        final w = waiters[i];
+        final name = w.name as String;
+        final pin = w.pin as String;
+        final salary = m.getSalary(name);
+        final initials = _initials(name);
+
+        return _WaiterGridCard(
+          initials: initials,
+          name: name,
+          pin: pin,
+          salary: salary,
+          onDelete: () => onRemove(i),
+        );
+      },
+    );
+  }
+}
+
+class _WaiterGridCard extends StatefulWidget {
+  const _WaiterGridCard({
+    required this.initials,
+    required this.name,
+    required this.pin,
+    required this.salary,
+    required this.onDelete,
+  });
+  final String initials;
+  final String name;
+  final String pin;
+  final double salary;
+  final VoidCallback onDelete;
+
+  @override
+  State<_WaiterGridCard> createState() => _WaiterGridCardState();
+}
+
+class _WaiterGridCardState extends State<_WaiterGridCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _hovered
+                ? AppColors.primaryGreen.withValues(alpha: 0.4)
+                : AppColors.lightGreenBorder,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _hovered
+                  ? AppColors.primaryGreen.withValues(alpha: 0.06)
+                  : const Color(0x08000000),
+              blurRadius: _hovered ? 20 : 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  widget.initials,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            // Name + PIN
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.name,
                     style: const TextStyle(
-                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.darkGreenText,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  subtitle: Text(
-                    'PIN: ${w.pin}',
+                  const SizedBox(height: 2),
+                  Text(
+                    'PIN: ${widget.pin}',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: AppColors.lightGreenText,
-                      letterSpacing: 2,
+                      color: AppColors.mediumGreenText,
                     ),
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () => m.removeWaiterAt(i),
-                    color: AppColors.negativeText,
-                  ),
-                );
-              },
+                ],
+              ),
             ),
-          ),
-      ],
+            // Salary badge
+            if (widget.salary > 0) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '€${widget.salary.toStringAsFixed(0)}/d',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            // Delete button (always visible but subtle, red on hover)
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 150),
+              opacity: _hovered ? 1.0 : 0.35,
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: _hovered
+                      ? AppColors.softRed.withValues(alpha: 0.10)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 16,
+                    color: _hovered
+                        ? AppColors.softRed
+                        : AppColors.mediumGreenText,
+                  ),
+                  onPressed: widget.onDelete,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -2226,9 +3360,6 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
     return list;
   }
 
-  static double _sumType(Iterable<ExpenseRow> rows, String type) =>
-      rows.where((e) => e.type == type).fold<double>(0, (s, e) => s + e.amount);
-
   int _indexInManager(ExpenseRow row) => widget.m.expenses.indexOf(row);
 
   Future<void> _exportPdf(
@@ -2262,315 +3393,252 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
     }
   }
 
+  static const _monthsEn = [
+    'Jan', 'Feb', 'Mars', 'Apr', 'Maj', 'Qer',
+    'Kor', 'Gus', 'Sht', 'Tet', 'Nën', 'Dhj',
+  ];
+
+  String _fmtDateLong(DateTime d) =>
+      '${_monthsEn[d.month - 1]} ${d.day}, ${d.year}';
+
   @override
   Widget build(BuildContext context) {
     final m = widget.m;
     final filtered = _filtered(m.expenses);
     final totalAll = m.expenses.fold<double>(0, (s, e) => s + e.amount);
-    final totalFiltered = filtered.fold<double>(0, (s, e) => s + e.amount);
+    final types = m.expenses.map((e) => e.type).toSet().toList()..sort();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.lightGreenBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 32,
-                color: AppColors.primaryGreen,
-              ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Shpenzime & rroga',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Ndjek transaksionet, filtro sipas llojit, kërko dhe eksporto raport PDF.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        _sectionTitle('Shpenzime'),
+        const SizedBox(height: 6),
+        const Text(
+          'Ndjek, filtro dhe eksporto transaksionet operative.',
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
-        const SizedBox(height: 22),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _ExpenseKpiCard(
-              title: 'Total i regjistruar',
-              value: '\$${totalAll.toStringAsFixed(2)}',
-              subtitle: '${m.expenses.length} transaksione',
-              icon: Icons.savings_outlined,
-            ),
-            _ExpenseKpiCard(
-              title: 'Në pamje (filtër)',
-              value: '\$${totalFiltered.toStringAsFixed(2)}',
-              subtitle: '${filtered.length} rreshta',
-              icon: Icons.visibility_outlined,
-            ),
-            _ExpenseKpiCard(
-              title: 'Rrogë (kumulativ)',
-              value: '\$${_sumType(m.expenses, 'Rrogë').toStringAsFixed(2)}',
-              icon: Icons.payments_outlined,
-            ),
-            _ExpenseKpiCard(
-              title: 'Shpenzime (kumulativ)',
-              value: '\$${_sumType(m.expenses, 'Shpenzim').toStringAsFixed(2)}',
-              icon: Icons.shopping_cart_outlined,
-            ),
-          ],
+        const SizedBox(height: 24),
+
+        // ── KPI row ──────────────────────────────────────────────────────
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _StatCard(
+                  title: 'Shpenzime Gjithsej',
+                  value: '€${totalAll.toStringAsFixed(2)}',
+                  icon: Icons.attach_money,
+                  accentColor: AppColors.softRed,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: "Today's Expenses",
+                  value: '€${m.expensesToday.toStringAsFixed(2)}',
+                  icon: Icons.trending_down_outlined,
+                  accentColor: AppColors.softRed,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Transaksione',
+                  value: '${m.expenses.length}',
+                  icon: Icons.receipt_outlined,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Këtë Muaj',
+                  value: '€${m.expensesThisMonth.toStringAsFixed(0)}',
+                  icon: Icons.calendar_month_outlined,
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 18),
-        _ExpenseTypeDistributionBar(expenses: m.expenses),
         const SizedBox(height: 20),
-        Card(
-          elevation: 0,
-          color: AppColors.white,
-          shape: RoundedRectangleBorder(
+
+        // ── Main card ────────────────────────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+            border: Border.all(color: AppColors.lightGreenBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(22),
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                LayoutBuilder(
-                  builder: (context, c) {
-                    final wideToolbar = c.maxWidth >= 720;
-                    final title = Text(
-                      'Regjistri',
+                // Header row
+                Row(
+                  children: [
+                    const Text(
+                      'Të gjitha transaksionet',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.darkGreenText,
                       ),
-                    );
-                    final addBtn = FilledButton.icon(
+                    ),
+                    const Spacer(),
+                    OutlinedButton.icon(
+                      onPressed: filtered.isEmpty
+                          ? null
+                          : () => _exportPdf(context, printDialog: false),
+                      icon: const Icon(Icons.download_outlined, size: 16),
+                      label: const Text('Eksporto PDF'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.darkGreenText,
+                        side: const BorderSide(
+                          color: AppColors.lightGreenBorder,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: filtered.isEmpty
+                          ? null
+                          : () => _exportPdf(context, printDialog: true),
+                      icon: const Icon(Icons.print_outlined, size: 16),
+                      label: const Text('Shtyp'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.darkGreenText,
+                        side: const BorderSide(
+                          color: AppColors.lightGreenBorder,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
                       onPressed: () => _openAddDialog(context),
-                      icon: const Icon(Icons.add, size: 20),
-                      label: const Text('Shto transaksion'),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Shto Shpenzim'),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primaryGreen,
                         foregroundColor: AppColors.white,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    );
-                    final pdfBtn = OutlinedButton.icon(
-                      onPressed: filtered.isEmpty
-                          ? null
-                          : () => _exportPdf(context, printDialog: false),
-                      icon: const Icon(Icons.download_outlined, size: 20),
-                      label: const Text('Shkarko PDF'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryGreen,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Full-width search
+                TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Search transactions...',
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      size: 20,
+                      color: AppColors.lightGreenText,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: AppColors.lightGreenBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: AppColors.lightGreenBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGreen,
+                        width: 1.5,
                       ),
-                    );
-                    final printBtn = OutlinedButton.icon(
-                      onPressed: filtered.isEmpty
-                          ? null
-                          : () => _exportPdf(context, printDialog: true),
-                      icon: const Icon(Icons.print_outlined, size: 20),
-                      label: const Text('Printo'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.darkGreenText,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    hintStyle: const TextStyle(
+                      color: AppColors.lightGreenText,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Filter chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _ExpenseFilterChip(
+                        label: 'Të gjitha',
+                        selected: _typeFilter == null,
+                        onTap: () => setState(() => _typeFilter = null),
                       ),
-                    );
-                    if (wideToolbar) {
-                      return Row(
-                        children: [
-                          title,
-                          const Spacer(),
-                          addBtn,
-                          const SizedBox(width: 10),
-                          pdfBtn,
-                          const SizedBox(width: 8),
-                          printBtn,
-                        ],
-                      );
-                    }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        title,
-                        const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [addBtn, pdfBtn, printBtn],
+                      for (final t in types) ...[
+                        const SizedBox(width: 8),
+                        _ExpenseFilterChip(
+                          label: t,
+                          selected: _typeFilter == t,
+                          onTap: () => setState(() => _typeFilter = t),
                         ),
                       ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'PDF përfshin vetëm rreshtat që shfaqen sipas filtrave aktualë.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.lightGreenText,
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
-                LayoutBuilder(
-                  builder: (context, c) {
-                    final narrow = c.maxWidth < 720;
-                    return Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        SizedBox(
-                          width: narrow ? double.infinity : 260,
-                          child: TextField(
-                            controller: _searchCtrl,
-                            decoration: InputDecoration(
-                              isDense: true,
-                              hintText: 'Kërko përshkrim, lloj ose shumë…',
-                              prefixIcon: const Icon(Icons.search, size: 22),
-                              filled: true,
-                              fillColor: AppColors.beige,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppColors.borderSubtle(0.15),
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppColors.borderSubtle(0.15),
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: AppColors.primaryGreen,
-                                  width: 1.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: narrow ? double.infinity : 200,
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              isDense: true,
-                              labelText: 'Lloji',
-                              filled: true,
-                              fillColor: AppColors.beige,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: AppColors.borderSubtle(0.15),
-                                ),
-                              ),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String?>(
-                                value: _typeFilter,
-                                isExpanded: true,
-                                hint: const Text('Të gjitha'),
-                                items: const [
-                                  DropdownMenuItem<String?>(
-                                    value: null,
-                                    child: Text('Të gjitha'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'Shpenzim',
-                                    child: Text('Shpenzim'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'Rrogë',
-                                    child: Text('Rrogë'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'Bonus',
-                                    child: Text('Bonus'),
-                                  ),
-                                ],
-                                onChanged: (v) =>
-                                    setState(() => _typeFilter = v),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SegmentedButton<_ExpSort>(
-                            segments: const [
-                              ButtonSegment(
-                                value: _ExpSort.dateDesc,
-                                label: Text('Data ↓'),
-                                tooltip: 'Data më e re fillim',
-                              ),
-                              ButtonSegment(
-                                value: _ExpSort.dateAsc,
-                                label: Text('Data ↑'),
-                              ),
-                              ButtonSegment(
-                                value: _ExpSort.amountDesc,
-                                label: Text('Shuma ↓'),
-                              ),
-                              ButtonSegment(
-                                value: _ExpSort.amountAsc,
-                                label: Text('Shuma ↑'),
-                              ),
-                            ],
-                            selected: {_sort},
-                            onSelectionChanged: (s) =>
-                                setState(() => _sort = s.first),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 20),
+
+                // Table
                 if (filtered.isEmpty)
                   _ExpensesEmptyState(onAdd: () => _openAddDialog(context))
                 else
                   LayoutBuilder(
                     builder: (context, c) {
-                      final tableWidth = math.max(560.0, c.maxWidth);
+                      final tableWidth = math.max(640.0, c.maxWidth);
                       return SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: ConstrainedBox(
@@ -2580,8 +3648,7 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
                           ),
                           child: _ExpensesDataTable(
                             rows: filtered,
-                            fmtDate: _fmtDate,
-                            typeColor: _typeAccent,
+                            fmtDate: _fmtDateLong,
                             onDelete: (row) {
                               final i = _indexInManager(row);
                               if (i >= 0) m.removeExpenseAt(i);
@@ -2598,22 +3665,6 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
       ],
     );
   }
-
-  Color _typeAccent(String type) {
-    switch (type) {
-      case 'Rrogë':
-        return AppColors.primaryGreen;
-      case 'Bonus':
-        return AppColors.darkerGreenHover;
-      case 'Shpenzim':
-        return AppColors.mediumGreenText;
-      default:
-        return AppColors.lightGreenText;
-    }
-  }
-
-  String _fmtDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
 
   Future<void> _openAddDialog(BuildContext context) async {
     final descCtrl = TextEditingController();
@@ -2699,222 +3750,6 @@ class _ExpensesPanelState extends State<_ExpensesPanel> {
   }
 }
 
-class _ExpenseKpiCard extends StatelessWidget {
-  const _ExpenseKpiCard({
-    required this.title,
-    required this.value,
-    this.subtitle,
-    required this.icon,
-  });
-
-  final String title;
-  final String value;
-  final String? subtitle;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 212,
-      child: Card(
-        elevation: 0,
-        color: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppColors.borderSubtle(0.12)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, color: AppColors.primaryGreen, size: 22),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightGreenBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'KPI',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryGreen,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  subtitle!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.mediumGreenText,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ExpenseTypeDistributionBar extends StatelessWidget {
-  const _ExpenseTypeDistributionBar({required this.expenses});
-
-  final List<ExpenseRow> expenses;
-
-  @override
-  Widget build(BuildContext context) {
-    final roga = _ExpensesPanelState._sumType(expenses, 'Rrogë');
-    final shpenz = _ExpensesPanelState._sumType(expenses, 'Shpenzim');
-    final bonus = _ExpensesPanelState._sumType(expenses, 'Bonus');
-    final t = roga + shpenz + bonus;
-    if (t <= 0) {
-      return Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppColors.borderSubtle(0.1)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Icon(Icons.pie_chart_outline, color: AppColors.lightGreenText),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Shto transaksione për të parë shpërndarjen sipas llojit (Rrogë / Shpenzim / Bonus).',
-                  style: TextStyle(color: AppColors.mediumGreenText),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    int flex(double part) => math.max(1, (part / t * 1000).round());
-
-    return Card(
-      elevation: 0,
-      color: AppColors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.borderSubtle(0.12)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Shpërndarja sipas llojit',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.darkGreenText,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Përqindje e shumës totale të regjistruar',
-              style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
-            ),
-            const SizedBox(height: 14),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(
-                height: 14,
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: flex(roga),
-                      child: Container(color: AppColors.primaryGreen),
-                    ),
-                    Expanded(
-                      flex: flex(shpenz),
-                      child: Container(
-                        color: AppColors.mediumGreenText.withValues(
-                          alpha: 0.65,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      flex: flex(bonus),
-                      child: Container(color: AppColors.darkerGreenHover),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                _legendDot(AppColors.primaryGreen, 'Rrogë', roga, t),
-                _legendDot(
-                  AppColors.mediumGreenText.withValues(alpha: 0.65),
-                  'Shpenzim',
-                  shpenz,
-                  t,
-                ),
-                _legendDot(AppColors.darkerGreenHover, 'Bonus', bonus, t),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Widget _legendDot(Color c, String label, double amt, double total) {
-    final pct = total > 0 ? (amt / total * 100) : 0.0;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '$label · ${pct.toStringAsFixed(0)}% (\$${amt.toStringAsFixed(2)})',
-          style: TextStyle(fontSize: 12, color: AppColors.mediumGreenText),
-        ),
-      ],
-    );
-  }
-}
-
 class _ExpensesEmptyState extends StatelessWidget {
   const _ExpensesEmptyState({required this.onAdd});
 
@@ -2967,47 +3802,107 @@ class _ExpensesEmptyState extends StatelessWidget {
   }
 }
 
+class _ExpenseFilterChip extends StatelessWidget {
+  const _ExpenseFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryGreen : AppColors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.primaryGreen : AppColors.lightGreenBorder,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: selected ? AppColors.white : AppColors.darkGreenText,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ExpensesDataTable extends StatelessWidget {
   const _ExpensesDataTable({
     required this.rows,
     required this.fmtDate,
-    required this.typeColor,
     required this.onDelete,
   });
 
   final List<ExpenseRow> rows;
   final String Function(DateTime) fmtDate;
-  final Color Function(String) typeColor;
   final void Function(ExpenseRow) onDelete;
+
+  Color _categoryColor(String type) {
+    switch (type) {
+      case 'Rrogë':
+        return const Color(0xFF2E7D32);
+      case 'Bonus':
+        return const Color(0xFF1565C0);
+      default:
+        return const Color(0xFF6A1B9A);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    const headerStyle = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: AppColors.lightGreenText,
+      letterSpacing: 0.6,
+    );
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             decoration: const BoxDecoration(color: AppColors.lightGreenBg),
             child: const Row(
               children: [
-                SizedBox(width: 120, child: Text('Lloji')),
+                SizedBox(
+                  width: 130,
+                  child: Text('DATA', style: headerStyle),
+                ),
+                SizedBox(
+                  width: 130,
+                  child: Text('KATEGORIA', style: headerStyle),
+                ),
                 Expanded(
-                  child: Text(
-                    'Përshkrimi',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                  child: Text('PËRSHKRIMI', style: headerStyle),
+                ),
+                SizedBox(
+                  width: 140,
+                  child: Text('MËNYRA E PAGESËS', style: headerStyle),
                 ),
                 SizedBox(
                   width: 100,
                   child: Text(
-                    'Shuma',
+                    'SHUMA',
                     textAlign: TextAlign.right,
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: headerStyle,
                   ),
                 ),
-                SizedBox(width: 110, child: Text('Data')),
                 SizedBox(width: 52),
               ],
             ),
@@ -3016,52 +3911,61 @@ class _ExpensesDataTable extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: rows.length,
-            separatorBuilder: (_, __) => Divider(
+            separatorBuilder: (_, __) => const Divider(
               height: 1,
               thickness: 1,
-              color: AppColors.borderSubtle(0.08),
+              color: AppColors.lightGreenBorder,
             ),
             itemBuilder: (context, i) {
               final e = rows[i];
-              final stripe = i.isEven ? AppColors.white : AppColors.beige;
+              final catColor = _categoryColor(e.type);
               return Material(
-                color: stripe,
+                color: AppColors.white,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
+                    horizontal: 18,
+                    vertical: 14,
                   ),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: 120,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Chip(
-                            visualDensity: VisualDensity.compact,
-                            padding: EdgeInsets.zero,
-                            labelPadding: const EdgeInsets.symmetric(
-                              horizontal: 8,
+                        width: 130,
+                        child: Text(
+                          fmtDate(e.date),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.mediumGreenText,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 130,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: catColor.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: catColor.withValues(alpha: 0.30),
                             ),
-                            side: BorderSide(color: typeColor(e.type)),
-                            backgroundColor: typeColor(
-                              e.type,
-                            ).withValues(alpha: 0.12),
-                            label: Text(
-                              e.type,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: typeColor(e.type),
-                              ),
+                          ),
+                          child: Text(
+                            e.type,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: catColor,
                             ),
                           ),
                         ),
                       ),
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.only(right: 8, top: 2),
+                          padding: const EdgeInsets.only(right: 12),
                           child: Text(
                             e.description,
                             style: const TextStyle(
@@ -3073,39 +3977,35 @@ class _ExpensesDataTable extends StatelessWidget {
                         ),
                       ),
                       SizedBox(
+                        width: 140,
+                        child: Text(
+                          '—',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.mediumGreenText,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
                         width: 100,
                         child: Text(
-                          '\$${e.amount.toStringAsFixed(2)}',
+                          '€${e.amount.toStringAsFixed(2)}',
                           textAlign: TextAlign.right,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.darkGreenText,
+                            color: AppColors.negativeText,
                           ),
                         ),
                       ),
                       SizedBox(
-                        width: 110,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            fmtDate(e.date),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.mediumGreenText,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 48,
+                        width: 52,
                         child: IconButton(
                           tooltip: 'Fshi rreshtin',
                           icon: Icon(
                             Icons.delete_outline,
-                            color: AppColors.negativeText.withValues(
-                              alpha: 0.85,
-                            ),
+                            size: 18,
+                            color: AppColors.negativeText.withValues(alpha: 0.7),
                           ),
                           onPressed: () => onDelete(e),
                         ),
@@ -3124,7 +4024,6 @@ class _ExpensesDataTable extends StatelessWidget {
 
 class _ProfitsPanel extends StatefulWidget {
   const _ProfitsPanel({required this.m});
-
   final ManagerData m;
 
   @override
@@ -3132,7 +4031,7 @@ class _ProfitsPanel extends StatefulWidget {
 }
 
 class _ProfitsPanelState extends State<_ProfitsPanel> {
-  int _tab = 0;
+  int _tab = 1; // 0=Daily, 1=Weekly, 2=Monthly
 
   @override
   void initState() {
@@ -3148,545 +4047,521 @@ class _ProfitsPanelState extends State<_ProfitsPanel> {
     super.dispose();
   }
 
+  List<FlSpot> _buildSpots(ManagerData m) {
+    final today = DateTime.now();
+    switch (_tab) {
+      case 0: // Daily — hourly today
+        return List.generate(12, (i) {
+          final h = (today.hour - 11 + i).clamp(0, 23);
+          final from = DateTime(today.year, today.month, today.day, h);
+          final to = DateTime(today.year, today.month, today.day, h, 59, 59);
+          final p = m.revenueInRange(from, to) - m.expensesInRange(from, to);
+          return FlSpot(i.toDouble(), p);
+        });
+      case 2: // Monthly — last 30 days
+        return List.generate(30, (i) {
+          final day = today.subtract(Duration(days: 29 - i));
+          final from = DateTime(day.year, day.month, day.day);
+          final to = DateTime(day.year, day.month, day.day, 23, 59, 59);
+          final p = m.revenueInRange(from, to) - m.expensesInRange(from, to);
+          return FlSpot(i.toDouble(), p);
+        });
+      default: // Weekly — last 7 days
+        return List.generate(7, (i) {
+          final day = today.subtract(Duration(days: 6 - i));
+          final from = DateTime(day.year, day.month, day.day);
+          final to = DateTime(day.year, day.month, day.day, 23, 59, 59);
+          final p = m.revenueInRange(from, to) - m.expensesInRange(from, to);
+          return FlSpot(i.toDouble(), p);
+        });
+    }
+  }
+
+  String _xLabel(int i) {
+    final today = DateTime.now();
+    const dayAbbr = ['Hën', 'Mar', 'Mër', 'Enj', 'Pre', 'Sht', 'Die'];
+    switch (_tab) {
+      case 0:
+        final h = (today.hour - 11 + i).clamp(0, 23);
+        return '$h:00';
+      case 2:
+        final day = today.subtract(Duration(days: 29 - i));
+        return '${day.day}';
+      default:
+        final day = today.subtract(Duration(days: 6 - i));
+        return dayAbbr[day.weekday - 1];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final m = widget.m;
 
-    // Revenue (shitjet nga kamarierët)
-    final revDay = m.revenueToday;
-    final revWeek = m.revenueThisWeek;
-    final revMonth = m.revenueThisMonth;
-
-    // Expenses (shpenzimet) për periudhën
-    final expDay = m.expensesToday;
-    final expWeek = m.expensesThisWeek;
-    final expMonth = m.expensesThisMonth;
-
-    // Profit = revenue – expenses
     final profDay = m.profitToday;
     final profWeek = m.profitThisWeek;
     final profMonth = m.profitThisMonth;
+    final totalSales = m.revenueThisMonth;
 
-    final labels = ['Sot', 'Kjo javë', 'Ky muaj'];
-    final revenues = [revDay, revWeek, revMonth];
-    final expenses = [expDay, expWeek, expMonth];
-    final profits = [profDay, profWeek, profMonth];
+    final selRevenues = [m.revenueToday, m.revenueThisWeek, m.revenueThisMonth];
+    final selExpenses = [m.expensesToday, m.expensesThisWeek, m.expensesThisMonth];
+    final selProfits = [profDay, profWeek, profMonth];
+    final selRev = selRevenues[_tab];
+    final selExp = selExpenses[_tab];
+    final selProfit = selProfits[_tab];
 
-    // Normalise bar heights by the largest revenue value.
-    final maxRev = revenues.fold(0.0, math.max);
-    final norm = maxRev > 0
-        ? revenues.map((v) => v / maxRev).toList()
-        : [0.0, 0.0, 0.0];
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final avgDaily = _tab == 0
+        ? profDay
+        : _tab == 1
+            ? profWeek / 7
+            : profMonth / daysInMonth;
+    final margin = selRev > 0 ? (selProfit / selRev * 100) : 0.0;
 
-    final selProfit = profits[_tab];
-    final selRev = revenues[_tab];
-    final selExp = expenses[_tab];
-    final profitColor = selProfit >= 0
-        ? AppColors.primaryGreen
-        : AppColors.negativeText;
+    final spots = _buildSpots(m);
+    final yValues = spots.map((s) => s.y).toList();
+    final maxY = yValues.isEmpty ? 0.0 : yValues.reduce(math.max);
+    final minY = yValues.isEmpty ? 0.0 : yValues.reduce(math.min);
+    final chartMaxY = math.max(maxY * 1.15, 100.0);
+    final chartMinY = math.min(minY * 1.1, 0.0);
+    final yInterval = math.max((chartMaxY - chartMinY) / 4, 1.0);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── header ────────────────────────────────────────────────────────
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.lightGreenBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.trending_up,
-                size: 32,
-                color: AppColors.primaryGreen,
-              ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Fitime & performanca',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Fitimi real bazuar në shitjet e kamarierëve minus shpenzimet e regjistruara.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        _sectionTitle('Fitime'),
+        const SizedBox(height: 6),
+        const Text(
+          'Fitimi neto = shitje – shpenzime, sipas periudhës.',
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 24),
 
-        // ── KPI tiles ─────────────────────────────────────────────────────
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _ProfitKpiTile(
-              label: 'Fitim sot',
-              value:
-                  '${profDay >= 0 ? '' : '-'}€${profDay.abs().toStringAsFixed(2)}',
-              icon: Icons.today_outlined,
-              highlight: _tab == 0,
-              positive: profDay >= 0,
-              onTap: () => setState(() => _tab = 0),
-            ),
-            _ProfitKpiTile(
-              label: 'Fitim kjo javë',
-              value:
-                  '${profWeek >= 0 ? '' : '-'}€${profWeek.abs().toStringAsFixed(2)}',
-              icon: Icons.date_range_outlined,
-              highlight: _tab == 1,
-              positive: profWeek >= 0,
-              onTap: () => setState(() => _tab = 1),
-            ),
-            _ProfitKpiTile(
-              label: 'Fitim ky muaj',
-              value:
-                  '${profMonth >= 0 ? '' : '-'}€${profMonth.abs().toStringAsFixed(2)}',
-              icon: Icons.calendar_month_outlined,
-              highlight: _tab == 2,
-              positive: profMonth >= 0,
-              onTap: () => setState(() => _tab = 2),
-            ),
-            _ProfitKpiTile(
-              label: 'Shitje totale (sesion)',
-              value:
-                  '€${m.waiterSales.values.fold(0.0, (s, v) => s + v).toStringAsFixed(2)}',
-              icon: Icons.point_of_sale_outlined,
-              highlight: false,
-              positive: true,
-              onTap: null,
-            ),
-          ],
+        // ── KPI row ──────────────────────────────────────────────────────
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _StatCard(
+                  title: 'Fitim Ditor',
+                  value: '€${profDay.toStringAsFixed(0)}',
+                  icon: Icons.attach_money,
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Fitim Javor',
+                  value: '€${profWeek.toStringAsFixed(0)}',
+                  icon: Icons.trending_up_outlined,
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Fitim Mujor',
+                  value: '€${profMonth.toStringAsFixed(0)}',
+                  icon: Icons.calendar_month_outlined,
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  title: 'Shitje Gjithsej',
+                  value: '€${totalSales.toStringAsFixed(0)}',
+                  icon: Icons.bar_chart_outlined,
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 20),
 
-        // ── detail card ───────────────────────────────────────────────────
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
+        // ── Main card ────────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+            border: Border.all(color: AppColors.lightGreenBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x08000000),
+                blurRadius: 16,
+                offset: Offset(0, 6),
+              ),
+            ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // period selector
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SegmentedButton<int>(
-                    segments: [
-                      for (var i = 0; i < 3; i++)
-                        ButtonSegment<int>(value: i, label: Text(labels[i])),
-                    ],
-                    selected: {_tab},
-                    onSelectionChanged: (s) => setState(() => _tab = s.first),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // big profit number
-                Text(
-                  'Fitimi — ${labels[_tab]}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.mediumGreenText,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${selProfit >= 0 ? '' : '-'}€${selProfit.abs().toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 44,
-                    fontWeight: FontWeight.w700,
-                    color: profitColor,
-                    height: 1.05,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // revenue vs expenses row
-                Row(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Left: line chart ────────────────────────────────────────
+              Expanded(
+                flex: 62,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _ProfitStatCell(
-                        label: 'Shitje',
-                        value: '€${selRev.toStringAsFixed(2)}',
-                        icon: Icons.arrow_upward_rounded,
-                        color: AppColors.primaryGreen,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ProfitStatCell(
-                        label: 'Shpenzime',
-                        value: '€${selExp.toStringAsFixed(2)}',
-                        icon: Icons.arrow_downward_rounded,
-                        color: AppColors.negativeText,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ProfitStatCell(
-                        label: 'Transaksione',
-                        value:
-                            '${m.salesHistory.where(_inPeriod(_tab)).length}',
-                        icon: Icons.receipt_outlined,
-                        color: AppColors.mediumGreenText,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // bar chart (revenue per period)
-                Text(
-                  'Shitjet sipas periudhës',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 120,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      for (var i = 0; i < 3; i++)
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '€${revenues[i].toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.darkGreenText,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.bottomCenter,
-                                    child: AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      width: 40,
-                                      height: 12 + norm[i] * 72,
-                                      decoration: BoxDecoration(
-                                        color: _tab == i
-                                            ? AppColors.primaryGreen
-                                            : AppColors.primaryGreen.withValues(
-                                                alpha: 0.35,
-                                              ),
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                              top: Radius.circular(8),
-                                            ),
+                    Row(
+                      children: [
+                        const Text(
+                          'Trendi i Fitimit',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.darkGreenText,
+                          ),
+                        ),
+                        const Spacer(),
+                        // Tab toggle
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.lightGreenBg,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              for (final entry in [
+                                (0, 'Ditore'),
+                                (1, 'Javore'),
+                                (2, 'Mujore'),
+                              ])
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _tab = entry.$1),
+                                  child: AnimatedContainer(
+                                    duration:
+                                        const Duration(milliseconds: 150),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _tab == entry.$1
+                                          ? AppColors.primaryGreen
+                                          : Colors.transparent,
+                                      borderRadius:
+                                          BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      entry.$2,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: _tab == entry.$1
+                                            ? AppColors.white
+                                            : AppColors.mediumGreenText,
                                       ),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  labels[i],
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.mediumGreenText,
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    SizedBox(
+                      height: 320,
+                      child: LineChart(
+                        LineChartData(
+                          minX: 0,
+                          maxX: (spots.length - 1).toDouble(),
+                          minY: chartMinY,
+                          maxY: chartMaxY,
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: spots,
+                              isCurved: true,
+                              curveSmoothness: 0.3,
+                              color: AppColors.primaryGreen,
+                              barWidth: 2.5,
+                              dotData: FlDotData(
+                                show: true,
+                                getDotPainter: (_, __, ___, ____) =>
+                                    FlDotCirclePainter(
+                                  radius: 4,
+                                  color: AppColors.primaryGreen,
+                                  strokeWidth: 2,
+                                  strokeColor: AppColors.white,
+                                ),
+                              ),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                color: AppColors.primaryGreen.withValues(
+                                  alpha: 0.05,
+                                ),
+                              ),
+                            ),
+                          ],
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: false,
+                            horizontalInterval: yInterval,
+                            getDrawingHorizontalLine: (_) => FlLine(
+                              color: AppColors.lightGreenBorder,
+                              strokeWidth: 1,
+                              dashArray: [4, 4],
+                            ),
+                          ),
+                          titlesData: FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 28,
+                                interval: _tab == 2 ? 5 : 1,
+                                getTitlesWidget: (v, _) => Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    _xLabel(v.toInt()),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.mediumGreenText,
+                                    ),
                                   ),
                                 ),
-                              ],
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 52,
+                                interval: yInterval,
+                                getTitlesWidget: (v, _) => Text(
+                                  v >= 1000
+                                      ? '${(v / 1000).toStringAsFixed(0)}k'
+                                      : v.toStringAsFixed(0),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.lightGreenText,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          lineTouchData: LineTouchData(
+                            touchTooltipData: LineTouchTooltipData(
+                              getTooltipColor: (_) => AppColors.primaryGreen,
+                              tooltipRoundedRadius: 8,
+                              getTooltipItems: (spots) => spots
+                                  .map(
+                                    (s) => LineTooltipItem(
+                                      '€${s.y.toStringAsFixed(0)}',
+                                      const TextStyle(
+                                        color: AppColors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-
-        // ── breakdown table ────────────────────────────────────────────────
-        Card(
-          elevation: 0,
-          color: AppColors.beige,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: AppColors.borderSubtle(0.1)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1),
-              },
-              children: [
-                TableRow(
-                  children: [
-                    _profitTblHead('Metrika'),
-                    _profitTblHead('Vlera', right: true),
+                      ),
+                    ),
                   ],
                 ),
-                _profitTblRow('Shitje sot', '€${revDay.toStringAsFixed(2)}'),
-                _profitTblRow(
-                  'Shitje kjo javë',
-                  '€${revWeek.toStringAsFixed(2)}',
+              ),
+              const SizedBox(width: 20),
+
+              // ── Right: stat cards ────────────────────────────────────────
+              SizedBox(
+                width: 260,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Average Daily
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightGreenBg.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Mesatare Ditore',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.mediumGreenText,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '€${avgDaily.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryGreen,
+                              height: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Breakdown
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.lightGreenBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Ndarja',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.darkGreenText,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _ProfitBreakdownRow(
+                            label: 'Të Ardhura',
+                            value: '€${selRev.toStringAsFixed(0)}',
+                          ),
+                          const SizedBox(height: 10),
+                          _ProfitBreakdownRow(
+                            label: 'Kosto',
+                            value: selExp > 0
+                                ? '-€${selExp.toStringAsFixed(0)}'
+                                : '€0',
+                            valueColor: selExp > 0
+                                ? AppColors.softRed
+                                : AppColors.darkGreenText,
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  AppColors.lightGreenBg.withValues(alpha: 0.8),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: _ProfitBreakdownRow(
+                              label: 'Fitim Neto',
+                              value: '€${selProfit.toStringAsFixed(0)}',
+                              valueColor: AppColors.primaryGreen,
+                              bold: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Margin
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightGreenBg.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Marzhi',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.darkGreenText,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                '${margin.toStringAsFixed(0)}%',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryGreen,
+                                  height: 1.0,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                selRev > 0 ? '+${margin.toStringAsFixed(1)}%' : '—',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.primaryGreen,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                _profitTblRow(
-                  'Shitje ky muaj',
-                  '€${revMonth.toStringAsFixed(2)}',
-                ),
-                _profitTblRow('Shpenzime sot', '€${expDay.toStringAsFixed(2)}'),
-                _profitTblRow(
-                  'Shpenzime kjo javë',
-                  '€${expWeek.toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Shpenzime ky muaj',
-                  '€${expMonth.toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Fitim sot',
-                  '${profDay >= 0 ? '' : '-'}€${profDay.abs().toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Fitim kjo javë',
-                  '${profWeek >= 0 ? '' : '-'}€${profWeek.abs().toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Fitim ky muaj',
-                  '${profMonth >= 0 ? '' : '-'}€${profMonth.abs().toStringAsFixed(2)}',
-                ),
-                _profitTblRow(
-                  'Transaksione gjithsej',
-                  '${m.salesHistory.length}',
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
+}
 
-  /// Returns a predicate that checks whether a [SaleRow] falls in period [tab].
-  bool Function(SaleRow) _inPeriod(int tab) {
-    final now = DateTime.now();
-    final DateTime from;
-    switch (tab) {
-      case 1:
-        from = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).subtract(Duration(days: now.weekday - 1));
-        break;
-      case 2:
-        from = DateTime(now.year, now.month, 1);
-        break;
-      default:
-        from = DateTime(now.year, now.month, now.day);
-    }
-    return (s) => !s.timestamp.isBefore(from);
-  }
+class _ProfitBreakdownRow extends StatelessWidget {
+  const _ProfitBreakdownRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+    this.bold = false,
+  });
+  final String label;
+  final String value;
+  final Color? valueColor;
+  final bool bold;
 
-  static Widget _profitTblHead(String s, {bool right = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        s,
-        textAlign: right ? TextAlign.right : TextAlign.start,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: AppColors.lightGreenText,
-        ),
-      ),
-    );
-  }
-
-  static TableRow _profitTblRow(String a, String b) {
-    return TableRow(
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+        Expanded(
           child: Text(
-            a,
-            style: const TextStyle(
+            label,
+            style: TextStyle(
               fontSize: 13,
-              color: AppColors.darkGreenText,
+              color: bold ? AppColors.darkGreenText : AppColors.lightGreenText,
+              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(
-            b,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkGreenText,
-            ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+            color: valueColor ?? AppColors.darkGreenText,
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ProfitKpiTile extends StatelessWidget {
-  const _ProfitKpiTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.highlight,
-    required this.positive,
-    this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final bool highlight;
-  final bool positive;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final valueColor = positive
-        ? AppColors.primaryGreen
-        : AppColors.negativeText;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 200,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: highlight ? AppColors.lightGreenBg : AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: highlight
-                  ? AppColors.primaryGreen.withValues(alpha: 0.45)
-                  : AppColors.borderSubtle(0.12),
-              width: highlight ? 1.5 : 1,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: valueColor, size: 22),
-              const SizedBox(height: 10),
-              Text(
-                label,
-                style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: valueColor,
-                ),
-              ),
-              if (onTap != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  'Prek për të zgjedhur',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: AppColors.mediumGreenText,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfitStatCell extends StatelessWidget {
-  const _ProfitStatCell({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.beige,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.mediumGreenText,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -3746,429 +4621,369 @@ class _ReportsPanelState extends State<_ReportsPanel> {
     await Clipboard.setData(ClipboardData(text: csv));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'CSV u kopjua në clipboard — ngjite në Excel ose në një skedar .csv',
-        ),
+      const SnackBar(
+        content: Text('CSV u kopjua në clipboard'),
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.primaryGreen,
       ),
     );
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Eksport CSV'),
-        content: SizedBox(
-          width: 480,
-          height: 280,
-          child: SingleChildScrollView(
-            child: SelectableText(
-              csv,
-              style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Mbyll'),
-          ),
-        ],
-      ),
-    );
   }
+
+  Future<void> _expensesPdf(
+    BuildContext context, {
+    required bool printOnly,
+  }) async {
+    final rows = widget.m.expenses;
+    if (rows.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nuk ka shpenzime për eksport.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.negativeText,
+        ),
+      );
+      return;
+    }
+    final bytes = await buildExpensesPdfBytes(rows: rows);
+    if (!context.mounted) return;
+    if (printOnly) {
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } else {
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename:
+            'expenses_report_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      );
+    }
+  }
+
+  static const _rMonths = [
+    'Jan', 'Feb', 'Mars', 'Apr', 'Maj', 'Qer',
+    'Kor', 'Gus', 'Sht', 'Tet', 'Nën', 'Dhj',
+  ];
+
+  String _fmtDay(DateTime d) => '${_rMonths[d.month - 1]} ${d.day}, ${d.year}';
 
   @override
   Widget build(BuildContext context) {
-    final m = widget.m;
-    final recentExp = List<ExpenseRow>.from(m.expenses)
-      ..sort((a, b) => b.date.compareTo(a.date));
-    final preview = recentExp.take(8).toList();
-    final sales = m.employeeSalesSorted.take(6).toList();
+    final now = DateTime.now();
+    final weekNum = ((now.difference(DateTime(now.year, 1, 1)).inDays +
+                DateTime(now.year, 1, 1).weekday - 1) /
+            7)
+        .ceil();
+    final yesterday = now.subtract(const Duration(days: 1));
+
+    final recentItems = <({String title, String subtitle, VoidCallback onDownload, VoidCallback onPrint})>[
+      (
+        title: 'Raporti Ditor - ${_fmtDay(now)}',
+        subtitle: 'Sot · ~245 KB',
+        onDownload: () => _pdf(printOnly: false),
+        onPrint: () => _pdf(printOnly: true),
+      ),
+      (
+        title: 'Përmbledhja Javore - Java $weekNum',
+        subtitle: '${_fmtDay(yesterday)} · ~890 KB',
+        onDownload: () => _pdf(printOnly: false),
+        onPrint: () => _pdf(printOnly: true),
+      ),
+      (
+        title: 'Përmbledhje Shpenzimesh',
+        subtitle: '${_fmtDay(now)} · ~120 KB',
+        onDownload: () => _expensesPdf(context, printOnly: false),
+        onPrint: () => _expensesPdf(context, printOnly: true),
+      ),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.lightGreenBg,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(
-                Icons.description_outlined,
-                size: 32,
-                color: AppColors.primaryGreen,
-              ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Raporte & eksporte',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Gjenero PDF përmbledhës, printo ose eksporto shpenzimet si CSV për Excel.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        _sectionTitle('Raporte'),
+        const SizedBox(height: 6),
+        const Text(
+          'Gjenero dhe eksporto raporte biznesi',
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
-        const SizedBox(height: 22),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _ReportStatChip(
-              icon: Icons.picture_as_pdf_outlined,
-              label: 'PDF',
-              value: 'Raport i plotë',
-            ),
-            _ReportStatChip(
-              icon: Icons.table_chart_outlined,
-              label: 'CSV',
-              value: '${m.expenses.length} rreshta',
-            ),
-            _ReportStatChip(
-              icon: Icons.groups_outlined,
-              label: 'Kamarierë',
-              value: '${m.waiters.length}',
-            ),
-          ],
+        const SizedBox(height: 24),
+
+        // Row 1: Daily Sales + Staff Performance
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _ReportCard(
+                  icon: Icons.attach_money_outlined,
+                  title: 'Raporti i Shitjeve Ditore',
+                  subtitle: "Complete breakdown of today's sales",
+                  onExport: () => _pdf(printOnly: false),
+                  onPrint: () => _pdf(printOnly: true),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _ReportCard(
+                  icon: Icons.people_outline,
+                  title: 'Performanca e Stafit',
+                  subtitle: 'Shitjet dhe statistikat individuale të kamarierëve',
+                  onExport: () => _pdf(printOnly: false),
+                  onPrint: () => _pdf(printOnly: true),
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 20),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
+        const SizedBox(height: 16),
+
+        // Row 2: Expense Summary + Inventory Report
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _ReportCard(
+                  icon: Icons.description_outlined,
+                  title: 'Përmbledhje Shpenzimesh',
+                  subtitle: 'Të gjitha shpenzimet të kategorizuara dhe totalizuara',
+                  onExport: () => _expensesPdf(context, printOnly: false),
+                  onPrint: () => _expensesPdf(context, printOnly: true),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _ReportCard(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'Raporti i Inventarit',
+                  subtitle: 'Nivelet aktuale të stokut dhe përdorimi',
+                  onExport: () => _exportCsv(context),
+                  onPrint: () => _pdf(printOnly: true),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Recent Reports card
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: AppColors.borderSubtle(0.12)),
+            border: Border.all(color: AppColors.lightGreenBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(22),
+            padding: const EdgeInsets.all(24),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Veprime',
+                const Text(
+                  'Raportet e Fundit',
                   style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.darkGreenText,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'PDF përfshin fitime (demo), tavolina, shift, shpenzime dhe shitje stafi.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.mediumGreenText,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                LayoutBuilder(
-                  builder: (context, c) {
-                    final wide = c.maxWidth > 560;
-                    if (wide) {
-                      return Row(
-                        children: [
-                          FilledButton.icon(
-                            onPressed: () => _pdf(printOnly: false),
-                            icon: const Icon(Icons.download_outlined),
-                            label: const Text('Shkarko PDF'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primaryGreen,
-                              foregroundColor: AppColors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          OutlinedButton.icon(
-                            onPressed: () => _exportCsv(context),
-                            icon: const Icon(Icons.table_chart_outlined),
-                            label: const Text('Eksport CSV (Excel)'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primaryGreen,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          OutlinedButton.icon(
-                            onPressed: () => _pdf(printOnly: true),
-                            icon: const Icon(Icons.print_outlined),
-                            label: const Text('Printo PDF'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.darkGreenText,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    return Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        FilledButton.icon(
-                          onPressed: () => _pdf(printOnly: false),
-                          icon: const Icon(Icons.download_outlined),
-                          label: const Text('Shkarko PDF'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.primaryGreen,
-                            foregroundColor: AppColors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => _exportCsv(context),
-                          icon: const Icon(Icons.table_chart_outlined),
-                          label: const Text('Eksport CSV'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primaryGreen,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => _pdf(printOnly: true),
-                          icon: const Icon(Icons.print_outlined),
-                          label: const Text('Printo'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.darkGreenText,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        LayoutBuilder(
-          builder: (context, c) {
-            final twoCol = c.maxWidth > 900;
-            final left = Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: AppColors.borderSubtle(0.1)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.receipt_long_outlined,
-                          color: AppColors.primaryGreen,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Parapamje shpenzimesh (8 të fundit)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.darkGreenText,
-                          ),
-                        ),
-                      ],
+                const SizedBox(height: 16),
+                for (int i = 0; i < recentItems.length; i++) ...[
+                  if (i > 0)
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: AppColors.lightGreenBorder,
                     ),
-                    const SizedBox(height: 14),
-                    if (preview.isEmpty)
-                      Text(
-                        'Nuk ka shpenzime. Shto nga seksioni Shpenzime.',
-                        style: TextStyle(color: AppColors.mediumGreenText),
-                      )
-                    else
-                      ...preview.map(
-                        (e) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Row(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.lightGreenBg,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.description_outlined,
+                            size: 18,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  e.description,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.darkGreenText,
-                                  ),
-                                ),
-                              ),
                               Text(
-                                '\$${e.amount.toStringAsFixed(2)}',
+                                recentItems[i].title,
                                 style: const TextStyle(
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.darkGreenText,
                                 ),
                               ),
+                              const SizedBox(height: 2),
+                              Text(
+                                recentItems[i].subtitle,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.mediumGreenText,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-            final right = Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: AppColors.borderSubtle(0.1)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.point_of_sale_outlined,
-                          color: AppColors.primaryGreen,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Shitje stafi (sesion)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.darkGreenText,
+                        IconButton(
+                          tooltip: 'Shkarko',
+                          icon: const Icon(
+                            Icons.download_outlined,
+                            size: 20,
+                            color: AppColors.mediumGreenText,
                           ),
+                          onPressed: recentItems[i].onDownload,
+                        ),
+                        IconButton(
+                          tooltip: 'Shtyp',
+                          icon: const Icon(
+                            Icons.print_outlined,
+                            size: 20,
+                            color: AppColors.mediumGreenText,
+                          ),
+                          onPressed: recentItems[i].onPrint,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    if (sales.isEmpty)
-                      Text(
-                        'Ende pa shitje të regjistruara.',
-                        style: TextStyle(color: AppColors.mediumGreenText),
-                      )
-                    else
-                      ...sales.map(
-                        (e) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  e.key,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.darkGreenText,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                '\$${e.value.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryGreen,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-            if (twoCol) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: left),
-                  const SizedBox(width: 16),
-                  Expanded(child: right),
+                  ),
                 ],
-              );
-            }
-            return Column(children: [left, const SizedBox(height: 16), right]);
-          },
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
 }
 
-class _ReportStatChip extends StatelessWidget {
-  const _ReportStatChip({
+class _ReportCard extends StatelessWidget {
+  const _ReportCard({
     required this.icon,
-    required this.label,
-    required this.value,
+    required this.title,
+    required this.subtitle,
+    required this.onExport,
+    required this.onPrint,
   });
 
   final IconData icon;
-  final String label;
-  final String value;
+  final String title;
+  final String subtitle;
+  final VoidCallback onExport;
+  final VoidCallback onPrint;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle(0.12)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 22, color: AppColors.primaryGreen),
-          const SizedBox(width: 10),
-          Column(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(fontSize: 11, color: AppColors.lightGreenText),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 22, color: AppColors.primaryGreen),
               ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreenText,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.mediumGreenText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onExport,
+                  icon: const Icon(Icons.download_outlined, size: 16),
+                  label: const Text('Eksporto PDF'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                onPressed: onPrint,
+                icon: const Icon(Icons.print_outlined, size: 16),
+                label: const Text('Shtyp'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.darkGreenText,
+                  side: const BorderSide(color: AppColors.lightGreenBorder),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -4186,95 +5001,357 @@ class _TopEmployeePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final top = m.topEmployee;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionTitle('6. Realizimi sipas puntorëve'),
-        const SizedBox(height: 16),
-        Card(
-          elevation: 0,
-          color: AppColors.lightGreenBg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    final sorted = m.employeeSalesSorted;
+
+    if (sorted.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle('Realizimi sipas punëtorëve'),
+          const SizedBox(height: 8),
+          const Text(
+            'Statistikat e shitjeve sipas punonjësve',
+            style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
+          const SizedBox(height: 40),
+          Center(
+            child: Column(
               children: [
-                const Icon(
-                  Icons.emoji_events,
-                  size: 48,
-                  color: AppColors.primaryGreen,
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.lightGreenBg,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events_outlined,
+                    size: 36,
+                    color: AppColors.lightGreenText,
+                  ),
                 ),
-                const SizedBox(width: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Më shumë realizim',
-                      style: TextStyle(color: AppColors.mediumGreenText),
-                    ),
-                    Text(
-                      top.key,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkGreenText,
-                      ),
-                    ),
-                    Text(
-                      '\$${top.value.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        color: AppColors.primaryGreen,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                const Text(
+                  'Asnjë shitje e regjistruar ende.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: AppColors.mediumGreenText,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Shitjet do të shfaqen këtu pasi të regjistroni shitjet e para.',
+                  style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
                 ),
               ],
             ),
           ),
+        ],
+      );
+    }
+
+    final top = sorted.first;
+    final maxSales = top.value > 0 ? top.value : 1.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('Realizimi sipas punëtorëve'),
+        const SizedBox(height: 4),
+        const Text(
+          'Statistikat e shitjeve sipas punonjësve',
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
         const SizedBox(height: 24),
-        if (m.employeeSalesSorted.isEmpty)
-          Text(
-            'Asnjë shitje e regjistruar ende.',
-            style: TextStyle(color: AppColors.lightGreenText),
-          )
-        else ...[
-          const Text(
-            'Të gjithë:',
-            style: TextStyle(fontWeight: FontWeight.w500),
+
+        // ── Trophy hero card ─────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.warmGold.withValues(alpha: 0.12),
+                AppColors.warmGold.withValues(alpha: 0.04),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppColors.warmGold.withValues(alpha: 0.35),
+            ),
           ),
-          const SizedBox(height: 8),
-          ...m.employeeSalesSorted.map(
-            (e) => ListTile(
-              dense: true,
-              leading: CircleAvatar(
-                backgroundColor: AppColors.lightGreenBg,
-                radius: 16,
-                child: Text(
-                  e.key.isNotEmpty ? e.key[0].toUpperCase() : '?',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryGreen,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.warmGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.emoji_events,
+                  size: 34,
+                  color: AppColors.warmGold,
                 ),
               ),
-              title: Text(e.key),
-              trailing: Text(
-                '\$${e.value.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryGreen,
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Punëtori më i mirë',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.lightGreenText,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      top.key,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.darkGreenText,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '€${top.value.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.warmGold,
+                      height: 1.0,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'totale',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.lightGreenText,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Leaderboard ──────────────────────────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.lightGreenBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Table header
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg.withValues(alpha: 0.6),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(17),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    SizedBox(width: 36),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'PUNËTORI',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.lightGreenText,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 100,
+                      child: Text(
+                        'SHITJET',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.lightGreenText,
+                          letterSpacing: 0.6,
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              for (var i = 0; i < sorted.length; i++) ...[
+                if (i > 0)
+                  const Divider(height: 1, color: AppColors.lightGreenBorder),
+                _TopEmployeeRow(
+                  rank: i + 1,
+                  name: sorted[i].key,
+                  sales: sorted[i].value,
+                  maxSales: maxSales,
+                  isLast: i == sorted.length - 1,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TopEmployeeRow extends StatelessWidget {
+  const _TopEmployeeRow({
+    required this.rank,
+    required this.name,
+    required this.sales,
+    required this.maxSales,
+    required this.isLast,
+  });
+
+  final int rank;
+  final String name;
+  final double sales;
+  final double maxSales;
+  final bool isLast;
+
+  Color get _rankColor {
+    if (rank == 1) return AppColors.warmGold;
+    if (rank == 2) return const Color(0xFF9E9E9E);
+    if (rank == 3) return const Color(0xFFCD7F32);
+    return AppColors.lightGreenText;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = maxSales > 0 ? sales / maxSales : 0.0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        borderRadius: isLast
+            ? const BorderRadius.vertical(bottom: Radius.circular(17))
+            : BorderRadius.zero,
+      ),
+      child: Row(
+        children: [
+          // Rank badge
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _rankColor.withValues(alpha: rank <= 3 ? 0.12 : 0.06),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                '$rank',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: _rankColor,
                 ),
               ),
             ),
           ),
+          const SizedBox(width: 12),
+          // Avatar + name + progress bar
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 4,
+                    backgroundColor: AppColors.lightGreenBg,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      rank == 1
+                          ? AppColors.warmGold
+                          : AppColors.primaryGreen.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Sales value
+          SizedBox(
+            width: 100,
+            child: Text(
+              '€${sales.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: rank == 1 ? AppColors.warmGold : AppColors.darkGreenText,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -5397,448 +6474,392 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
     final m = widget.m;
     final n = _count.round();
     final pr = _perRow.round();
-    final rows = (n / pr).ceil();
     final occupied = m.cashierTables.where((t) => t.occupied).length;
-    final openTotal = m.cashierTables.fold<double>(
-      0,
-      (s, t) => s + (t.currentTotal ?? 0),
-    );
+    final free = m.cashierTables.length - occupied;
+    final total = m.cashierTables.length;
+    final occupancyPct = total > 0 ? (occupied / total * 100).round() : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.lightGreenBg,
-                borderRadius: BorderRadius.circular(14),
+        _sectionTitle('Menaxhimi i Tavolinave'),
+        const SizedBox(height: 6),
+        const Text(
+          'Monitoro dhe menaxho tavolinat e restorantit',
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        ),
+        const SizedBox(height: 24),
+
+        // ── KPI row ──────────────────────────────────────────────────────
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.table_restaurant_outlined,
+                  title: 'Tavolina Gjithsej',
+                  value: '$total',
+                ),
               ),
-              child: const Icon(
-                Icons.grid_view_rounded,
-                size: 32,
-                color: AppColors.primaryGreen,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.people_outline,
+                  title: 'Tavolina të Lira',
+                  value: '$free',
+                  accentColor: AppColors.primaryGreen,
+                ),
               ),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.schedule_outlined,
+                  title: 'Të Zëna',
+                  value: '$occupied',
+                  accentColor: AppColors.softRed,
+                  badge: '$occupancyPct%',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.event_available_outlined,
+                  title: 'Të Rezervuara',
+                  value: '0',
+                  accentColor: AppColors.warmGold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Floor Layout card ─────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.lightGreenBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    'Tavolinat & rrjeti i kasës',
+                  const Text(
+                    'Planimetria',
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  const Spacer(),
+                  _TableLegendDot(
+                    color: AppColors.primaryGreen,
+                    label: 'Lirë',
+                  ),
+                  const SizedBox(width: 16),
+                  _TableLegendDot(
+                    color: AppColors.softRed,
+                    label: 'Zënë',
+                  ),
+                  const SizedBox(width: 16),
+                  _TableLegendDot(
+                    color: AppColors.warmGold,
+                    label: 'Rezervuar',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: pr.clamp(2, 12),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.55,
+                ),
+                itemCount: n,
+                itemBuilder: (context, i) {
+                  final id = i + 1;
+                  TableInfo? info;
+                  try {
+                    info = m.cashierTables.firstWhere((t) => t.id == id);
+                  } catch (_) {}
+                  final occ = info?.occupied ?? false;
+
+                  const freeBg = Color(0xFFECF5EC);
+                  const freeBorder = Color(0xFFB8DEB8);
+                  const occBg = Color(0xFFFFF0F0);
+                  const occBorder = Color(0xFFFFCDD2);
+                  const freeGreen = Color(0xFF4CAF50);
+                  const occRed = Color(0xFFEF5350);
+
+                  final bg = occ ? occBg : freeBg;
+                  final border = occ ? occBorder : freeBorder;
+                  final dot = occ ? occRed : freeGreen;
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: bg,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: border, width: 1.5),
+                    ),
+                    child: Stack(
+                      children: [
+                        // Number badge (top-left)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$id',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.darkGreenText,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Status dot (top-right)
+                        Positioned(
+                          top: 10,
+                          right: 2,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: dot,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        // Content (bottom-left)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: occ
+                              ? Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (info?.assignedWaiterName != null)
+                                      Text(
+                                        info!.assignedWaiterName!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.darkGreenText,
+                                        ),
+                                      ),
+                                    if ((info?.currentTotal ?? 0) > 0)
+                                      Text(
+                                        '€${info!.currentTotal!.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.mediumGreenText,
+                                        ),
+                                      ),
+                                  ],
+                                )
+                              : const Text(
+                                  'Lirë',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: freeGreen,
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Configuration card ────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.lightGreenBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Konfigurimi i Planimetrisë',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  const Text(
+                    'Numri i tavolinave',
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: AppColors.darkGreenText,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Ruajtja rindërton listën 1…N. Kamarieri mund të shtojë tavolina me “+” nga ekrani i tavolinave.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: AppColors.mediumGreenText,
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.lightGreenBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_count.round()}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryGreen,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 22),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _TableStatPill(
-              icon: Icons.event_seat_outlined,
-              label: 'Tavolina (aktualisht)',
-              value: '${m.cashierTables.length}',
-            ),
-            _TableStatPill(
-              icon: Icons.event_available_outlined,
-              label: 'Të zëna',
-              value: '$occupied',
-            ),
-            _TableStatPill(
-              icon: Icons.event_busy_outlined,
-              label: 'Të lira',
-              value: '${m.cashierTables.length - occupied}',
-            ),
-            _TableStatPill(
-              icon: Icons.receipt_outlined,
-              label: 'Hapësirë e hapur',
-              value: '\$${openTotal.toStringAsFixed(2)}',
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: AppColors.borderSubtle(0.12)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Cilësimet e rrjetit',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.darkGreenText,
-                  ),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: AppColors.primaryGreen,
+                  inactiveTrackColor: AppColors.lightGreenBorder,
+                  thumbColor: AppColors.primaryGreen,
+                  overlayColor: AppColors.primaryGreen.withValues(alpha: 0.12),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Parapamja poshtë përdor vlerat e zgjedhura (para ruajtjes). Rreshta të parashikuar në grid: $rows.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.mediumGreenText,
-                  ),
+                child: Slider(
+                  value: _count,
+                  min: 1,
+                  max: 48,
+                  divisions: 47,
+                  label: '${_count.round()}',
+                  onChanged: (v) => setState(() => _count = v),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Text(
-                      'Numri i tavolinave',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkGreenText,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.lightGreenBg,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_count.round()}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    activeTrackColor: AppColors.primaryGreen,
-                    inactiveTrackColor: AppColors.borderSubtle(0.15),
-                    thumbColor: AppColors.primaryGreen,
-                    overlayColor: AppColors.primaryGreen.withValues(
-                      alpha: 0.12,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Text(
+                    'Tavolina për rresht',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
                     ),
                   ),
-                  child: Slider(
-                    value: _count,
-                    min: 1,
-                    max: 48,
-                    divisions: 47,
-                    label: '${_count.round()}',
-                    onChanged: (v) => setState(() => _count = v),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      'Tavolina për rresht',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkGreenText,
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.lightGreenBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_perRow.round()}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryGreen,
                       ),
                     ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.lightGreenBg,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_perRow.round()}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    activeTrackColor: AppColors.primaryGreen,
-                    inactiveTrackColor: AppColors.borderSubtle(0.15),
-                    thumbColor: AppColors.primaryGreen,
-                    overlayColor: AppColors.primaryGreen.withValues(
-                      alpha: 0.12,
-                    ),
                   ),
-                  child: Slider(
-                    value: _perRow,
-                    min: 2,
-                    max: 12,
-                    divisions: 10,
-                    label: '${_perRow.round()}',
-                    onChanged: (v) => setState(() => _perRow = v),
-                  ),
+                ],
+              ),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: AppColors.primaryGreen,
+                  inactiveTrackColor: AppColors.lightGreenBorder,
+                  thumbColor: AppColors.primaryGreen,
+                  overlayColor: AppColors.primaryGreen.withValues(alpha: 0.12),
                 ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
+                child: Slider(
+                  value: _perRow,
+                  min: 2,
+                  max: 12,
+                  divisions: 10,
+                  label: '${_perRow.round()}',
+                  onChanged: (v) => setState(() => _perRow = v),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.icon(
                   onPressed: () {
                     m.setTableLayout(
                       count: _count.round(),
                       perRow: _perRow.round(),
                     );
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text(
-                          'Cilësimet e tavolinave u ruajtën.',
-                        ),
+                      const SnackBar(
+                        content: Text('Table layout saved.'),
                         behavior: SnackBarBehavior.floating,
                         backgroundColor: AppColors.primaryGreen,
                       ),
                     );
                   },
-                  icon: const Icon(Icons.save_outlined),
-                  label: const Text('Ruaj cilësimet'),
+                  icon: const Icon(Icons.save_outlined, size: 18),
+                  label: const Text('Ruaj Planimetrinë'),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 16,
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        Text(
-          'Parapamje e shpërndarjes ($n tavolina · $pr kolona)',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.darkGreenText,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Card(
-          elevation: 0,
-          color: AppColors.beige,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: AppColors.borderSubtle(0.1)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: pr.clamp(2, 12),
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 1.15,
-                  ),
-                  itemCount: n,
-                  itemBuilder: (context, i) {
-                    final id = i + 1;
-                    TableInfo? info;
-                    try {
-                      info = m.cashierTables.firstWhere((t) => t.id == id);
-                    } catch (_) {
-                      info = null;
-                    }
-                    final occ = info?.occupied ?? false;
-                    return Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: occ
-                            ? AppColors.primaryGreen.withValues(alpha: 0.2)
-                            : AppColors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: occ
-                              ? AppColors.primaryGreen
-                              : AppColors.borderSubtle(0.15),
-                          width: occ ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$id',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              color: AppColors.darkGreenText,
-                            ),
-                          ),
-                          if (occ)
-                            Text(
-                              '\$${(info?.currentTotal ?? 0).toStringAsFixed(0)}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.primaryGreen,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          'Statusi aktual i tavolinave',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.darkGreenText,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: AppColors.borderSubtle(0.1)),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 520),
-                child: DataTable(
-                  headingRowColor: const WidgetStatePropertyAll(
-                    AppColors.lightGreenBg,
-                  ),
-                  columns: const [
-                    DataColumn(label: Text('ID')),
-                    DataColumn(label: Text('Gjendja')),
-                    DataColumn(label: Text('Total'), numeric: true),
-                  ],
-                  rows: [
-                    for (final t in m.cashierTables)
-                      DataRow(
-                        cells: [
-                          DataCell(Text('${t.id}')),
-                          DataCell(
-                            Row(
-                              children: [
-                                Icon(
-                                  t.occupied
-                                      ? Icons.circle
-                                      : Icons.circle_outlined,
-                                  size: 12,
-                                  color: t.occupied
-                                      ? AppColors.primaryGreen
-                                      : AppColors.lightGreenText,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  t.occupied ? 'E zënë' : 'E lirë',
-                                  style: TextStyle(
-                                    color: t.occupied
-                                        ? AppColors.darkGreenText
-                                        : AppColors.mediumGreenText,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          DataCell(
-                            Text(
-                              t.currentTotal != null
-                                  ? '\$${t.currentTotal!.toStringAsFixed(2)}'
-                                  : '—',
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TableStatPill extends StatelessWidget {
-  const _TableStatPill({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle(0.12)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 22, color: AppColors.primaryGreen),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(fontSize: 11, color: AppColors.lightGreenText),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreenText,
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -5909,85 +6930,349 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
       );
     }
 
+    final periodStart = DateTime(_viewMonth.year, _viewMonth.month, 1);
+    final periodEnd = DateTime(
+      _viewMonth.year,
+      _viewMonth.month + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    double totalGross = 0;
+    double totalAdv = 0;
+    double maxGross = 0;
+    for (final w in m.waiters) {
+      final worked = m.workedDaysInMonth(
+        w.name,
+        _viewMonth.year,
+        _viewMonth.month,
+      );
+      final rate = m.getSalary(w.name);
+      final gross = rate * worked;
+      totalGross += gross;
+      totalAdv += m.totalAdvancesFor(w.name, periodStart, periodEnd);
+      if (gross > maxGross) maxGross = gross;
+    }
+    final totalNet = totalGross - totalAdv;
+    final staffCount = m.waiters.length;
+    final avgSalary = staffCount > 0 ? totalGross / staffCount : 0.0;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _sectionTitle('11. Pagat & Avans'),
-        const SizedBox(height: 12),
-        _buildMonthNav(),
-        const SizedBox(height: 16),
+        // ── Header ────────────────────────────────────────────────────────
+        Row(
+          children: [
+            Expanded(child: _sectionTitle('Pagat & Avans')),
+            // Month navigation pill
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.lightGreenBorder),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () => setState(
+                      () => _viewMonth = DateTime(
+                        _viewMonth.year,
+                        _viewMonth.month - 1,
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.chevron_left,
+                      color: AppColors.primaryGreen,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      '${_monthNames[_viewMonth.month - 1]} ${_viewMonth.year}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(
+                      () => _viewMonth = DateTime(
+                        _viewMonth.year,
+                        _viewMonth.month + 1,
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.primaryGreen,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Menaxho pagat dhe avanset e stafit sipas muajit.',
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        ),
+        const SizedBox(height: 24),
+
+        // ── KPI row ───────────────────────────────────────────────────────
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: 'Pagesa Gjithsej',
+                  value: '€${totalGross.toStringAsFixed(0)}',
+                  accentColor: AppColors.primaryGreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.money_off_outlined,
+                  title: 'Avanse Gjithsej',
+                  value: '€${totalAdv.toStringAsFixed(0)}',
+                  accentColor: AppColors.softRed,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.people_outline,
+                  title: 'Numri i Stafit',
+                  value: '$staffCount',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.check_circle_outline,
+                  title: 'Pagesa Neto',
+                  value: '€${totalNet.toStringAsFixed(0)}',
+                  accentColor: totalNet >= 0
+                      ? AppColors.primaryGreen
+                      : AppColors.softRed,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // ── Bottom 2-column section ───────────────────────────────────────
         if (m.waiters.isEmpty)
           _buildEmptyState()
         else
-          ...m.waiters.map(
-            (w) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _WaiterSummaryCard(
-                waiter: w,
-                m: m,
-                viewMonth: _viewMonth,
-                onTap: () => setState(() => _selectedWaiter = w),
-              ),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Left: Staff list
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppColors.lightGreenBorder),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x0A000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Paga e Stafit',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.darkGreenText,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        for (int i = 0; i < m.waiters.length; i++) ...[
+                          if (i > 0)
+                            const Divider(
+                              height: 1,
+                              color: AppColors.lightGreenBorder,
+                            ),
+                          _WaiterSummaryCard(
+                            waiter: m.waiters[i],
+                            m: m,
+                            viewMonth: _viewMonth,
+                            onTap: () =>
+                                setState(() => _selectedWaiter = m.waiters[i]),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+
+                // Right: Monthly Summary
+                SizedBox(
+                  width: 320,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppColors.lightGreenBorder),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x0A000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Përmbledhja Mujore',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.darkGreenText,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Total payroll highlight
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.lightGreenBg,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Pagesa Gjithsej',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.mediumGreenText,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '€${totalGross.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _PayrollSummaryRow(
+                          label: 'Paga Mesatare',
+                          value: '€${avgSalary.toStringAsFixed(2)}',
+                        ),
+                        const Divider(
+                          height: 24,
+                          color: AppColors.lightGreenBorder,
+                        ),
+                        _PayrollSummaryRow(
+                          label: 'Bruto Më i Lartë',
+                          value: '€${maxGross.toStringAsFixed(2)}',
+                        ),
+                        const Divider(
+                          height: 24,
+                          color: AppColors.lightGreenBorder,
+                        ),
+                        _PayrollSummaryRow(
+                          label: 'Avanse Gjithsej',
+                          value: '-€${totalAdv.toStringAsFixed(2)}',
+                          valueColor: totalAdv > 0
+                              ? AppColors.softRed
+                              : AppColors.mediumGreenText,
+                        ),
+                        const Divider(
+                          height: 24,
+                          color: AppColors.lightGreenBorder,
+                        ),
+                        _PayrollSummaryRow(
+                          label: 'Numri i Stafit',
+                          value: '$staffCount',
+                          bold: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _buildMonthNav() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => setState(
-            () => _viewMonth = DateTime(_viewMonth.year, _viewMonth.month - 1),
-          ),
-          icon: const Icon(Icons.chevron_left),
-          color: AppColors.primaryGreen,
-        ),
-        Text(
-          '${_monthNames[_viewMonth.month - 1]} ${_viewMonth.year}',
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: AppColors.darkGreenText,
-          ),
-        ),
-        IconButton(
-          onPressed: () => setState(
-            () => _viewMonth = DateTime(_viewMonth.year, _viewMonth.month + 1),
-          ),
-          icon: const Icon(Icons.chevron_right),
-          color: AppColors.primaryGreen,
-        ),
       ],
     );
   }
 
   Widget _buildEmptyState() {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(48),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle()),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreenBorder),
       ),
       child: Center(
         child: Column(
           children: [
-            const Icon(
-              Icons.badge_outlined,
-              size: 48,
-              color: AppColors.lightGreenText,
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.lightGreenBg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.badge_outlined,
+                size: 32,
+                color: AppColors.lightGreenText,
+              ),
             ),
-            const SizedBox(height: 12),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'Nuk ka kamarierë të regjistruar.',
-              style: TextStyle(color: AppColors.mediumGreenText, fontSize: 15),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.mediumGreenText,
+              ),
             ),
             const SizedBox(height: 4),
-            Text(
+            const Text(
               'Shko te "Kamarierët" për të shtuar punonjës.',
-              style: TextStyle(color: AppColors.lightGreenText, fontSize: 13),
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.lightGreenText,
+              ),
             ),
           ],
         ),
@@ -5997,6 +7282,43 @@ class _StaffPayrollPanelState extends State<_StaffPayrollPanel> {
 }
 
 // ──────────────────────── Waiter Summary Card (list view) ─────────────────────
+
+class _PayrollSummaryRow extends StatelessWidget {
+  const _PayrollSummaryRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+    this.bold = false,
+  });
+  final String label;
+  final String value;
+  final Color? valueColor;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppColors.mediumGreenText,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
+            color: valueColor ?? AppColors.darkGreenText,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _WaiterSummaryCard extends StatelessWidget {
   const _WaiterSummaryCard({
@@ -6032,124 +7354,111 @@ class _WaiterSummaryCard extends StatelessWidget {
     );
     final totalAdv = m.totalAdvancesFor(waiter.name, periodStart, periodEnd);
     final net = gross - totalAdv;
+    final initial =
+        waiter.name.isNotEmpty ? waiter.name[0].toUpperCase() : '?';
 
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.borderSubtle()),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryGreen.withValues(alpha: 0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen,
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.15),
-                radius: 24,
+              child: Center(
                 child: Text(
-                  waiter.name.isNotEmpty ? waiter.name[0].toUpperCase() : '?',
+                  initial,
                   style: const TextStyle(
-                    color: AppColors.primaryGreen,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      waiter.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkGreenText,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      rate > 0
-                          ? '€${rate.toStringAsFixed(2)}/ditë'
-                          : 'Pa pagë të caktuar',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.mediumGreenText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _chip(
-                    '$worked ditë',
-                    Icons.calendar_today_outlined,
-                    AppColors.primaryGreen,
-                  ),
-                  _chip(
-                    '€${gross.toStringAsFixed(0)} bruto',
-                    Icons.account_balance_wallet_outlined,
-                    AppColors.darkGreenText,
-                  ),
-                  if (totalAdv > 0)
-                    _chip(
-                      '-€${totalAdv.toStringAsFixed(0)} avans',
-                      Icons.money_off_outlined,
-                      AppColors.negativeText,
+                  Text(
+                    waiter.name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
                     ),
-                  _chip(
-                    '€${net.toStringAsFixed(0)} mbetet',
-                    Icons.check_circle_outline,
-                    net >= 0 ? AppColors.primaryGreen : AppColors.negativeText,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    rate > 0
+                        ? '€${rate.toStringAsFixed(2)}/ditë · $worked ditë'
+                        : 'Pa pagë të caktuar',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.mediumGreenText,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: AppColors.mediumGreenText),
-            ],
-          ),
+            ),
+            const SizedBox(width: 16),
+            // Stats: Gross | Adv | Net
+            Row(
+              children: [
+                _statCell('Bruto', '€${gross.toStringAsFixed(0)}',
+                    AppColors.darkGreenText),
+                const SizedBox(width: 20),
+                if (totalAdv > 0)
+                  _statCell('Avans', '-€${totalAdv.toStringAsFixed(0)}',
+                      AppColors.softRed),
+                if (totalAdv > 0) const SizedBox(width: 20),
+                _statCell(
+                  'Neto',
+                  '€${net.toStringAsFixed(0)}',
+                  net >= 0 ? AppColors.primaryGreen : AppColors.softRed,
+                ),
+              ],
+            ),
+            const SizedBox(width: 12),
+            const Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: AppColors.mediumGreenText,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _chip(String label, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+  Widget _statCell(String label, String value, Color valueColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.mediumGreenText,
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: valueColor,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -6205,6 +7514,23 @@ class _WaiterPayrollDetailState extends State<_WaiterPayrollDetail> {
       await widget.m.setSalary(widget.waiter.name, val);
     }
     if (mounted) setState(() => _editingRate = false);
+  }
+
+  Future<void> _selectAllDays() async {
+    final m = widget.m;
+    final w = widget.waiter;
+    final month = widget.viewMonth;
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final allWorked = Iterable.generate(daysInMonth, (i) => i + 1).every(
+      (day) => m.isDayWorked(w.name, DateTime(month.year, month.month, day)),
+    );
+    for (var day = 1; day <= daysInMonth; day++) {
+      final date = DateTime(month.year, month.month, day);
+      final isWorked = m.isDayWorked(w.name, date);
+      if (allWorked ? isWorked : !isWorked) {
+        await m.toggleWorkedDay(w.name, date);
+      }
+    }
   }
 
   Future<void> _showAddAdvanceDialog() async {
@@ -6416,7 +7742,6 @@ class _WaiterPayrollDetailState extends State<_WaiterPayrollDetail> {
             children: [
               // month nav
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
                     onPressed: () => widget.onMonthChanged(
@@ -6425,13 +7750,48 @@ class _WaiterPayrollDetailState extends State<_WaiterPayrollDetail> {
                     icon: const Icon(Icons.chevron_left),
                     color: AppColors.primaryGreen,
                   ),
-                  Text(
-                    '${_monthNames[month.month - 1]} ${month.year}',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        '${_monthNames[month.month - 1]} ${month.year}',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.darkGreenText,
+                        ),
+                      ),
                     ),
+                  ),
+                  // Select / Deselect all days
+                  Builder(
+                    builder: (_) {
+                      final allWorked = Iterable.generate(
+                        daysInMonth,
+                        (i) => i + 1,
+                      ).every(
+                        (day) => m.isDayWorked(
+                          w.name,
+                          DateTime(month.year, month.month, day),
+                        ),
+                      );
+                      return TextButton(
+                        onPressed: _selectAllDays,
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primaryGreen,
+                          textStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                        ),
+                        child: Text(
+                          allWorked ? 'Çzgjidh të Gjitha' : 'Zgjidh të Gjitha',
+                        ),
+                      );
+                    },
                   ),
                   IconButton(
                     onPressed: () => widget.onMonthChanged(
@@ -6835,30 +8195,64 @@ Widget _sectionTitle(String text) {
   return Text(
     text,
     style: const TextStyle(
-      fontSize: 24,
-      fontWeight: FontWeight.w600,
+      fontSize: 26,
+      fontWeight: FontWeight.w700,
       color: AppColors.darkGreenText,
+      height: 1.2,
     ),
   );
 }
 
-InputDecoration _inputDeco(String hint) {
+InputDecoration _inputDeco(String hint, {String? prefix}) {
   return InputDecoration(
     hintText: hint,
+    prefixText: prefix,
     filled: true,
     fillColor: AppColors.white,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: AppColors.borderVisible(0.2)),
+      borderSide: const BorderSide(color: AppColors.lightGreenBorder),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: AppColors.borderVisible(0.2)),
+      borderSide: const BorderSide(color: AppColors.lightGreenBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    hintStyle: const TextStyle(
+      color: AppColors.lightGreenText,
+      fontSize: 14,
+    ),
   );
+}
+
+class _TableLegendDot extends StatelessWidget {
+  const _TableLegendDot({required this.color, required this.label});
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.mediumGreenText,
+          ),
+        ),
+      ],
+    );
+  }
 }

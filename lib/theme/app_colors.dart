@@ -1,26 +1,44 @@
 import 'package:flutter/material.dart';
 
-/// POS System — paleta sipas specifikës vizuale.
+/// Premium POS design token palette.
 abstract final class AppColors {
-  static const Color primaryGreen = Color(0xFF4a7c59);
-  static const Color lightGreenBg = Color(0xFFe8f3ec);
-  static const Color beige = Color(0xFFf9faf7);
-  static const Color darkGreenText = Color(0xFF2d4a35);
-  static const Color mediumGreenText = Color(0xFF6b8670);
-  static const Color lightGreenText = Color(0xFF9db3a1);
-  static const Color white = Color(0xFFffffff);
-  static const Color darkerGreenHover = Color(0xFF3d6849);
-  static const Color negativeBg = Color(0xFFFFEBEE);
-  static const Color negativeText = Color(0xFFC62828);
+  // ── Primary brand ──────────────────────────────────────────────────────────
+  static const Color primaryGreen = Color(0xFF234B36);   // deep forest green — CTAs, active nav
+  static const Color oliveGreen   = Color(0xFF3E6B52);   // secondary accent
 
+  // ── Backgrounds ───────────────────────────────────────────────────────────
+  static const Color beige         = Color(0xFFF7F8F6);  // page background
+  static const Color lightGreenBg  = Color(0xFFEAF0EA);  // hover / selected bg
+  static const Color white         = Color(0xFFFFFFFF);  // card surface
+
+  // ── Borders ───────────────────────────────────────────────────────────────
+  static const Color lightGreenBorder = Color(0xFFDCE5DC);  // card / input border
+
+  // ── Text ──────────────────────────────────────────────────────────────────
+  static const Color darkGreenText   = Color(0xFF222222);  // charcoal — headings
+  static const Color mediumGreenText = Color(0xFF555555);  // body text
+  static const Color lightGreenText  = Color(0xFF888888);  // muted / metadata
+
+  // ── Semantic / accents ────────────────────────────────────────────────────
+  static const Color warmGold       = Color(0xFFD4AF37);  // revenue / profit
+  static const Color softRed        = Color(0xFFDC3545);  // errors
+  static const Color mutedOrange    = Color(0xFFFFA07A);  // warnings
+  static const Color infoBlue       = Color(0xFF5B9BD5);  // info / reserved
+
+  // ── Legacy aliases (kept for backward compatibility) ──────────────────────
+  static const Color darkerGreenHover = oliveGreen;
+  static const Color negativeText     = softRed;
+  static const Color negativeBg       = Color(0xFFFFEBEE);
+
+  // ── Dynamic border helpers (kept for backward compatibility) ──────────────
   static Color borderSubtle([double a = 0.1]) =>
-      primaryGreen.withValues(alpha: a);
+      const Color(0xFF234B36).withValues(alpha: a);
 
   static Color borderVisible([double a = 0.2]) =>
-      primaryGreen.withValues(alpha: a);
+      const Color(0xFF234B36).withValues(alpha: a);
 
   static Color borderEmphasized([double a = 0.3]) =>
-      primaryGreen.withValues(alpha: a);
+      const Color(0xFF234B36).withValues(alpha: a);
 
   static Color lightGreenBorderEmpty() =>
       lightGreenText.withValues(alpha: 0.2);

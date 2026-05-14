@@ -43,9 +43,119 @@ class PosSystemApp extends StatelessWidget {
           primary: AppColors.primaryGreen,
           surface: AppColors.white,
         ),
+        fontFamily: 'DMSans',
         textTheme: const TextTheme().apply(
+          fontFamily: 'DMSans',
           bodyColor: AppColors.darkGreenText,
           displayColor: AppColors.darkGreenText,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+              color: AppColors.primaryGreen,
+              width: 2,
+            ),
+          ),
+          hintStyle: const TextStyle(
+            color: AppColors.lightGreenText,
+            fontSize: 14,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryGreen,
+            foregroundColor: AppColors.white,
+            minimumSize: const Size(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.primaryGreen,
+            foregroundColor: AppColors.white,
+            minimumSize: const Size(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.primaryGreen,
+            minimumSize: const Size(0, 48),
+            side: const BorderSide(color: AppColors.lightGreenBorder),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        dividerTheme: const DividerThemeData(
+          color: AppColors.lightGreenBorder,
+          thickness: 1,
+          space: 1,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: AppColors.lightGreenBorder),
+          ),
+          margin: EdgeInsets.zero,
+        ),
+        snackBarTheme: const SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.primaryGreen,
+          contentTextStyle: TextStyle(color: AppColors.white),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: AppColors.lightGreenBg,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          titleTextStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkGreenText,
+            fontFamily: 'DMSans',
+          ),
+          contentTextStyle: const TextStyle(
+            fontSize: 14,
+            color: AppColors.darkGreenText,
+            fontFamily: 'DMSans',
+          ),
         ),
       ),
       home: mode == 'NAMEMODE'

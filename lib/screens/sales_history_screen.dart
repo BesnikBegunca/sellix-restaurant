@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
@@ -372,12 +374,10 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(),
-        const SizedBox(height: 16),
-        _buildFiltersCard(),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         if (_loading)
           const Center(
             child: Padding(
@@ -389,45 +389,40 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           _buildError()
         else ...[
           if (_analytics != null) ...[
-            _buildAnalyticsGrid(_analytics!),
+            _buildKpiRow(_analytics!),
             const SizedBox(height: 20),
           ],
-          if (_analytics != null &&
-              (_analytics!.topProducts.isNotEmpty ||
-                  _analytics!.topCategories.isNotEmpty)) ...[
-            _buildTopInsights(_analytics!),
-            const SizedBox(height: 20),
-          ],
-          _buildSalesList(),
+          _buildFiltersAndInsightsCard(),
+          const SizedBox(height: 20),
+          _buildOrderHistoryCard(),
         ],
       ],
     );
   }
 
-  // ── header row ─────────────────────────────────────────────────────────────
+  // ── header ─────────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
     return Row(
       children: [
-        Expanded(
+        const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Historiku i Shitjeve',
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.darkGreenText,
+                  height: 1.1,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
-                _analytics == null
-                    ? 'Duke ngarkuar…'
-                    : '${_analytics!.totalSales} shitje · $_dateRangeLabel',
-                style: const TextStyle(
-                  fontSize: 13,
+                'Analitika e detajuar e shitjeve dhe historiku',
+                style: TextStyle(
+                  fontSize: 14,
                   color: AppColors.lightGreenText,
                 ),
               ),
@@ -435,7 +430,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           ),
         ),
         const SizedBox(width: 12),
-        FilledButton.icon(
+        OutlinedButton.icon(
           onPressed: _exportingPdf ? null : _exportPdf,
           icon: _exportingPdf
               ? const SizedBox(
@@ -443,17 +438,22 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.primaryGreen,
                   ),
                 )
-              : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              : const Icon(Icons.download_outlined, size: 16),
           label: const Text('Eksporto PDF'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primaryGreen,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.darkGreenText,
+            side: const BorderSide(color: AppColors.lightGreenBorder),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -461,61 +461,192 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
     );
   }
 
-  // ── filters card ───────────────────────────────────────────────────────────
+  // ── KPI row ────────────────────────────────────────────────────────────────
 
-  Widget _buildFiltersCard() {
+  Widget _buildKpiRow(SalesAnalytics a) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _SHKpiCard(
+              icon: Icons.attach_money_outlined,
+              label: 'Të Ardhurat Totale',
+              value: '€${a.grossRevenue.toStringAsFixed(2)}',
+              badge: a.totalSales > 0 ? '+${a.totalSales} orders' : null,
+              accentColor: AppColors.primaryGreen,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _SHKpiCard(
+              icon: Icons.shopping_cart_outlined,
+              label: 'Porosi Gjithsej',
+              value: '${a.totalSales}',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _SHKpiCard(
+              icon: Icons.trending_up_outlined,
+              label: 'Vlera Mesatare',
+              value: '€${a.avgOrderValue.toStringAsFixed(2)}',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _SHKpiCard(
+              icon: Icons.inventory_2_outlined,
+              label: 'Artikuj të Shitur',
+              value: '${a.totalItemsSold}',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Filters & Search + insights card ───────────────────────────────────────
+
+  Widget _buildFiltersAndInsightsCard() {
+    final a = _analytics;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle(0.1)),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final f in _DateFilter.values) _dateChip(f),
-              ],
+          const Text(
+            'Filtrat & Kërkim',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkGreenText,
             ),
           ),
-          const SizedBox(height: 12),
-          // Waiter + table dropdowns + search
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          const SizedBox(height: 16),
+
+          // Search + period tabs row
+          Row(
             children: [
-              SizedBox(width: 200, child: _waiterDropdown()),
-              SizedBox(width: 160, child: _tableDropdown()),
-              SizedBox(width: 220, child: _searchField()),
-              OutlinedButton.icon(
-                onPressed: _clearFilters,
-                icon: const Icon(Icons.clear, size: 16),
-                label: const Text('Pastro filtrat'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.mediumGreenText,
-                  side: BorderSide(color: AppColors.borderVisible(0.2)),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
+              Expanded(
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Kërko porosi, artikuj ose kamarierë...',
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      size: 20,
+                      color: AppColors.lightGreenText,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightGreenBorder,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightGreenBorder,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGreen,
+                        width: 1.5,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    hintStyle: const TextStyle(
+                      color: AppColors.lightGreenText,
+                      fontSize: 14,
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  onChanged: (_) => _loadData(),
                 ),
               ),
+              const SizedBox(width: 12),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.lightGreenBorder),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _periodTab(_DateFilter.today, 'Sot'),
+                    _periodTab(_DateFilter.thisWeek, 'Javë'),
+                    _periodTab(_DateFilter.thisMonth, 'Muaj'),
+                    _periodTab(_DateFilter.allTime, 'Të gjitha'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Analytics insights below search
+          if (a != null &&
+              (a.topProducts.isNotEmpty ||
+                  a.topCategories.isNotEmpty)) ...[
+            const SizedBox(height: 20),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (a.topProducts.isNotEmpty)
+                    Expanded(
+                      child: _buildTopProductsCard(a.topProducts),
+                    ),
+                  if (a.topProducts.isNotEmpty &&
+                      a.topCategories.isNotEmpty)
+                    const SizedBox(width: 20),
+                  if (a.topCategories.isNotEmpty)
+                    Expanded(
+                      child: _buildCategoryChart(a.topCategories),
+                    ),
+                ],
+              ),
+            ),
+          ],
+
+          // Secondary filters: waiter + table
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              SizedBox(width: 200, child: _waiterDropdown()),
+              const SizedBox(width: 12),
+              SizedBox(width: 160, child: _tableDropdown()),
+              const Spacer(),
+              if (_selectedWaiter != null ||
+                  _selectedTable != null ||
+                  _searchCtrl.text.isNotEmpty ||
+                  _dateFilter != _DateFilter.allTime)
+                TextButton.icon(
+                  onPressed: _clearFilters,
+                  icon: const Icon(Icons.clear, size: 14),
+                  label: const Text('Pastro filtrat'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.mediumGreenText,
+                  ),
+                ),
             ],
           ),
         ],
@@ -523,65 +654,182 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
     );
   }
 
-  Widget _dateChip(_DateFilter f) {
-    final labels = {
-      _DateFilter.today: 'Sot',
-      _DateFilter.thisWeek: 'Kjo javë',
-      _DateFilter.thisMonth: 'Ky muaj',
-      _DateFilter.allTime: 'Të gjitha',
-      _DateFilter.custom: 'Personalizuar',
-    };
+  Widget _periodTab(_DateFilter f, String label) {
     final sel = _dateFilter == f;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: () async {
-          if (f == _DateFilter.custom) {
-            final picked = await showDateRangePicker(
-              context: context,
-              firstDate: DateTime(2020),
-              lastDate: DateTime.now().add(const Duration(days: 1)),
-              initialDateRange: _customRange,
-              builder: (ctx, child) => Theme(
-                data: ThemeData.light().copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: AppColors.primaryGreen,
-                  ),
-                ),
-                child: child!,
-              ),
-            );
-            if (picked == null) return;
-            setState(() {
-              _dateFilter = _DateFilter.custom;
-              _customRange = picked;
-            });
-          } else {
-            setState(() => _dateFilter = f);
-          }
-          _loadData();
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: sel ? AppColors.primaryGreen : AppColors.beige,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: sel
-                  ? AppColors.primaryGreen
-                  : AppColors.borderVisible(0.15),
-            ),
-          ),
-          child: Text(
-            labels[f] ?? '',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-              color: sel ? Colors.white : AppColors.mediumGreenText,
-            ),
+    return GestureDetector(
+      onTap: () {
+        setState(() => _dateFilter = f);
+        _loadData();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: sel ? AppColors.primaryGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
+            color: sel ? Colors.white : AppColors.darkGreenText,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTopProductsCard(
+    List<({String name, double revenue, int qty})> products,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.lightGreenBg,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Produktet Kryesore',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final p in products.take(4)) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.darkGreenText,
+                        ),
+                      ),
+                      Text(
+                        '${p.qty} shitur',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.mediumGreenText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '€${p.revenue.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChart(
+    List<({String name, double revenue})> categories,
+  ) {
+    final maxRev = categories.fold<double>(
+      0,
+      (m, c) => math.max(m, c.revenue),
+    );
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.lightGreenBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Të Ardhura sipas Kategorisë',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final cat in categories.take(5)) ...[
+            Row(
+              children: [
+                SizedBox(
+                  width: 100,
+                  child: Text(
+                    cat.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: AppColors.lightGreenBg,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor:
+                            maxRev > 0 ? (cat.revenue / maxRev) : 0,
+                        child: Container(
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 64,
+                  child: Text(
+                    '€${cat.revenue.toStringAsFixed(0)}',
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ],
       ),
     );
   }
@@ -619,21 +867,12 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           child: Text('Të gjitha tavolinat'),
         ),
         for (final t in tables)
-          DropdownMenuItem<int?>(value: t, child: Text('Table $t')),
+          DropdownMenuItem<int?>(value: t, child: Text('Tavolina $t')),
       ],
       onChanged: (v) {
         setState(() => _selectedTable = v);
         _loadData();
       },
-    );
-  }
-
-  Widget _searchField() {
-    return TextField(
-      controller: _searchCtrl,
-      decoration: _filterDeco('Kërko me numër shitjeje'),
-      keyboardType: TextInputType.number,
-      onChanged: (_) => _loadData(),
     );
   }
 
@@ -658,11 +897,11 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
         fillColor: AppColors.beige,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.borderVisible(0.2)),
+          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.borderVisible(0.15)),
+          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -673,329 +912,6 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         isDense: true,
       );
-
-  // ── analytics KPI grid ─────────────────────────────────────────────────────
-
-  Widget _buildAnalyticsGrid(SalesAnalytics a) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        _kpiCard(
-          icon: Icons.receipt_long_outlined,
-          label: 'Shitje gjithsej',
-          value: '${a.totalSales}',
-        ),
-        _kpiCard(
-          icon: Icons.account_balance_wallet_outlined,
-          label: 'Të ardhura bruto',
-          value: '€${a.grossRevenue.toStringAsFixed(2)}',
-          highlight: true,
-        ),
-        if (a.totalRefunded > 0)
-          _kpiCard(
-            icon: Icons.undo_outlined,
-            label: 'Rimbursime',
-            value: '-€${a.totalRefunded.toStringAsFixed(2)}',
-            negative: true,
-          ),
-        if (a.totalRefunded > 0)
-          _kpiCard(
-            icon: Icons.trending_up_outlined,
-            label: 'Të ardhura neto',
-            value: '€${a.netRevenue.toStringAsFixed(2)}',
-            highlight: true,
-          ),
-        _kpiCard(
-          icon: Icons.calculate_outlined,
-          label: 'Mesatare/porosi',
-          value: '€${a.avgOrderValue.toStringAsFixed(2)}',
-        ),
-        _kpiCard(
-          icon: Icons.inventory_2_outlined,
-          label: 'Artikuj të shitur',
-          value: '${a.totalItemsSold}',
-        ),
-        _kpiCard(
-          icon: Icons.emoji_events_outlined,
-          label: 'Top kamarier',
-          value: a.topWaiterName,
-          sub: a.topWaiterName == '—'
-              ? null
-              : '€${a.topWaiterRevenue.toStringAsFixed(2)}',
-        ),
-      ],
-    );
-  }
-
-  Widget _kpiCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    String? sub,
-    bool highlight = false,
-    bool negative = false,
-  }) {
-    final Color fgColor = negative
-        ? AppColors.negativeText
-        : highlight
-            ? AppColors.primaryGreen
-            : AppColors.darkGreenText;
-    final Color bgColor = negative
-        ? AppColors.negativeBg
-        : highlight
-            ? AppColors.lightGreenBg
-            : AppColors.white;
-    final Color iconBg = negative
-        ? AppColors.negativeText.withValues(alpha: 0.1)
-        : highlight
-            ? AppColors.primaryGreen.withValues(alpha: 0.12)
-            : AppColors.beige;
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: negative
-              ? AppColors.negativeText.withValues(alpha: 0.2)
-              : highlight
-                  ? AppColors.borderEmphasized(0.25)
-                  : AppColors.borderSubtle(0.1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: fgColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: fgColor,
-                  ),
-                ),
-                if (sub != null)
-                  Text(
-                    sub,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.lightGreenText,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── top products / categories ──────────────────────────────────────────────
-
-  Widget _buildTopInsights(SalesAnalytics a) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (a.topProducts.isNotEmpty)
-          Expanded(child: _insightCard('Produktet kryesore', a.topProducts)),
-        if (a.topProducts.isNotEmpty && a.topCategories.isNotEmpty)
-          const SizedBox(width: 16),
-        if (a.topCategories.isNotEmpty)
-          Expanded(
-            child: _categoryCard('Të ardhura sipas kategorisë', a.topCategories),
-          ),
-      ],
-    );
-  }
-
-  Widget _insightCard(
-    String title,
-    List<({String name, double revenue, int qty})> items,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 12),
-          for (var i = 0; i < items.length; i++) ...[
-            if (i > 0) const SizedBox(height: 8),
-            _insightRow(
-              rank: i + 1,
-              name: items[i].name,
-              revenue: items[i].revenue,
-              badge: '×${items[i].qty}',
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _categoryCard(
-    String title,
-    List<({String name, double revenue})> items,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 12),
-          for (var i = 0; i < items.length; i++) ...[
-            if (i > 0) const SizedBox(height: 8),
-            _insightRow(
-              rank: i + 1,
-              name: items[i].name,
-              revenue: items[i].revenue,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _insightRow({
-    required int rank,
-    required String name,
-    required double revenue,
-    String? badge,
-  }) {
-    return Row(
-      children: [
-        Container(
-          width: 22,
-          height: 22,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: rank == 1
-                ? AppColors.primaryGreen
-                : AppColors.lightGreenBg,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            '$rank',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color:
-                  rank == 1 ? Colors.white : AppColors.mediumGreenText,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-        ),
-        if (badge != null) ...[
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.beige,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              badge,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.mediumGreenText,
-              ),
-            ),
-          ),
-        ],
-        const SizedBox(width: 8),
-        Text(
-          '€${revenue.toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primaryGreen,
-          ),
-        ),
-      ],
-    );
-  }
 
   // ── refund dialog ──────────────────────────────────────────────────────────
 
@@ -1114,113 +1030,142 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
     }
   }
 
-  // ── sales list ─────────────────────────────────────────────────────────────
+  // ── order history card ─────────────────────────────────────────────────────
 
-  Widget _buildSalesList() {
-    if (_sales.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(48),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderSubtle(0.1)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 48,
-              color: AppColors.lightGreenText.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Nuk ka shitje për filtrat e zgjedhur',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.mediumGreenText,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Ndrysho filtrat ose bëj pagesa të reja.',
-              style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // List header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Row(
+  Widget _buildOrderHistoryCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text(
-                '${_sales.length} shitje',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              const Text(
+                'Historiku i Porosive',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.darkGreenText,
                 ),
               ),
+              if (_sales.isNotEmpty) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightGreenBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_sales.length} porosi',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ),
+              ],
               const Spacer(),
-              TextButton.icon(
-                onPressed: () {
+              if (_sales.isNotEmpty)
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      if (_expandedIds.length == _sales.length) {
+                        _expandedIds.clear();
+                      } else {
+                        _expandedIds.addAll(
+                          _sales.map((s) => s.sale.dbId).whereType<int>(),
+                        );
+                      }
+                    });
+                  },
+                  icon: Icon(
+                    _expandedIds.length == _sales.length
+                        ? Icons.unfold_less
+                        : Icons.unfold_more,
+                    size: 16,
+                  ),
+                  label: Text(
+                    _expandedIds.length == _sales.length
+                        ? 'Mbyll të gjitha'
+                        : 'Hap të gjitha',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryGreen,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (_sales.isEmpty)
+            _buildEmptyOrders()
+          else
+            for (final s in _sales)
+              _SaleCard(
+                data: s,
+                expanded: s.sale.dbId != null &&
+                    _expandedIds.contains(s.sale.dbId),
+                onToggle: () {
+                  final id = s.sale.dbId;
+                  if (id == null) return;
                   setState(() {
-                    if (_expandedIds.length == _sales.length) {
-                      _expandedIds.clear();
+                    if (_expandedIds.contains(id)) {
+                      _expandedIds.remove(id);
                     } else {
-                      _expandedIds.addAll(
-                        _sales
-                            .map((s) => s.sale.dbId)
-                            .whereType<int>(),
-                      );
+                      _expandedIds.add(id);
                     }
                   });
                 },
-                icon: Icon(
-                  _expandedIds.length == _sales.length
-                      ? Icons.unfold_less
-                      : Icons.unfold_more,
-                  size: 16,
-                ),
-                label: Text(
-                  _expandedIds.length == _sales.length
-                      ? 'Mbyll të gjitha'
-                      : 'Hap të gjitha',
-                  style: const TextStyle(fontSize: 13),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryGreen,
-                ),
+                onRefund: s.sale.dbId != null
+                    ? () => _showRefundDialog(s)
+                    : null,
               ),
-            ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyOrders() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 48,
+            color: AppColors.lightGreenText.withValues(alpha: 0.4),
           ),
-        ),
-        for (final s in _sales) _SaleCard(
-          data: s,
-          expanded: s.sale.dbId != null && _expandedIds.contains(s.sale.dbId),
-          onToggle: () {
-            final id = s.sale.dbId;
-            if (id == null) return;
-            setState(() {
-              if (_expandedIds.contains(id)) {
-                _expandedIds.remove(id);
-              } else {
-                _expandedIds.add(id);
-              }
-            });
-          },
-          onRefund: s.sale.dbId != null
-              ? () => _showRefundDialog(s)
-              : null,
-        ),
-      ],
+          const SizedBox(height: 16),
+          const Text(
+            'Nuk ka porosi',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.mediumGreenText,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Ndrysho filtrat ose periudhën.',
+            style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1279,9 +1224,11 @@ class _SaleCard extends StatelessWidget {
 
     final ts = sale.timestamp;
     final dateStr =
-        '${ts.day.toString().padLeft(2, '0')}.${ts.month.toString().padLeft(2, '0')}.${ts.year}';
+        '${ts.year}-${ts.month.toString().padLeft(2, '0')}-${ts.day.toString().padLeft(2, '0')}';
     final timeStr =
         '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
+    final orderId =
+        'ORD-${(sale.dbId ?? 0).toString().padLeft(3, '0')}';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1290,16 +1237,9 @@ class _SaleCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: expanded
-              ? AppColors.borderEmphasized(0.2)
-              : AppColors.borderSubtle(0.1),
+              ? AppColors.primaryGreen.withValues(alpha: 0.25)
+              : AppColors.lightGreenBorder,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1312,90 +1252,86 @@ class _SaleCard extends StatelessWidget {
               bottom: Radius.circular(expanded ? 0 : 14),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  // Sale ID badge
+                  // Table number badge
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
                       color: AppColors.lightGreenBg,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
+                    alignment: Alignment.center,
                     child: Text(
-                      '#${sale.dbId ?? '?'}',
+                      'T${sale.tableId}',
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryGreen,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Waiter + Table
+                  const SizedBox(width: 14),
+                  // Order ID + date/waiter
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          sale.waiterName,
+                          orderId,
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.darkGreenText,
                           ),
                         ),
+                        const SizedBox(height: 3),
                         Text(
-                          'Table ${sale.tableId}',
+                          '$dateStr at $timeStr  •  ${sale.waiterName}',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: AppColors.lightGreenText,
+                            color: AppColors.mediumGreenText,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  // Date + time
+                  const SizedBox(width: 12),
+                  // Total
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        dateStr,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mediumGreenText,
-                        ),
-                      ),
-                      Text(
-                        timeStr,
-                        style: const TextStyle(
+                      const Text(
+                        'Total',
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.lightGreenText,
                         ),
                       ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '€${sale.total.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
                     ],
-                  ),
-                  const SizedBox(width: 16),
-                  // Total
-                  Text(
-                    '€${sale.total.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryGreen,
-                    ),
                   ),
                   const SizedBox(width: 10),
                   AnimatedRotation(
                     turns: expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(
+                    child: Icon(
                       Icons.keyboard_arrow_down,
                       size: 20,
-                      color: AppColors.mediumGreenText,
+                      color: expanded
+                          ? AppColors.primaryGreen
+                          : AppColors.mediumGreenText,
                     ),
                   ),
                 ],
@@ -1421,110 +1357,110 @@ class _SaleCard extends StatelessWidget {
     List<SaleAdjustmentRow> adjustments,
     VoidCallback? onRefund,
   ) {
-    if (lines.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-        child: const Divider(height: 1),
-      );
-    }
-
     final linesTotal = lines.fold(0.0, (s, l) => s + l.lineTotal);
     final adjTotal = adjustments.fold(0.0, (s, a) => s + a.amount);
 
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.beige,
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(14),
-        ),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF4F8F4),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(14)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Divider(height: 1, thickness: 1, indent: 16, endIndent: 16),
-          // Column headers
+          const Divider(height: 1, thickness: 1),
+          // Section title
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Row(
-              children: const [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'Produkti',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.mediumGreenText,
-                    ),
+              children: [
+                const Text(
+                  'Artikujt e Porosisë',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.darkGreenText,
                   ),
                 ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Kategoria',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 40,
-                  child: Text(
-                    'Sasi',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 64,
-                  child: Text(
-                    'Çmimi',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 72,
-                  child: Text(
-                    'Totali',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.mediumGreenText,
-                    ),
+                const Spacer(),
+                Text(
+                  '${lines.length} artikull${lines.length == 1 ? '' : 'ë'}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.mediumGreenText,
                   ),
                 ),
               ],
             ),
           ),
-          // Line rows
-          for (var i = 0; i < lines.length; i++) ...[
-            if (i > 0)
-              const Divider(
-                height: 1,
-                indent: 16,
-                endIndent: 16,
-                thickness: 0.5,
+          // Line items
+          for (final line in lines)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Row(
+                children: [
+                  // Quantity circle
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.lightGreenBg,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${line.quantity}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Emoji
+                  Text(line.productEmoji, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 8),
+                  // Product name
+                  Expanded(
+                    child: Text(
+                      line.productName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                  ),
+                  // Unit price (small)
+                  Text(
+                    '€${line.productPrice.toStringAsFixed(2)} × ${line.quantity}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.lightGreenText,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Line total
+                  Text(
+                    '€${line.lineTotal.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                ],
               ),
-            _LineRow(line: lines[i]),
-          ],
-          // Adjustment rows (refunds/voids)
+            ),
+          // Adjustment rows
           if (adjustments.isNotEmpty) ...[
             const Divider(height: 1, indent: 16, endIndent: 16),
             for (final adj in adjustments) _AdjustmentRow(adj: adj),
           ],
-          // Footer: totals + refund button
+          // Footer
+          const Divider(height: 1, indent: 16, endIndent: 16),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
             child: Row(
@@ -1547,34 +1483,33 @@ class _SaleCard extends StatelessWidget {
                     ),
                   ),
                 const Spacer(),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        const Text(
-                          'Bruto  ',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.mediumGreenText,
+                if (adjTotal > 0) ...[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Nëntotali  ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.mediumGreenText,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '€${linesTotal.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.darkGreenText,
+                          Text(
+                            '€${linesTotal.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.darkGreenText,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    if (adjTotal > 0) ...[
+                        ],
+                      ),
                       const SizedBox(height: 2),
                       Row(
                         children: [
                           const Text(
-                            'Rimbursim  ',
+                            'Refund  ',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.negativeText,
@@ -1583,7 +1518,7 @@ class _SaleCard extends StatelessWidget {
                           Text(
                             '-€${adjTotal.toStringAsFixed(2)}',
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: AppColors.negativeText,
                             ),
@@ -1594,27 +1529,7 @@ class _SaleCard extends StatelessWidget {
                       Row(
                         children: [
                           const Text(
-                            'Neto  ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.mediumGreenText,
-                            ),
-                          ),
-                          Text(
-                            '€${(linesTotal - adjTotal).toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primaryGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else
-                      Row(
-                        children: [
-                          const Text(
-                            'Total  ',
+                            'Totali Neto  ',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -1622,17 +1537,38 @@ class _SaleCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '€${linesTotal.toStringAsFixed(2)}',
+                            '€${(linesTotal - adjTotal).toStringAsFixed(2)}',
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: AppColors.primaryGreen,
                             ),
                           ),
                         ],
                       ),
-                  ],
-                ),
+                    ],
+                  ),
+                ] else
+                  Row(
+                    children: [
+                      const Text(
+                        'Totali  ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.darkGreenText,
+                        ),
+                      ),
+                      Text(
+                        '€${linesTotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -1719,85 +1655,97 @@ class _AdjustmentRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── line row widget ──────────────────────────────────
+// ─────────────────────────── KPI card widget ─────────────────────────────────
 
-class _LineRow extends StatelessWidget {
-  const _LineRow({required this.line});
-  final SaleLineRow line;
+class _SHKpiCard extends StatelessWidget {
+  const _SHKpiCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.badge,
+    this.accentColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final String? badge;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
+    final color = accentColor ?? AppColors.primaryGreen;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Stack(
         children: [
-          // Emoji thumbnail
-          Text(line.productEmoji, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 8),
-          // Product name (historical snapshot)
-          Expanded(
-            flex: 3,
-            child: Text(
-              line.productName,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.darkGreenText,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 20, color: color),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mediumGreenText,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  height: 1.1,
+                ),
+              ),
+            ],
+          ),
+          if (badge != null)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.lightGreenBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  badge!,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
               ),
             ),
-          ),
-          // Category snapshot
-          Expanded(
-            flex: 2,
-            child: Text(
-              line.categoryName ?? '—',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.lightGreenText,
-              ),
-            ),
-          ),
-          // Quantity
-          SizedBox(
-            width: 40,
-            child: Text(
-              '×${line.quantity}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.mediumGreenText,
-              ),
-            ),
-          ),
-          // Historical unit price (immutable snapshot)
-          SizedBox(
-            width: 64,
-            child: Text(
-              '€${line.productPrice.toStringAsFixed(2)}',
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.mediumGreenText,
-              ),
-            ),
-          ),
-          // Line total
-          SizedBox(
-            width: 72,
-            child: Text(
-              '€${line.lineTotal.toStringAsFixed(2)}',
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.darkGreenText,
-              ),
-            ),
-          ),
         ],
       ),
     );
