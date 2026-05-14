@@ -959,28 +959,10 @@ class _ManagerSideNav extends StatelessWidget {
                           color: AppColors.mediumGreenText,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Tooltip(
-                  message: 'Sign out',
-                  child: Center(
-                    child: IconButton(
-                      onPressed: onLogout,
-                      icon: const Icon(
-                        Icons.logout_rounded,
-                        color: AppColors.deepForestGreen,
-                      ),
                     ),
                   ),
-                ),
-              ),
+          ),
           ],
-        ),
       ),
     );
   }

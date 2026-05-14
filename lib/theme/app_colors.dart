@@ -25,6 +25,18 @@ abstract final class AppColors {
   static const Color mutedOrange    = Color(0xFFFFA07A);  // warnings
   static const Color infoBlue       = Color(0xFF5B9BD5);  // info / reserved
 
+  // ── Semantic aliases (new widget tokens) ──────────────────────────────────
+  static const Color deepForestGreen = primaryGreen;           // alias
+  static const Color pureWhite       = white;                  // alias
+  static const Color charcoalText    = darkGreenText;          // alias
+  static const Color softGreenTint   = lightGreenBg;           // alias
+  static const Color warmOffWhite    = beige;                  // alias
+  static const Color mutedGray       = Color(0xFF9E9E9E);      // neutral grey
+  static const Color successGreen    = Color(0xFF28A745);      // positive / success
+  static const Color accentRed       = softRed;                // alias
+  static const Color accentOrange    = mutedOrange;            // alias
+  static const Color accentBlue      = infoBlue;               // alias
+
   // ── Legacy aliases (kept for backward compatibility) ──────────────────────
   static const Color darkerGreenHover = oliveGreen;
   static const Color negativeText     = softRed;
