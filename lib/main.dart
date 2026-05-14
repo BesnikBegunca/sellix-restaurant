@@ -47,75 +47,118 @@ class PosSystemApp extends StatelessWidget {
           surface: AppColors.pureWhite,
           onSurface: AppColors.charcoalText,
         ),
+        fontFamily: 'DMSans',
         textTheme: const TextTheme().apply(
-          bodyColor: AppColors.charcoalText,
-          displayColor: AppColors.charcoalText,
+          fontFamily: 'DMSans',
+          bodyColor: AppColors.darkGreenText,
+          displayColor: AppColors.darkGreenText,
         ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          color: AppColors.pureWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTokens.cardRadius),
-            side: const BorderSide(color: AppColors.lightGreenBorder),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+              color: AppColors.primaryGreen,
+              width: 2,
+            ),
+          ),
+          hintStyle: const TextStyle(
+            color: AppColors.lightGreenText,
+            fontSize: 14,
           ),
         ),
-        dividerTheme: const DividerThemeData(
-          color: AppColors.lightGreenBorder,
-          thickness: 1,
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryGreen,
+            foregroundColor: AppColors.white,
+            minimumSize: const Size(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            minimumSize: const Size(48, 48),
-            backgroundColor: AppColors.deepForestGreen,
-            foregroundColor: AppColors.pureWhite,
+            backgroundColor: AppColors.primaryGreen,
+            foregroundColor: AppColors.white,
+            minimumSize: const Size(0, 48),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            minimumSize: const Size(48, 48),
-            foregroundColor: AppColors.deepForestGreen,
+            foregroundColor: AppColors.primaryGreen,
+            minimumSize: const Size(0, 48),
             side: const BorderSide(color: AppColors.lightGreenBorder),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: AppColors.pureWhite,
-          hintStyle: TextStyle(
-            color: AppColors.mutedGray.withValues(alpha: 0.85),
-            fontSize: AppTokens.tableTextSize,
+        dividerTheme: const DividerThemeData(
+          color: AppColors.lightGreenBorder,
+          thickness: 1,
+          space: 1,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: AppColors.lightGreenBorder),
           ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTokens.controlRadius),
-            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTokens.controlRadius),
-            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTokens.controlRadius),
-            borderSide: const BorderSide(
-              color: AppColors.deepForestGreen,
-              width: 2,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
+          margin: EdgeInsets.zero,
         ),
         snackBarTheme: const SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.deepForestGreen,
-          contentTextStyle: TextStyle(
-            color: AppColors.pureWhite,
-            fontSize: AppTokens.tableTextSize,
+          backgroundColor: AppColors.primaryGreen,
+          contentTextStyle: TextStyle(color: AppColors.white),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: AppColors.lightGreenBg,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          titleTextStyle: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkGreenText,
+            fontFamily: 'DMSans',
+          ),
+          contentTextStyle: const TextStyle(
+            fontSize: 14,
+            color: AppColors.darkGreenText,
+            fontFamily: 'DMSans',
           ),
         ),
       ),

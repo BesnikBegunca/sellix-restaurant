@@ -12,6 +12,81 @@ import '../theme/app_colors.dart';
 
 enum _DateFilter { today, thisWeek, thisMonth, allTime, custom }
 
+enum _CategoryFilter { all, security, payments, settings, users }
+
+_CategoryFilter _actionCategory(String action) {
+  switch (action) {
+    case AuditAction.failedPin:
+    case AuditAction.unauthorizedAction:
+      return _CategoryFilter.security;
+    case AuditAction.saleCreated:
+    case AuditAction.refundCreated:
+    case AuditAction.voidCreated:
+    case AuditAction.splitPayment:
+    case AuditAction.paymentMethodOverride:
+    case AuditAction.discountApplied:
+    case AuditAction.manualDiscount:
+    case AuditAction.priceOverride:
+    case AuditAction.cashDrawerOpened:
+    case AuditAction.receiptReprinted:
+      return _CategoryFilter.payments;
+    case AuditAction.settingChanged:
+    case AuditAction.companyNameChanged:
+    case AuditAction.printerChanged:
+      return _CategoryFilter.settings;
+    case AuditAction.waiterAdded:
+    case AuditAction.waiterRemoved:
+    case AuditAction.salaryChanged:
+    case AuditAction.managerLogin:
+    case AuditAction.waiterLogin:
+      return _CategoryFilter.users;
+    default:
+      return _CategoryFilter.all;
+  }
+}
+
+String _categoryLabel(_CategoryFilter cat) => switch (cat) {
+  _CategoryFilter.security => 'Siguri',
+  _CategoryFilter.payments => 'Pagesë',
+  _CategoryFilter.settings => 'Cilësime',
+  _CategoryFilter.users    => 'Përdorues',
+  _CategoryFilter.all      => '',
+};
+
+({Color bg, Color fg}) _categoryBadgeStyle(_CategoryFilter cat) => switch (cat) {
+  _CategoryFilter.security => (bg: const Color(0xFFFFEBEE), fg: const Color(0xFFE53935)),
+  _CategoryFilter.payments => (bg: const Color(0xFFE8F5E9), fg: const Color(0xFF2E7D32)),
+  _CategoryFilter.settings => (bg: const Color(0xFFFFF3E0), fg: const Color(0xFFE65100)),
+  _CategoryFilter.users    => (bg: const Color(0xFFF5F5F5), fg: const Color(0xFF616161)),
+  _CategoryFilter.all      => (bg: AppColors.beige,         fg: AppColors.mediumGreenText),
+};
+
+String _logDescription(AuditLogRow log) {
+  final d = log.details;
+  if (d == null || d.isEmpty) {
+    if (log.entityType != null) {
+      return '${log.entityType}${log.entityId != null ? ' #${log.entityId}' : ''}';
+    }
+    return '';
+  }
+  for (final key in ['description', 'note', 'reason', 'message', 'name']) {
+    if (d.containsKey(key)) return d[key].toString();
+  }
+  if (log.entityType != null && log.entityId != null) {
+    return '${log.entityType} #${log.entityId}';
+  }
+  final entry = d.entries.first;
+  return '${entry.key}: ${entry.value}';
+}
+
+String _timeAgo(DateTime ts) {
+  final diff = DateTime.now().difference(ts);
+  if (diff.inMinutes < 1) return 'Tani';
+  if (diff.inMinutes < 60) return '${diff.inMinutes} min më parë';
+  if (diff.inHours < 24) return '${diff.inHours} orë më parë';
+  return '${diff.inDays} ditë më parë';
+}
+
 // ── colour per action type ────────────────────────────────────────────────────
 
 Color _actionColor(String action) {
@@ -173,7 +248,15 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   DateTimeRange? _customRange;
   String? _selectedActor;
   String? _selectedActionType;
+  _CategoryFilter _categoryFilter = _CategoryFilter.all;
   final _searchCtrl = TextEditingController();
+
+  List<AuditLogRow> get _filteredLogs {
+    if (_categoryFilter == _CategoryFilter.all) return _logs;
+    return _logs
+        .where((l) => _actionCategory(l.actionType) == _categoryFilter)
+        .toList();
+  }
 
   // ── data ───────────────────────────────────────────────────────────────────
   List<AuditLogRow> _logs = [];
@@ -339,11 +422,11 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(),
-        const SizedBox(height: 16),
-        _buildFiltersCard(),
+        const SizedBox(height: 24),
+        _buildKpiRow(),
         const SizedBox(height: 20),
         if (_loading && _logs.isEmpty)
           const Center(
@@ -355,7 +438,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
         else if (_error != null)
           _buildError()
         else
-          _buildLogList(),
+          _buildMainCard(),
       ],
     );
   }
@@ -365,32 +448,31 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   Widget _buildHeader() {
     return Row(
       children: [
-        Expanded(
+        const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Audit Logs',
+              Text(
+                'Regjistri i Auditit',
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.darkGreenText,
+                  height: 1.1,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
-                _loading
-                    ? 'Duke ngarkuar…'
-                    : '${_logs.length} veprime · $_dateRangeLabel',
-                style: const TextStyle(
-                  fontSize: 13,
+                'Gjurmo të gjitha aktivitetet e sistemit',
+                style: TextStyle(
+                  fontSize: 14,
                   color: AppColors.lightGreenText,
                 ),
               ),
             ],
           ),
         ),
-        FilledButton.icon(
+        OutlinedButton.icon(
           onPressed: (_exportingPdf || _logs.isEmpty) ? null : _exportPdf,
           icon: _exportingPdf
               ? const SizedBox(
@@ -398,18 +480,22 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.primaryGreen,
                   ),
                 )
-              : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              : const Icon(Icons.download_outlined, size: 16),
           label: const Text('Eksporto PDF'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primaryGreen,
-            foregroundColor: Colors.white,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.darkGreenText,
+            side: const BorderSide(color: AppColors.lightGreenBorder),
             padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
@@ -417,65 +503,226 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
     );
   }
 
-  // ── filters card ───────────────────────────────────────────────────────────
+  // ── KPI row ────────────────────────────────────────────────────────────────
 
-  Widget _buildFiltersCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildKpiRow() {
+    final securityCount = _logs
+        .where((l) => _actionCategory(l.actionType) == _CategoryFilter.security)
+        .length;
+    final paymentCount = _logs
+        .where((l) => _actionCategory(l.actionType) == _CategoryFilter.payments)
+        .length;
+    final lastActivity =
+        _logs.isNotEmpty ? _timeAgo(_logs.first.createdAt) : '—';
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [for (final f in _DateFilter.values) _dateChip(f)],
+          Expanded(
+            child: _AuditKpiCard(
+              icon: Icons.monitor_heart_outlined,
+              label: 'Evente Gjithsej',
+              value: '${_logs.length}',
             ),
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              SizedBox(width: 200, child: _actorDropdown()),
-              SizedBox(width: 220, child: _actionTypeDropdown()),
-              SizedBox(width: 180, child: _searchField()),
-              OutlinedButton.icon(
-                onPressed: _clearFilters,
-                icon: const Icon(Icons.clear, size: 16),
-                label: const Text('Pastro filtrat'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.mediumGreenText,
-                  side: BorderSide(color: AppColors.borderVisible(0.2)),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
-            ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: _AuditKpiCard(
+              icon: Icons.shield_outlined,
+              label: 'Evente Sigurie',
+              value: '$securityCount',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _AuditKpiCard(
+              icon: Icons.attach_money_outlined,
+              label: 'Evente Pagesash',
+              value: '$paymentCount',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _AuditKpiCard(
+              icon: Icons.schedule_outlined,
+              label: 'Aktiviteti i Fundit',
+              value: lastActivity,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _dateChip(_DateFilter f) {
+  // ── main card (filter + log list) ──────────────────────────────────────────
+
+  Widget _buildMainCard() {
+    final filtered = _filteredLogs;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Filtro sipas Kategorisë',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkGreenText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildCategoryTabs(),
+          const SizedBox(height: 16),
+          _buildSecondaryFilters(),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+          if (filtered.isEmpty)
+            _buildEmptyState()
+          else ...[
+            for (final log in filtered)
+              _AuditLogCard(
+                log: log,
+                expanded: _expandedIds.contains(log.id),
+                onToggle: () => setState(() {
+                  if (_expandedIds.contains(log.id)) {
+                    _expandedIds.remove(log.id);
+                  } else {
+                    _expandedIds.add(log.id);
+                  }
+                }),
+              ),
+            if (_hasMore)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Center(
+                  child: _loading
+                      ? const CircularProgressIndicator(
+                          color: AppColors.primaryGreen,
+                        )
+                      : OutlinedButton.icon(
+                          onPressed: () => _loadData(reset: false),
+                          icon: const Icon(Icons.expand_more, size: 18),
+                          label: const Text('Ngarko më shumë'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryGreen,
+                            side: const BorderSide(
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryTabs() {
+    const tabs = [
+      (_CategoryFilter.all,      Icons.bar_chart_outlined,    'Të gjitha'),
+      (_CategoryFilter.security, Icons.shield_outlined,       'Siguri'),
+      (_CategoryFilter.payments, Icons.attach_money_outlined, 'Pagesat'),
+      (_CategoryFilter.settings, Icons.settings_outlined,     'Cilësimet'),
+      (_CategoryFilter.users,    Icons.person_outline,        'Përdoruesit'),
+    ];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final (filter, icon, label) in tabs)
+          GestureDetector(
+            onTap: () => setState(() => _categoryFilter = filter),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: _categoryFilter == filter
+                    ? AppColors.primaryGreen
+                    : AppColors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: _categoryFilter == filter
+                      ? AppColors.primaryGreen
+                      : AppColors.lightGreenBorder,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 15,
+                    color: _categoryFilter == filter
+                        ? Colors.white
+                        : AppColors.mediumGreenText,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: _categoryFilter == filter
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      color: _categoryFilter == filter
+                          ? Colors.white
+                          : AppColors.darkGreenText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSecondaryFilters() {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        SizedBox(
+          width: 160,
+          child: _buildDatePeriodDropdown(),
+        ),
+        SizedBox(width: 180, child: _actorDropdown()),
+        SizedBox(width: 210, child: _actionTypeDropdown()),
+        SizedBox(width: 160, child: _searchField()),
+        TextButton.icon(
+          onPressed: _clearFilters,
+          icon: const Icon(Icons.clear, size: 14),
+          label: const Text('Pastro filtrat'),
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.mediumGreenText,
+            textStyle: const TextStyle(fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatePeriodDropdown() {
     final labels = {
       _DateFilter.today:     'Sot',
       _DateFilter.thisWeek:  'Kjo javë',
@@ -483,59 +730,45 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
       _DateFilter.allTime:   'Të gjitha',
       _DateFilter.custom:    'Personalizuar',
     };
-    final sel = _dateFilter == f;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: () async {
-          if (f == _DateFilter.custom) {
-            final picked = await showDateRangePicker(
-              context: context,
-              firstDate: DateTime(2020),
-              lastDate: DateTime.now().add(const Duration(days: 1)),
-              initialDateRange: _customRange,
-              builder: (ctx, child) => Theme(
-                data: ThemeData.light().copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: AppColors.primaryGreen,
-                  ),
+    return DropdownButtonFormField<_DateFilter>(
+      value: _dateFilter,
+      decoration: _filterDeco('Periudha'),
+      isExpanded: true,
+      items: _DateFilter.values
+          .map(
+            (f) => DropdownMenuItem(
+              value: f,
+              child: Text(labels[f] ?? ''),
+            ),
+          )
+          .toList(),
+      onChanged: (v) async {
+        if (v == null) return;
+        if (v == _DateFilter.custom) {
+          final picked = await showDateRangePicker(
+            context: context,
+            firstDate: DateTime(2020),
+            lastDate: DateTime.now().add(const Duration(days: 1)),
+            initialDateRange: _customRange,
+            builder: (ctx, child) => Theme(
+              data: ThemeData.light().copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: AppColors.primaryGreen,
                 ),
-                child: child!,
               ),
-            );
-            if (picked == null) return;
-            setState(() {
-              _dateFilter  = _DateFilter.custom;
-              _customRange = picked;
-            });
-          } else {
-            setState(() => _dateFilter = f);
-          }
-          _loadData(reset: true);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: sel ? AppColors.primaryGreen : AppColors.beige,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: sel
-                  ? AppColors.primaryGreen
-                  : AppColors.borderVisible(0.15),
+              child: child!,
             ),
-          ),
-          child: Text(
-            labels[f] ?? '',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-              color: sel ? Colors.white : AppColors.mediumGreenText,
-            ),
-          ),
-        ),
-      ),
+          );
+          if (picked == null) return;
+          setState(() {
+            _dateFilter = _DateFilter.custom;
+            _customRange = picked;
+          });
+        } else {
+          setState(() => _dateFilter = v);
+        }
+        _loadData(reset: true);
+      },
     );
   }
 
@@ -601,11 +834,11 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
         fillColor: AppColors.beige,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.borderVisible(0.2)),
+          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: AppColors.borderVisible(0.15)),
+          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -617,125 +850,33 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
         isDense: true,
       );
 
-  // ── log list ───────────────────────────────────────────────────────────────
-
-  Widget _buildLogList() {
-    if (_logs.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(48),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borderSubtle(0.1)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.verified_user_outlined,
-              size: 48,
-              color: AppColors.lightGreenText.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Nuk ka veprime për filtrat e zgjedhur',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.mediumGreenText,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Ndrysho filtrat ose kryej veprime të reja.',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.lightGreenText,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Row(
-            children: [
-              Text(
-                '${_logs.length} veprime',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: () {
-                  setState(() {
-                    if (_expandedIds.length == _logs.length) {
-                      _expandedIds.clear();
-                    } else {
-                      _expandedIds.addAll(_logs.map((l) => l.id));
-                    }
-                  });
-                },
-                icon: Icon(
-                  _expandedIds.length == _logs.length
-                      ? Icons.unfold_less
-                      : Icons.unfold_more,
-                  size: 16,
-                ),
-                label: Text(
-                  _expandedIds.length == _logs.length
-                      ? 'Mbyll të gjitha'
-                      : 'Hap të gjitha',
-                  style: const TextStyle(fontSize: 13),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryGreen,
-                ),
-              ),
-            ],
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.verified_user_outlined,
+            size: 48,
+            color: AppColors.lightGreenText.withValues(alpha: 0.4),
           ),
-        ),
-        for (final log in _logs)
-          _AuditLogCard(
-            log:      log,
-            expanded: _expandedIds.contains(log.id),
-            onToggle: () => setState(() {
-              if (_expandedIds.contains(log.id)) {
-                _expandedIds.remove(log.id);
-              } else {
-                _expandedIds.add(log.id);
-              }
-            }),
-          ),
-        if (_hasMore)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: _loading
-                  ? const CircularProgressIndicator(
-                      color: AppColors.primaryGreen,
-                    )
-                  : OutlinedButton.icon(
-                      onPressed: () => _loadData(reset: false),
-                      icon: const Icon(Icons.expand_more, size: 18),
-                      label: const Text('Ngarko më shumë'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryGreen,
-                        side:
-                            const BorderSide(color: AppColors.primaryGreen),
-                      ),
-                    ),
+          const SizedBox(height: 16),
+          const Text(
+            'Nuk ka aktivitet',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppColors.mediumGreenText,
             ),
           ),
-      ],
+          const SizedBox(height: 4),
+          const Text(
+            'Ndrysho kategorinë ose periudhën.',
+            style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+          ),
+        ],
+      ),
     );
   }
 
@@ -784,30 +925,28 @@ class _AuditLogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _actionColor(log.actionType);
-    final ts    = log.createdAt;
+    final actionColor = _actionColor(log.actionType);
+    final category = _actionCategory(log.actionType);
+    final (:bg, :fg) = _categoryBadgeStyle(category);
+    final catLabel = _categoryLabel(category);
+
+    final ts = log.createdAt;
     final dateStr =
-        '${ts.day.toString().padLeft(2, '0')}.${ts.month.toString().padLeft(2, '0')}.${ts.year}';
-    final timeStr =
-        '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}:${ts.second.toString().padLeft(2, '0')}';
+        '${ts.year}-${ts.month.toString().padLeft(2, '0')}-${ts.day.toString().padLeft(2, '0')}'
+        ' ${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}:${ts.second.toString().padLeft(2, '0')}';
+
+    final description = _logDescription(log);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: expanded
-              ? color.withValues(alpha: 0.3)
-              : AppColors.borderSubtle(0.08),
+              ? AppColors.primaryGreen.withValues(alpha: 0.2)
+              : AppColors.lightGreenBorder,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -816,98 +955,119 @@ class _AuditLogCard extends StatelessWidget {
           InkWell(
             onTap: onToggle,
             borderRadius: BorderRadius.vertical(
-              top: const Radius.circular(12),
-              bottom: Radius.circular(expanded ? 0 : 12),
+              top: const Radius.circular(14),
+              bottom: Radius.circular(expanded ? 0 : 14),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 11,
-              ),
+              padding: const EdgeInsets.all(16),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // action icon badge
+                  // Icon container
                   Container(
-                    width: 34,
-                    height: 34,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.lightGreenBg,
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    alignment: Alignment.center,
                     child: Icon(
                       _actionIcon(log.actionType),
-                      size: 17,
-                      color: color,
+                      size: 20,
+                      color: actionColor,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // action label + actor
+                  const SizedBox(width: 14),
+                  // Thin vertical accent line
+                  Container(
+                    width: 1.5,
+                    height: 50,
+                    color: AppColors.lightGreenBorder,
+                  ),
+                  const SizedBox(width: 14),
+                  // Content
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           AuditAction.label(log.actionType),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: color,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.darkGreenText,
                           ),
                         ),
-                        if (log.performedBy != null)
+                        if (description.isNotEmpty) ...[
+                          const SizedBox(height: 3),
                           Text(
-                            '${log.performedBy}'
-                            '${log.performedRole != null ? ' · ${log.performedRole}' : ''}',
+                            description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.lightGreenText,
+                              fontSize: 13,
+                              color: AppColors.mediumGreenText,
                             ),
                           ),
+                        ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.person_outline,
+                              size: 13,
+                              color: AppColors.lightGreenText,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              log.performedBy ?? '—',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.mediumGreenText,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Icon(
+                              Icons.access_time_outlined,
+                              size: 13,
+                              color: AppColors.lightGreenText,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              dateStr,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.mediumGreenText,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                  // entity badge
-                  if (log.entityType != null)
+                  const SizedBox(width: 12),
+                  // Category badge
+                  if (catLabel.isNotEmpty)
                     Container(
-                      margin: const EdgeInsets.only(right: 10),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.beige,
-                        borderRadius: BorderRadius.circular(6),
+                        color: bg,
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${log.entityType}'
-                        '${log.entityId != null ? ' #${log.entityId}' : ''}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.mediumGreenText,
+                        catLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: fg,
                         ),
                       ),
                     ),
-                  // date + time
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        dateStr,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.mediumGreenText,
-                        ),
-                      ),
-                      Text(
-                        timeStr,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.lightGreenText,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
-                  ),
                   const SizedBox(width: 8),
                   AnimatedRotation(
                     turns: expanded ? 0.5 : 0,
@@ -925,7 +1085,7 @@ class _AuditLogCard extends StatelessWidget {
           // ── expanded detail ──────────────────────────────────────────────
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
-            secondChild: _buildDetail(color),
+            secondChild: _buildDetail(actionColor),
             crossFadeState: expanded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
@@ -1100,5 +1260,72 @@ class _AuditLogCard extends StatelessWidget {
     }
     if (v is double) return v.toStringAsFixed(2);
     return v.toString();
+  }
+}
+
+// ── KPI card widget ───────────────────────────────────────────────────────────
+
+class _AuditKpiCard extends StatelessWidget {
+  const _AuditKpiCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.lightGreenBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.lightGreenBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 20, color: AppColors.primaryGreen),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.mediumGreenText,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.darkGreenText,
+              height: 1.1,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
