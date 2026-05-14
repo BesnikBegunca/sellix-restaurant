@@ -80,13 +80,15 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       backgroundColor: AppColors.beige,
       body: Row(
         children: [
-          _ManagerSideNav(
-            expanded: _sidebarExpanded,
-            selectedIndex: _railIndex,
-            onToggle: () =>
-                setState(() => _sidebarExpanded = !_sidebarExpanded),
-            onDestinationSelected: (i) => setState(() => _railIndex = i),
-            onLogout: _exitToLogin,
+          ClipRect(
+            child: _ManagerSideNav(
+              expanded: _sidebarExpanded,
+              selectedIndex: _railIndex,
+              onToggle: () =>
+                  setState(() => _sidebarExpanded = !_sidebarExpanded),
+              onDestinationSelected: (i) => setState(() => _railIndex = i),
+              onLogout: _exitToLogin,
+            ),
           ),
           Expanded(
             child: Column(
@@ -838,12 +840,14 @@ class _ManagerSideNav extends StatelessWidget {
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOutCubic,
       width: expanded ? 256 : 80,
+      clipBehavior: Clip.hardEdge,
       decoration: const BoxDecoration(
         color: AppColors.white,
         border: Border(
           right: BorderSide(color: AppColors.lightGreenBorder),
         ),
       ),
+      child: ClipRect(
       child: Column(
         children: [
           // ── Brand / toggle bar ────────────────────────────────────────────
@@ -964,6 +968,7 @@ class _ManagerSideNav extends StatelessWidget {
           ),
           ],
       ),
+      ), // ClipRect
     );
   }
 }

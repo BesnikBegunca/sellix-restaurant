@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -58,15 +60,22 @@ class _LoginScreenState extends State<LoginScreen> {
   /// null = hyrje në PIN; 0 = fatura; 1 = pagesa.
   int? _calcField;
 
+  DateTime _now = DateTime.now();
+  Timer? _clockTimer;
+
   @override
   void initState() {
     super.initState();
     ManagerData.instance.addListener(_onDataChanged);
     _pinController.addListener(() => setState(() {}));
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() => _now = DateTime.now());
+    });
   }
 
   @override
   void dispose() {
+    _clockTimer?.cancel();
     _pinController.dispose();
     _pinFocus.dispose();
     ManagerData.instance.removeListener(_onDataChanged);
@@ -143,24 +152,6 @@ class _LoginScreenState extends State<LoginScreen> {
           text: nt,
           selection: TextSelection.collapsed(offset: nt.length),
         );
-      }
-    });
-  }
-
-  void _clearActiveMoney() {
-    setState(() {
-      if (_calcField == 0) _bill = '';
-      if (_calcField == 1) _paid = '';
-    });
-  }
-
-  void _appendDoubleZero() {
-    if (_calcField == null) return;
-    setState(() {
-      if (_calcField == 0) {
-        _bill += '00';
-      } else {
-        _paid += '00';
       }
     });
   }
@@ -279,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Expanded(flex: 3, child: _pinCard(context)),
                                 const SizedBox(width: 24),
                                 SizedBox(
-                                  width: 320,
+                                  width: 460,
                                   child:
                                       ManagerData.instance.loginMode ==
                                           'NAMEMODE'
@@ -289,6 +280,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                           ),
+                        const SizedBox(height: 28),
+                        _clockDisplay(),
                       ],
                     ),
                   ),
@@ -297,6 +290,21 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _clockDisplay() {
+    final h = _now.hour.toString().padLeft(2, '0');
+    final m = _now.minute.toString().padLeft(2, '0');
+    final s = _now.second.toString().padLeft(2, '0');
+    return Text(
+      '$h:$m:$s',
+      style: const TextStyle(
+        fontSize: 36,
+        fontWeight: FontWeight.w300,
+        color: AppColors.lightGreenText,
+        letterSpacing: 4,
       ),
     );
   }
@@ -331,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Fast and simple restaurant management system',
+                'Sistem i shpejtë dhe i thjeshtë për menaxhim restoranti',
                 style: TextStyle(fontSize: 16, color: AppColors.lightGreenText),
               ),
             ],
@@ -367,7 +375,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              isNameMode ? 'Administrator Login' : 'Enter PIN',
+              isNameMode ? 'Hyrja e Administratorit' : 'Shkruaj PIN',
               style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w500,
@@ -383,7 +391,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
-                  '👤 Waiters: Click the button below to select your name',
+                  '👤 Kamarierë: Klikoni butonin poshtë për të zgjedhur emrin tuaj',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -446,30 +454,116 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 32),
             _keypadSection(context),
-            const SizedBox(height: 16),
-            if (isNameMode)
-              const Center(
-                child: Text(
-                  'Enter admin PIN to continue',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-              )
-            else
-              const Center(
-                child: Text(
-                  'Minimum 4 shifra, sa të duash gjatë · tastiera ose fusha · Enter për të hyrë',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
+    );
+  }
+
+  void _calcNumpadAppend(String d) {
+    setState(() {
+      if (_calcField == null) _calcField = 0;
+      _appendMoney(_calcField!, d);
+    });
+  }
+
+  void _calcEnter() {
+    setState(() {
+      if (_calcField == null || _calcField == 0) {
+        _calcField = 1;
+      } else {
+        _calcField = null;
+      }
+    });
+  }
+
+  void _calcAc() {
+    setState(() {
+      if (_calcField == null) _calcField = 0;
+      if (_calcField == 0) _bill = '';
+      if (_calcField == 1) _paid = '';
+    });
+  }
+
+  Widget _calcNumpad() {
+    Widget padBtn(String label, VoidCallback onTap, {Color? accent}) {
+      return _HoverCardButton(
+        onPressed: onTap,
+        builder: (ctx, hovered) => AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: accent != null
+                ? (hovered ? accent.withValues(alpha: 0.82) : accent)
+                : (hovered ? AppColors.lightGreenBg : AppColors.beige),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: accent != null
+                  ? Colors.transparent
+                  : AppColors.borderSubtle(0.1),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: label == 'Enter' ? 13 : 18,
+              fontWeight: FontWeight.w500,
+              color: accent != null
+                  ? AppColors.white
+                  : AppColors.darkGreenText,
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget numRow(List<String> digits) {
+      return Row(
+        children: digits
+            .map(
+              (d) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: padBtn(d, () => _calcNumpadAppend(d)),
+                ),
+              ),
+            )
+            .toList(),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        padBtn('AC', _calcAc, accent: AppColors.softRed),
+        const SizedBox(height: 15),
+        numRow(['7', '8', '9']),
+        const SizedBox(height: 15),
+        numRow(['4', '5', '6']),
+        const SizedBox(height: 15),
+        numRow(['1', '2', '3']),
+        const SizedBox(height: 15),
+        Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: 3),
+                child: padBtn('.', () => _calcNumpadAppend('.')),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 3),
+                child: padBtn('Enter', _calcEnter,
+                    accent: AppColors.primaryGreen),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -478,7 +572,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final negative = change != null && change < 0;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(20),
@@ -491,88 +585,82 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-      child: Column(
+      child: IntrinsicHeight(
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Quick Change Calculator',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 24),
-          _moneyField(
-            label: 'Bill Amount',
-            value: _bill,
-            selected: _calcField == 0,
-            onTap: () => _setCalcField(0),
-          ),
-          const SizedBox(height: 16),
-          _moneyField(
-            label: 'Customer Paid',
-            value: _paid,
-            selected: _calcField == 1,
-            onTap: () => _setCalcField(1),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Container(height: 1, color: AppColors.borderSubtle(0.1)),
-          ),
-          const Text(
-            'Change',
-            style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            alignment: Alignment.centerLeft,
-            decoration: BoxDecoration(
-              color: change == null
-                  ? AppColors.beige
-                  : (negative ? AppColors.negativeBg : AppColors.lightGreenBg),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              change == null
-                  ? '0.00€'
-                  : '${change.abs().toStringAsFixed(2)}€${negative ? ' owed' : ''}',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w600,
-                color: change == null
-                    ? AppColors.lightGreenText
-                    : (negative
-                          ? AppColors.negativeText
-                          : AppColors.primaryGreen),
-              ),
-            ),
-          ),
-          if (_calcField != null) ...[
-            const SizedBox(height: 16),
-            Row(
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: _quickChip('Clear', _clearActiveMoney)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _quickChip('.', () {
-                    if (_calcField != null) _appendDigit('.');
-                  }),
+                const Text(
+                  'Llogaritësi i Kushurit',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.darkGreenText,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(child: _quickChip('00', _appendDoubleZero)),
+                const SizedBox(height: 16),
+                _moneyField(
+                  label: 'Shuma e Faturës',
+                  value: _bill,
+                  selected: _calcField == 0,
+                  onTap: () => _setCalcField(0),
+                ),
+                const SizedBox(height: 12),
+                _moneyField(
+                  label: 'Pagoi Klienti',
+                  value: _paid,
+                  selected: _calcField == 1,
+                  onTap: () => _setCalcField(1),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Container(height: 1, color: AppColors.borderSubtle(0.1)),
+                ),
+                const Text(
+                  'Kusuri',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.lightGreenText,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                Container(
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    color: change == null
+                        ? AppColors.beige
+                        : (negative
+                            ? AppColors.negativeBg
+                            : AppColors.lightGreenBg),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    change == null
+                        ? '0.00€'
+                        : '${change.abs().toStringAsFixed(2)}€${negative ? ' borxh' : ''}',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
+                      color: change == null
+                          ? AppColors.lightGreenText
+                          : (negative
+                                ? AppColors.negativeText
+                                : AppColors.primaryGreen),
+                    ),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Click field to select, use main keypad to enter',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
-            ),
-          ],
+          ),
+          const SizedBox(width: 16),
+          SizedBox(width: 152, child: _calcNumpad()),
         ],
+      ),
       ),
     );
   }
@@ -599,7 +687,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const Icon(Icons.person, size: 48, color: AppColors.primaryGreen),
           const SizedBox(height: 16),
           const Text(
-            'Are you a waiter?',
+            'Jeni kamarier?',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 18,
@@ -609,7 +697,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Click below to select your name',
+            'Klikoni poshtë për të zgjedhur emrin tuaj',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
           ),
@@ -631,7 +719,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 child: Text(
-                  '👤 Select Your Name',
+                  '👤 Zgjidh Emrin Tënd',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -683,7 +771,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               child: Text(
-                value.isEmpty ? '0.00€' : '€$value',
+                value.isEmpty ? '0.00€' : '${value}€',
                 style: const TextStyle(
                   fontSize: 16,
                   color: AppColors.darkGreenText,
@@ -694,10 +782,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ],
     );
-  }
-
-  Widget _quickChip(String label, VoidCallback onTap) {
-    return _HoverSmallChip(label: label, onTap: onTap);
   }
 
   Widget _keypadSection(BuildContext context) {
