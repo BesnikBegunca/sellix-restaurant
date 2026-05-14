@@ -103,7 +103,7 @@ Color _actionColor(String action) {
     case AuditAction.expenseAdded:
     case AuditAction.cashDrawerOpened:
     case AuditAction.receiptReprinted:
-      return const Color(0xFF2E7D32);
+      return AppColors.successGreen;
     // red — destructive / security failure
     case AuditAction.refundCreated:
     case AuditAction.voidCreated:
@@ -125,14 +125,14 @@ Color _actionColor(String action) {
     case AuditAction.restoreUndone:
     case AuditAction.paymentMethodOverride:
     case AuditAction.itemRemoved:
-      return const Color(0xFFE65100);
+      return AppColors.accentOrange;
     // blue — informational / movement
     case AuditAction.splitPayment:
     case AuditAction.tableTransfer:
     case AuditAction.tableMerge:
     case AuditAction.tableSplit:
     case AuditAction.orderReopened:
-      return const Color(0xFF1565C0);
+      return AppColors.accentBlue;
     default:
       return AppColors.mediumGreenText;
   }

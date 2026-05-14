@@ -41,5 +41,5 @@ abstract final class AppColors {
       const Color(0xFF234B36).withValues(alpha: a);
 
   static Color lightGreenBorderEmpty() =>
-      lightGreenText.withValues(alpha: 0.2);
+      lightGreenBorder.withValues(alpha: 0.72);
 }

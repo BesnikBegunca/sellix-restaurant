@@ -107,6 +107,9 @@ class ReceiptPrinter {
   static Future<bool> printShiftStatus({
     required String companyName,
     required Map<String, double> waiterTotals,
+    double? summaryPaid,
+    double? summaryOpen,
+    DateTime? reportTime,
   }) async {
     final selectedPrinter = await PrinterSettingsStore.loadSelectedPrinterName();
     if (selectedPrinter.trim().isEmpty) return false;
@@ -122,10 +125,16 @@ class ReceiptPrinter {
         profile: profile,
         companyName: companyName,
         waiterTotals: waiterTotals,
+        summaryPaid: summaryPaid,
+        summaryOpen: summaryOpen,
+        reportTime: reportTime,
       );
       final fallback = buildShiftReceiptText(
         companyName: companyName,
         waiterTotals: waiterTotals,
+        summaryPaid: summaryPaid,
+        summaryOpen: summaryOpen,
+        reportTime: reportTime,
       );
       return EscPosPrinterService.instance.printNow(
         printerName: selectedPrinter,
@@ -137,6 +146,9 @@ class ReceiptPrinter {
     final text = buildShiftReceiptText(
       companyName: companyName,
       waiterTotals: waiterTotals,
+      summaryPaid: summaryPaid,
+      summaryOpen: summaryOpen,
+      reportTime: reportTime,
     );
     return WindowsPrintersService.printRawText(
       printerName: selectedPrinter,

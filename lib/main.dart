@@ -7,6 +7,7 @@ import 'manager/manager_data.dart';
 import 'screens/login_screen.dart';
 import 'screens/waiter_selection_screen.dart';
 import 'theme/app_colors.dart';
+import 'theme/app_tokens.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,9 +40,12 @@ class PosSystemApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.beige,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryGreen,
-          primary: AppColors.primaryGreen,
-          surface: AppColors.white,
+          seedColor: AppColors.deepForestGreen,
+          brightness: Brightness.light,
+          primary: AppColors.deepForestGreen,
+          onPrimary: AppColors.pureWhite,
+          surface: AppColors.pureWhite,
+          onSurface: AppColors.charcoalText,
         ),
         fontFamily: 'DMSans',
         textTheme: const TextTheme().apply(

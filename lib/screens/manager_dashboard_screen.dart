@@ -17,19 +17,22 @@ import '../services/receipt_printer.dart';
 import '../services/windows_printers_service.dart';
 import '../models/mock_data.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_tokens.dart';
 import '../utils/image_utils.dart';
+import '../widgets/dashboard/dashboard_widgets.dart';
+import '../widgets/gg_header.dart';
 
 /// Të dhënat që barten me drag nga një produkt.
 typedef _ProductDrag = ({String fromCatId, ProductItem product});
 
 const _kSectionTitles = <String>[
-  'Përmbledhje',
-  'Gjendja',
-  'Kamarierët',
-  'Shpenzime',
-  'Fitime',
-  'Raporte',
-  'Top puntor',
+  'Overview',
+  'Shift',
+  'Staff',
+  'Expenses',
+  'Profits',
+  'Reports',
+  'Leaderboard',
   'Menu',
   'Tavolinat',
   'Cilësimet e Kompanisë',
@@ -48,6 +51,7 @@ class ManagerDashboardScreen extends StatefulWidget {
 
 class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   final ManagerData _m = ManagerData.instance;
+  final TextEditingController _headerSearchController = TextEditingController();
   int _railIndex = 0;
   bool _sidebarExpanded = true;
 
@@ -61,6 +65,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
   @override
   void dispose() {
+    _headerSearchController.dispose();
     _m.removeListener(_onData);
     super.dispose();
   }
@@ -828,6 +833,7 @@ class _ManagerSideNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final m = ManagerData.instance;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOutCubic,
@@ -953,10 +959,28 @@ class _ManagerSideNav extends StatelessWidget {
                           color: AppColors.mediumGreenText,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Tooltip(
+                  message: 'Sign out',
+                  child: Center(
+                    child: IconButton(
+                      onPressed: onLogout,
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                        color: AppColors.deepForestGreen,
+                      ),
                     ),
                   ),
-          ),
-        ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1271,6 +1295,86 @@ class _TopBarManagerBadge extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: AppColors.white,
               letterSpacing: 0.8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ManagerBusinessPill extends StatelessWidget {
+  const _ManagerBusinessPill({required this.managerData});
+
+  final ManagerData managerData;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite,
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+        border: Border.all(color: AppColors.lightGreenBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.store_mall_directory_outlined,
+            size: 20,
+            color: AppColors.mutedGray.withValues(alpha: 0.95),
+          ),
+          const SizedBox(width: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
+            child: Text(
+              managerData.companyName ?? 'Main location',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.charcoalText,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ManagerShiftPill extends StatelessWidget {
+  const _ManagerShiftPill({required this.managerData});
+
+  final ManagerData managerData;
+
+  @override
+  Widget build(BuildContext context) {
+    final open = managerData.shiftOpen;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.softGreenTint,
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+        border: Border.all(color: AppColors.lightGreenBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 20,
+            color: AppColors.deepForestGreen,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            open ? 'Shift open' : 'Shift closed',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: AppColors.charcoalText,
             ),
           ),
         ],
@@ -2472,23 +2576,34 @@ class _ShiftPanel extends StatelessWidget {
   final ManagerData m;
 
   Future<void> _showPrintDialog(BuildContext context) async {
-    final sales = m.waiterSales;
-    final names = <String>{
-      ...m.waiters.map((w) => w.name),
-      ...sales.keys,
-    }.toList()
-      ..sort();
-    final waiterTotals = <String, double>{
-      for (final name in names) name: (sales[name] ?? 0.0),
-    };
+    final messenger = ScaffoldMessenger.of(context);
+    final ShiftStatusReport report;
+    try {
+      report = await m.computeShiftStatusReport();
+    } catch (e) {
+      if (context.mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Nuk u lexua gjendja: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.darkGreenText,
+          ),
+        );
+      }
+      return;
+    }
 
+    final waiterTotals = report.waiterGrandTotalsForPrint();
     final ok = await ReceiptPrinter.printShiftStatus(
       companyName: m.companyName ?? 'POS System',
       waiterTotals: waiterTotals,
+      summaryPaid: report.grandPaid,
+      summaryOpen: report.grandOpen,
+      reportTime: report.generatedAt,
     );
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             ok
@@ -2503,10 +2618,16 @@ class _ShiftPanel extends StatelessWidget {
       );
     }
 
-    showDialog(
-      context: context,
-      builder: (_) => _GjendjaDialog(m: m, isClose: false),
-    );
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => _GjendjaDialog(
+          m: m,
+          isClose: false,
+          initialReport: report,
+        ),
+      );
+    }
   }
 
   void _showCloseDialog(BuildContext context) {
@@ -2760,99 +2881,316 @@ class _ShiftPanel extends StatelessWidget {
   }
 }
 
-/// Modal that shows all waiter totals.
-/// When [isClose] is true it adds a confirm button that finalises and resets.
-class _GjendjaDialog extends StatelessWidget {
-  const _GjendjaDialog({required this.m, required this.isClose});
+/// Modal që tregon totalet sipas kamarierit (paguar + hapur).
+/// Kur [isClose] është true, shton konfirmim për mbylljen përfundimtare të shift-it.
+class _GjendjaDialog extends StatefulWidget {
+  const _GjendjaDialog({
+    required this.m,
+    required this.isClose,
+    this.initialReport,
+  });
 
   final ManagerData m;
   final bool isClose;
+  final ShiftStatusReport? initialReport;
+
+  @override
+  State<_GjendjaDialog> createState() => _GjendjaDialogState();
+}
+
+class _GjendjaDialogState extends State<_GjendjaDialog> {
+  ShiftStatusReport? _report;
+  Object? _loadError;
+  bool _loading = false;
+  bool _closing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _report = widget.initialReport;
+    if (_report == null) {
+      _loading = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    }
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await widget.m.computeShiftStatusReport();
+      if (!mounted) return;
+      setState(() {
+        _report = r;
+        _loadError = null;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e;
+        _loading = false;
+      });
+    }
+  }
+
+  String _fmtTime(DateTime t) {
+    final d = t.day.toString().padLeft(2, '0');
+    final mo = t.month.toString().padLeft(2, '0');
+    final h = t.hour.toString().padLeft(2, '0');
+    final mi = t.minute.toString().padLeft(2, '0');
+    final s = t.second.toString().padLeft(2, '0');
+    return '$d.$mo.${t.year} $h:$mi:$s';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final sales = m.waiterSales;
+    if (_loading) {
+      return AlertDialog(
+        title: Text(
+          widget.isClose ? 'Mbyll gjendjen' : 'Gjendja aktuale',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: const SizedBox(
+          width: 280,
+          height: 100,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Anulo'),
+          ),
+        ],
+      );
+    }
 
-    // Union of registered waiters and any name that appears in sales map.
-    final names = <String>{
-      ...m.waiters.map((w) => w.name),
-      ...sales.keys,
-    }.toList()..sort();
+    if (_loadError != null) {
+      return AlertDialog(
+        title: const Text('Gabim'),
+        content: Text('$_loadError'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Mbyll'),
+          ),
+          FilledButton(
+            onPressed: () {
+              setState(() {
+                _loading = true;
+                _loadError = null;
+              });
+              _load();
+            },
+            child: const Text('Riprovo'),
+          ),
+        ],
+      );
+    }
 
-    final grandTotal = names.fold<double>(0, (s, n) => s + (sales[n] ?? 0));
+    final report = _report!;
+    final names = report.byWaiter.keys.toList()..sort();
+    final grandPaid = report.grandPaid;
+    final grandOpen = report.grandOpen;
+    final grandTotal = report.grandTotal;
+    final shiftLine = report.shiftId != null
+        ? 'Shift #${report.shiftId} · aktiv'
+        : 'Pa shift aktiv në DB';
 
     return AlertDialog(
       title: Text(
-        isClose ? 'Mbyll gjendjen' : 'Gjendja aktuale',
+        widget.isClose ? 'Mbyll gjendjen' : 'Gjendja aktuale',
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       content: SizedBox(
-        width: 360,
-        child: names.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  'Nuk ka kamarierë të regjistruar.',
-                  style: TextStyle(color: AppColors.mediumGreenText),
+        width: 400,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                shiftLine,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mediumGreenText,
                 ),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
+              ),
+              Text(
+                'Përditësuar: ${_fmtTime(report.generatedAt)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mediumGreenText,
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (names.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Nuk ka shitje të regjistruara për shift-in dhe as porosi të hapura në tavolina.',
+                    style: TextStyle(color: AppColors.mediumGreenText),
+                  ),
+                )
+              else
+                ...names.map((name) {
+                  final w = report.byWaiter[name]!;
+                  return ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(name),
+                    subtitle: Text(
+                      'Paguar: ${w.paidTotal.toStringAsFixed(2)} € · '
+                      'Hapur: ${w.openTotal.toStringAsFixed(2)} € · '
+                      'Porosi: ${w.paidOrderCount} paguar, ${w.openOrderCount} hapur',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.mediumGreenText,
+                      ),
+                    ),
+                    trailing: Text(
+                      '${w.grandTotal.toStringAsFixed(2)} €',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  );
+                }),
+              const Divider(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ...names.map(
-                    (name) => ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(name),
-                      trailing: Text(
-                        '${(sales[name] ?? 0.0).toStringAsFixed(2)} €',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                  Text(
+                    'Paguar (gjithsej)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.mediumGreenText,
                     ),
                   ),
-                  const Divider(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      Text(
-                        '${grandTotal.toStringAsFixed(2)} €',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ],
+                  Text(
+                    '${grandPaid.toStringAsFixed(2)} €',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  if (isClose)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Text(
-                        'Pas konfirmimit të gjitha totalet resetohen në 0.00.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mediumGreenText,
-                        ),
-                      ),
-                    ),
                 ],
               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Hapur / pa paguar',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                  Text(
+                    '${grandOpen.toStringAsFixed(2)} €',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Totali',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    '${grandTotal.toStringAsFixed(2)} €',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+              if (widget.isClose)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    'Ky është veprim përfundimtar: ruhet snapshot-i i shift-it, '
+                    'mbyllen porositë e hapura në tavolina dhe nis shift i ri. '
+                    'Nuk mund të kthehet mbrapsht.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.darkGreenText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(isClose ? 'Anulo' : 'Mbyll'),
+          onPressed: _closing ? null : () => Navigator.of(context).pop(),
+          child: Text(widget.isClose ? 'Anulo' : 'Mbyll'),
         ),
-        if (isClose)
+        if (widget.isClose)
           FilledButton(
-            onPressed: () {
-              m.closeShift();
-              Navigator.of(context).pop();
-            },
+            onPressed: (_closing || _loading)
+                ? null
+                : () async {
+                    setState(() => _closing = true);
+                    final messenger = ScaffoldMessenger.of(context);
+                    final closureReport = _report!;
+                    try {
+                      await widget.m.closeShift();
+                      if (!context.mounted) return;
+
+                      final waiterTotals =
+                          closureReport.waiterGrandTotalsForPrint();
+                      final printed = await ReceiptPrinter.printShiftStatus(
+                        companyName:
+                            widget.m.companyName ?? 'POS System',
+                        waiterTotals: waiterTotals,
+                        summaryPaid: closureReport.grandPaid,
+                        summaryOpen: closureReport.grandOpen,
+                        reportTime: closureReport.generatedAt,
+                      );
+
+                      if (!context.mounted) return;
+                      Navigator.of(context).pop();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            printed
+                                ? 'Shift-i u mbyll. Përmbledhja e të gjithë '
+                                    'punonjësve u printua (si te “Shtyp gjendjen”).'
+                                : 'Shift-i u mbyll, por përmbledhja nuk u printua. '
+                                    'Kontrollo printerin te Company Settings > Printers.',
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: printed
+                              ? AppColors.primaryGreen
+                              : AppColors.darkGreenText,
+                        ),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Mbyllja dështoi (shift-i mbeti aktiv): $e',
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: AppColors.darkGreenText,
+                        ),
+                      );
+                    } finally {
+                      if (mounted) setState(() => _closing = false);
+                    }
+                  },
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.darkGreenText,
               foregroundColor: AppColors.white,
             ),
-            child: const Text('Konfirmo & Reseto'),
+            child: _closing
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Konfirmo mbylljen'),
           ),
       ],
     );
@@ -2889,8 +3227,11 @@ class _WaitersPanelState extends State<_WaitersPanel> {
       setState(() => _errorMsg = 'Shkruaj emrin e kamarierit.');
       return;
     }
-    if (pin.length < 4 || pin.length > 6 || int.tryParse(pin) == null) {
-      setState(() => _errorMsg = 'PIN duhet të jetë 4–6 shifra.');
+    if (pin.length < 4 || !RegExp(r'^\d+$').hasMatch(pin)) {
+      setState(
+        () => _errorMsg =
+            'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
+      );
       return;
     }
     if (pin == '9999') {
@@ -6444,6 +6785,26 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
   late double _count;
   late double _perRow;
 
+  /// null = pamja globale e kasës; emri = okupimi sipas porosive të atij kamarieri.
+  String? _tableViewWaiter;
+  List<TableInfo>? _waiterTablesSnapshot;
+
+  List<TableInfo> _displayTables(ManagerData m) {
+    if (_tableViewWaiter == null) return m.cashierTables;
+    return _waiterTablesSnapshot ?? m.cashierTables;
+  }
+
+  Future<void> _syncWaiterTables() async {
+    final w = _tableViewWaiter;
+    if (w == null) {
+      if (mounted) setState(() => _waiterTablesSnapshot = null);
+      return;
+    }
+    final list = await widget.m.tablesForWaiter(w);
+    if (!mounted || _tableViewWaiter != w) return;
+    setState(() => _waiterTablesSnapshot = list);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -6452,7 +6813,12 @@ class _TablesConfigPanelState extends State<_TablesConfigPanel> {
     widget.m.addListener(_onM);
   }
 
-  void _onM() => setState(() {});
+  void _onM() {
+    setState(() {});
+    if (_tableViewWaiter != null) {
+      _syncWaiterTables();
+    }
+  }
 
   @override
   void didUpdateWidget(covariant _TablesConfigPanel oldWidget) {
@@ -8208,7 +8574,7 @@ InputDecoration _inputDeco(String hint, {String? prefix}) {
     hintText: hint,
     prefixText: prefix,
     filled: true,
-    fillColor: AppColors.white,
+    fillColor: AppColors.pureWhite,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: const BorderSide(color: AppColors.lightGreenBorder),
@@ -8218,8 +8584,11 @@ InputDecoration _inputDeco(String hint, {String? prefix}) {
       borderSide: const BorderSide(color: AppColors.lightGreenBorder),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+      borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+      borderSide: const BorderSide(
+        color: AppColors.deepForestGreen,
+        width: 2,
+      ),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     hintStyle: const TextStyle(

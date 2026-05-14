@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -209,6 +210,70 @@ class SaleRow {
   );
 }
 
+/// Shifra për një kamarier: shitje të paguara (në shift) + porosi të hapura në tavolina.
+@immutable
+class ShiftWorkerBreakdown {
+  const ShiftWorkerBreakdown({
+    required this.paidTotal,
+    required this.openTotal,
+    required this.paidOrderCount,
+    required this.openOrderCount,
+  });
+
+  final double paidTotal;
+  final double openTotal;
+  final int paidOrderCount;
+  final int openOrderCount;
+
+  double get grandTotal => paidTotal + openTotal;
+
+  Map<String, dynamic> toJson() => {
+        'paidTotal': paidTotal,
+        'openTotal': openTotal,
+        'paidOrderCount': paidOrderCount,
+        'openOrderCount': openOrderCount,
+        'grandTotal': grandTotal,
+      };
+}
+
+/// Raport i gjendjes për shift-in aktiv (print live ose snapshot para mbylljes).
+@immutable
+class ShiftStatusReport {
+  const ShiftStatusReport({
+    required this.shiftId,
+    required this.generatedAt,
+    required this.byWaiter,
+  });
+
+  final int? shiftId;
+  final DateTime generatedAt;
+  final Map<String, ShiftWorkerBreakdown> byWaiter;
+
+  double get grandPaid =>
+      byWaiter.values.fold<double>(0, (s, w) => s + w.paidTotal);
+
+  double get grandOpen =>
+      byWaiter.values.fold<double>(0, (s, w) => s + w.openTotal);
+
+  double get grandTotal => grandPaid + grandOpen;
+
+  /// Totali i përgjithshëm për kamarier (për printer / kolonë e njëtë).
+  Map<String, double> waiterGrandTotalsForPrint() => {
+        for (final e in byWaiter.entries) e.key: e.value.grandTotal,
+      };
+
+  Map<String, dynamic> toJson() => {
+        'shiftId': shiftId,
+        'generatedAt': generatedAt.toIso8601String(),
+        'byWaiter': {
+          for (final e in byWaiter.entries) e.key: e.value.toJson(),
+        },
+        'grandPaid': grandPaid,
+        'grandOpen': grandOpen,
+        'grandTotal': grandTotal,
+      };
+}
+
 /// Advance (avans) given to a waiter, persisted in the [advances] SQLite table.
 class AdvanceRow {
   AdvanceRow({
@@ -304,6 +369,9 @@ class ManagerData extends ChangeNotifier {
   /// Null only during the brief window before [_init] completes.
   int? _currentShiftId;
   int? get currentShiftId => _currentShiftId;
+
+  bool _shiftClosingInProgress = false;
+  bool get isShiftClosing => _shiftClosingInProgress;
 
   // ── cached lists (always in sync with SQLite) ──────────────────────────────
 
@@ -531,66 +599,144 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Archives the current shift, resets waiter totals, and keeps the system
-  /// active. Historical sales and line items are NEVER deleted.
-  Future<void> closeShift() async {
-    final db = DatabaseService.instance;
+  String _normWaiterName(String raw) {
+    final n = raw.trim();
+    return n.isEmpty ? 'Panjohur' : n;
+  }
+
+  /// Raport i gjallë: shitje të paguara me [shiftId] aktiv + porosi të hapura
+  /// nga [current_orders] (jo anuluar — ato nuk janë në këto burime).
+  Future<ShiftStatusReport> computeShiftStatusReport() async {
+    final sid = _currentShiftId;
     final now = DateTime.now();
-    shiftClosedAt = now;
+    final paidByWaiter = <String, double>{};
+    final paidCountByWaiter = <String, int>{};
+    final saleIdsInShift = <int>[];
 
-    // Compute totals from the current shift's in-memory data.
-    final shiftSalesTotal = _salesHistory
-        .where((s) => s.shiftId == _currentShiftId)
-        .fold<double>(0, (sum, s) => sum + s.total);
-    final shiftExpensesTotal = _expenses
-        .where((e) => e.shiftId == _currentShiftId)
-        .fold<double>(0, (sum, e) => sum + e.amount);
+    for (final s in _salesHistory) {
+      if (sid == null) break;
+      if (s.shiftId != sid) continue;
+      final name = _normWaiterName(s.waiterName);
+      paidByWaiter[name] = (paidByWaiter[name] ?? 0) + s.total;
+      paidCountByWaiter[name] = (paidCountByWaiter[name] ?? 0) + 1;
+      if (s.dbId != null) saleIdsInShift.add(s.dbId!);
+    }
 
-    // Archive the shift — no data deleted.
-    if (_currentShiftId != null) {
-      await db.closeShiftRecord(
-        shiftId: _currentShiftId!,
-        closedAt: now,
-        totalSales: shiftSalesTotal,
-        totalExpenses: shiftExpensesTotal,
-        netProfit: shiftSalesTotal - shiftExpensesTotal,
+    if (saleIdsInShift.isNotEmpty) {
+      final adjRows =
+          await DatabaseService.instance.fetchAdjustmentsForSales(saleIdsInShift);
+      final saleById = <int, SaleRow>{};
+      for (final s in _salesHistory) {
+        if (s.dbId != null) saleById[s.dbId!] = s;
+      }
+      for (final r in adjRows) {
+        final saleId = (r['saleId'] as num).toInt();
+        final sale = saleById[saleId];
+        if (sale == null || sid == null || sale.shiftId != sid) continue;
+        final name = _normWaiterName(sale.waiterName);
+        final amt = (r['amount'] as num).toDouble();
+        paidByWaiter[name] = (paidByWaiter[name] ?? 0) + amt;
+      }
+    }
+
+    final openMap =
+        await DatabaseService.instance.fetchCurrentOrderTotalsByWaiter();
+    final openCountMap =
+        await DatabaseService.instance.fetchCurrentOrderCountsByWaiter();
+
+    final names = <String>{
+      ..._waiters.map((w) => _normWaiterName(w.name)),
+      ...paidByWaiter.keys,
+      ...openMap.keys,
+    };
+
+    final byWaiter = <String, ShiftWorkerBreakdown>{};
+    for (final name in names) {
+      byWaiter[name] = ShiftWorkerBreakdown(
+        paidTotal: paidByWaiter[name] ?? 0,
+        openTotal: openMap[name] ?? 0,
+        paidOrderCount: paidCountByWaiter[name] ?? 0,
+        openOrderCount: openCountMap[name] ?? 0,
       );
     }
 
-    // Update legacy singleton shift record.
-    await db.updateShift(
-      openedAt: null,
-      closedAt: now.toIso8601String(),
-      status: 'open',
+    return ShiftStatusReport(
+      shiftId: sid,
+      generatedAt: now,
+      byWaiter: byWaiter,
     );
+  }
 
-    // Log close before opening the next one.
-    AuditLogService.instance.logShiftClosed(
-      shiftId:       _currentShiftId ?? 0,
-      totalSales:    shiftSalesTotal,
-      totalExpenses: shiftExpensesTotal,
-    );
+  /// Archives the current shift, resets waiter totals, and keeps the system
+  /// active. Historical sales and line items are NEVER deleted.
+  ///
+  /// Para pastrimit ruhet snapshot-i (paguar + hapur) në rreshtin e shift-it.
+  /// Nëse ruajtja dështon, shift-i mbetet aktiv dhe porositë e hapura intakte.
+  Future<void> closeShift() async {
+    if (_shiftClosingInProgress) return;
+    final closingShiftId = _currentShiftId;
+    if (closingShiftId == null) return;
 
-    // Open the next shift immediately so sales are never orphaned.
-    _currentShiftId = await db.insertShiftRecord(openedAt: now);
-    AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
-    shiftOpenedAt = now;
+    final db = DatabaseService.instance;
+    final now = DateTime.now();
 
-    // Reset tables (clear active orders) but do NOT delete historical sales.
-    await db.clearAllCurrentOrdersAndResetTables();
-    waiterSales = {};
-    _cashierTables = _cashierTables
-        .map(
-          (t) => TableInfo(
-            id: t.id,
-            occupied: false,
-            currentTotal: null,
-            assignedWaiterName: null,
-            currentOrderNumber: 0,
-          ),
-        )
-        .toList();
-    notifyListeners();
+    _shiftClosingInProgress = true;
+    try {
+      final report = await computeShiftStatusReport();
+      final shiftExpensesTotal = _expenses
+          .where((e) => e.shiftId == closingShiftId)
+          .fold<double>(0, (sum, e) => sum + e.amount);
+      final shiftGrandTotal = report.grandTotal;
+      final snapshotJson = jsonEncode(report.toJson());
+
+      await db.closeShiftRecord(
+        shiftId: closingShiftId,
+        closedAt: now,
+        totalSales: shiftGrandTotal,
+        totalExpenses: shiftExpensesTotal,
+        netProfit: shiftGrandTotal - shiftExpensesTotal,
+        snapshotJson: snapshotJson,
+      );
+
+      shiftClosedAt = now;
+
+      await db.updateShift(
+        openedAt: null,
+        closedAt: now.toIso8601String(),
+        status: 'open',
+      );
+
+      AuditLogService.instance.logShiftClosed(
+        shiftId: closingShiftId,
+        totalSales: shiftGrandTotal,
+        totalExpenses: shiftExpensesTotal,
+      );
+
+      _currentShiftId = await db.insertShiftRecord(openedAt: now);
+      AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
+      shiftOpenedAt = now;
+
+      await db.clearAllCurrentOrdersAndResetTables();
+      waiterSales = {};
+      _cashierTables = _cashierTables
+          .map(
+            (t) => TableInfo(
+              id: t.id,
+              occupied: false,
+              currentTotal: null,
+              assignedWaiterName: null,
+              currentOrderNumber: 0,
+            ),
+          )
+          .toList();
+      await _reloadSales(db);
+      notifyListeners();
+    } catch (e, st) {
+      debugPrint('closeShift failed: $e\n$st');
+      rethrow;
+    } finally {
+      _shiftClosingInProgress = false;
+    }
   }
 
   // ─────────────────────────── waiters ──────────────────────────────────────
@@ -838,12 +984,14 @@ class ManagerData extends ChangeNotifier {
       waiterName: waiterName,
       tableId: tableId,
       total: amount,
+      shiftId: _currentShiftId,
     );
     final sale = SaleRow(
       waiterName: waiterName,
       tableId: tableId,
       total: amount,
       timestamp: now,
+      shiftId: _currentShiftId,
     );
     _salesHistory.insert(0, sale);
     waiterSales[waiterName] = (waiterSales[waiterName] ?? 0) + amount;

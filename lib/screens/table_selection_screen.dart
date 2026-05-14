@@ -143,7 +143,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
   }
 }
 
-/// Rreshti i sipërm: Total + badge në **start**; “Select Table” më i vogël në **end**.
+/// Rreshti i sipërm: totali + badge i tavolinave të zëna.
 class _TableScreenHeaderRow extends StatelessWidget {
   const _TableScreenHeaderRow({
     required this.total,
@@ -170,7 +170,7 @@ class _TableScreenHeaderRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Total of All Tables',
+                      'Totali i të gjitha tavolinave',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.lightGreenText,
@@ -217,7 +217,11 @@ class _OccupiedCountBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        '$occupied occupied',
+        occupied == 0
+            ? 'Të gjitha të lira'
+            : occupied == 1
+                ? '1 e zënë'
+                : '$occupied të zëna',
         style: const TextStyle(fontSize: 14, color: AppColors.primaryGreen),
       ),
     );
@@ -355,7 +359,7 @@ class _TableCardState extends State<_TableCard> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Table ${widget.table.id}',
+                            'Tavolina ${widget.table.id}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -374,7 +378,7 @@ class _TableCardState extends State<_TableCard> {
                     const SizedBox(height: 8),
                     if (o && widget.table.currentTotal != null) ...[
                       const Text(
-                        'Current Total',
+                        'Totali aktual',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.lightGreenText,
@@ -395,7 +399,7 @@ class _TableCardState extends State<_TableCard> {
                       ),
                     ] else
                       const Text(
-                        'No active orders',
+                        'Nuk ka porosi aktive',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.lightGreenText,
@@ -428,7 +432,7 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Text(
-        occupied ? 'Occupied' : 'Available',
+        occupied ? 'E zënë' : 'E lirë',
         style: TextStyle(
           fontSize: 11,
           color: occupied ? AppColors.primaryGreen : AppColors.lightGreenText,
