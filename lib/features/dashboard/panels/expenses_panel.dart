@@ -379,7 +379,9 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
         builder: (ctx, setSt) {
           return AlertDialog(
             title: const Text('Shto shpenzim / rrogë'),
-            content: Column(
+            content: SizedBox(
+              width: 480,
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 InputDecorator(
@@ -421,6 +423,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                   ],
                 ),
               ],
+            ),
             ),
             actions: [
               TextButton(
