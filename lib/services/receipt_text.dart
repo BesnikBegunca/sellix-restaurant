@@ -56,10 +56,13 @@ String buildKitchenOrderReceiptText({
   if (paymentReceipt) {
     out.add(markCenterBold('Fakture per Pagese'));
     out.add('');
+    out.add(markCenterBold(companyName));
+    out.add(rule());
+  } else {
+    out.add(rule());
+    out.add(markCenterBold(companyName));
+    out.add(rule());
   }
-  out.add(rule());
-  out.add(markCenterBold(companyName));
-  out.add(rule());
   out.add(rowLR('Kamarjeri : $waiterName', 'Tavolina $tableNumber'));
   out.add('');
   out.add(
