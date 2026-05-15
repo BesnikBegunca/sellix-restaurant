@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'manager/manager_data.dart';
+import 'screens/dev_mode_login_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/waiter_selection_screen.dart';
 import 'theme/app_colors.dart';
@@ -26,13 +27,40 @@ void main() async {
   runApp(const PosSystemApp());
 }
 
-class PosSystemApp extends StatelessWidget {
+class PosSystemApp extends StatefulWidget {
   const PosSystemApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final mode = ManagerData.instance.loginMode;
+  State<PosSystemApp> createState() => _PosSystemAppState();
+}
 
+class _PosSystemAppState extends State<PosSystemApp> {
+  @override
+  void initState() {
+    super.initState();
+    ManagerData.instance.addListener(_onData);
+  }
+
+  @override
+  void dispose() {
+    ManagerData.instance.removeListener(_onData);
+    super.dispose();
+  }
+
+  void _onData() => setState(() {});
+
+  Widget _homeScreen() {
+    final m = ManagerData.instance;
+    if (!m.isLicenseValid) {
+      return const DevModeLoginScreen();
+    }
+    return m.loginMode == 'NAMEMODE'
+        ? const WaiterSelectionScreen()
+        : const LoginScreen();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'POS System',
       debugShowCheckedModeBanner: false,
@@ -162,9 +190,7 @@ class PosSystemApp extends StatelessWidget {
           ),
         ),
       ),
-      home: mode == 'NAMEMODE'
-          ? const WaiterSelectionScreen()
-          : const LoginScreen(),
+      home: _homeScreen(),
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../manager/manager_data.dart';
 import '../../../theme/app_colors.dart';
 
 class ManagerSideNav extends StatelessWidget {
@@ -8,6 +7,7 @@ class ManagerSideNav extends StatelessWidget {
     super.key,
     required this.expanded,
     required this.selectedIndex,
+    this.devModeOnly = false,
     required this.onToggle,
     required this.onDestinationSelected,
     required this.onLogout,
@@ -15,6 +15,7 @@ class ManagerSideNav extends StatelessWidget {
 
   final bool expanded;
   final int selectedIndex;
+  final bool devModeOnly;
   final VoidCallback onToggle;
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onLogout;
@@ -34,12 +35,19 @@ class ManagerSideNav extends StatelessWidget {
     (icon: Icons.undo_outlined,      sel: Icons.undo,            label: 'Refund'),
     (icon: Icons.history_outlined,   sel: Icons.history,         label: 'Historiku'),
     (icon: Icons.security_outlined,  sel: Icons.security,        label: 'Audit'),
+    (icon: Icons.verified_user_outlined, sel: Icons.verified_user, label: 'Licenca'),
   ];
+
+  static const _devItems = <({IconData icon, IconData sel, String label})>[
+    (icon: Icons.verified_user_outlined, sel: Icons.verified_user, label: 'Licenca'),
+  ];
+
+  List<({IconData icon, IconData sel, String label})> get _visibleItems =>
+      devModeOnly ? _devItems : _items;
 
   @override
   Widget build(BuildContext context) {
-    // ignore: unused_local_variable
-    final m = ManagerData.instance;
+    final items = _visibleItems;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 240),
       curve: Curves.easeOutCubic,
@@ -75,9 +83,9 @@ class ManagerSideNav extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Menaxher POS',
+                              devModeOnly ? 'Dev Mode' : 'Menaxher POS',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -111,9 +119,9 @@ class ManagerSideNav extends StatelessWidget {
                   expanded ? 12 : 8,
                   0,
                 ),
-                itemCount: _items.length,
+                itemCount: items.length,
                 itemBuilder: (context, i) {
-                  final it = _items[i];
+                  final it = items[i];
                   final sel = i == selectedIndex;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 2),

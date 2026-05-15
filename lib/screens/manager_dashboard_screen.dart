@@ -15,6 +15,7 @@ import '../features/dashboard/panels/staff_payroll_panel.dart';
 import '../features/dashboard/panels/overview_panel.dart';
 import '../features/dashboard/panels/company_settings_panel.dart';
 import '../features/dashboard/panels/refund_panel.dart';
+import '../features/dashboard/panels/license_panel.dart';
 import '../features/dashboard/widgets/manager_side_nav.dart';
 import '../features/dashboard/widgets/manager_top_bar.dart';
 
@@ -34,11 +35,22 @@ const _kSectionTitles = <String>[
   'Refund — Porositë e Printuara',
   'Historiku i Shitjeve',
   'Regjistri i Auditit',
+  'Licenca',
 ];
+
+const _kDevSectionTitles = <String>['Licenca'];
 
 /// Dashboard menaxheri (PIN 9999). Seksionet 1–8 sipas kërkesës.
 class ManagerDashboardScreen extends StatefulWidget {
-  const ManagerDashboardScreen({super.key});
+  const ManagerDashboardScreen({
+    super.key,
+    this.devModeOnly = false,
+    this.initialIndex = 0,
+  });
+
+  /// Vetëm paneli i licencës (pas hyrjes Dev Mode kur licenca ka skaduar).
+  final bool devModeOnly;
+  final int initialIndex;
 
   @override
   State<ManagerDashboardScreen> createState() => _ManagerDashboardScreenState();
@@ -47,12 +59,16 @@ class ManagerDashboardScreen extends StatefulWidget {
 class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   final ManagerData _m = ManagerData.instance;
   final TextEditingController _headerSearchController = TextEditingController();
-  int _railIndex = 0;
+  late int _railIndex;
   bool _sidebarExpanded = true;
+
+  List<String> get _sectionTitles =>
+      widget.devModeOnly ? _kDevSectionTitles : _kSectionTitles;
 
   @override
   void initState() {
     super.initState();
+    _railIndex = widget.initialIndex;
     _m.addListener(_onData);
   }
 
@@ -66,6 +82,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   }
 
   void _exitToLogin() {
+    if (_m.devModeSession) {
+      _m.endDevModeSession();
+    }
     Navigator.of(context).popUntil((r) => r.isFirst);
   }
 
@@ -79,6 +98,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             child: ManagerSideNav(
               expanded: _sidebarExpanded,
               selectedIndex: _railIndex,
+              devModeOnly: widget.devModeOnly,
               onToggle: () =>
                   setState(() => _sidebarExpanded = !_sidebarExpanded),
               onDestinationSelected: (i) => setState(() => _railIndex = i),
@@ -90,7 +110,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 ManagerTopBar(
-                  sectionTitle: _kSectionTitles[_railIndex],
+                  sectionTitle: _sectionTitles[_railIndex],
                   m: _m,
                 ),
                 Expanded(
@@ -114,6 +134,14 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   }
 
   Widget _buildSection() {
+    if (widget.devModeOnly) {
+      return LicensePanel(
+        m: _m,
+        onLicenseRenewed: () {
+          if (mounted) setState(() {});
+        },
+      );
+    }
     switch (_railIndex) {
       case 0:
         return OverviewPanel(
@@ -146,6 +174,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         return const SalesHistoryPanel();
       case 13:
         return const AuditLogPanel();
+      case 14:
+        return LicensePanel(m: _m);
       default:
         return const SizedBox.shrink();
     }
