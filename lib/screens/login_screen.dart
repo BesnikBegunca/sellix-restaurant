@@ -43,7 +43,7 @@ class _HoverCardButtonState extends State<_HoverCardButton> {
   }
 }
 
-/// Ekrani 1: PIN + kalkulator ndrysi; tastiera kryesore shërben për të dy sipas fokusit.
+/// Ekrani 1: PIN + kalkulator ndarë; tastiera e PIN-it dhe numpadi i kalkulatorit janë të pavarura.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -99,15 +99,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _appendDigit(String d) {
     setState(() {
-      if (_calcField != null) {
-        _appendMoney(_calcField!, d);
-      } else {
-        final t = _pinController.text + d;
-        _pinController.value = TextEditingValue(
-          text: t,
-          selection: TextSelection.collapsed(offset: t.length),
-        );
-      }
+      _calcField = null;
+      final t = _pinController.text + d;
+      _pinController.value = TextEditingValue(
+        text: t,
+        selection: TextSelection.collapsed(offset: t.length),
+      );
     });
   }
 
@@ -136,16 +133,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _backspace() {
     setState(() {
-      if (_calcField != null) {
-        final s = _calcField == 0 ? _bill : _paid;
-        if (s.isNotEmpty) {
-          if (_calcField == 0) {
-            _bill = s.substring(0, s.length - 1);
-          } else {
-            _paid = s.substring(0, s.length - 1);
-          }
-        }
-      } else if (_pinController.text.isNotEmpty) {
+      _calcField = null;
+      if (_pinController.text.isNotEmpty) {
         _pinController.clear();
       }
     });
