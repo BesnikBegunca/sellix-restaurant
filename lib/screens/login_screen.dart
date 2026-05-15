@@ -579,7 +579,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
-                  'Llogaritësi i Kushurit',
+                  'Llogaritësi i Kusurit',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
