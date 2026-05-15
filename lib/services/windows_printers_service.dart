@@ -112,10 +112,13 @@ Add-Type -AssemblyName System.Drawing
   \$brush = [System.Drawing.Brushes]::Black
   \$y = 0
   \$printWidth = \$e.MarginBounds.Width
+  if (\$printWidth -le 0) { \$printWidth = \$e.PageBounds.Width }
+  \$printX = \$e.MarginBounds.Left
+  if (\$printX -lt 0) { \$printX = 0 }
   \$e.Graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::SingleBitPerPixelGridFit
   \$lines = \$text -split \"`r?`n\"
   foreach (\$line in \$lines) {
-    \$rect = New-Object System.Drawing.RectangleF(0, \$y, \$printWidth, \$lineHeight)
+    \$rect = New-Object System.Drawing.RectangleF(\$printX, \$y, \$printWidth, \$lineHeight)
     \$fmt = New-Object System.Drawing.StringFormat
     if (\$line.StartsWith('[[CB]]') -and \$line.EndsWith('[[/CB]]')) {
       \$clean = \$line.Substring(6, \$line.Length - 13)

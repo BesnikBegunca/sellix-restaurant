@@ -58,7 +58,7 @@ String buildKitchenOrderReceiptText({
     out.add('');
   }
   out.add(rule());
-  out.add(markCenter(companyName));
+  out.add(markCenterBold(companyName));
   out.add(rule());
   out.add(rowLR('Kamarjeri : $waiterName', 'Tavolina $tableNumber'));
   out.add('');
@@ -123,17 +123,16 @@ String buildShiftReceiptText({
   final names = waiterTotals.keys.toList()..sort();
   final grandTotal = names.fold<double>(0, (s, n) => s + (waiterTotals[n] ?? 0));
 
+  String markCenter(String s) =>
+      '[[C]]${s.replaceAll('\n', ' ')}[[/C]]';
+
+  String markCenterBold(String s) =>
+      '[[CB]]${s.replaceAll('\n', ' ')}[[/CB]]';
+
   final out = <String>[];
   out.add(rule());
-  final centeredCompany = (() {
-    final s = companyName.replaceAll('\n', ' ');
-    if (s.length >= width) return s.substring(0, width);
-    final left = ((width - s.length) / 2).floor();
-    final right = width - s.length - left;
-    return '${' ' * left}$s${' ' * right}';
-  })();
-  out.add(centeredCompany);
-  out.add('GJENDJA');
+  out.add(markCenterBold(companyName));
+  out.add(markCenter('GJENDJA'));
   out.add(rule());
   out.add(padRight('Kamarjeri', waiterCol) + padLeft('Totali', totalCol));
   out.add('');

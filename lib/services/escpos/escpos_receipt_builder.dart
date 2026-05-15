@@ -221,8 +221,11 @@ class EscPosReceiptBuilder {
   // ── Private helpers ──────────────────────────────────────────────────────
 
   static void _header(EscPosBytes b, String companyName) {
+    final name = companyName.trim();
     b.separator();
-    b.boldCenteredLine(companyName);
+    if (name.isNotEmpty) {
+      b.boldCenteredLine(name);
+    }
     b.separator();
   }
 
