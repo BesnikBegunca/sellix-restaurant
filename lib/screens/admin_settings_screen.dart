@@ -10,7 +10,6 @@ import '../services/printer_settings_store.dart';
 import '../services/restore_service.dart';
 import '../services/windows_printers_service.dart';
 import 'login_screen.dart';
-import 'waiter_selection_screen.dart';
 import '../theme/app_colors.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
@@ -136,14 +135,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           'Waiters enter their PIN to access their tables',
                       isSelected: _selectedMode == 'PINMODE',
                       onTap: () => _changeMode('PINMODE'),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildModeOption(
-                      mode: 'NAMEMODE',
-                      title: 'Name Mode',
-                      description: 'Waiters select their name from a list',
-                      isSelected: _selectedMode == 'NAMEMODE',
-                      onTap: () => _changeMode('NAMEMODE'),
                     ),
                   ],
                 ),
@@ -1123,13 +1114,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       if (!success) return;
       AuditLogService.instance.logRestoreUndone();
 
-      final newMode = ManagerData.instance.loginMode;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => newMode == 'NAMEMODE'
-              ? const WaiterSelectionScreen()
-              : const LoginScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
         (_) => false,
       );
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1205,13 +1191,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       if (!mounted) return;
       setState(() => _hasRestoreUndo = hasUndo);
 
-      final newMode = ManagerData.instance.loginMode;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => newMode == 'NAMEMODE'
-              ? const WaiterSelectionScreen()
-              : const LoginScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
         (_) => false,
       );
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1296,7 +1277,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Login mode changed to ${newMode == 'PINMODE' ? 'PIN' : 'Name'} Mode',
+          'Login mode changed to PIN Mode',
         ),
         backgroundColor: AppColors.primaryGreen,
       ),

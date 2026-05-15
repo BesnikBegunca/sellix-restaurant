@@ -8,8 +8,6 @@ import '../models/mock_data.dart';
 import '../models/pos_models.dart';
 import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
-import '../services/license_service.dart';
-
 export '../models/pos_models.dart';
 
 part 'manager_data_sales.dart';
@@ -38,35 +36,7 @@ class ManagerData extends ChangeNotifier {
 
   String? companyName;
   Uint8List? companyLogoBytes;
-  String loginMode = 'PINMODE'; // 'PINMODE' or 'NAMEMODE'
-
-  /// Skadimi i licencës (null = nuk është aktivizuar).
-  DateTime? licenseExpiresAt;
-
-  /// Sesion Dev Mode (admin) për zgjatjen e licencës.
-  bool devModeSession = false;
-
-  bool get isLicenseValid {
-    final exp = licenseExpiresAt;
-    if (exp == null) return false;
-    return DateTime.now().isBefore(exp);
-  }
-
-  void startDevModeSession() {
-    devModeSession = true;
-    notifyListeners();
-  }
-
-  void endDevModeSession() {
-    devModeSession = false;
-    notifyListeners();
-  }
-
-  Future<void> extendLicense(Duration extension) async {
-    licenseExpiresAt =
-        await LicenseService.instance.extendLicense(extension);
-    notifyListeners();
-  }
+  String loginMode = 'PINMODE';
 
   /// Emri i printerit (Windows) ku printohen receipt-et (POS80).
   String? selectedPrinterName;
@@ -139,7 +109,11 @@ class ManagerData extends ChangeNotifier {
       companyLogoBytes = blob != null
           ? Uint8List.fromList(blob as List<int>)
           : null;
-      loginMode = (company['loginMode'] as String?) ?? 'PINMODE';
+      final storedMode = (company['loginMode'] as String?) ?? 'PINMODE';
+      loginMode = storedMode == 'NAMEMODE' ? 'PINMODE' : storedMode;
+      if (storedMode == 'NAMEMODE') {
+        await db.updateLoginMode('PINMODE');
+      }
       selectedPrinterName = company['printerName'] as String?;
       useEscPos         = ((company['useEscPos']         as int?) ?? 1) == 1;
       cashDrawerEnabled = ((company['cashDrawerEnabled'] as int?) ?? 0) == 1;
@@ -148,8 +122,6 @@ class ManagerData extends ChangeNotifier {
       businessAddress   = company['businessAddress'] as String?;
       businessPhone     = company['businessPhone']   as String?;
     }
-
-    licenseExpiresAt = await LicenseService.instance.getExpiresAt();
 
     // Shift — ensure a permanent shift record exists in [shifts] table.
     shiftOpen = true;
@@ -269,7 +241,7 @@ class ManagerData extends ChangeNotifier {
   }
 
   Future<void> setLoginMode(String mode) async {
-    if (mode != 'PINMODE' && mode != 'NAMEMODE') return;
+    if (mode != 'PINMODE') return;
     loginMode = mode;
     await DatabaseService.instance.updateLoginMode(mode);
     notifyListeners();
