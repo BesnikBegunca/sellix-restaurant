@@ -29,7 +29,7 @@ class EscPosReceiptBuilder {
 
     b.reset();
     _header(b, companyName);
-    _waiterTable(b, waiterName, tableNumber, w);
+    _waiterTable(b, waiterName, tableNumber);
     b.lf();
     _itemsHeader(b, w);
     _itemLines(b, lines, w);
@@ -77,7 +77,7 @@ class EscPosReceiptBuilder {
     }
     b.separator();
 
-    _waiterTable(b, waiterName, tableNumber, w);
+    _waiterTable(b, waiterName, tableNumber);
     if (shiftId != null) {
       b.textLine('Turni: #$shiftId');
     }
@@ -226,18 +226,8 @@ class EscPosReceiptBuilder {
     b.separator();
   }
 
-  static void _waiterTable(
-    EscPosBytes b,
-    String waiter,
-    int table,
-    int w,
-  ) {
-    final left = 'Kamarjeri: $waiter';
-    final right = 'Tavolina $table';
-    final line = left.length + 2 + right.length <= w
-        ? '$left  $right'
-        : left;
-    b.textLine(line);
+  static void _waiterTable(EscPosBytes b, String waiter, int table) {
+    b.rowLR('Kamarjeri: $waiter', 'Tavolina $table');
   }
 
   static void _itemsHeader(EscPosBytes b, int w) {

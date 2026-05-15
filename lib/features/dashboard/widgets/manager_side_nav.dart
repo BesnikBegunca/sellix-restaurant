@@ -56,49 +56,47 @@ class ManagerSideNav extends StatelessWidget {
             SizedBox(
               height: 80,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    if (expanded) ...[
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreen,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.restaurant,
-                          color: AppColors.white,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Menaxher POS',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.darkGreenText,
+                padding: EdgeInsets.symmetric(horizontal: expanded ? 16 : 8),
+                child: expanded
+                    ? Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.restaurant,
+                              color: AppColors.white,
+                              size: 18,
+                            ),
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Menaxher POS',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.darkGreenText,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          _ToggleButton(
+                            expanded: expanded,
+                            onPressed: onToggle,
+                          ),
+                        ],
+                      )
+                    : Center(
+                        child: _ToggleButton(
+                          expanded: expanded,
+                          onPressed: onToggle,
                         ),
                       ),
-                    ],
-                    IconButton(
-                      tooltip: expanded ? 'Mbyll' : 'Hap',
-                      onPressed: onToggle,
-                      icon: Icon(
-                        expanded
-                            ? Icons.keyboard_double_arrow_left
-                            : Icons.menu,
-                        size: 20,
-                        color: AppColors.mediumGreenText,
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
 
@@ -106,7 +104,12 @@ class ManagerSideNav extends StatelessWidget {
 
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                padding: EdgeInsets.fromLTRB(
+                  expanded ? 12 : 8,
+                  12,
+                  expanded ? 12 : 8,
+                  0,
+                ),
                 itemCount: _items.length,
                 itemBuilder: (context, i) {
                   final it = _items[i];
@@ -127,7 +130,12 @@ class ManagerSideNav extends StatelessWidget {
 
             const Divider(height: 1, thickness: 1, color: AppColors.lightGreenBorder),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+              padding: EdgeInsets.fromLTRB(
+                expanded ? 12 : 8,
+                10,
+                expanded ? 12 : 8,
+                16,
+              ),
               child: expanded
                   ? SizedBox(
                       width: double.infinity,
@@ -192,6 +200,32 @@ class _SideNavItem extends StatefulWidget {
   State<_SideNavItem> createState() => _SideNavItemState();
 }
 
+class _ToggleButton extends StatelessWidget {
+  const _ToggleButton({
+    required this.expanded,
+    required this.onPressed,
+  });
+
+  final bool expanded;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: expanded ? 'Mbyll' : 'Hap',
+      onPressed: onPressed,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      icon: Icon(
+        expanded ? Icons.keyboard_double_arrow_left : Icons.menu,
+        size: 20,
+        color: AppColors.mediumGreenText,
+      ),
+    );
+  }
+}
+
 class _SideNavItemState extends State<_SideNavItem> {
   bool _hovered = false;
 
@@ -199,70 +233,93 @@ class _SideNavItemState extends State<_SideNavItem> {
   Widget build(BuildContext context) {
     final active = widget.selected;
     final showBg = active || _hovered;
+    final iconColor = active
+        ? AppColors.primaryGreen
+        : AppColors.mediumGreenText;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Container(
-          height: 44,
-          decoration: BoxDecoration(
-            color: showBg ? AppColors.lightGreenBg : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: Stack(
-            children: [
-              if (active)
-                Positioned(
-                  left: 0,
-                  top: 8,
-                  bottom: 8,
-                  child: Container(
-                    width: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGreen,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-
-              Row(
-                children: [
-                  SizedBox(
-                    width: widget.expanded ? 44 : 56,
-                    child: Center(
-                      child: Icon(
-                        widget.icon,
-                        size: 20,
-                        color: active
-                            ? AppColors.primaryGreen
-                            : AppColors.mediumGreenText,
-                      ),
-                    ),
-                  ),
-                  if (widget.expanded)
-                    Expanded(
-                      child: Text(
-                        widget.label,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight:
-                              active ? FontWeight.w600 : FontWeight.w500,
-                          color: active
-                              ? AppColors.primaryGreen
-                              : AppColors.mediumGreenText,
+        child: _wrapCollapsedTooltip(
+          Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: showBg ? AppColors.lightGreenBg : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            clipBehavior: Clip.hardEdge,
+            child: widget.expanded
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (active)
+                        Container(
+                          width: 4,
+                          height: 28,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 12),
+                      SizedBox(
+                        width: 28,
+                        child: Center(
+                          child: Icon(
+                            widget.icon,
+                            size: 20,
+                            color: iconColor,
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                ],
-              ),
-            ],
+                      Expanded(
+                        child: Text(
+                          widget.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1,
+                            fontWeight: active
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                            color: iconColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (active)
+                        Positioned(
+                          left: 0,
+                          top: 8,
+                          bottom: 8,
+                          child: Container(
+                            width: 3,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      Icon(widget.icon, size: 20, color: iconColor),
+                    ],
+                  ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _wrapCollapsedTooltip(Widget child) {
+    if (widget.expanded) return child;
+    return Tooltip(message: widget.label, child: child);
   }
 }

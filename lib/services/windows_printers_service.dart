@@ -110,16 +110,26 @@ Add-Type -AssemblyName System.Drawing
 \$doc.add_PrintPage({
   param(\$sender, \$e)
   \$brush = [System.Drawing.Brushes]::Black
-  \$x = 0
   \$y = 0
+  \$printWidth = \$e.MarginBounds.Width
   \$e.Graphics.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::SingleBitPerPixelGridFit
   \$lines = \$text -split \"`r?`n\"
   foreach (\$line in \$lines) {
-    if (\$line.StartsWith('[[B]]') -and \$line.EndsWith('[[/B]]')) {
+    \$rect = New-Object System.Drawing.RectangleF(0, \$y, \$printWidth, \$lineHeight)
+    \$fmt = New-Object System.Drawing.StringFormat
+    if (\$line.StartsWith('[[CB]]') -and \$line.EndsWith('[[/CB]]')) {
+      \$clean = \$line.Substring(6, \$line.Length - 13)
+      \$fmt.Alignment = [System.Drawing.StringAlignment]::Center
+      \$e.Graphics.DrawString(\$clean, \$fontBold, \$brush, \$rect, \$fmt)
+    } elseif (\$line.StartsWith('[[C]]') -and \$line.EndsWith('[[/C]]')) {
       \$clean = \$line.Substring(5, \$line.Length - 11)
-      \$e.Graphics.DrawString(\$clean, \$fontBold, \$brush, \$x, \$y)
+      \$fmt.Alignment = [System.Drawing.StringAlignment]::Center
+      \$e.Graphics.DrawString(\$clean, \$fontRegular, \$brush, \$rect, \$fmt)
+    } elseif (\$line.StartsWith('[[B]]') -and \$line.EndsWith('[[/B]]')) {
+      \$clean = \$line.Substring(5, \$line.Length - 11)
+      \$e.Graphics.DrawString(\$clean, \$fontBold, \$brush, 0, \$y)
     } else {
-      \$e.Graphics.DrawString(\$line, \$fontRegular, \$brush, \$x, \$y)
+      \$e.Graphics.DrawString(\$line, \$fontRegular, \$brush, 0, \$y)
     }
     \$y += \$lineHeight
   }

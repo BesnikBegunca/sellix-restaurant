@@ -19,12 +19,19 @@ String buildKitchenOrderReceiptText({
   // Conservative width so all 3 columns stay visible on most POS80 drivers.
   const width = 32;
 
-  String center(String s) {
-    s = s.replaceAll('\n', ' ');
-    if (s.length >= width) return s.substring(0, width);
-    final left = ((width - s.length) / 2).floor();
-    final right = width - s.length - left;
-    return '${' ' * left}$s${' ' * right}';
+  String markCenter(String s) =>
+      '[[C]]${s.replaceAll('\n', ' ')}[[/C]]';
+
+  String markCenterBold(String s) =>
+      '[[CB]]${s.replaceAll('\n', ' ')}[[/CB]]';
+
+  String rowLR(String left, String right) {
+    if (right.length >= width) return right.substring(0, width);
+    final leftMax = width - right.length;
+    final leftStr = left.length >= leftMax
+        ? left.substring(0, leftMax)
+        : left.padRight(leftMax);
+    return leftStr + right;
   }
 
   String padRight(String s, int n) {
@@ -47,18 +54,13 @@ String buildKitchenOrderReceiptText({
 
   final out = <String>[];
   if (paymentReceipt) {
-    out.add('[[B]]${center('Fakture per Pagese')}[[/B]]');
+    out.add(markCenterBold('Fakture per Pagese'));
     out.add('');
   }
   out.add(rule());
-  out.add(center(companyName));
+  out.add(markCenter(companyName));
   out.add(rule());
-  final waiterPart = 'Kamarjeri : $waiterName';
-  final tablePart = 'Tavolina $tableNumber';
-  final waiterTableLine = '$waiterPart  |  $tablePart';
-  out.add(waiterTableLine.length > width
-      ? waiterTableLine.substring(0, width)
-      : waiterTableLine);
+  out.add(rowLR('Kamarjeri : $waiterName', 'Tavolina $tableNumber'));
   out.add('');
   out.add(
     padRight('Produkti', productCol) +
@@ -86,7 +88,7 @@ String buildKitchenOrderReceiptText({
   );
   if (paymentReceipt) {
     out.add('');
-    out.add(center('Ju Faleminderit.'));
+    out.add(markCenter('Ju Faleminderit.'));
   }
 
   return out.join('\n');
