@@ -31,6 +31,7 @@ class ManagerSideNav extends StatelessWidget {
     (icon: Icons.grid_view_outlined, sel: Icons.grid_view,       label: 'Tavolinat'),
     (icon: Icons.settings_outlined,  sel: Icons.settings,        label: 'Cilësimet'),
     (icon: Icons.payments_outlined,  sel: Icons.payments,        label: 'Pagat'),
+    (icon: Icons.undo_outlined,      sel: Icons.undo,            label: 'Refund'),
     (icon: Icons.history_outlined,   sel: Icons.history,         label: 'Historiku'),
     (icon: Icons.security_outlined,  sel: Icons.security,        label: 'Audit'),
   ];

@@ -307,6 +307,14 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       lines: merged,
     );
 
+    // Historik: çdo shtypje Printo = një batch i veçantë (p.sh. 3€, 4€, 5€).
+    await ManagerData.instance.recordKitchenPrint(
+      tableId: widget.tableNumber,
+      waiterName: widget.waiterName,
+      orderNumber: _activeOrderNumber,
+      lines: _toCurrentLines(_lines),
+    );
+
     // Printo kuponin termik / POS80 (tekst i formatum per POS80).
     try {
       await ReceiptPrinter.printKitchenOrder(

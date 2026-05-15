@@ -11,12 +11,14 @@ class SaleCard extends StatelessWidget {
     required this.expanded,
     required this.onToggle,
     this.onRefund,
+    this.onDelete,
   });
 
   final SaleWithLines data;
   final bool expanded;
   final VoidCallback onToggle;
   final VoidCallback? onRefund;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +144,12 @@ class SaleCard extends StatelessWidget {
           // ── expanded line items ────────────────────────────────────────
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
-            secondChild: _buildLineItems(lines, data.adjustments, onRefund),
+            secondChild: _buildLineItems(
+              lines,
+              data.adjustments,
+              onRefund,
+              onDelete,
+            ),
             crossFadeState: expanded
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
@@ -157,6 +164,7 @@ class SaleCard extends StatelessWidget {
     List<SaleLineRow> lines,
     List<SaleAdjustmentRow> adjustments,
     VoidCallback? onRefund,
+    VoidCallback? onDelete,
   ) {
     final linesTotal = lines.fold(0.0, (s, l) => s + l.lineTotal);
     final adjTotal = adjustments.fold(0.0, (s, a) => s + a.amount);
@@ -266,7 +274,23 @@ class SaleCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
             child: Row(
               children: [
-                if (onRefund != null)
+                if (onDelete != null)
+                  FilledButton.icon(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline, size: 14),
+                    label: const Text('Fshi porosinë'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.negativeText,
+                      foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      textStyle: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                if (onRefund != null) ...[
+                  if (onDelete != null) const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: onRefund,
                     icon: const Icon(Icons.undo_outlined, size: 14),
@@ -283,6 +307,7 @@ class SaleCard extends StatelessWidget {
                       textStyle: const TextStyle(fontSize: 12),
                     ),
                   ),
+                ],
                 const Spacer(),
                 if (adjTotal > 0) ...[
                   Column(

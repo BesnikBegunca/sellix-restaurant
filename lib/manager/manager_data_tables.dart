@@ -53,6 +53,142 @@ extension TablesMethods on ManagerData {
     _notify();
   }
 
+  /// Regjistron një PRINTO të veçantë (çdo shtypje e butonit Printo).
+  Future<int> recordKitchenPrint({
+    required int tableId,
+    required String waiterName,
+    required int orderNumber,
+    required List<CurrentOrderLine> lines,
+  }) async {
+    if (lines.isEmpty) return -1;
+    final lineMaps = lines.map((l) {
+      final lineTotal = double.parse(
+        (l.product.price * l.qty).toStringAsFixed(2),
+      );
+      return {
+        'productId': l.product.id,
+        'productName': l.product.name,
+        'productPrice': l.product.price,
+        'productEmoji': l.product.emoji,
+        'imagePath': l.product.imagePath,
+        'qty': l.qty,
+        'lineTotal': lineTotal,
+      };
+    }).toList();
+    return DatabaseService.instance.insertKitchenPrint(
+      tableId: tableId,
+      waiterName: waiterName,
+      orderNumber: orderNumber,
+      lines: lineMaps,
+      shiftId: _currentShiftId,
+    );
+  }
+
+  List<CurrentOrderLine> _subtractPrintLines(
+    List<CurrentOrderLine> current,
+    List<CurrentOrderLine> toRemove,
+  ) {
+    final map = <String, CurrentOrderLine>{
+      for (final l in current)
+        l.product.id: CurrentOrderLine(product: l.product, qty: l.qty),
+    };
+    for (final r in toRemove) {
+      final existing = map[r.product.id];
+      if (existing == null) continue;
+      final newQty = existing.qty - r.qty;
+      if (newQty <= 0) {
+        map.remove(r.product.id);
+      } else {
+        map[r.product.id] = CurrentOrderLine(
+          product: existing.product,
+          qty: newQty,
+        );
+      }
+    }
+    return map.values.toList();
+  }
+
+  /// Fshin një PRINTO të vetëm dhe zbrit linjat nga porosia aktive e tavolinës.
+  Future<void> voidKitchenPrint(int printId) async {
+    final meta = await DatabaseService.instance.fetchKitchenPrintById(printId);
+    if (meta == null) {
+      throw StateError('Printimi #$printId nuk u gjet.');
+    }
+    final tableId = (meta['tableId'] as num).toInt();
+    final waiterName = meta['waiterName'] as String;
+    final orderNumber = (meta['orderNumber'] as num).toInt();
+
+    final rawLines =
+        await DatabaseService.instance.fetchKitchenPrintLines(printId);
+    final printLines = rawLines
+        .map(
+          (r) => CurrentOrderLine(
+            product: ProductItem(
+              id: r['productId'] as String,
+              name: r['productName'] as String,
+              price: (r['productPrice'] as num).toDouble(),
+              emoji: r['productEmoji'] as String? ?? '☕',
+              imagePath: r['imagePath'] as String?,
+            ),
+            qty: (r['qty'] as num).toInt(),
+          ),
+        )
+        .toList();
+
+    final currentLines = await loadCurrentOrderLines(tableId, waiterName);
+    final remaining = _subtractPrintLines(currentLines, printLines);
+
+    await DatabaseService.instance.deleteKitchenPrint(printId);
+
+    if (remaining.isEmpty) {
+      await DatabaseService.instance.updateTable(
+        tableId,
+        occupied: false,
+        currentTotal: null,
+        assignedWaiterName: null,
+        currentOrderNumber: orderNumber,
+      );
+      await DatabaseService.instance.clearCurrentOrder(
+        tableId,
+        waiterName,
+        clearPrintHistory: false,
+      );
+      _cashierTables = _cashierTables.map((t) {
+        if (t.id != tableId) return t;
+        return TableInfo(
+          id: t.id,
+          occupied: false,
+          currentTotal: null,
+          assignedWaiterName: null,
+          currentOrderNumber: orderNumber,
+        );
+      }).toList();
+    } else {
+      await saveCurrentOrder(
+        tableId: tableId,
+        orderNumber: orderNumber,
+        waiterName: waiterName,
+        lines: remaining,
+      );
+    }
+
+    AuditLogService.instance.log(
+      actionType: AuditAction.itemRemoved,
+      entityType: 'kitchen_print',
+      entityId: '$printId',
+      performedBy: 'Menaxher',
+      performedRole: 'manager',
+      shiftId: _currentShiftId,
+      tableId: tableId,
+      details: {
+        'waiterName': waiterName,
+        'printTotal': meta['total'],
+        'reason': 'PRINTO i vetëm u fshi nga menaxheri',
+      },
+    );
+    _notify();
+  }
+
   Future<void> clearTable(int tableId, String waiterName) async {
     final current = _cashierTables.firstWhere(
       (t) => t.id == tableId,
@@ -65,7 +201,11 @@ extension TablesMethods on ManagerData {
       assignedWaiterName: null,
       currentOrderNumber: current.currentOrderNumber ?? 0,
     );
-    await DatabaseService.instance.clearCurrentOrder(tableId, waiterName);
+    await DatabaseService.instance.clearCurrentOrder(
+      tableId,
+      waiterName,
+      clearPrintHistory: true,
+    );
     _cashierTables = _cashierTables.map((t) {
       if (t.id != tableId) return t;
       return TableInfo(
