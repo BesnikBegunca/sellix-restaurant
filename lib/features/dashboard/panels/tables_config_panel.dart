@@ -44,9 +44,30 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
     _count = widget.m.tableCount.toDouble();
     _perRow = widget.m.tablesPerRow.toDouble();
     widget.m.addListener(_onM);
+    if (widget.m.waiters.isNotEmpty) {
+      _tableViewWaiter = widget.m.waiters.first.name;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncWaiterTables());
+    }
+  }
+
+  void _onWaiterSelected(String? name) {
+    setState(() {
+      _tableViewWaiter = name;
+      _waiterTablesSnapshot = null;
+    });
+    _syncWaiterTables();
   }
 
   void _onM() {
+    final waiters = widget.m.waiters;
+    if (waiters.isEmpty) {
+      _tableViewWaiter = null;
+      _waiterTablesSnapshot = null;
+    } else if (_tableViewWaiter == null ||
+        !waiters.any((w) => w.name == _tableViewWaiter)) {
+      _tableViewWaiter = waiters.first.name;
+      _waiterTablesSnapshot = null;
+    }
     setState(() {});
     if (_tableViewWaiter != null) {
       _syncWaiterTables();
@@ -73,10 +94,12 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
     final m = widget.m;
     final n = _count.round();
     final pr = _perRow.round();
-    final occupied = m.cashierTables.where((t) => t.occupied).length;
-    final free = m.cashierTables.length - occupied;
-    final total = m.cashierTables.length;
+    final viewTables = _displayTables(m);
+    final occupied = viewTables.where((t) => t.occupied).length;
+    final free = viewTables.length - occupied;
+    final total = viewTables.length;
     final occupancyPct = total > 0 ? (occupied / total * 100).round() : 0;
+    final waiters = m.waiters;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -119,14 +142,64 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                   badge: '$occupancyPct%',
                 ),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.lightGreenBorder),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.person_outline,
+                size: 22,
+                color: AppColors.primaryGreen,
+              ),
               const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  icon: Icons.event_available_outlined,
-                  title: 'Të Rezervuara',
-                  value: '0',
-                  accentColor: AppColors.warmGold,
+              const Text(
+                'Kamarieri',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGreenText,
                 ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: waiters.isEmpty
+                    ? const Text(
+                        'Nuk ka kamarierë të regjistruar.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.lightGreenText,
+                        ),
+                      )
+                    : DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _tableViewWaiter != null &&
+                                  waiters.any((w) => w.name == _tableViewWaiter)
+                              ? _tableViewWaiter
+                              : null,
+                          isExpanded: true,
+                          hint: const Text('Zgjidh kamarierin'),
+                          borderRadius: BorderRadius.circular(12),
+                          items: waiters
+                              .map(
+                                (w) => DropdownMenuItem(
+                                  value: w.name,
+                                  child: Text(w.name),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: waiters.isEmpty ? null : _onWaiterSelected,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -152,9 +225,11 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
             children: [
               Row(
                 children: [
-                  const Text(
-                    'Planimetria',
-                    style: TextStyle(
+                  Text(
+                    _tableViewWaiter == null
+                        ? 'Planimetria'
+                        : 'Tavolinat — $_tableViewWaiter',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: AppColors.darkGreenText,
@@ -170,14 +245,28 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                     color: AppColors.softRed,
                     label: 'Zënë',
                   ),
-                  const SizedBox(width: 16),
-                  _TableLegendDot(
-                    color: AppColors.warmGold,
-                    label: 'Rezervuar',
-                  ),
                 ],
               ),
               const SizedBox(height: 20),
+              if (_tableViewWaiter == null)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(
+                    child: Text(
+                      'Zgjidh një kamarier për të parë tavolinat e tij.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.lightGreenText,
+                      ),
+                    ),
+                  ),
+                )
+              else if (_waiterTablesSnapshot == null)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -192,7 +281,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                   final id = i + 1;
                   TableInfo? info;
                   try {
-                    info = m.cashierTables.firstWhere((t) => t.id == id);
+                    info = viewTables.firstWhere((t) => t.id == id);
                   } catch (_) {}
                   final occ = info?.occupied ?? false;
 
