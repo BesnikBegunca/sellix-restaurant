@@ -1,5 +1,7 @@
 import '../../../manager/manager_data.dart';
 
+enum SHDateFilter { today, thisWeek, thisMonth, allTime, custom }
+
 class SaleWithLines {
   const SaleWithLines({
     required this.sale,

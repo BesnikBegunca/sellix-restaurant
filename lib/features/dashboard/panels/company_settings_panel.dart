@@ -6,6 +6,9 @@ import '../../../services/printer_settings_store.dart';
 import '../../../services/windows_printers_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
+import '../widgets/settings/login_mode_tile.dart';
+import '../widgets/settings/settings_card.dart';
+import '../widgets/settings/settings_check_tile.dart';
 
 class CompanySettingsPanel extends StatefulWidget {
   const CompanySettingsPanel({super.key, required this.m});
@@ -165,7 +168,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         ),
         const SizedBox(height: 24),
 
-        _buildSettingsCard(
+        SettingsCard(
           icon: Icons.grid_view_rounded,
           title: 'Informacioni i Biznesit',
           child: Column(
@@ -322,7 +325,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         ),
         const SizedBox(height: 20),
 
-        _buildSettingsCard(
+        SettingsCard(
           icon: Icons.security_outlined,
           title: 'Mënyra e Hyrjes',
           child: Column(
@@ -333,23 +336,25 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
               ),
               const SizedBox(height: 14),
-              _buildLoginModeTile(
-                mode: 'PINMODE',
+              LoginModeTile(
                 title: 'Mënyra PIN',
                 subtitle: 'Waiters enter their 4–6 digit PIN',
+                selected: _selectedLoginMode == 'PINMODE',
+                onTap: () => _changeLoginMode('PINMODE'),
               ),
               const SizedBox(height: 8),
-              _buildLoginModeTile(
-                mode: 'NAMEMODE',
+              LoginModeTile(
                 title: 'Mënyra me Emër',
                 subtitle: 'Kamarierët zgjedhin emrin nga lista',
+                selected: _selectedLoginMode == 'NAMEMODE',
+                onTap: () => _changeLoginMode('NAMEMODE'),
               ),
             ],
           ),
         ),
         const SizedBox(height: 20),
 
-        _buildSettingsCard(
+        SettingsCard(
           icon: Icons.print_outlined,
           title: 'Cilësimet e Printerit',
           child: Column(
@@ -423,9 +428,9 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildCheckTile(label: 'Printo automatikisht faturat pas pagesës'),
+              SettingsCheckTile(label: 'Printo automatikisht faturat pas pagesës'),
               const SizedBox(height: 8),
-              _buildCheckTile(label: 'Dërgo porositë automatikisht te printeri i kuzhinës'),
+              SettingsCheckTile(label: 'Dërgo porositë automatikisht te printeri i kuzhinës'),
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
@@ -490,160 +495,6 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildSettingsCard({
-    required IconData icon,
-    required String title,
-    required Widget child,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.lightGreenBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.lightGreenBg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: AppColors.primaryGreen),
-              ),
-              const SizedBox(width: 14),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoginModeTile({
-    required String mode,
-    required String title,
-    required String subtitle,
-  }) {
-    final selected = _selectedLoginMode == mode;
-    return GestureDetector(
-      onTap: () => _changeLoginMode(mode),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.lightGreenBg
-              : const Color(0xFFF7FAF7),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected
-                ? AppColors.primaryGreen.withValues(alpha: 0.35)
-                : AppColors.lightGreenBorder,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                color: selected ? AppColors.primaryGreen : AppColors.white,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                  color: selected
-                      ? AppColors.primaryGreen
-                      : AppColors.lightGreenBorder,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: selected
-                  ? const Icon(Icons.check, size: 13, color: Colors.white)
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: selected
-                      ? AppColors.primaryGreen
-                      : AppColors.darkGreenText,
-                ),
-              ),
-            ),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.mediumGreenText,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCheckTile({required String label}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.lightGreenBg,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: Checkbox(
-              value: true,
-              onChanged: (_) {},
-              activeColor: AppColors.primaryGreen,
-              side: const BorderSide(color: AppColors.lightGreenBorder),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

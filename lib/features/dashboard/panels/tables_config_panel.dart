@@ -5,6 +5,7 @@ import '../../../models/mock_data.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
 import '../widgets/stat_card.dart';
+import '../widgets/tables/table_legend_dot.dart';
 
 class TablesConfigPanel extends StatefulWidget {
   const TablesConfigPanel({super.key, required this.m});
@@ -236,12 +237,12 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                     ),
                   ),
                   const Spacer(),
-                  _TableLegendDot(
+                  TableLegendDot(
                     color: AppColors.primaryGreen,
                     label: 'Lirë',
                   ),
                   const SizedBox(width: 16),
-                  _TableLegendDot(
+                  TableLegendDot(
                     color: AppColors.softRed,
                     label: 'Zënë',
                   ),
@@ -539,34 +540,6 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TableLegendDot extends StatelessWidget {
-  const _TableLegendDot({required this.color, required this.label});
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppColors.mediumGreenText,
           ),
         ),
       ],

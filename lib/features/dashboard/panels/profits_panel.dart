@@ -7,6 +7,7 @@ import '../../../manager/manager_data.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
 import '../widgets/stat_card.dart';
+import '../widgets/profits/profit_breakdown_row.dart';
 
 class ProfitsPanel extends StatefulWidget {
   const ProfitsPanel({super.key, required this.m});
@@ -413,12 +414,12 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                             ),
                           ),
                           const SizedBox(height: 14),
-                          _ProfitBreakdownRow(
+                          ProfitBreakdownRow(
                             label: 'Të Ardhura',
                             value: '${selRev.toStringAsFixed(0)}€',
                           ),
                           const SizedBox(height: 10),
-                          _ProfitBreakdownRow(
+                          ProfitBreakdownRow(
                             label: 'Kosto',
                             value: selExp > 0
                                 ? '-${selExp.toStringAsFixed(0)}€'
@@ -438,7 +439,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                   AppColors.lightGreenBg.withValues(alpha: 0.8),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: _ProfitBreakdownRow(
+                            child: ProfitBreakdownRow(
                               label: 'Fitim Neto',
                               value: '${selProfit.toStringAsFixed(0)}€',
                               valueColor: AppColors.primaryGreen,
@@ -499,45 +500,6 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ProfitBreakdownRow extends StatelessWidget {
-  const _ProfitBreakdownRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-    this.bold = false,
-  });
-  final String label;
-  final String value;
-  final Color? valueColor;
-  final bool bold;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: bold ? AppColors.darkGreenText : AppColors.lightGreenText,
-              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
-            color: valueColor ?? AppColors.darkGreenText,
           ),
         ),
       ],

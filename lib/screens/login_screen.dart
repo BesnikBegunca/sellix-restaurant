@@ -7,7 +7,10 @@ import '../manager/manager_data.dart';
 import '../services/audit_log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
+import '../widgets/hover_card_button.dart';
 import '../widgets/hover_interaction.dart';
+import '../widgets/hover_small_chip.dart';
+import '../widgets/num_key_body.dart';
 
 // Reuse hover widgets already defined in `hover_interaction.dart`.
 // (HoverInteraction might not exist in this project version.)
@@ -15,33 +18,6 @@ import '../widgets/hover_interaction.dart';
 import 'manager_dashboard_screen.dart';
 import 'table_selection_screen.dart';
 import 'waiter_selection_screen.dart';
-
-class _HoverCardButton extends StatefulWidget {
-  const _HoverCardButton({required this.onPressed, required this.builder});
-
-  final VoidCallback onPressed;
-  final Widget Function(BuildContext context, bool isHovered) builder;
-
-  @override
-  State<_HoverCardButton> createState() => _HoverCardButtonState();
-}
-
-class _HoverCardButtonState extends State<_HoverCardButton> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onPressed,
-        child: widget.builder(context, _hovered),
-      ),
-    );
-  }
-}
 
 /// Ekrani 1: PIN + kalkulator ndarë; tastiera e PIN-it dhe numpadi i kalkulatorit janë të pavarura.
 class LoginScreen extends StatefulWidget {
@@ -486,7 +462,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _calcNumpad() {
     Widget padBtn(String label, VoidCallback onTap, {Color? accent}) {
-      return _HoverCardButton(
+      return HoverCardButton(
         onPressed: onTap,
         builder: (ctx, hovered) => AnimatedContainer(
           duration: const Duration(milliseconds: 150),
@@ -702,7 +678,7 @@ class _LoginScreenState extends State<LoginScreen> {
             style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
           ),
           const SizedBox(height: 24),
-          _HoverCardButton(
+          HoverCardButton(
             onPressed: _goToWaiterSelection,
             builder: (context, isHovered) {
               return Container(
@@ -883,84 +859,7 @@ class _LoginScreenState extends State<LoginScreen> {
       onPressed: () => _appendDigit(label),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: _NumKeyBody(label: label),
-      ),
-    );
-  }
-}
-
-class _NumKeyBody extends StatefulWidget {
-  const _NumKeyBody({required this.label});
-
-  final String label;
-
-  @override
-  State<_NumKeyBody> createState() => _NumKeyBodyState();
-}
-
-class _NumKeyBodyState extends State<_NumKeyBody> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: 56,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: _hover ? AppColors.lightGreenBg : AppColors.beige,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderSubtle(0.1)),
-        ),
-        child: Text(
-          widget.label,
-          style: const TextStyle(fontSize: 32, color: AppColors.darkGreenText),
-        ),
-      ),
-    );
-  }
-}
-
-class _HoverSmallChip extends StatefulWidget {
-  const _HoverSmallChip({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  State<_HoverSmallChip> createState() => _HoverSmallChipState();
-}
-
-class _HoverSmallChipState extends State<_HoverSmallChip> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 32,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _hover ? AppColors.lightGreenBg : AppColors.beige,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.borderSubtle(0.1)),
-          ),
-          child: Text(
-            widget.label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-        ),
+        child: NumKeyBody(label: label),
       ),
     );
   }

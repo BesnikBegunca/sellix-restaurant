@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
+import '../features/audit_log/widgets/audit_category_tabs.dart';
+import '../features/audit_log/widgets/audit_empty_state.dart';
+import '../features/audit_log/widgets/audit_error_card.dart';
+import '../features/audit_log/widgets/audit_kpi_card.dart';
+import '../features/audit_log/widgets/audit_kpi_row.dart';
 import '../features/audit_log/widgets/audit_log_card.dart';
 import '../manager/manager_data.dart';
 import '../services/audit_log_pdf.dart';
@@ -204,7 +209,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
       children: [
         _buildHeader(),
         const SizedBox(height: 24),
-        _buildKpiRow(),
+        AuditKpiRow(logs: _logs),
         const SizedBox(height: 20),
         if (_loading && _logs.isEmpty)
           const Center(
@@ -214,7 +219,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
             ),
           )
         else if (_error != null)
-          _buildError()
+          AuditErrorCard(error: _error, onRetry: () => _loadData(reset: true))
         else
           _buildMainCard(),
       ],
@@ -281,58 +286,6 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
     );
   }
 
-  // ── KPI row ────────────────────────────────────────────────────────────────
-
-  Widget _buildKpiRow() {
-    final securityCount = _logs
-        .where((l) => auditActionCategory(l.actionType) == AuditCategoryFilter.security)
-        .length;
-    final paymentCount = _logs
-        .where((l) => auditActionCategory(l.actionType) == AuditCategoryFilter.payments)
-        .length;
-    final lastActivity =
-        _logs.isNotEmpty ? auditTimeAgo(_logs.first.createdAt) : '—';
-
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: AuditKpiCard(
-              icon: Icons.monitor_heart_outlined,
-              label: 'Evente Gjithsej',
-              value: '${_logs.length}',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: AuditKpiCard(
-              icon: Icons.shield_outlined,
-              label: 'Evente Sigurie',
-              value: '$securityCount',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: AuditKpiCard(
-              icon: Icons.attach_money_outlined,
-              label: 'Evente Pagesash',
-              value: '$paymentCount',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: AuditKpiCard(
-              icon: Icons.schedule_outlined,
-              label: 'Aktiviteti i Fundit',
-              value: lastActivity,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ── main card (filter + log list) ──────────────────────────────────────────
 
   Widget _buildMainCard() {
@@ -363,14 +316,17 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildCategoryTabs(),
+          AuditCategoryTabs(
+            selected: _categoryFilter,
+            onChanged: (f) => setState(() => _categoryFilter = f),
+          ),
           const SizedBox(height: 16),
           _buildSecondaryFilters(),
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
           if (filtered.isEmpty)
-            _buildEmptyState()
+            const AuditEmptyState()
           else ...[
             for (final log in filtered)
               AuditLogCard(
@@ -408,69 +364,6 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
           ],
         ],
       ),
-    );
-  }
-
-  Widget _buildCategoryTabs() {
-    const tabs = [
-      (AuditCategoryFilter.all,      Icons.bar_chart_outlined,    'Të gjitha'),
-      (AuditCategoryFilter.security, Icons.shield_outlined,       'Siguri'),
-      (AuditCategoryFilter.payments, Icons.attach_money_outlined, 'Pagesat'),
-      (AuditCategoryFilter.settings, Icons.settings_outlined,     'Cilësimet'),
-      (AuditCategoryFilter.users,    Icons.person_outline,        'Përdoruesit'),
-    ];
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final (filter, icon, label) in tabs)
-          GestureDetector(
-            onTap: () => setState(() => _categoryFilter = filter),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: _categoryFilter == filter
-                    ? AppColors.primaryGreen
-                    : AppColors.white,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: _categoryFilter == filter
-                      ? AppColors.primaryGreen
-                      : AppColors.lightGreenBorder,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 15,
-                    color: _categoryFilter == filter
-                        ? Colors.white
-                        : AppColors.mediumGreenText,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: _categoryFilter == filter
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                      color: _categoryFilter == filter
-                          ? Colors.white
-                          : AppColors.darkGreenText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
     );
   }
 
@@ -628,63 +521,5 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
         isDense: true,
       );
 
-  Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.verified_user_outlined,
-            size: 48,
-            color: AppColors.lightGreenText.withValues(alpha: 0.4),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Nuk ka aktivitet',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.mediumGreenText,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Ndrysho kategorinë ose periudhën.',
-            style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildError() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.negativeBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.negativeText.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.negativeText),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Gabim gjatë ngarkimit: $_error',
-              style: const TextStyle(color: AppColors.negativeText),
-            ),
-          ),
-          TextButton(
-            onPressed: () => _loadData(reset: true),
-            child: const Text('Riprovo'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 

@@ -1,6 +1,6 @@
 # Refactor Status — POS System
 
-Qëllimi: split file të mëdha në `lib/features/` pa ndryshuar UI, logjikë, ose sjellje.
+Qëllimi: split file të mëdha pa ndryshuar UI, logjikë, ose sjellje.
 Pas çdo ekstraktimi: `flutter analyze --no-pub` → **0 errors**.
 
 ---
@@ -9,64 +9,84 @@ Pas çdo ekstraktimi: `flutter analyze --no-pub` → **0 errors**.
 
 | File | Para | Pas | Çfarë u bë |
 |------|------|-----|------------|
-| `lib/screens/manager_dashboard_screen.dart` | 8 614 | 150 | Split i plotë — 11 panel + 3 widget |
-| `lib/manager/manager_data.dart` | 1 256 | 671 | Split në 3 part files (extension) |
-| `lib/manager/manager_data_sales.dart` | — | 163 | Ekstraktuar: recordSale, recordSaleWithLines, recordAdjustment, topEmployee |
-| `lib/manager/manager_data_menu.dart` | — | 234 | Ekstraktuar: addCategory, addProduct, editProduct, moveProduct |
-| `lib/manager/manager_data_tables.dart` | — | 207 | Ekstraktuar: setTableLayout, clearTable, saveCurrentOrder, tablesForWaiter |
-| `lib/services/database_service.dart` | 1 603 | 973 | Schema DDL → database_schema.dart |
-| `lib/services/database_schema.dart` | — | 640 | ensureTables, upgrade, create, seedDefaultMenu |
+| `lib/screens/manager_dashboard_screen.dart` | 8 614 | 184 | Split i plotë — 11 panel + 3 widget |
+| `lib/manager/manager_data.dart` | 1 256 | 702 | Split në 3 part files (extension) |
+| `lib/manager/manager_data_sales.dart` | — | 193 | recordSale, recordSaleWithLines, recordAdjustment, voidSale, topEmployee |
+| `lib/manager/manager_data_menu.dart` | — | 234 | addCategory, addProduct, editProduct, moveProduct |
+| `lib/manager/manager_data_tables.dart` | — | 345 | setTableLayout, clearTable, saveCurrentOrder, tablesForWaiter |
+| `lib/services/database_service.dart` | 1 603 | 1 112 | Schema DDL → database_schema.dart |
+| `lib/services/database_schema.dart` | — | 670 | ensureTables, upgrade, create, seedDefaultMenu |
 | `lib/features/dashboard/panels/overview_panel.dart` | 1 049 | 233 | 6 widget → `widgets/overview/` |
 | `lib/features/dashboard/panels/menu_panel.dart` | 1 064 | 452 | asset_picker.dart + category_product_table.dart |
 | `lib/features/dashboard/panels/staff_payroll_panel.dart` | 1 308 | 418 | 3 widget → `widgets/staff/` |
+| `lib/screens/sales_history_screen.dart` | 1 103 | 789 | SHKpiRow, SHTopProductsCard, SHCategoryChart, showSHRefundDialog |
+| `lib/features/pos_order/widgets/order_panel.dart` | 421 | 151 | OrderLineRow, QtyButton, SendOrderButton, PayButton |
+| `lib/features/dashboard/panels/expenses_panel.dart` | 729 | 461 | ExpensesEmptyState, ExpenseFilterChip, ExpensesDataTable |
+| `lib/features/dashboard/panels/waiters_panel.dart` | 444 | 213 | WaiterList, WaiterGridCard |
+| `lib/features/dashboard/panels/shift_panel.dart` | 529 | 276 | GjendjaDialog → widgets/shift/ |
+| `lib/features/dashboard/panels/profits_panel.dart` | 546 | 508 | ProfitBreakdownRow → widgets/profits/ |
+| `lib/features/dashboard/panels/reports_panel.dart` | 434 | 312 | ReportCard → widgets/reports/ |
+| `lib/features/dashboard/panels/tables_config_panel.dart` | 575 | 548 | TableLegendDot → widgets/tables/ |
+| `lib/features/sales_history/widgets/sale_card.dart` | 480 | 406 | AdjustmentRow → adjustment_row.dart |
+| `lib/features/audit_log/widgets/audit_log_card.dart` | 643 | 575 | AuditKpiCard → audit_kpi_card.dart |
+| `lib/screens/login_screen.dart` | 967 | 866 | HoverCardButton, NumKeyBody, HoverSmallChip → lib/widgets/ |
+| `lib/screens/audit_log_screen.dart` | 690 | 525 | AuditKpiRow, AuditCategoryTabs, AuditEmptyState, AuditErrorCard |
+| `lib/features/dashboard/panels/company_settings_panel.dart` | 649 | 501 | SettingsCard, LoginModeTile, SettingsCheckTile → widgets/settings/ |
+| `lib/screens/sales_history_screen.dart` | 789 | 563 | SHFiltersCard (SHDateFilter publik, 5 metoda → widget) |
 
 ---
 
-## 🔴 Prioritet i lartë (>700 rreshta)
+## ✅ 🟢 E lehtë — PËRFUNDUAR
 
-| File | Rreshta | Çfarë mund të ndahet |
-|------|---------|----------------------|
-| `lib/screens/admin_settings_screen.dart` | **1 331** | ⚠️ Vështirë — 10+ controllers të lidhur; kandidatë: _buildBackupCard, _buildReceiptSettingsCard |
-| `lib/screens/sales_history_screen.dart` | **1 103** | Filtra widget, refund dialog, PDF export |
-| `lib/screens/login_screen.dart` | **967** | PIN pad widget, waiter list widget |
-| `lib/services/audit_log_service.dart` | **922** | Log methods sipas tipit: sales/menu/staff/shift |
-| `lib/features/dashboard/panels/expenses_panel.dart` | **726** | Add-expense dialog, expense row widget |
-| `lib/features/dashboard/widgets/staff/waiter_payroll_detail.dart` | **721** | Kalendar widget, advance dialog |
-| `lib/screens/audit_log_screen.dart` | **690** | Filter bar, log list widget, detail dialog |
-| `lib/features/dashboard/panels/company_settings_panel.dart` | **649** | Logo section, printer section, receipt preview |
-| `lib/features/audit_log/widgets/audit_log_card.dart` | **643** | Per-type card variants |
-
----
-
-## 🟡 Prioritet mesatar (400–700 rreshta)
-
-| File | Rreshta | Çfarë mund të ndahet |
-|------|---------|----------------------|
-| `lib/services/database_service.dart` | **973** | Insert methods, fetch methods, shift methods → grupe |
-| `lib/screens/pos_order_screen.dart` | **558** | Payment dialog, product grid widget |
-| `lib/features/dashboard/panels/profits_panel.dart` | **546** | Chart widget, KPI cards |
-| `lib/features/dashboard/panels/shift_panel.dart` | **529** | Shift summary card, close-shift dialog |
-| `lib/features/dashboard/panels/tables_config_panel.dart` | **486** | Table grid widget, layout editor |
-| `lib/services/sales_history_pdf.dart` | **464** | PDF builder — OK si është (vetëm PDFe) |
-| `lib/features/sales_history/widgets/sale_card.dart` | **455** | Line items section, adjustment section |
-| `lib/features/dashboard/panels/waiters_panel.dart` | **444** | Add-waiter dialog, waiter row, worked-days section |
-| `lib/screens/table_selection_screen.dart` | **443** | Table grid widget |
-| `lib/features/dashboard/panels/reports_panel.dart` | **434** | Chart widgets, export buttons |
-| `lib/features/pos_order/widgets/order_panel.dart` | **421** | Order line row, total section |
+| File | Para | Pas | Çfarë u nxjerr |
+|------|------|-----|----------------|
+| `order_panel.dart` | 421 | 151 | OrderLineRow, QtyButton, SendOrderButton, PayButton |
+| `expenses_panel.dart` | 729 | 461 | ExpensesEmptyState, ExpenseFilterChip, ExpensesDataTable |
+| `waiters_panel.dart` | 444 | 213 | WaiterList, WaiterGridCard |
+| `shift_panel.dart` | 529 | 276 | GjendjaDialog |
+| `profits_panel.dart` | 546 | 508 | ProfitBreakdownRow |
+| `reports_panel.dart` | 434 | 312 | ReportCard |
+| `tables_config_panel.dart` | 575 | 548 | TableLegendDot |
+| `sale_card.dart` | 480 | 406 | AdjustmentRow |
+| `audit_log_card.dart` | 643 | 575 | AuditKpiCard |
+| `login_screen.dart` | 967 | 866 | HoverCardButton, NumKeyBody, HoverSmallChip |
 
 ---
 
-## ⚪ OK — nuk kanë nevojë (nën 400 rreshta)
+## ✅ 🟡 Mesatar — PËRFUNDUAR
 
-`database_schema.dart` (640) — vetëm DDL, nuk ka widget për të ndarë.
-`sale_card.dart` (455) — tashmë në `lib/features/`, strukturë e mirë.
+| File | Para | Pas | Çfarë u nxjerr |
+|------|------|-----|----------------|
+| `audit_log_screen.dart` | 690 | 525 | AuditKpiRow, AuditCategoryTabs, AuditEmptyState, AuditErrorCard |
+| `company_settings_panel.dart` | 649 | 501 | SettingsCard, LoginModeTile, SettingsCheckTile |
+| `sales_history_screen.dart` | 789 | 563 | SHFiltersCard (SHDateFilter publik + 5 metoda) |
 
 ---
 
-## Rregullat e refaktorimit
+## 🔴 Vështirë — coupling i rëndë, rrezik gabimi
 
-1. **Mos ndrysho UI** — asnjë ndryshim vizual
-2. **Mos ndrysho logjikë** — metodat bëjnë saktësisht të njëjtën gjë
-3. **Mos ndrysho navigimin** — routes dhe state management mbeten njëlloj
-4. **Mos prish importet** — përdor `export` nëse widget kaloi në file tjetër
-5. **`flutter analyze --no-pub`** pas çdo ekstraktimi — 0 errors
+| File | Rreshta | Arsyeja |
+|------|---------|---------|
+| `lib/screens/admin_settings_screen.dart` | **1 331** | `_buildReceiptSettingsCard` (rr. 301–587) dhe `_buildBackupCard` (rr. 588–1323) referojnë 10+ state fields: `_footerCtrl`, `_addressCtrl`, `_phoneCtrl`, `_useEscPos`, `_cashDrawerEnabled`, `_paperWidthMm`, `_isBackupOperation`, `_hasRestoreUndo`, etj. Do nevojiten 10+ parametra + callback — shton abstraktime. |
+| `lib/screens/pos_order_screen.dart` | **567** | Ekran i vetëm `StatefulWidget`; logjika e pagesës, tavolina, dhe produktet janë të ndërthurura. |
+
+---
+
+## ⚪ OK si janë — nuk kanë nevojë
+
+| File | Rreshta | Arsyeja |
+|------|---------|---------|
+| `lib/services/database_schema.dart` | 670 | Vetëm DDL SQL, nuk ka widget |
+| `lib/services/sales_history_pdf.dart` | 464 | Vetëm PDF builder, një klasë logjike |
+| `lib/services/audit_log_service.dart` | 922 | Service me metoda log — ndarja me `part of` mundësohet por rreziku vs. fitimi i vogël |
+| `lib/services/database_service.dart` | 1 112 | Service DB — schema tashmë e ndarë; pjesa tjetër janë query metoda |
+| `lib/features/dashboard/widgets/staff/waiter_payroll_detail.dart` | 721 | Tashmë i nxjerrë nga staff_payroll_panel; vetë është widget i madh por i lidhur |
+
+---
+
+## Rregullat
+
+1. Mos ndrysho UI, logjikë, navigim, ose sjellje
+2. Përdor `export` nëse widget lëviz nga `screens/` në `features/`
+3. `flutter analyze --no-pub` → 0 errors pas çdo hapi
+4. Privatët `_Foo` bëhen publike `Foo` kur dalin në file tjetër

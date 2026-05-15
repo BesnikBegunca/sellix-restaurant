@@ -28,7 +28,8 @@
       "Bash(cat)",
       "Bash(python3 /tmp/euro_suffix.py)",
       "Bash(awk 'NR>=3180 && NR<=3195' /Users/urim/StudioProjects/pos_system/lib/screens/manager_dashboard_screen.dart)",
-      "Bash(awk 'NR>1 && $1 < 200 && $1 >= 150 {print}')"
+      "Bash(awk 'NR>1 && $1 < 200 && $1 >= 150 {print}')",
+      "Bash(grep \"^.*:.*class\\\\|^.*:.*enum\\\\|^.*:.*\\\\bdef\\\\b\\\\|^.*:.*[A-Z].*{$\\\\|^.*:.*AuditCategoryFilter =\\\\|^.*:.*auditAction\\\\|^.*:.*auditTime\")"
     ]
   }
 }

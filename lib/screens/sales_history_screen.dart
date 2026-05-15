@@ -6,15 +6,12 @@ import '../features/sales_history/widgets/sale_card.dart';
 import '../features/sales_history/widgets/sh_category_chart.dart';
 import '../features/sales_history/widgets/sh_kpi_row.dart';
 import '../features/sales_history/widgets/sh_refund_dialog.dart';
+import '../features/sales_history/widgets/sh_filters_card.dart';
 import '../features/sales_history/widgets/sh_top_products_card.dart';
 import '../manager/manager_data.dart';
 import '../services/database_service.dart';
 import '../services/sales_history_pdf.dart';
 import '../theme/app_colors.dart';
-
-// ─────────────────────────── enums ───────────────────────────────────────────
-
-enum _DateFilter { today, thisWeek, thisMonth, allTime, custom }
 
 // ─────────────────────────── main panel widget ───────────────────────────────
 
@@ -30,7 +27,7 @@ class SalesHistoryPanel extends StatefulWidget {
 
 class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
   // ── filters ────────────────────────────────────────────────────────────────
-  _DateFilter _dateFilter = _DateFilter.allTime;
+  SHDateFilter _dateFilter = SHDateFilter.allTime;
   DateTimeRange? _customRange;
   String? _selectedWaiter;
   int? _selectedTable;
@@ -71,37 +68,37 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
   DateTimeRange? get _effectiveRange {
     final now = DateTime.now();
     switch (_dateFilter) {
-      case _DateFilter.today:
+      case SHDateFilter.today:
         return DateTimeRange(
           start: _startOfDay(now),
           end: _endOfDay(now),
         );
-      case _DateFilter.thisWeek:
+      case SHDateFilter.thisWeek:
         final monday = now.subtract(Duration(days: now.weekday - 1));
         return DateTimeRange(start: _startOfDay(monday), end: _endOfDay(now));
-      case _DateFilter.thisMonth:
+      case SHDateFilter.thisMonth:
         return DateTimeRange(
           start: DateTime(now.year, now.month, 1),
           end: _endOfDay(now),
         );
-      case _DateFilter.allTime:
+      case SHDateFilter.allTime:
         return null;
-      case _DateFilter.custom:
+      case SHDateFilter.custom:
         return _customRange;
     }
   }
 
   String get _dateRangeLabel {
     switch (_dateFilter) {
-      case _DateFilter.today:
+      case SHDateFilter.today:
         return 'Sot';
-      case _DateFilter.thisWeek:
+      case SHDateFilter.thisWeek:
         return 'Kjo javë';
-      case _DateFilter.thisMonth:
+      case SHDateFilter.thisMonth:
         return 'Ky muaj';
-      case _DateFilter.allTime:
+      case SHDateFilter.allTime:
         return 'Të gjitha';
-      case _DateFilter.custom:
+      case SHDateFilter.custom:
         if (_customRange == null) return 'Personalizuar';
         final s = _customRange!.start;
         final e = _customRange!.end;
@@ -218,6 +215,17 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
     return ids;
   }
 
+  void _clearFilters() {
+    setState(() {
+      _dateFilter = SHDateFilter.allTime;
+      _customRange = null;
+      _selectedWaiter = null;
+      _selectedTable = null;
+      _searchCtrl.clear();
+    });
+    _loadData();
+  }
+
   // ── PDF export ─────────────────────────────────────────────────────────────
 
   Future<void> _exportPdf() async {
@@ -292,7 +300,29 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
             SHKpiRow(analytics: _analytics!),
             const SizedBox(height: 20),
           ],
-          _buildFiltersAndInsightsCard(),
+          SHFiltersCard(
+            analytics: _analytics,
+            searchCtrl: _searchCtrl,
+            dateFilter: _dateFilter,
+            onDateFilterChanged: (f) {
+              setState(() => _dateFilter = f);
+              _loadData();
+            },
+            selectedWaiter: _selectedWaiter,
+            allWaiters: _allWaiters,
+            onWaiterChanged: (v) {
+              setState(() => _selectedWaiter = v);
+              _loadData();
+            },
+            selectedTable: _selectedTable,
+            allTables: _allTables,
+            onTableChanged: (v) {
+              setState(() => _selectedTable = v);
+              _loadData();
+            },
+            onClearFilters: _clearFilters,
+            onSearch: _loadData,
+          ),
           const SizedBox(height: 20),
           _buildOrderHistoryCard(),
         ],
@@ -360,261 +390,6 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
       ],
     );
   }
-
-  // ── Filters & Search + insights card ───────────────────────────────────────
-
-  Widget _buildFiltersAndInsightsCard() {
-    final a = _analytics;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.lightGreenBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Filtrat & Kërkim',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Search + period tabs row
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Kërko porosi, artikuj ose kamarierë...',
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      size: 20,
-                      color: AppColors.lightGreenText,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.lightGreenBorder,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.lightGreenBorder,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.primaryGreen,
-                        width: 1.5,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    hintStyle: const TextStyle(
-                      color: AppColors.lightGreenText,
-                      fontSize: 14,
-                    ),
-                  ),
-                  onChanged: (_) => _loadData(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.lightGreenBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _periodTab(_DateFilter.today, 'Sot'),
-                    _periodTab(_DateFilter.thisWeek, 'Javë'),
-                    _periodTab(_DateFilter.thisMonth, 'Muaj'),
-                    _periodTab(_DateFilter.allTime, 'Të gjitha'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Analytics insights below search
-          if (a != null &&
-              (a.topProducts.isNotEmpty ||
-                  a.topCategories.isNotEmpty)) ...[
-            const SizedBox(height: 20),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (a.topProducts.isNotEmpty)
-                    Expanded(
-                      child: SHTopProductsCard(products: a.topProducts),
-                    ),
-                  if (a.topProducts.isNotEmpty &&
-                      a.topCategories.isNotEmpty)
-                    const SizedBox(width: 20),
-                  if (a.topCategories.isNotEmpty)
-                    Expanded(
-                      child: SHCategoryChart(categories: a.topCategories),
-                    ),
-                ],
-              ),
-            ),
-          ],
-
-          // Secondary filters: waiter + table
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              SizedBox(width: 200, child: _waiterDropdown()),
-              const SizedBox(width: 12),
-              SizedBox(width: 160, child: _tableDropdown()),
-              const Spacer(),
-              if (_selectedWaiter != null ||
-                  _selectedTable != null ||
-                  _searchCtrl.text.isNotEmpty ||
-                  _dateFilter != _DateFilter.allTime)
-                TextButton.icon(
-                  onPressed: _clearFilters,
-                  icon: const Icon(Icons.clear, size: 14),
-                  label: const Text('Pastro filtrat'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.mediumGreenText,
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _periodTab(_DateFilter f, String label) {
-    final sel = _dateFilter == f;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _dateFilter = f);
-        _loadData();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: sel ? AppColors.primaryGreen : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-            color: sel ? Colors.white : AppColors.darkGreenText,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _waiterDropdown() {
-    final waiters = _allWaiters;
-    return DropdownButtonFormField<String?>(
-      value: _selectedWaiter,
-      decoration: _filterDeco('Të gjithë kamarierët'),
-      isExpanded: true,
-      items: [
-        const DropdownMenuItem<String?>(
-          value: null,
-          child: Text('Të gjithë kamarierët'),
-        ),
-        for (final w in waiters)
-          DropdownMenuItem<String?>(value: w, child: Text(w)),
-      ],
-      onChanged: (v) {
-        setState(() => _selectedWaiter = v);
-        _loadData();
-      },
-    );
-  }
-
-  Widget _tableDropdown() {
-    final tables = _allTables;
-    return DropdownButtonFormField<int?>(
-      value: _selectedTable,
-      decoration: _filterDeco('Të gjitha tavolinat'),
-      isExpanded: true,
-      items: [
-        const DropdownMenuItem<int?>(
-          value: null,
-          child: Text('Të gjitha tavolinat'),
-        ),
-        for (final t in tables)
-          DropdownMenuItem<int?>(value: t, child: Text('Tavolina $t')),
-      ],
-      onChanged: (v) {
-        setState(() => _selectedTable = v);
-        _loadData();
-      },
-    );
-  }
-
-  void _clearFilters() {
-    setState(() {
-      _dateFilter = _DateFilter.allTime;
-      _customRange = null;
-      _selectedWaiter = null;
-      _selectedTable = null;
-      _searchCtrl.clear();
-    });
-    _loadData();
-  }
-
-  InputDecoration _filterDeco(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(
-          fontSize: 13,
-          color: AppColors.lightGreenText,
-        ),
-        filled: true,
-        fillColor: AppColors.beige,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide:
-              const BorderSide(color: AppColors.primaryGreen, width: 1.5),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        isDense: true,
-      );
-
   // ── order history card ─────────────────────────────────────────────────────
 
   Widget _buildOrderHistoryCard() {
