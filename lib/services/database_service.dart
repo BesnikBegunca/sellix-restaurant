@@ -70,7 +70,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 12,
+      version: 13,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
@@ -212,7 +212,11 @@ class DatabaseService {
     );
   }
 
-  Future<void> clearCurrentOrder(int tableId, String waiterName) async {
+  Future<void> clearCurrentOrder(
+    int tableId,
+    String waiterName, {
+    bool clearPrintHistory = false,
+  }) async {
     final db = await database;
     await db.delete(
       'current_orders',
@@ -224,6 +228,119 @@ class DatabaseService {
       where: 'tableId = ? AND waiterName = ?',
       whereArgs: [tableId, waiterName],
     );
+    if (clearPrintHistory) {
+      await clearKitchenPrintsForTable(tableId, waiterName);
+    }
+  }
+
+  // ───────────────────────── KITCHEN PRINT HISTORY ────────────────────────
+
+  /// Regjistron një PRINTO të veçantë (batch-i i asaj shtypjeje).
+  Future<int> insertKitchenPrint({
+    required int tableId,
+    required String waiterName,
+    required int orderNumber,
+    required List<Map<String, dynamic>> lines,
+    int? shiftId,
+  }) async {
+    if (lines.isEmpty) return -1;
+    final db = await database;
+    final printedAt = DateTime.now().toIso8601String();
+    var total = 0.0;
+    for (final l in lines) {
+      total += (l['lineTotal'] as num).toDouble();
+    }
+    return db.transaction<int>((txn) async {
+      final printId = await txn.insert('kitchen_prints', {
+        'tableId': tableId,
+        'waiterName': waiterName,
+        'orderNumber': orderNumber,
+        'total': total,
+        'printedAt': printedAt,
+        'shiftId': shiftId,
+      });
+      for (final line in lines) {
+        await txn.insert('kitchen_print_lines', {
+          'printId': printId,
+          'productId': line['productId'],
+          'productName': line['productName'],
+          'productPrice': line['productPrice'],
+          'productEmoji': line['productEmoji'] ?? '☕',
+          'imagePath': line['imagePath'],
+          'qty': line['qty'],
+          'lineTotal': line['lineTotal'],
+        });
+      }
+      return printId;
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> fetchKitchenPrintsForWaiter(
+    String waiterName, {
+    int? shiftId,
+  }) async {
+    final db = await database;
+    if (shiftId != null) {
+      return db.query(
+        'kitchen_prints',
+        where: 'waiterName = ? AND shiftId = ?',
+        whereArgs: [waiterName, shiftId],
+        orderBy: 'printedAt DESC',
+      );
+    }
+    return db.query(
+      'kitchen_prints',
+      where: 'waiterName = ?',
+      whereArgs: [waiterName],
+      orderBy: 'printedAt DESC',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchKitchenPrintLines(int printId) async {
+    final db = await database;
+    return db.query(
+      'kitchen_print_lines',
+      where: 'printId = ?',
+      whereArgs: [printId],
+      orderBy: 'id ASC',
+    );
+  }
+
+  Future<Map<String, dynamic>?> fetchKitchenPrintById(int printId) async {
+    final db = await database;
+    final rows = await db.query(
+      'kitchen_prints',
+      where: 'id = ?',
+      whereArgs: [printId],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  Future<void> deleteKitchenPrint(int printId) async {
+    final db = await database;
+    await db.delete(
+      'kitchen_print_lines',
+      where: 'printId = ?',
+      whereArgs: [printId],
+    );
+    await db.delete(
+      'kitchen_prints',
+      where: 'id = ?',
+      whereArgs: [printId],
+    );
+  }
+
+  Future<void> clearKitchenPrintsForTable(int tableId, String waiterName) async {
+    final db = await database;
+    final prints = await db.query(
+      'kitchen_prints',
+      where: 'tableId = ? AND waiterName = ?',
+      whereArgs: [tableId, waiterName],
+    );
+    for (final p in prints) {
+      await deleteKitchenPrint((p['id'] as num).toInt());
+    }
   }
 
   Future<void> clearAllCurrentOrdersAndResetTables() async {
@@ -810,6 +927,28 @@ class DatabaseService {
       'reason': reason,
       'createdBy': createdBy,
       'createdAt': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Deletes a sale and all related lines and adjustments (manager void).
+  Future<void> deleteSaleById(int saleId) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(
+        'sale_adjustments',
+        where: 'saleId = ?',
+        whereArgs: [saleId],
+      );
+      await txn.delete(
+        'sale_lines',
+        where: 'saleId = ?',
+        whereArgs: [saleId],
+      );
+      await txn.delete(
+        'sales',
+        where: 'id = ?',
+        whereArgs: [saleId],
+      );
     });
   }
 

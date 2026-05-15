@@ -285,9 +285,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   Future<void> _sendOrder() async {
     if (_lines.isEmpty) return;
-    if (_activeOrderNumber == 0) {
-      _activeOrderNumber = await ManagerData.instance.nextGlobalOrderNumber();
-    }
+    // Çdo PRINTO merr order number global të ri (+1), pavarësisht kamarierit/tavolinës.
+    final printOrderNumber =
+        await ManagerData.instance.nextGlobalOrderNumber();
+    setState(() => _activeOrderNumber = printOrderNumber);
     final persisted = await ManagerData.instance.loadCurrentOrderLines(
       widget.tableNumber,
       widget.waiterName,
@@ -305,6 +306,14 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       orderNumber: _activeOrderNumber,
       waiterName: widget.waiterName,
       lines: merged,
+    );
+
+    // Historik: çdo shtypje Printo = një batch i veçantë (p.sh. 3€, 4€, 5€).
+    await ManagerData.instance.recordKitchenPrint(
+      tableId: widget.tableNumber,
+      waiterName: widget.waiterName,
+      orderNumber: _activeOrderNumber,
+      lines: _toCurrentLines(_lines),
     );
 
     // Printo kuponin termik / POS80 (tekst i formatum per POS80).

@@ -5,10 +5,13 @@ class SaleWithLines {
     required this.sale,
     required this.lines,
     this.adjustments = const [],
+    this.kitchenPrintId,
   });
   final SaleRow sale;
   final List<SaleLineRow> lines;
   final List<SaleAdjustmentRow> adjustments;
+  /// ID i rreshtit në [kitchen_prints] (vetëm paneli Refund).
+  final int? kitchenPrintId;
 
   double get totalAdjusted =>
       adjustments.fold<double>(0, (s, a) => s + a.amount);

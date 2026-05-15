@@ -14,6 +14,7 @@ import '../features/dashboard/panels/tables_config_panel.dart';
 import '../features/dashboard/panels/staff_payroll_panel.dart';
 import '../features/dashboard/panels/overview_panel.dart';
 import '../features/dashboard/panels/company_settings_panel.dart';
+import '../features/dashboard/panels/refund_panel.dart';
 import '../features/dashboard/widgets/manager_side_nav.dart';
 import '../features/dashboard/widgets/manager_top_bar.dart';
 
@@ -30,6 +31,7 @@ const _kSectionTitles = <String>[
   'Tavolinat',
   'Cilësimet e Kompanisë',
   'Pagat & Avans',
+  'Refund — Porositë e Printuara',
   'Historiku i Shitjeve',
   'Regjistri i Auditit',
 ];
@@ -139,8 +141,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       case 10:
         return StaffPayrollPanel(m: _m);
       case 11:
-        return const SalesHistoryPanel();
+        return RefundPanel(m: _m);
       case 12:
+        return const SalesHistoryPanel();
+      case 13:
         return const AuditLogPanel();
       default:
         return const SizedBox.shrink();

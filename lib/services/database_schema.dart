@@ -151,6 +151,36 @@ class DatabaseSchema {
       )
     ''');
     await db.execute('''
+      CREATE TABLE IF NOT EXISTS kitchen_prints (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        tableId      INTEGER NOT NULL,
+        waiterName   TEXT    NOT NULL,
+        orderNumber  INTEGER NOT NULL,
+        total        REAL    NOT NULL,
+        printedAt    TEXT    NOT NULL,
+        shiftId      INTEGER
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS kitchen_print_lines (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        printId      INTEGER NOT NULL,
+        productId    TEXT    NOT NULL,
+        productName  TEXT    NOT NULL,
+        productPrice REAL    NOT NULL,
+        productEmoji TEXT    NOT NULL DEFAULT '☕',
+        imagePath    TEXT,
+        qty          INTEGER NOT NULL,
+        lineTotal    REAL    NOT NULL,
+        FOREIGN KEY (printId) REFERENCES kitchen_prints(id) ON DELETE CASCADE
+      )
+    ''');
+    try {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_kitchen_prints_waiter ON kitchen_prints(waiterName)',
+      );
+    } catch (_) {}
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS app_meta (
         key   TEXT PRIMARY KEY,
         value TEXT NOT NULL

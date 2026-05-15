@@ -106,6 +106,36 @@ extension SalesMethods on ManagerData {
     _notify();
   }
 
+  /// Fshin plotësisht një porosi (shitje + rreshta) dhe përditëson totalin e kamarierit.
+  Future<void> voidSale({
+    required int saleId,
+    String? reason,
+    String? performedBy,
+  }) async {
+    SaleRow? sale;
+    for (final s in _salesHistory) {
+      if (s.dbId == saleId) {
+        sale = s;
+        break;
+      }
+    }
+    if (sale == null) {
+      throw StateError('Porosia #$saleId nuk u gjet.');
+    }
+
+    await DatabaseService.instance.deleteSaleById(saleId);
+    AuditLogService.instance.logAdjustment(
+      adjustmentType: 'void',
+      saleId: saleId,
+      amount: sale.total,
+      reason: reason ?? 'Porosi e fshirë nga menaxheri',
+      performedBy: performedBy ?? 'Menaxher',
+      shiftId: _currentShiftId,
+    );
+    await _reloadSales(DatabaseService.instance);
+    _notify();
+  }
+
   /// Records a refund, void, or discount against an existing sale.
   /// The original sale and its line items are never modified.
   Future<SaleAdjustmentRow> recordAdjustment({
