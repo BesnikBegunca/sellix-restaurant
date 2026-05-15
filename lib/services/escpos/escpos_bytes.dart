@@ -77,12 +77,13 @@ class EscPosBytes {
   /// Print a string followed by a line feed.
   EscPosBytes textLine(String s) => text(s).lf();
 
-  /// Print a centered string followed by a line feed.
-  EscPosBytes centeredLine(String s) => alignCenter().text(s).lf();
+  /// Print a centered string followed by a line feed, then restore left align.
+  EscPosBytes centeredLine(String s) =>
+      alignCenter().textLine(s).alignLeft();
 
-  /// Print a centered bold string followed by a line feed, then restore bold off + left align.
+  /// Print a centered bold string followed by a line feed, then restore styles.
   EscPosBytes boldCenteredLine(String s) =>
-      alignCenter().boldOn().text(s).boldOff().alignLeft().lf();
+      alignCenter().boldOn().textLine(s).boldOff().alignLeft();
 
   /// Print a line feed n times.
   EscPosBytes lf([int n = 1]) {
