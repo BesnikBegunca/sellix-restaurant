@@ -552,12 +552,13 @@ class _LoginScreenState extends State<LoginScreen> {
               flex: 2,
               child: Padding(
                 padding: const EdgeInsets.only(left: 3),
-                child: padBtn('Enter', _calcEnter,
-                    accent: AppColors.primaryGreen),
+                child: padBtn('0', () => _calcNumpadAppend('0')),
               ),
             ),
           ],
         ),
+        const SizedBox(height: 15),
+        padBtn('Enter', _calcEnter, accent: AppColors.primaryGreen),
       ],
     );
   }
