@@ -1,11 +1,12 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
 import '../features/sales_history/models/sales_models.dart';
 import '../features/sales_history/widgets/sale_card.dart';
-import '../features/sales_history/widgets/sh_kpi_card.dart';
+import '../features/sales_history/widgets/sh_category_chart.dart';
+import '../features/sales_history/widgets/sh_kpi_row.dart';
+import '../features/sales_history/widgets/sh_refund_dialog.dart';
+import '../features/sales_history/widgets/sh_top_products_card.dart';
 import '../manager/manager_data.dart';
 import '../services/database_service.dart';
 import '../services/sales_history_pdf.dart';
@@ -288,7 +289,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           _buildError()
         else ...[
           if (_analytics != null) ...[
-            _buildKpiRow(_analytics!),
+            SHKpiRow(analytics: _analytics!),
             const SizedBox(height: 20),
           ],
           _buildFiltersAndInsightsCard(),
@@ -357,51 +358,6 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           ),
         ),
       ],
-    );
-  }
-
-  // ── KPI row ────────────────────────────────────────────────────────────────
-
-  Widget _buildKpiRow(SalesAnalytics a) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: SHKpiCard(
-              icon: Icons.attach_money_outlined,
-              label: 'Të Ardhurat Totale',
-              value: '${a.grossRevenue.toStringAsFixed(2)}€',
-              badge: a.totalSales > 0 ? '+${a.totalSales} orders' : null,
-              accentColor: AppColors.primaryGreen,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: SHKpiCard(
-              icon: Icons.shopping_cart_outlined,
-              label: 'Porosi Gjithsej',
-              value: '${a.totalSales}',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: SHKpiCard(
-              icon: Icons.trending_up_outlined,
-              label: 'Vlera Mesatare',
-              value: '${a.avgOrderValue.toStringAsFixed(2)}€',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: SHKpiCard(
-              icon: Icons.inventory_2_outlined,
-              label: 'Artikuj të Shitur',
-              value: '${a.totalItemsSold}',
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -512,14 +468,14 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                 children: [
                   if (a.topProducts.isNotEmpty)
                     Expanded(
-                      child: _buildTopProductsCard(a.topProducts),
+                      child: SHTopProductsCard(products: a.topProducts),
                     ),
                   if (a.topProducts.isNotEmpty &&
                       a.topCategories.isNotEmpty)
                     const SizedBox(width: 20),
                   if (a.topCategories.isNotEmpty)
                     Expanded(
-                      child: _buildCategoryChart(a.topCategories),
+                      child: SHCategoryChart(categories: a.topCategories),
                     ),
                 ],
               ),
@@ -576,159 +532,6 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
             color: sel ? Colors.white : AppColors.darkGreenText,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTopProductsCard(
-    List<({String name, double revenue, int qty})> products,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.lightGreenBg,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Produktet Kryesore',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 16),
-          for (final p in products.take(4)) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        p.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.darkGreenText,
-                        ),
-                      ),
-                      Text(
-                        '${p.qty} shitur',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.mediumGreenText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  '${p.revenue.toStringAsFixed(0)}€',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryGreen,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryChart(
-    List<({String name, double revenue})> categories,
-  ) {
-    final maxRev = categories.fold<double>(
-      0,
-      (m, c) => math.max(m, c.revenue),
-    );
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGreenBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Të Ardhura sipas Kategorisë',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 16),
-          for (final cat in categories.take(5)) ...[
-            Row(
-              children: [
-                SizedBox(
-                  width: 100,
-                  child: Text(
-                    cat.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      Container(
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: AppColors.lightGreenBg,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      FractionallySizedBox(
-                        widthFactor:
-                            maxRev > 0 ? (cat.revenue / maxRev) : 0,
-                        child: Container(
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGreen,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  width: 64,
-                  child: Text(
-                    '${cat.revenue.toStringAsFixed(0)}€',
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-          ],
-        ],
       ),
     );
   }
@@ -811,123 +614,6 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         isDense: true,
       );
-
-  // ── refund dialog ──────────────────────────────────────────────────────────
-
-  Future<void> _showRefundDialog(SaleWithLines swl) async {
-    final formKey = GlobalKey<FormState>();
-    String adjustmentType = 'refund';
-    final amountCtrl = TextEditingController();
-    final reasonCtrl = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlg) => AlertDialog(
-          title: const Text('Regjistro rimbursim / anulim'),
-          content: Form(
-            key: formKey,
-            child: SizedBox(
-              width: 360,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Shitja #${swl.sale.dbId}  ·  Totali: ${swl.sale.total.toStringAsFixed(2)}€',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'refund', label: Text('Rimbursim')),
-                      ButtonSegment(value: 'void', label: Text('Anulim')),
-                      ButtonSegment(value: 'discount', label: Text('Zbritje')),
-                    ],
-                    selected: {adjustmentType},
-                    onSelectionChanged: (s) =>
-                        setDlg(() => adjustmentType = s.first),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: amountCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Shuma (€)',
-                      border: OutlineInputBorder(),
-                      suffixText: '€',
-                    ),
-                    validator: (v) {
-                      final n = double.tryParse(v ?? '');
-                      if (n == null || n <= 0) return 'Shuma duhet të jetë > 0';
-                      if (n > swl.sale.total) return 'Kalon totalin e shitjes';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: reasonCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Arsyeja (opsionale)',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 2,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Anulo'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.negativeText,
-              ),
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.pop(ctx, true);
-                }
-              },
-              child: const Text('Konfirmo'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    final amount = double.parse(amountCtrl.text);
-    final reason = reasonCtrl.text.trim().isEmpty ? null : reasonCtrl.text.trim();
-
-    try {
-      await ManagerData.instance.recordAdjustment(
-        saleId: swl.sale.dbId!,
-        adjustmentType: adjustmentType,
-        amount: amount,
-        reason: reason,
-      );
-      _loadData();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Rimbursimi dështoi: $e'),
-            backgroundColor: AppColors.negativeText,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
 
   // ── order history card ─────────────────────────────────────────────────────
 
@@ -1030,7 +716,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                   });
                 },
                 onRefund: s.sale.dbId != null
-                    ? () => _showRefundDialog(s)
+                    ? () => showSHRefundDialog(context, s, onSuccess: _loadData)
                     : null,
               ),
         ],

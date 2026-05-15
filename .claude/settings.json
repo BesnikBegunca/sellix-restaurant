@@ -27,7 +27,8 @@
       "Bash(grep -n \"€\\\\|\\\\\\\\\\\\$[0-9]\\\\|r'\\\\\\\\\\\\$\\\\|'\\\\\\\\\\\\\\\\\\\\$\" /Users/urim/StudioProjects/pos_system/lib/screens/pos_order_screen.dart /Users/urim/StudioProjects/pos_system/lib/screens/login_screen.dart)",
       "Bash(cat)",
       "Bash(python3 /tmp/euro_suffix.py)",
-      "Bash(awk 'NR>=3180 && NR<=3195' /Users/urim/StudioProjects/pos_system/lib/screens/manager_dashboard_screen.dart)"
+      "Bash(awk 'NR>=3180 && NR<=3195' /Users/urim/StudioProjects/pos_system/lib/screens/manager_dashboard_screen.dart)",
+      "Bash(awk 'NR>1 && $1 < 200 && $1 >= 150 {print}')"
     ]
   }
 }
