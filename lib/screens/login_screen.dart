@@ -146,12 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
       } else if (_pinController.text.isNotEmpty) {
-        final t = _pinController.text;
-        final nt = t.substring(0, t.length - 1);
-        _pinController.value = TextEditingValue(
-          text: nt,
-          selection: TextSelection.collapsed(offset: nt.length),
-        );
+        _pinController.clear();
       }
     });
   }
