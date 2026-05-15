@@ -154,6 +154,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submitPin() {
     if (!_pinConfirmEnabled) return;
+    if (!ManagerData.instance.isLicenseValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Licenca ka skaduar. Kontaktoni administratorin (Dev Mode).',
+          ),
+          backgroundColor: AppColors.negativeText,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
     final pin = _pinController.text;
 
     if (pin == '9999') {

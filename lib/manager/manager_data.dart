@@ -8,6 +8,7 @@ import '../models/mock_data.dart';
 import '../models/pos_models.dart';
 import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
+import '../services/license_service.dart';
 
 export '../models/pos_models.dart';
 
@@ -38,6 +39,34 @@ class ManagerData extends ChangeNotifier {
   String? companyName;
   Uint8List? companyLogoBytes;
   String loginMode = 'PINMODE'; // 'PINMODE' or 'NAMEMODE'
+
+  /// Skadimi i licencës (null = nuk është aktivizuar).
+  DateTime? licenseExpiresAt;
+
+  /// Sesion Dev Mode (admin) për zgjatjen e licencës.
+  bool devModeSession = false;
+
+  bool get isLicenseValid {
+    final exp = licenseExpiresAt;
+    if (exp == null) return false;
+    return DateTime.now().isBefore(exp);
+  }
+
+  void startDevModeSession() {
+    devModeSession = true;
+    notifyListeners();
+  }
+
+  void endDevModeSession() {
+    devModeSession = false;
+    notifyListeners();
+  }
+
+  Future<void> extendLicense(Duration extension) async {
+    licenseExpiresAt =
+        await LicenseService.instance.extendLicense(extension);
+    notifyListeners();
+  }
 
   /// Emri i printerit (Windows) ku printohen receipt-et (POS80).
   String? selectedPrinterName;
@@ -119,6 +148,8 @@ class ManagerData extends ChangeNotifier {
       businessAddress   = company['businessAddress'] as String?;
       businessPhone     = company['businessPhone']   as String?;
     }
+
+    licenseExpiresAt = await LicenseService.instance.getExpiresAt();
 
     // Shift — ensure a permanent shift record exists in [shifts] table.
     shiftOpen = true;
