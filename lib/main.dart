@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'manager/manager_data.dart';
-import 'screens/dev_mode_login_screen.dart';
 import 'screens/login_screen.dart';
 import 'theme/app_colors.dart';
-import 'theme/app_tokens.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,14 +45,6 @@ class _PosSystemAppState extends State<PosSystemApp> {
   }
 
   void _onData() => setState(() {});
-
-  Widget _homeScreen() {
-    final m = ManagerData.instance;
-    if (!m.isLicenseValid) {
-      return const DevModeLoginScreen();
-    }
-    return const LoginScreen();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -187,7 +177,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
           ),
         ),
       ),
-      home: _homeScreen(),
+      home: const LoginScreen(),
     );
   }
 }
