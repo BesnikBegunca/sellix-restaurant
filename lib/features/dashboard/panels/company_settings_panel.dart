@@ -6,7 +6,6 @@ import '../../../services/printer_settings_store.dart';
 import '../../../services/windows_printers_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
-import '../widgets/settings/login_mode_tile.dart';
 import '../widgets/settings/settings_card.dart';
 import '../widgets/settings/settings_check_tile.dart';
 
@@ -22,7 +21,6 @@ class CompanySettingsPanel extends StatefulWidget {
 class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   final _nameCtrl = TextEditingController();
   String? _errorMsg;
-  late String _selectedLoginMode;
   List<String> _printers = const [];
   String _selectedPrinter = '';
   bool _loadingPrinters = true;
@@ -31,14 +29,11 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   void initState() {
     super.initState();
     _nameCtrl.text = widget.m.companyName ?? '';
-    _selectedLoginMode = widget.m.loginMode;
     widget.m.addListener(_onM);
     _loadPrinters();
   }
 
-  void _onM() => setState(() {
-    _selectedLoginMode = widget.m.loginMode;
-  });
+  void _onM() => setState(() {});
 
   @override
   void dispose() {
@@ -95,20 +90,6 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           content: Text('Logo e kompanisë u fshi.'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.primaryGreen,
-        ),
-      );
-    }
-  }
-
-  Future<void> _changeLoginMode(String newMode) async {
-    await widget.m.setLoginMode(newMode);
-    setState(() => _selectedLoginMode = newMode);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Mënyra e hyrjes u ndryshua në ${newMode == 'PINMODE' ? 'PIN' : 'Emër'}'),
-          backgroundColor: AppColors.primaryGreen,
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }
@@ -320,35 +301,6 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        SettingsCard(
-          icon: Icons.security_outlined,
-          title: 'Mënyra e Hyrjes',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Select how staff log into the system:',
-                style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
-              ),
-              const SizedBox(height: 14),
-              LoginModeTile(
-                title: 'Mënyra PIN',
-                subtitle: 'Waiters enter their 4–6 digit PIN',
-                selected: _selectedLoginMode == 'PINMODE',
-                onTap: () => _changeLoginMode('PINMODE'),
-              ),
-              const SizedBox(height: 8),
-              LoginModeTile(
-                title: 'Mënyra me Emër',
-                subtitle: 'Kamarierët zgjedhin emrin nga lista',
-                selected: _selectedLoginMode == 'NAMEMODE',
-                onTap: () => _changeLoginMode('NAMEMODE'),
-              ),
             ],
           ),
         ),

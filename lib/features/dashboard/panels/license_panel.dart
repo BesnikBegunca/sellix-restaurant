@@ -5,7 +5,6 @@ import '../../../services/license_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
 import '../../../screens/login_screen.dart';
-import '../../../screens/waiter_selection_screen.dart';
 
 class LicensePanel extends StatefulWidget {
   const LicensePanel({
@@ -54,13 +53,8 @@ class _LicensePanelState extends State<LicensePanel> {
         widget.onLicenseRenewed?.call();
         if (widget.m.devModeSession && mounted) {
           widget.m.endDevModeSession();
-          final mode = widget.m.loginMode;
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute<void>(
-              builder: (_) => mode == 'NAMEMODE'
-                  ? const WaiterSelectionScreen()
-                  : const LoginScreen(),
-            ),
+            MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
             (_) => false,
           );
         }

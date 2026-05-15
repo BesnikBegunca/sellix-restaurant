@@ -6,7 +6,6 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'manager/manager_data.dart';
 import 'screens/dev_mode_login_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/waiter_selection_screen.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_tokens.dart';
 
@@ -54,9 +53,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
     if (!m.isLicenseValid) {
       return const DevModeLoginScreen();
     }
-    return m.loginMode == 'NAMEMODE'
-        ? const WaiterSelectionScreen()
-        : const LoginScreen();
+    return const LoginScreen();
   }
 
   @override

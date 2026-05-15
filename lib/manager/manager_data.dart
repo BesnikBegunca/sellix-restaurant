@@ -38,7 +38,7 @@ class ManagerData extends ChangeNotifier {
 
   String? companyName;
   Uint8List? companyLogoBytes;
-  String loginMode = 'PINMODE'; // 'PINMODE' or 'NAMEMODE'
+  String loginMode = 'PINMODE';
 
   /// Skadimi i licencës (null = nuk është aktivizuar).
   DateTime? licenseExpiresAt;
@@ -139,7 +139,11 @@ class ManagerData extends ChangeNotifier {
       companyLogoBytes = blob != null
           ? Uint8List.fromList(blob as List<int>)
           : null;
-      loginMode = (company['loginMode'] as String?) ?? 'PINMODE';
+      final storedMode = (company['loginMode'] as String?) ?? 'PINMODE';
+      loginMode = storedMode == 'NAMEMODE' ? 'PINMODE' : storedMode;
+      if (storedMode == 'NAMEMODE') {
+        await db.updateLoginMode('PINMODE');
+      }
       selectedPrinterName = company['printerName'] as String?;
       useEscPos         = ((company['useEscPos']         as int?) ?? 1) == 1;
       cashDrawerEnabled = ((company['cashDrawerEnabled'] as int?) ?? 0) == 1;
@@ -269,7 +273,7 @@ class ManagerData extends ChangeNotifier {
   }
 
   Future<void> setLoginMode(String mode) async {
-    if (mode != 'PINMODE' && mode != 'NAMEMODE') return;
+    if (mode != 'PINMODE') return;
     loginMode = mode;
     await DatabaseService.instance.updateLoginMode(mode);
     notifyListeners();
