@@ -66,7 +66,11 @@ class EscPosReceiptBuilder {
     b.boldCenteredLine('Fature per Pagese');
     b.lf();
 
-    _header(b, companyName);
+    final name = companyName.trim();
+    if (name.isNotEmpty) {
+      b.boldCenteredLine(name);
+    }
+    b.separator();
 
     // Optional address / phone under the company name
     if (businessAddress != null && businessAddress.isNotEmpty) {
@@ -75,7 +79,6 @@ class EscPosReceiptBuilder {
     if (businessPhone != null && businessPhone.isNotEmpty) {
       b.alignCenter().textLine('Tel: $businessPhone').alignLeft();
     }
-    b.separator();
 
     _waiterTable(b, waiterName, tableNumber);
     if (shiftId != null) {
