@@ -76,6 +76,7 @@ class _RefundPanelState extends State<RefundPanel> {
       final orders = <SaleWithLines>[];
       for (final meta in prints) {
         final printId = (meta['id'] as num).toInt();
+        final orderNumber = (meta['orderNumber'] as num).toInt();
         final tableId = (meta['tableId'] as num).toInt();
         final total = (meta['total'] as num).toDouble();
         final printedAt =
@@ -104,7 +105,7 @@ class _RefundPanelState extends State<RefundPanel> {
         orders.add(
           SaleWithLines(
             sale: SaleRow(
-              dbId: printId,
+              dbId: orderNumber,
               waiterName: waiter,
               tableId: tableId,
               total: total,
@@ -112,6 +113,7 @@ class _RefundPanelState extends State<RefundPanel> {
               shiftId: meta['shiftId'] as int?,
             ),
             lines: lineRows,
+            kitchenPrintId: printId,
           ),
         );
       }
@@ -121,7 +123,7 @@ class _RefundPanelState extends State<RefundPanel> {
           _orders = orders;
           _loading = false;
           _expandedPrintIds.removeWhere(
-            (id) => !orders.any((o) => o.sale.dbId == id),
+            (id) => !orders.any((o) => o.kitchenPrintId == id),
           );
         });
       }
@@ -134,8 +136,9 @@ class _RefundPanelState extends State<RefundPanel> {
       _orders.fold<double>(0, (s, o) => s + o.sale.total);
 
   Future<void> _confirmDelete(SaleWithLines order) async {
-    final printId = order.sale.dbId;
+    final printId = order.kitchenPrintId;
     if (printId == null) return;
+    final orderNo = order.sale.dbId ?? 0;
 
     final ok = await showDialog<bool>(
       context: context,
@@ -144,7 +147,7 @@ class _RefundPanelState extends State<RefundPanel> {
         content: SizedBox(
           width: 400,
           child: Text(
-            'Printim #${printId.toString().padLeft(3, '0')} · '
+            'Order #${orderNo.toString().padLeft(3, '0')} · '
             'Tavolina ${order.sale.tableId} · '
             '${order.sale.total.toStringAsFixed(2)}€\n\n'
             'Fshihet vetëm ky PRINTO (${order.sale.total.toStringAsFixed(2)}€), '
@@ -354,7 +357,8 @@ class _RefundPanelState extends State<RefundPanel> {
                   separatorBuilder: (_, __) => const SizedBox(height: 4),
                   itemBuilder: (context, i) {
                     final order = _orders[i];
-                    final printId = order.sale.dbId!;
+                    final printId = order.kitchenPrintId!;
+                    final orderNo = order.sale.dbId ?? 0;
                     final expanded = _expandedPrintIds.contains(printId);
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -375,7 +379,8 @@ class _RefundPanelState extends State<RefundPanel> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  'PRINTO · ${order.sale.total.toStringAsFixed(2)}€ · T${order.sale.tableId}',
+                                  'Order #${orderNo.toString().padLeft(3, '0')} · '
+                                  '${order.sale.total.toStringAsFixed(2)}€ · T${order.sale.tableId}',
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
