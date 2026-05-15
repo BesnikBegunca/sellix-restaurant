@@ -475,8 +475,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void _calcAc() {
     setState(() {
       if (_calcField == null) _calcField = 0;
-      if (_calcField == 0) _bill = '';
-      if (_calcField == 1) _paid = '';
+      _bill = '';
+      _paid = '';
     });
   }
 
