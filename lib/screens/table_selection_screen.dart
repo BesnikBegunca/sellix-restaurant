@@ -181,7 +181,7 @@ class _TableScreenHeaderRow extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        '\$${total.toStringAsFixed(2)}',
+                        '${total.toStringAsFixed(2)}€',
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w500,
@@ -389,7 +389,7 @@ class _TableCardState extends State<_TableCard> {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          '\$${widget.table.currentTotal!.toStringAsFixed(2)}',
+                          '${widget.table.currentTotal!.toStringAsFixed(2)}€',
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w500,

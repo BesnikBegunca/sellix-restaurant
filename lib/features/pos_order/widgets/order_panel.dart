@@ -141,7 +141,7 @@ class OrderPanel extends StatelessWidget {
       children: [
         Text(label, style: style),
         const Spacer(),
-        Text('\$${amount.toStringAsFixed(2)}', style: style),
+        Text('${amount.toStringAsFixed(2)}€', style: style),
       ],
     );
   }
@@ -205,7 +205,7 @@ class _OrderLineRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '\$${line.product.price.toStringAsFixed(2)}',
+                  '${line.product.price.toStringAsFixed(2)}€',
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.lightGreenText,
