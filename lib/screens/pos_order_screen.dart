@@ -236,7 +236,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                     if (tableTotal > 0) ...[
                       const SizedBox(height: 12),
                       Text(
-                        '\$${tableTotal.toStringAsFixed(2)}',
+                        '${tableTotal.toStringAsFixed(2)}€',
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w600,
