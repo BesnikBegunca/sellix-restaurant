@@ -92,6 +92,16 @@ class Win32Window {
 
   bool quit_on_close_ = false;
 
+  // When true, window opens on the monitor work area and cannot be resized.
+  bool size_locked_ = false;
+  int locked_width_ = 0;
+  int locked_height_ = 0;
+  int locked_x_ = 0;
+  int locked_y_ = 0;
+
+  void ApplyLockedBounds(HWND hwnd);
+  void RefreshLockedBoundsFromMonitor(HWND hwnd);
+
   // window handle for top level window.
   HWND window_handle_ = nullptr;
 

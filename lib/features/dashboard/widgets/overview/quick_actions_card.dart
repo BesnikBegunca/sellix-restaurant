@@ -45,7 +45,7 @@ class QuickActionsCard extends StatelessWidget {
           _BigActionButton(
             icon: Icons.bar_chart_outlined,
             label: 'Shiko Raportet',
-            onTap: () => onNavigate(5),
+            onTap: () => onNavigate(6),
           ),
         ],
       ),

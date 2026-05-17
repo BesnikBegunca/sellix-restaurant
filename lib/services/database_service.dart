@@ -903,6 +903,16 @@ class DatabaseService {
     return db.query('shifts', orderBy: 'id DESC');
   }
 
+  /// Closed shift archives (çdo mbyllje gjendje) — për panelin Shitjet.
+  Future<List<Map<String, dynamic>>> fetchClosedShifts() async {
+    final db = await database;
+    return db.query(
+      'shifts',
+      where: "status = 'closed' AND closedAt IS NOT NULL",
+      orderBy: 'closedAt DESC',
+    );
+  }
+
   // ─────────────────────── SALE ADJUSTMENTS ─────────────────────────────────
 
   /// Records a refund, void, or discount against an existing sale.

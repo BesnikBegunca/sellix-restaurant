@@ -112,15 +112,20 @@ class EscPosReceiptBuilder {
     final w = b.lineWidth;
 
     b.reset();
-    _header(b, companyName);
-    b.boldCenteredLine('GJENDJA');
+    b.separator();
+    b.boldCenteredDoubleLine('GJENDJA');
+    b.lf();
+    final name = companyName.trim();
+    if (name.isNotEmpty) {
+      b.boldCenteredLine(name);
+    }
     b.separator();
 
     final colW = w ~/ 2;
-    b.textLine(
-      b.col('Perdoruesi', colW) + b.col('Totali', colW, rightAlign: true),
-    );
-    b.lf();
+    final shiftHeader =
+        b.col('Perdoruesi', colW) + b.col('Totali', colW, rightAlign: true);
+    b.boldOn().textLine(shiftHeader).boldOff();
+    b.separator();
 
     final names = waiterTotals.keys.toList()..sort();
     var grand = 0.0;
@@ -134,9 +139,11 @@ class EscPosReceiptBuilder {
     }
 
     b.separator();
+    b.boldOn();
     b.textLine(
-      b.col('TOTALI', colW) + b.col(_money(grand), colW, rightAlign: true),
+      b.col('Totali', colW) + b.col(_money(grand), colW, rightAlign: true),
     );
+    b.boldOff();
     if (summaryPaid != null && summaryOpen != null) {
       b.lf();
       b.textLine(

@@ -144,13 +144,21 @@ String buildShiftReceiptText({
   String markCenterBold(String s) =>
       '[[CB]]${s.replaceAll('\n', ' ')}[[/CB]]';
 
+  String markCenterBoldLarge(String s) =>
+      '[[CBL]]${s.replaceAll('\n', ' ')}[[/CBL]]';
+
+  String markBold(String s) => '[[B]]${s.replaceAll('\n', ' ')}[[/B]]';
+
   final out = <String>[];
   out.add(rule());
-  out.add(markCenterBold(companyName));
-  out.add(markCenter('GJENDJA'));
-  out.add(rule());
-  out.add(padRight('Perdoruesi', waiterCol) + padLeft('Totali', totalCol));
+  out.add(markCenterBoldLarge('GJENDJA'));
   out.add('');
+  out.add(markCenterBold(companyName));
+  out.add(rule());
+  final shiftHeader =
+      padRight('Perdoruesi', waiterCol) + padLeft('Totali', totalCol);
+  out.add(markBold(shiftHeader));
+  out.add(rule());
 
   for (final name in names) {
     out.add(
@@ -160,7 +168,11 @@ String buildShiftReceiptText({
   }
 
   out.add(rule());
-  out.add(padRight('Totali', waiterCol) + padLeft(fmtMoney(grandTotal), totalCol));
+  out.add(
+    markBold(
+      padRight('Totali', waiterCol) + padLeft(fmtMoney(grandTotal), totalCol),
+    ),
+  );
   if (summaryPaid != null && summaryOpen != null) {
     out.add('');
     out.add(padRight('Paguar', waiterCol) + padLeft(fmtMoney(summaryPaid), totalCol));

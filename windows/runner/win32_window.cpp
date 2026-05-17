@@ -131,14 +131,24 @@ bool Win32Window::Create(const std::wstring& title,
   const POINT target_point = {static_cast<LONG>(origin.x),
                               static_cast<LONG>(origin.y)};
   HMONITOR monitor = MonitorFromPoint(target_point, MONITOR_DEFAULTTONEAREST);
-  UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
-  double scale_factor = dpi / 96.0;
 
-  HWND window = CreateWindow(
-      window_class, title.c_str(), WS_OVERLAPPEDWINDOW,
-      Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
-      Scale(size.width, scale_factor), Scale(size.height, scale_factor),
-      nullptr, nullptr, GetModuleHandle(nullptr), this);
+  MONITORINFO monitor_info = {sizeof(MONITORINFO)};
+  GetMonitorInfo(monitor, &monitor_info);
+  const RECT& monitor_rect = monitor_info.rcMonitor;
+
+  locked_x_ = monitor_rect.left;
+  locked_y_ = monitor_rect.top;
+  locked_width_ = monitor_rect.right - monitor_rect.left;
+  locked_height_ = monitor_rect.bottom - monitor_rect.top;
+  size_locked_ = true;
+
+  // Borderless popup covering the entire monitor (including the taskbar).
+  const DWORD window_style = WS_POPUP;
+
+  HWND window = CreateWindowEx(
+      WS_EX_TOPMOST, window_class, title.c_str(), window_style, locked_x_,
+      locked_y_, locked_width_, locked_height_, nullptr, nullptr,
+      GetModuleHandle(nullptr), this);
 
   if (!window) {
     return false;
@@ -150,7 +160,36 @@ bool Win32Window::Create(const std::wstring& title,
 }
 
 bool Win32Window::Show() {
-  return ShowWindow(window_handle_, SW_SHOWNORMAL);
+  if (!window_handle_) {
+    return false;
+  }
+  ApplyLockedBounds(window_handle_);
+  return ShowWindow(window_handle_, SW_SHOW);
+}
+
+void Win32Window::RefreshLockedBoundsFromMonitor(HWND hwnd) {
+  if (!hwnd) {
+    return;
+  }
+  HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+  MONITORINFO monitor_info = {sizeof(MONITORINFO)};
+  if (!GetMonitorInfo(monitor, &monitor_info)) {
+    return;
+  }
+  const RECT& monitor_rect = monitor_info.rcMonitor;
+  locked_x_ = monitor_rect.left;
+  locked_y_ = monitor_rect.top;
+  locked_width_ = monitor_rect.right - monitor_rect.left;
+  locked_height_ = monitor_rect.bottom - monitor_rect.top;
+}
+
+void Win32Window::ApplyLockedBounds(HWND hwnd) {
+  if (!size_locked_ || !hwnd) {
+    return;
+  }
+  RefreshLockedBoundsFromMonitor(hwnd);
+  SetWindowPos(hwnd, HWND_TOPMOST, locked_x_, locked_y_, locked_width_,
+               locked_height_, SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 }
 
 // static
@@ -179,6 +218,36 @@ Win32Window::MessageHandler(HWND hwnd,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
   switch (message) {
+    case WM_GETMINMAXINFO: {
+      if (size_locked_) {
+        auto* mmi = reinterpret_cast<MINMAXINFO*>(lparam);
+        mmi->ptMinTrackSize.x = locked_width_;
+        mmi->ptMinTrackSize.y = locked_height_;
+        mmi->ptMaxTrackSize.x = locked_width_;
+        mmi->ptMaxTrackSize.y = locked_height_;
+        return 0;
+      }
+      break;
+    }
+
+    case WM_SYSCOMMAND: {
+      const WPARAM command = wparam & 0xFFF0;
+      if (size_locked_ &&
+          (command == SC_SIZE || command == SC_MAXIMIZE ||
+           command == SC_MINIMIZE || command == SC_RESTORE ||
+           command == SC_MOVE)) {
+        return 0;
+      }
+      break;
+    }
+
+    case WM_DISPLAYCHANGE:
+      if (size_locked_) {
+        ApplyLockedBounds(hwnd);
+        return 0;
+      }
+      break;
+
     case WM_DESTROY:
       window_handle_ = nullptr;
       Destroy();
@@ -188,6 +257,10 @@ Win32Window::MessageHandler(HWND hwnd,
       return 0;
 
     case WM_DPICHANGED: {
+      if (size_locked_) {
+        ApplyLockedBounds(hwnd);
+        return 0;
+      }
       auto newRectSize = reinterpret_cast<RECT*>(lparam);
       LONG newWidth = newRectSize->right - newRectSize->left;
       LONG newHeight = newRectSize->bottom - newRectSize->top;
@@ -198,6 +271,14 @@ Win32Window::MessageHandler(HWND hwnd,
       return 0;
     }
     case WM_SIZE: {
+      if (size_locked_) {
+        if (wparam == SIZE_MINIMIZED) {
+          ApplyLockedBounds(hwnd);
+          ShowWindow(hwnd, SW_SHOW);
+          return 0;
+        }
+        ApplyLockedBounds(hwnd);
+      }
       RECT rect = GetClientArea();
       if (child_content_ != nullptr) {
         // Size and position the child window.
@@ -208,6 +289,9 @@ Win32Window::MessageHandler(HWND hwnd,
     }
 
     case WM_ACTIVATE:
+      if (size_locked_ && LOWORD(wparam) != WA_INACTIVE) {
+        ApplyLockedBounds(hwnd);
+      }
       if (child_content_ != nullptr) {
         SetFocus(child_content_);
       }

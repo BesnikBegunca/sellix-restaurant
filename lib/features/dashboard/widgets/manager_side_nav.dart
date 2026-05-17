@@ -24,6 +24,7 @@ class ManagerSideNav extends StatelessWidget {
     (icon: Icons.badge_outlined,     sel: Icons.badge,           label: 'Kamarierët'),
     (icon: Icons.table_rows_outlined,sel: Icons.table_rows,      label: 'Shpenzime'),
     (icon: Icons.trending_up_outlined,sel: Icons.trending_up,    label: 'Fitime'),
+    (icon: Icons.receipt_long_outlined, sel: Icons.receipt_long, label: 'Shitjet'),
     (icon: Icons.description_outlined,sel: Icons.description,    label: 'Raporte'),
     (icon: Icons.emoji_events_outlined,sel: Icons.emoji_events,  label: 'Top puntor'),
     (icon: Icons.menu_book_outlined, sel: Icons.menu_book,       label: 'Menu'),
