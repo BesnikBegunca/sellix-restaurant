@@ -1,0 +1,279 @@
+# PROMPT: POS Stats Mobile + Firebase Sync (nga pos_system ekzistues)
+
+## Konteksti — projekti desktop ekzistues (`pos_system`)
+
+Kemi një aplikacion **Flutter desktop (Windows)** POS me:
+- **SQLite lokale** (`pos_system.db`) — burimi i vetëm i të dhënave, duhet të vazhdojë **100% offline**
+- **ManagerData** singleton (`lib/manager/manager_data.dart`) — cache + logjikë
+- **DatabaseService** (`lib/services/database_service.dart`) — DAL
+
+### Tabela SQLite relevante
+
+**`sales`** — porosi të **paguara** (të kryera):
+- `id`, `waiterName`, `tableId`, `total`, `timestamp` (ISO8601), `shiftId`
+
+**`sale_lines`** — rreshta produktesh për çdo shitje (opsionale për mobil)
+
+**`current_orders`** — porosi **të hapura** në tavolina (jo paguar ende):
+- `tableId`, `waiterName`, `orderNumber`, `currentTotal`, `updatedAt`
+- Metoda ekzistuese: `fetchCurrentOrderTotalsByWaiter()`, `fetchCurrentOrderCountsByWaiter()`
+
+**`shifts`** — turne operative (`status`: `open` / `closed`)
+
+**`sale_adjustments`** — refund/void (duhet zbritur nga totalet)
+
+**`waiters`** — lista e kamarierëve
+
+### Logjikë ekzistuese që duhet pasqyruar në Firebase
+
+`ManagerData.computeShiftStatusReport()` (`lib/manager/manager_data.dart`):
+- **paidTotal** = shuma e `sales` për shift-in aktiv (`_currentShiftId`) minus/plus adjustments
+- **openTotal** = shuma nga `current_orders` për kamarier
+- **grandTotal** = paid + open (për çdo kamarier dhe total i përgjithshëm)
+
+`ManagerData.waiterSales` — totali i akumuluar i kamarierit në shift-in aktual (pas pagesës).
+
+Pagesa bëhet në `lib/screens/pos_order_screen.dart` → `recordSaleWithLines()`.
+
+---
+
+## Qëllimi i projektit
+
+### A) Ndryshime në `pos_system` (desktop) — MOS prish offline
+
+Shto **vetëm** sinkronizim Firebase (pasqyrë read-only për mobil). SQLite mbetet burimi i vërtetë.
+
+Krijo p.sh.:
+- `lib/services/firebase_stats_sync_service.dart`
+- inicializim Firebase në `main.dart` (vetëm kur ka konfigurim — mos crash nëse mungon)
+- thirrje sync pas: pagesës, ruajtjes porosie aktive, mbylljes turne, çdo 30–60 sek (timer), dhe kur kthehet interneti
+
+**Kur NUK ka internet:** asgjë nuk ndalet; të dhënat mbeten në SQLite; sync në radhë kur lidhet.
+
+**Kur KA internet:** push në Firebase vetëm statistikat më poshtë (JO të gjithë DB-në).
+
+### B) Projekt i ri Flutter: `pos_stats_mobile` (Android + iOS)
+
+App **vetëm lexues** — dashboard statistikash, **asgjë tjetër**:
+- ❌ pa menu, pa pagesa, pa menaxhim, pa backup, pa printer
+- ✅ vetëm lexon Firebase në kohë reale (StreamBuilder / snapshots)
+
+---
+
+## Të dhënat që duhen në Firebase
+
+Për **një lokacion** (fillimisht 1 restorant; `venueId` konstante ose nga `company.companyName`):
+
+### 1. Dokumenti live `venues/{venueId}/live/summary`
+
+Përditësohet nga desktopi çdo sync:
+
+```json
+{
+  "updatedAt": "2026-05-15T14:30:00.000",
+  "shiftId": 12,
+  "shiftOpenedAt": "...",
+  "companyName": "Emri i kompanisë",
+
+  "dailyTotal": 1250.50,
+  "dailyOrderCount": 87,
+
+  "shiftPaidTotal": 980.00,
+  "shiftOpenTotal": 120.00,
+  "shiftGrandTotal": 1100.00,
+
+  "syncStatus": "online",
+  "lastSyncError": null
+}
+```
+
+**Përkufizime:**
+- **dailyTotal** = SUM(`sales.total`) për **ditën kalendarike lokale** (00:00–23:59) + adjustments të ditës
+- **shiftPaidTotal / shiftOpenTotal / shiftGrandTotal** = si `computeShiftStatusReport()` (shift aktiv)
+- **dailyOrderCount** = numri i rreshtave `sales` sot
+
+### 2. Nën-koleksion `venues/{venueId}/live/waiters/{waiterName}`
+
+```json
+{
+  "paidTotal": 320.00,
+  "openTotal": 45.00,
+  "grandTotal": 365.00,
+  "paidOrderCount": 12,
+  "openOrderCount": 2,
+  "updatedAt": "..."
+}
+```
+
+### 3. Nën-koleksion `venues/{venueId}/orders_today/{saleId}`
+
+Lista e porosive **të kryera** (të paguara) sot:
+
+```json
+{
+  "saleId": 456,
+  "waiterName": "Arben",
+  "tableId": 3,
+  "total": 28.50,
+  "timestamp": "...",
+  "shiftId": 12,
+  "lineCount": 4
+}
+```
+
+- Desktopi: pas çdo `recordSaleWithLines` → shto/përditëso dokumentin
+- Sync periodik: rishkruaj listën e ditës (ose incremental me `saleId`)
+
+**MOS** dërgo: PIN, logo blob, backup, audit të plotë.
+
+---
+
+## Stack teknik
+
+### Desktop (`pos_system`) — shto në `pubspec.yaml`:
+```yaml
+firebase_core: ^latest
+cloud_firestore: ^latest
+connectivity_plus: ^latest  # opsional, për sync kur kthehet neti
+```
+
+### Mobile (`pos_stats_mobile`) — projekt i ri:
+```yaml
+firebase_core
+cloud_firestore
+firebase_auth  # opsional: login i thjeshtë menaxheri për mobil
+google_fonts
+intl
+```
+
+Firebase Console: projekt i ri, Firestore, rules, `google-services.json` / `GoogleService-Info.plist`.
+
+---
+
+## UI mobil (minimal, profesional)
+
+Ngjyra si desktop: jeshile `#2D5A3D`, beige background, DMSans.
+
+**1 ekran — Dashboard:**
+- KPI cards: Totali sot | Totali shift (paguar) | Hapur tani | Porosi sot
+- Listë kamarierësh: emër | paguar | hapur | total
+- Listë porosish të kryera sot (scroll): ora, kamarier, tavolinë, total
+- Pull-to-refresh
+- Badge "Offline" / "Live" + `updatedAt` i fundit nga desktopi
+- Empty state kur nuk ka të dhëna ende
+
+**Gjuha UI:** shqip.
+
+---
+
+## Siguria Firestore (minimum)
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /venues/{venueId}/live/{document=**} {
+      allow read: if request.auth != null;  // ose read publik vetëm për dev
+      allow write: if false;  // vetëm Admin SDK / desktop me service account
+    }
+    match /venues/{venueId}/orders_today/{orderId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
+```
+
+Desktopi shkruan me **Firebase Admin** NUK është i mundur në Flutter client — përdor **Firestore client write** me custom token ose rules të përkohshme për `deviceId` të regjistruar. Alternativë më e thjeshtë për MVP:
+- një `syncApiKey` në `company` / env që lejon write vetëm në path `venues/{venueId}/**` nga desktopi (documented risk për MVP brenda restorantit).
+
+---
+
+## Implementim desktop — pseudokod sync
+
+```dart
+Future<LiveStatsPayload> buildPayloadFromSqlite() async {
+  final db = DatabaseService.instance;
+  final openShift = await db.fetchOpenShift();
+  final shiftId = openShift?['id'] as int?;
+  final report = await ManagerData.instance.computeShiftStatusReport();
+  final dailySales = await db.fetchSalesForLocalDate(DateTime.now()); // shto metodë
+  // llogarit dailyTotal, dailyOrderCount, adjustments
+  // map waiters from report.byWaiter
+  return LiveStatsPayload(...);
+}
+
+Future<void> pushToFirestore(LiveStatsPayload p) async {
+  final venueId = _resolveVenueId(); // p.sh. slug nga companyName
+  final batch = FirebaseFirestore.instance.batch();
+  batch.set(liveSummaryRef, p.summary.toMap());
+  for (final w in p.waiters) {
+    batch.set(waiterRef(w.name), w.toMap());
+  }
+  // orders_today: merge ose replace collection
+  await batch.commit();
+}
+```
+
+**Hook points në desktop:**
+- pas `recordSaleWithLines` në `manager_data_sales.dart`
+- pas `saveCurrentOrder` / update `current_orders`
+- pas `closeShift`
+- `Timer.periodic(Duration(seconds: 45), (_) => syncIfOnline())`
+
+---
+
+## Deliverables (deri në pikën e fundit)
+
+### Repozitori 1 — ndryshime në `pos_system`:
+- [ ] `firebase_stats_sync_service.dart` + modele `live_stats_models.dart`
+- [ ] Metodë DB: `fetchSalesForLocalDate(DateTime date)` + totali me adjustments
+- [ ] Integrim hooks sync
+- [ ] README: si konfigurohet Firebase (`firebase_options.dart` me FlutterFire CLI)
+- [ ] `flutter analyze` pa gabime
+
+### Repozitori 2 — `pos_stats_mobile` (projekt i ri):
+- [ ] `flutter create pos_stats_mobile`
+- [ ] Firebase init + ekran login i thjeshtë (email/password ose kod restoranti)
+- [ ] `StatsRepository` lexon Firestore streams
+- [ ] `DashboardScreen` me të gjitha KPI + lista
+- [ ] Trajtim offline mobil (shfaq të dhënat e fundit + mesazh "Desktop offline")
+- [ ] Build Android APK të testueshëm
+
+### Test manual:
+1. Desktop offline → bëj 3 shitje → SQLite OK
+2. Ndiz internet → Firebase përditësohet
+3. Hap mobil → shfaq të njëjtat totale
+4. Porosi e hapur në tavolinë → `openTotal` rritet në mobil brenda ~60s
+5. Pagesë → shitet në `orders_today` dhe totalet përditësohen
+
+---
+
+## Kufizime të qarta
+
+- Mobil **NUK** shkruan në SQLite të desktopit
+- Mobil **NUK** zëvendëson POS-in
+- Sync është **best-effort**; nëse Firebase dështon, POS vazhdon normalisht
+- Faza 1 = **1 venue / 1 desktop**; multi-venue më vonë
+
+---
+
+## Stil kodi
+
+- Flutter 3.10+, null safety
+- Mos përdor Provider/Riverpod nëse nuk nevojitet — `StreamBuilder` mjafton për mobil
+- Komente minimale, shqip në UI
+- Për desktop: mos refaktorizo file të mëdha ekzistuese; vetëm shto sync layer
+
+---
+
+## Si ta përdorësh këtë prompt
+
+- Projektit **të ri** (`pos_stats_mobile`) → jepi të gjithë këtë skedar.
+- Projektit **`pos_system`** → jepi vetëm seksionet:
+  - "A) Ndryshime në pos_system"
+  - "Implementim desktop"
+  - "Hook points"
+  - "Deliverables — Repozitori 1"
+
+Fillo me: (1) skemën Firestore, (2) sync service në desktop, (3) projektin mobil, (4) test end-to-end.

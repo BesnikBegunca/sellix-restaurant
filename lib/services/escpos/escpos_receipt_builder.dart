@@ -63,7 +63,7 @@ class EscPosReceiptBuilder {
     b.reset();
 
     // Receipt type banner
-    b.boldCenteredLine('Fature per Pagese');
+    b.boldCenteredDoubleLine('TOTALI PER PAGESE');
     b.lf();
 
     final name = companyName.trim();
@@ -118,7 +118,7 @@ class EscPosReceiptBuilder {
 
     final colW = w ~/ 2;
     b.textLine(
-      b.col('Kamarjeri', colW) + b.col('Totali', colW, rightAlign: true),
+      b.col('Perdoruesi', colW) + b.col('Totali', colW, rightAlign: true),
     );
     b.lf();
 
@@ -190,9 +190,25 @@ class EscPosReceiptBuilder {
     b.lf();
 
     // Column test
-    b.textLine(b.col('Item Name', w - 14) + b.col('Qty', 6, rightAlign: true) + b.col('Price', 8, rightAlign: true));
-    b.textLine(b.col('Espresso', w - 14) + b.col('2', 6, rightAlign: true) + b.col('3.00', 8, rightAlign: true));
-    b.textLine(b.col('Cappuccino', w - 14) + b.col('1', 6, rightAlign: true) + b.col('4.50', 8, rightAlign: true));
+    final nc = _nameColW(w);
+    b.textLine(
+      b.col('Produkti', nc) +
+          b.col('Sasia', _qtyColW, rightAlign: true) +
+          b.col('Cmimi', _unitColW, rightAlign: true) +
+          b.col('Vlera', _valueColW, rightAlign: true),
+    );
+    b.textLine(
+      b.col('Espresso', nc) +
+          b.col('2', _qtyColW, rightAlign: true) +
+          b.col('3.00', _unitColW, rightAlign: true) +
+          b.col('6.00', _valueColW, rightAlign: true),
+    );
+    b.textLine(
+      b.col('Cappuccino', nc) +
+          b.col('1', _qtyColW, rightAlign: true) +
+          b.col('4.50', _unitColW, rightAlign: true) +
+          b.col('4.50', _valueColW, rightAlign: true),
+    );
     b.separator();
     b.rowLR('TOTAL:', '11.50');
     b.lf();
@@ -233,26 +249,38 @@ class EscPosReceiptBuilder {
   }
 
   static void _waiterTable(EscPosBytes b, String waiter, int table) {
-    b.rowLR('Kamarjeri: $waiter', 'Tavolina $table');
+    b.rowLR('Perdoruesi: $waiter', 'Tavolina $table');
   }
 
+  static const _qtyColW = 5; // "Sasia" = 5 shkronja
+  static const _unitColW = 7;
+  static const _valueColW = 8;
+
+  static int _nameColW(int lineWidth) =>
+      lineWidth - _qtyColW - _unitColW - _valueColW;
+
   static void _itemsHeader(EscPosBytes b, int w) {
-    final nc = w - 14; // name column width
-    b.textLine(
-      b.col('Produkti', nc) +
-          b.col('Sasia', 6, rightAlign: true) +
-          b.col('Cmimi', 8, rightAlign: true),
-    );
-    b.lf();
+    final nc = _nameColW(w);
+    final header =
+        b.col('Produkti', nc) +
+        b.col('Sasia', _qtyColW, rightAlign: true) +
+        b.col('Cmimi', _unitColW, rightAlign: true) +
+        b.col('Vlera', _valueColW, rightAlign: true);
+    b.boldOn().textLine(header).boldOff();
+    b.separator();
   }
 
   static void _itemLines(EscPosBytes b, List<ReceiptLine> lines, int w) {
-    final nc = w - 14;
+    final nc = _nameColW(w);
     for (final line in lines) {
+      final lineValue = line.product.price * line.qty;
       final namePart = b.col(line.product.name, nc);
-      final qtyPart  = b.col(line.qty.toString(), 6, rightAlign: true);
-      final pricePart = b.col(_money(line.product.price), 8, rightAlign: true);
-      b.textLine('$namePart$qtyPart$pricePart');
+      final qtyPart = b.col(line.qty.toString(), _qtyColW, rightAlign: true);
+      final unitPart =
+          b.col(_money(line.product.price), _unitColW, rightAlign: true);
+      final valuePart =
+          b.col(_money(lineValue), _valueColW, rightAlign: true);
+      b.textLine('$namePart$qtyPart$unitPart$valuePart');
     }
   }
 
