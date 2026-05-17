@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -5,6 +7,57 @@ import 'package:sqflite/sqflite.dart';
 /// to keep the service class focused on data-access methods only.
 class DatabaseSchema {
   DatabaseSchema._();
+
+  // ── UUID v4 generator ────────────────────────────────────────────────────────
+
+  /// Generates a RFC 4122 version-4 UUID using a cryptographically secure RNG.
+  /// No external package required — uses only dart:math.
+  static String generateUuid() {
+    final rng = Random.secure();
+    final b = List<int>.generate(16, (_) => rng.nextInt(256));
+    b[6] = (b[6] & 0x0f) | 0x40; // version 4
+    b[8] = (b[8] & 0x3f) | 0x80; // variant 10xx
+    String hex(int x) => x.toRadixString(16).padLeft(2, '0');
+    return '${hex(b[0])}${hex(b[1])}${hex(b[2])}${hex(b[3])}'
+        '-${hex(b[4])}${hex(b[5])}'
+        '-${hex(b[6])}${hex(b[7])}'
+        '-${hex(b[8])}${hex(b[9])}'
+        '-${hex(b[10])}${hex(b[11])}${hex(b[12])}${hex(b[13])}${hex(b[14])}${hex(b[15])}';
+  }
+
+  // ── Backfill existing rows with UUIDs ─────────────────────────────────────
+
+  /// Assigns UUID v4 to every row where uuid IS NULL.
+  ///
+  /// Uses SQLite's implicit rowid so it works for tables with any PK type
+  /// (INTEGER AUTOINCREMENT, TEXT, or no explicit PK like current_orders).
+  ///
+  /// [audit_logs] is deliberately excluded: immutability triggers on that
+  /// table block UPDATE statements at the database level.
+  static Future<void> _backfillUuids(Database db) async {
+    const tables = <String>[
+      'sales', 'sale_lines', 'sale_adjustments', 'expenses', 'shifts',
+      'products', 'categories', 'waiters', 'waiter_salaries', 'advances',
+      'waiter_worked_days', 'current_orders', 'current_order_lines',
+      'kitchen_prints', 'kitchen_print_lines',
+    ];
+    for (final table in tables) {
+      try {
+        final rows = await db.rawQuery(
+          'SELECT rowid FROM "$table" WHERE uuid IS NULL',
+        );
+        if (rows.isEmpty) continue;
+        await db.transaction((txn) async {
+          for (final row in rows) {
+            await txn.rawUpdate(
+              'UPDATE "$table" SET uuid = ? WHERE rowid = ?',
+              [generateUuid(), row['rowid']],
+            );
+          }
+        });
+      } catch (_) {}
+    }
+  }
 
   /// Kolona [snapshotJson] në [shifts] u shtua më vonë; bazat në v12 pa këtë
   /// kolonë dështojnë në UPDATE. Sigurohemi në çdo hapje lidhjeje (pa u varur
@@ -57,9 +110,12 @@ class DatabaseSchema {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS waiters (
-        id   INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT    NOT NULL,
-        pin  TEXT    NOT NULL UNIQUE
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        name         TEXT    NOT NULL,
+        pin          TEXT    NOT NULL DEFAULT '',
+        pinHash      TEXT,
+        pinSalt      TEXT,
+        pinUpdatedAt TEXT
       )
     ''');
     await db.execute('''
@@ -102,7 +158,11 @@ class DatabaseSchema {
         paperWidthMm       INTEGER NOT NULL DEFAULT 80,
         receiptFooter      TEXT    NOT NULL DEFAULT 'Ju Faleminderit!',
         businessAddress    TEXT,
-        businessPhone      TEXT
+        businessPhone      TEXT,
+        adminPinHash       TEXT,
+        adminPinSalt       TEXT,
+        adminPinCreatedAt  TEXT,
+        adminPinUpdatedAt  TEXT
       )
     ''');
     await db.execute('''
@@ -321,6 +381,27 @@ class DatabaseSchema {
         'CREATE INDEX IF NOT EXISTS idx_audit_table_id     ON audit_logs(tableId)',
       );
     } catch (_) {}
+
+    // ── v17: uuid columns for cloud sync ──────────────────────────────────────
+    const uuidTables = <String>[
+      'sales', 'sale_lines', 'sale_adjustments', 'expenses', 'shifts',
+      'products', 'categories', 'waiters', 'waiter_salaries', 'advances',
+      'waiter_worked_days', 'audit_logs', 'current_orders', 'current_order_lines',
+      'kitchen_prints', 'kitchen_print_lines',
+    ];
+    for (final t in uuidTables) {
+      try {
+        await db.execute('ALTER TABLE "$t" ADD COLUMN uuid TEXT');
+      } catch (_) {}
+    }
+    for (final t in uuidTables) {
+      try {
+        await db.execute(
+          'CREATE UNIQUE INDEX IF NOT EXISTS "idx_${t}_uuid" '
+          'ON "$t"(uuid) WHERE uuid IS NOT NULL',
+        );
+      } catch (_) {}
+    }
   }
 
   /// Called when upgrading from any older version. Creates missing tables and
@@ -395,6 +476,35 @@ class DatabaseSchema {
     try {
       await db.execute("ALTER TABLE company ADD COLUMN businessPhone TEXT");
     } catch (_) {}
+    // v14: admin PIN storage (hash + salt)
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN adminPinHash TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN adminPinSalt TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN adminPinCreatedAt TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN adminPinUpdatedAt TEXT");
+    } catch (_) {}
+    // v15: waiter PIN hashing (pinHash + pinSalt + pinUpdatedAt)
+    try {
+      await db.execute("ALTER TABLE waiters ADD COLUMN pinHash TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE waiters ADD COLUMN pinSalt TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE waiters ADD COLUMN pinUpdatedAt TEXT");
+    } catch (_) {}
+    // v16: clear plaintext from waiters.pin — replace with pinHash (maintains UNIQUE)
+    try {
+      await db.rawUpdate(
+        "UPDATE waiters SET pin = pinHash WHERE pinHash IS NOT NULL AND pinSalt IS NOT NULL AND pin != pinHash",
+      );
+    } catch (_) {}
     await db.insert('app_meta', {
       'key': 'global_order_number',
       'value': '0',
@@ -421,6 +531,9 @@ class DatabaseSchema {
         });
       }
     }
+    // v17: backfill UUIDs for all existing rows (safe no-op on fresh DBs).
+    await _backfillUuids(db);
+
     // Seed default menu if no categories exist.
     final catCount = Sqflite.firstIntValue(
       await db.rawQuery('SELECT COUNT(*) FROM categories'),
@@ -478,7 +591,7 @@ class DatabaseSchema {
       },
     ];
     for (final c in cats) {
-      await db.insert('categories', c);
+      await db.insert('categories', {...c, 'uuid': generateUuid()});
     }
 
     final products = [
@@ -664,7 +777,7 @@ class DatabaseSchema {
       },
     ];
     for (final p in products) {
-      await db.insert('products', p);
+      await db.insert('products', {...p, 'uuid': generateUuid()});
     }
   }
 }

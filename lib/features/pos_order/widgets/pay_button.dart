@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 
 class PayButton extends StatefulWidget {
-  const PayButton({super.key, required this.onPay});
+  const PayButton({super.key, required this.onPay, this.isPaying = false});
 
   final VoidCallback onPay;
+  final bool isPaying;
 
   @override
   State<PayButton> createState() => _PayButtonState();
@@ -17,6 +18,42 @@ class _PayButtonState extends State<PayButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isPaying) {
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 56,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.lightGreenBg.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderVisible(0.12)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.mediumGreenText,
+              ),
+            ),
+            SizedBox(width: 10),
+            Text(
+              'PAGUAJ...',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.2,
+                color: AppColors.mediumGreenText,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),

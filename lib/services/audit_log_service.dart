@@ -46,14 +46,20 @@ abstract final class AuditAction {
   static const String expenseDeleted = 'expense_deleted';
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  static const String managerLogin       = 'manager_login';
-  static const String waiterLogin        = 'waiter_login';
-  static const String failedPin          = 'failed_pin';
-  static const String unauthorizedAction = 'unauthorized_action';
+  static const String managerLogin         = 'manager_login';
+  static const String waiterLogin          = 'waiter_login';
+  static const String failedPin            = 'failed_pin';
+  static const String pinLockout           = 'pin_lockout';
+  static const String unauthorizedAction   = 'unauthorized_action';
+  static const String adminSessionTimeout  = 'admin_session_timeout';
+  static const String adminSessionUnlocked = 'admin_session_unlocked';
 
   // ── Backup ─────────────────────────────────────────────────────────────────
-  static const String backupExported = 'backup_exported';
-  static const String backupRestored = 'backup_restored';
+  static const String duplicatePaymentBlocked = 'duplicate_payment_blocked';
+
+  static const String backupExported       = 'backup_exported';
+  static const String backupRestoreAttempt = 'backup_restore_attempt';
+  static const String backupRestored       = 'backup_restored';
   static const String restoreUndone  = 'restore_undone';
   static const String failedRestore  = 'failed_restore';
 
@@ -100,8 +106,13 @@ abstract final class AuditAction {
     managerLogin         => 'Manager Login',
     waiterLogin          => 'Waiter Login',
     failedPin            => 'Failed PIN',
-    unauthorizedAction   => 'Unauthorized Action',
+    pinLockout               => 'PIN Lockout',
+    duplicatePaymentBlocked  => 'Duplicate Payment Blocked',
+    unauthorizedAction       => 'Unauthorized Action',
+    adminSessionTimeout      => 'Admin Session Timeout',
+    adminSessionUnlocked     => 'Admin Session Unlocked',
     backupExported       => 'Backup Exported',
+    backupRestoreAttempt => 'Backup Restore Attempt',
     backupRestored       => 'Backup Restored',
     restoreUndone        => 'Restore Undone',
     failedRestore        => 'Restore Failed',
@@ -755,6 +766,33 @@ class AuditLogService {
     performedBy: attemptedBy,
   );
 
+  void logPinLockout({int lockoutSeconds = 60}) => log(
+    actionType: AuditAction.pinLockout,
+    entityType: 'auth',
+    details:    {'lockoutSeconds': lockoutSeconds},
+  );
+
+  void logAdminSessionTimeout() => log(
+    actionType:   AuditAction.adminSessionTimeout,
+    entityType:   'auth',
+    performedBy:  'system',
+    performedRole: 'manager',
+  );
+
+  void logAdminSessionUnlocked() => log(
+    actionType:   AuditAction.adminSessionUnlocked,
+    entityType:   'auth',
+    performedBy:  'manager',
+    performedRole: 'manager',
+  );
+
+  void logDuplicatePaymentBlocked({required int tableId}) => log(
+    actionType: AuditAction.duplicatePaymentBlocked,
+    entityType: 'sale',
+    tableId:    tableId,
+    details:    {'reason': 'payment_in_progress'},
+  );
+
   void logUnauthorizedAction({
     required String description,
     String? performedBy,
@@ -787,6 +825,13 @@ class AuditLogService {
       'encrypted':              encrypted,
       if (fingerprint != null) 'fingerprint': fingerprint,
     },
+  );
+
+  void logBackupRestoreAttempt() => log(
+    actionType:   AuditAction.backupRestoreAttempt,
+    entityType:   'backup',
+    performedBy:  'manager',
+    performedRole: 'manager',
   );
 
   void logBackupRestored({String? path, String? fingerprint}) => log(

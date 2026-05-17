@@ -70,7 +70,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 13,
+      version: 17,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
@@ -144,6 +144,7 @@ class DatabaseService {
       'orderNumber': orderNumber,
       'currentTotal': currentTotal,
       'updatedAt': DateTime.now().toIso8601String(),
+      'uuid': DatabaseSchema.generateUuid(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -194,6 +195,7 @@ class DatabaseService {
           'productEmoji': line['productEmoji'],
           'imagePath': line['imagePath'],
           'qty': line['qty'],
+          'uuid': DatabaseSchema.generateUuid(),
         });
       }
     });
@@ -258,6 +260,7 @@ class DatabaseService {
         'total': total,
         'printedAt': printedAt,
         'shiftId': shiftId,
+        'uuid': DatabaseSchema.generateUuid(),
       });
       for (final line in lines) {
         await txn.insert('kitchen_print_lines', {
@@ -269,6 +272,7 @@ class DatabaseService {
           'imagePath': line['imagePath'],
           'qty': line['qty'],
           'lineTotal': line['lineTotal'],
+          'uuid': DatabaseSchema.generateUuid(),
         });
       }
       return printId;
@@ -396,6 +400,7 @@ class DatabaseService {
       'name': name,
       'iconCodePoint': iconCodePoint,
       'sortOrder': sortOrder,
+      'uuid': DatabaseSchema.generateUuid(),
     });
   }
 
@@ -428,6 +433,7 @@ class DatabaseService {
       'emoji': emoji,
       'imagePath': imagePath,
       'categoryId': categoryId,
+      'uuid': DatabaseSchema.generateUuid(),
     });
   }
 
@@ -461,9 +467,29 @@ class DatabaseService {
     return db.query('waiters', orderBy: 'id ASC');
   }
 
-  Future<int> insertWaiter(String name, String pin) async {
+  Future<int> insertWaiter(String name, String pinHash, String pinSalt) async {
     final db = await database;
-    return db.insert('waiters', {'name': name, 'pin': pin});
+    final now = DateTime.now().toIso8601String();
+    // pin column receives the hash as a unique placeholder (legacy compat).
+    return db.insert('waiters', {
+      'name': name,
+      'pin': pinHash,
+      'pinHash': pinHash,
+      'pinSalt': pinSalt,
+      'pinUpdatedAt': now,
+      'uuid': DatabaseSchema.generateUuid(),
+    });
+  }
+
+  Future<void> updateWaiterPin(int id, String hash, String salt) async {
+    final db = await database;
+    // pin column receives the hash to replace any plaintext (maintains UNIQUE).
+    await db.update('waiters', {
+      'pin': hash,
+      'pinHash': hash,
+      'pinSalt': salt,
+      'pinUpdatedAt': DateTime.now().toIso8601String(),
+    }, where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> deleteWaiterById(int id) async {
@@ -491,6 +517,7 @@ class DatabaseService {
       'total': total,
       'timestamp': DateTime.now().toIso8601String(),
       if (shiftId != null) 'shiftId': shiftId,
+      'uuid': DatabaseSchema.generateUuid(),
     });
   }
 
@@ -523,6 +550,7 @@ class DatabaseService {
         'total': total,
         'timestamp': timestamp,
         'shiftId': shiftId,
+        'uuid': DatabaseSchema.generateUuid(),
       });
       for (final line in lines) {
         await txn.insert('sale_lines', {
@@ -538,6 +566,7 @@ class DatabaseService {
           'tableName': line['tableName'],
           'waiterName': line['waiterName'],
           'createdAt': timestamp,
+          'uuid': DatabaseSchema.generateUuid(),
         });
       }
       return saleId;
@@ -629,6 +658,7 @@ class DatabaseService {
       'amount': amount,
       'timestamp': date.toIso8601String(),
       'shiftId': shiftId,
+      'uuid': DatabaseSchema.generateUuid(),
     });
   }
 
@@ -732,6 +762,40 @@ class DatabaseService {
     await db.update('company', map, where: 'id = 1');
   }
 
+  Future<void> updateAdminPin(String hash, String salt) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    try {
+      final existing = await db.query(
+        'company',
+        columns: ['adminPinCreatedAt'],
+        where: 'id = 1',
+      );
+      final createdAt =
+          (existing.isNotEmpty && existing.first['adminPinCreatedAt'] != null)
+          ? existing.first['adminPinCreatedAt'] as String
+          : now;
+      await db.update('company', {
+        'adminPinHash': hash,
+        'adminPinSalt': salt,
+        'adminPinCreatedAt': createdAt,
+        'adminPinUpdatedAt': now,
+      }, where: 'id = 1');
+    } catch (_) {
+      // Columns missing on very old DBs — add them first.
+      try { await db.execute("ALTER TABLE company ADD COLUMN adminPinHash TEXT"); } catch (_) {}
+      try { await db.execute("ALTER TABLE company ADD COLUMN adminPinSalt TEXT"); } catch (_) {}
+      try { await db.execute("ALTER TABLE company ADD COLUMN adminPinCreatedAt TEXT"); } catch (_) {}
+      try { await db.execute("ALTER TABLE company ADD COLUMN adminPinUpdatedAt TEXT"); } catch (_) {}
+      await db.update('company', {
+        'adminPinHash': hash,
+        'adminPinSalt': salt,
+        'adminPinCreatedAt': now,
+        'adminPinUpdatedAt': now,
+      }, where: 'id = 1');
+    }
+  }
+
   // ─────────────────────── WAITER SALARIES ──────────────────────────────────
 
   Future<Map<String, double>> fetchAllSalaries() async {
@@ -748,6 +812,7 @@ class DatabaseService {
     await db.insert('waiter_salaries', {
       'waiterName': waiterName,
       'dailyRate': dailyRate,
+      'uuid': DatabaseSchema.generateUuid(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -770,6 +835,7 @@ class DatabaseService {
       'amount': amount,
       'note': note,
       'timestamp': date.toIso8601String(),
+      'uuid': DatabaseSchema.generateUuid(),
     });
   }
 
@@ -791,6 +857,7 @@ class DatabaseService {
       await db.insert('waiter_worked_days', {
         'waiterName': waiterName,
         'workDate': date,
+        'uuid': DatabaseSchema.generateUuid(),
       }, conflictAlgorithm: ConflictAlgorithm.ignore);
     } else {
       await db.delete(
@@ -815,6 +882,7 @@ class DatabaseService {
       'openedBy': openedBy,
       'openingCash': openingCash,
       'status': 'open',
+      'uuid': DatabaseSchema.generateUuid(),
     });
   }
 
@@ -937,6 +1005,7 @@ class DatabaseService {
       'reason': reason,
       'createdBy': createdBy,
       'createdAt': DateTime.now().toIso8601String(),
+      'uuid': DatabaseSchema.generateUuid(),
     });
   }
 
@@ -1063,6 +1132,7 @@ class DatabaseService {
         'terminalName': terminalName,
         'appVersion':   appVersion,
         'platform':     platform,
+        'uuid':         DatabaseSchema.generateUuid(),
       });
     });
   }

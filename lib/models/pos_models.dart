@@ -293,20 +293,40 @@ class AdvanceRow {
   );
 }
 
-/// Waiter with name and PIN, persisted in the [waiters] SQLite table.
+/// Waiter with name and hashed PIN, persisted in the [waiters] SQLite table.
 class WaiterInfo {
-  WaiterInfo({this.dbId, required this.name, required this.pin});
+  WaiterInfo({
+    this.dbId,
+    required this.name,
+    this.pin = '',
+    this.pinHash,
+    this.pinSalt,
+    this.pinUpdatedAt,
+  });
 
   /// Primary key from SQLite — null until after first DB insert.
   final int? dbId;
 
   final String name;
+
+  /// Legacy column kept for DB backward compatibility.
+  /// Verification always uses [pinHash] + [pinSalt] when available.
   final String pin;
+
+  final String? pinHash;
+  final String? pinSalt;
+  final String? pinUpdatedAt;
+
+  /// True once a hashed PIN has been stored for this waiter.
+  bool get isHashed => pinHash != null && pinSalt != null;
 
   factory WaiterInfo.fromMap(Map<String, dynamic> m) => WaiterInfo(
     dbId: m['id'] as int?,
     name: m['name'] as String,
-    pin: m['pin'] as String,
+    pin: (m['pin'] as String?) ?? '',
+    pinHash: m['pinHash'] as String?,
+    pinSalt: m['pinSalt'] as String?,
+    pinUpdatedAt: m['pinUpdatedAt'] as String?,
   );
 }
 

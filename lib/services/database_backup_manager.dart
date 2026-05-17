@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'backup_crypto_service.dart';
 import 'database_service.dart';
 
 /// Manages automatic daily backups of the POS database.
@@ -81,6 +82,23 @@ class DatabaseBackupManager {
     await _saveConfig(cfg);
   }
 
+  /// Returns the stored auto-backup encryption password, or null if not set.
+  Future<String?> getAutoBackupPassword() async {
+    final pw = (await _readConfig())['autoBackupPassword'] as String?;
+    return (pw == null || pw.isEmpty) ? null : pw;
+  }
+
+  /// Returns true if an encryption password has been configured for auto-backups.
+  Future<bool> hasAutoBackupPassword() async =>
+      (await getAutoBackupPassword()) != null;
+
+  /// Saves the auto-backup encryption password to config.
+  Future<void> setAutoBackupPassword(String password) async {
+    final cfg = await _readConfig();
+    cfg['autoBackupPassword'] = password;
+    await _saveConfig(cfg);
+  }
+
   /// Opens a folder picker and saves the chosen path as the auto-backup
   /// destination.  Returns the chosen path, or [null] if the user cancelled.
   Future<String?> pickAndSetAutoBackupFolder() async {
@@ -102,23 +120,34 @@ class DatabaseBackupManager {
     final folder = await getAutoBackupFolder();
     if (folder == null) return AutoBackupResult.noFolderConfigured;
 
+    final password = await getAutoBackupPassword();
+    if (password == null) return AutoBackupResult.noPasswordConfigured;
+
     final cfg = await _readConfig();
     if ((cfg['lastBackupDate'] as String?) == _todayKey()) {
       return AutoBackupResult.alreadyBackedUpToday;
     }
-    return _runBackup(folder, compress: cfg['useCompression'] as bool? ?? false);
+    return _runBackup(
+      folder,
+      compress: cfg['useCompression'] as bool? ?? false,
+      password: password,
+    );
   }
 
   /// Forces an immediate backup regardless of whether one was already made
   /// today.  If no folder is configured, defaults to
   /// `{documents}/POS_Backups` and saves that as the configured folder.
   Future<AutoBackupResult> performAutoBackup() async {
+    final password = await getAutoBackupPassword();
+    if (password == null) return AutoBackupResult.noPasswordConfigured;
+
     final cfg = await _readConfig();
     String folder = cfg['autoBackupFolder'] as String? ??
         await _ensureDefaultFolder(cfg);
     return _runBackup(
       folder,
       compress: cfg['useCompression'] as bool? ?? false,
+      password: password,
     );
   }
 
@@ -135,6 +164,7 @@ class DatabaseBackupManager {
   Future<AutoBackupResult> _runBackup(
     String folder, {
     required bool compress,
+    required String password,
   }) async {
     try {
       final dir = Directory(folder);
@@ -149,36 +179,36 @@ class DatabaseBackupManager {
           'pos_backup_${now.year}_${_pad(now.month)}_${_pad(now.day)}'
           '_${_pad(now.hour)}${_pad(now.minute)}';
 
-      final String finalName = compress ? '$base.zip' : '$base.db';
+      // Auto-backups are always encrypted; naming reflects that.
+      final String finalName = compress ? '$base.enc.zip' : '$base.enc.db';
       final destPath = p.join(folder, finalName);
-      final tempPath = '$destPath.tmp';
+      final rawTempPath = '$destPath.raw_tmp';
+      final encTempPath = '$destPath.enc_tmp';
+      final zipTempPath = '$destPath.zip_tmp';
 
       // ── Raw snapshot via VACUUM INTO (or file-copy fallback) ──────────────
-      final rawTempPath = '$destPath.raw_tmp';
       final ok = await DatabaseService.instance.vacuumInto(rawTempPath);
       if (!ok) await sourceFile.copy(rawTempPath);
-
       String current = rawTempPath;
+
+      // ── Encrypt ───────────────────────────────────────────────────────────
+      await BackupCryptoService.instance.encryptFile(
+        current, encTempPath, password,
+      );
+      await _tryDelete(current);
+      current = encTempPath;
 
       // ── Optional ZIP compression ──────────────────────────────────────────
       if (compress) {
+        final entryName = '$base.enc.db';
         final sourceBytes = await File(current).readAsBytes();
         final archive = Archive()
-          ..addFile(ArchiveFile('$base.db', sourceBytes.length, sourceBytes));
+          ..addFile(ArchiveFile(entryName, sourceBytes.length, sourceBytes));
         final encoded = ZipEncoder().encode(archive);
         if (encoded == null) throw Exception('ZIP encoding failed.');
-        await File(tempPath).writeAsBytes(encoded, flush: true);
+        await File(zipTempPath).writeAsBytes(encoded, flush: true);
         await _tryDelete(current);
-        current = tempPath;
-      } else {
-        // Move the raw snapshot to the final temp name.
-        try {
-          await File(current).rename(tempPath);
-        } catch (_) {
-          await File(current).copy(tempPath);
-          await _tryDelete(current);
-        }
-        current = tempPath;
+        current = zipTempPath;
       }
 
       // ── Move to final destination ─────────────────────────────────────────
@@ -210,7 +240,8 @@ class DatabaseBackupManager {
         if (entity is File) {
           final name = p.basename(entity.path);
           if (name.startsWith('pos_backup_') &&
-              (name.endsWith('.db') || name.endsWith('.zip'))) {
+              (name.endsWith('.db') || name.endsWith('.zip') ||
+               name.endsWith('.enc.db') || name.endsWith('.enc.zip'))) {
             files.add(entity);
           }
         }
@@ -245,6 +276,7 @@ enum AutoBackupResult {
   success,
   alreadyBackedUpToday,
   noFolderConfigured,
+  noPasswordConfigured,
   sourceNotFound,
   error,
 }

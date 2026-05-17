@@ -80,6 +80,7 @@ class RestoreService {
   Future<bool> restoreDatabase({
     required Future<void> Function() onReloadData,
     Future<String?> Function()? onPasswordRequired,
+    Future<bool> Function()? onPlaintextWarning,
   }) async {
     if (_isRestoring) {
       throw Exception('A restore operation is already in progress.');
@@ -138,6 +139,10 @@ class RestoreService {
           password,
         );
         workingPath = decryptedPath;
+      } else if (onPlaintextWarning != null) {
+        // Backup is not encrypted — give the caller a chance to warn and abort.
+        final proceed = await onPlaintextWarning();
+        if (!proceed) return false;
       }
 
       // ── Step 4: validate SQLite header ───────────────────────────────────

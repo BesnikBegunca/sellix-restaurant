@@ -28,7 +28,7 @@ class _WaitersPanelState extends State<WaitersPanel> {
     super.dispose();
   }
 
-  void _add() {
+  Future<void> _add() async {
     final name = _nameCtrl.text.trim();
     final pin = _pinCtrl.text.trim();
     if (name.isEmpty) {
@@ -42,15 +42,12 @@ class _WaitersPanelState extends State<WaitersPanel> {
       );
       return;
     }
-    if (pin == '9999') {
-      setState(() => _errorMsg = 'PIN 9999 është rezervuar për menaxherin.');
-      return;
-    }
-    if (widget.m.waiters.any((w) => w.pin == pin)) {
+    if (await widget.m.waiterPinExists(pin)) {
       setState(() => _errorMsg = 'Ky PIN ekziston tashmë.');
       return;
     }
-    widget.m.addWaiter(name, pin);
+    await widget.m.addWaiter(name, pin);
+    if (!mounted) return;
     final salary = double.tryParse(
           _salaryCtrl.text.trim().replaceAll(',', '.'),
         ) ??
@@ -136,13 +133,13 @@ class _WaitersPanelState extends State<WaitersPanel> {
                       decoration: inputDeco('Rroga (€/ditë)'),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _add(),
+                      onSubmitted: (_) { _add(); },
                       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
                     ),
                   ),
                   const SizedBox(width: 12),
                   FilledButton.icon(
-                    onPressed: _add,
+                    onPressed: () { _add(); },
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Shto Kamarier'),
                     style: FilledButton.styleFrom(

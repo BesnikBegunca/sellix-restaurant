@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
 import '../models/mock_data.dart';
@@ -31,6 +32,11 @@ class ManagerData extends ChangeNotifier {
   // ── loading guard ──────────────────────────────────────────────────────────
 
   bool isLoading = true;
+
+  // ── admin PIN (hashed) ─────────────────────────────────────────────────────
+
+  String? _adminPinHash;
+  String? _adminPinSalt;
 
   // ── company ────────────────────────────────────────────────────────────────
 
@@ -121,6 +127,8 @@ class ManagerData extends ChangeNotifier {
       receiptFooter     = (company['receiptFooter']  as String?) ?? 'Ju Faleminderit!';
       businessAddress   = company['businessAddress'] as String?;
       businessPhone     = company['businessPhone']   as String?;
+      _adminPinHash     = company['adminPinHash']    as String?;
+      _adminPinSalt     = company['adminPinSalt']    as String?;
     }
 
     // Shift — ensure a permanent shift record exists in [shifts] table.
@@ -130,6 +138,7 @@ class ManagerData extends ChangeNotifier {
     // Waiters
     final waiterRows = await db.fetchWaiters();
     _waiters = waiterRows.map(WaiterInfo.fromMap).toList();
+    await _migrateWaiterPins();
 
     // Categories + products
     await _reloadMenu(db);
@@ -434,17 +443,79 @@ class ManagerData extends ChangeNotifier {
     }
   }
 
+  // ─────────────────────────── admin auth ───────────────────────────────────
+
+  /// True when an admin PIN has been set in SQLite.
+  bool get hasAdminPin => _adminPinHash != null && _adminPinSalt != null;
+
+  /// Compares [pin] against the stored SHA-256 hash. Returns false if no PIN is set.
+  Future<bool> verifyAdminPin(String pin) async {
+    if (_adminPinHash == null || _adminPinSalt == null) return false;
+    return _hashPin(pin, _adminPinSalt!) == _adminPinHash;
+  }
+
+  /// Hashes [pin] with a new random salt and stores both in SQLite.
+  Future<void> setAdminPin(String pin) async {
+    final salt = _generateSalt();
+    final hash = _hashPin(pin, salt);
+    await DatabaseService.instance.updateAdminPin(hash, salt);
+    _adminPinHash = hash;
+    _adminPinSalt = salt;
+    notifyListeners();
+  }
+
+  static String _generateSalt() {
+    final rng = math.Random.secure();
+    final bytes = List<int>.generate(32, (_) => rng.nextInt(256));
+    return base64Url.encode(bytes);
+  }
+
+  static String _hashPin(String pin, String salt) {
+    final combined = utf8.encode(pin + salt);
+    return sha256.convert(combined).toString();
+  }
+
   // ─────────────────────────── waiters ──────────────────────────────────────
+
+  Future<void> _migrateWaiterPins() async {
+    bool migrated = false;
+    for (int i = 0; i < _waiters.length; i++) {
+      final w = _waiters[i];
+      if (w.isHashed || w.dbId == null || w.pin.isEmpty) continue;
+      final salt = _generateSalt();
+      final hash = _hashPin(w.pin, salt);
+      await DatabaseService.instance.updateWaiterPin(w.dbId!, hash, salt);
+      _waiters[i] = WaiterInfo(
+        dbId: w.dbId,
+        name: w.name,
+        pin: hash, // replace plaintext with hash in memory too
+        pinHash: hash,
+        pinSalt: salt,
+        pinUpdatedAt: DateTime.now().toIso8601String(),
+      );
+      migrated = true;
+    }
+    if (migrated) notifyListeners();
+  }
 
   Future<void> addWaiter(String name, String pin) async {
     final n = name.trim();
     final p = pin.trim();
     if (n.isEmpty || p.length < 4) return;
-    // Guard against duplicate PINs (cache check is instant)
-    if (_waiters.any((w) => w.pin == p) || p == '9999') return;
+    if (await _waiterPinExists(p)) return;
 
-    final newId = await DatabaseService.instance.insertWaiter(n, p);
-    _waiters.add(WaiterInfo(dbId: newId, name: n, pin: p));
+    final salt = _generateSalt();
+    final hash = _hashPin(p, salt);
+    final now = DateTime.now().toIso8601String();
+    final newId = await DatabaseService.instance.insertWaiter(n, hash, salt);
+    _waiters.add(WaiterInfo(
+      dbId: newId,
+      name: n,
+      pin: hash,
+      pinHash: hash,
+      pinSalt: salt,
+      pinUpdatedAt: now,
+    ));
     AuditLogService.instance.logWaiterAdded(waiterName: n);
     notifyListeners();
   }
@@ -460,12 +531,21 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  WaiterInfo? findWaiterByPin(String pin) {
-    try {
-      return _waiters.firstWhere((w) => w.pin == pin);
-    } catch (_) {
-      return null;
+  Future<bool> _waiterPinExists(String pin) async {
+    for (final w in _waiters) {
+      if (w.isHashed && _hashPin(pin, w.pinSalt!) == w.pinHash) return true;
     }
+    return false;
+  }
+
+  /// Returns true if any existing waiter already uses [pin]. Used by add-waiter UI.
+  Future<bool> waiterPinExists(String pin) => _waiterPinExists(pin);
+
+  Future<WaiterInfo?> findWaiterByPin(String pin) async {
+    for (final w in _waiters) {
+      if (w.isHashed && _hashPin(pin, w.pinSalt!) == w.pinHash) return w;
+    }
+    return null;
   }
 
   // ─────────────────────────── expenses ─────────────────────────────────────

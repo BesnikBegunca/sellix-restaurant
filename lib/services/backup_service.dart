@@ -41,32 +41,25 @@ class BackupService {
     bool compressed = false,
     String? password,
   }) async {
+    // Encryption is mandatory for all exports.
+    if (password == null || password.length < 8) {
+      throw Exception(
+        'A backup password of at least 8 characters is required.',
+      );
+    }
+
     final sourcePath = await getDatabaseFilePath();
     final sourceFile = File(sourcePath);
     if (!await sourceFile.exists()) {
       throw Exception('Database file not found at: $sourcePath');
     }
 
-    final encrypted = password != null && password.isNotEmpty;
+    // Encryption is always applied; extension reflects compression choice.
     final now = DateTime.now();
     final base = 'pos_backup_${now.year}_${_pad(now.month)}_${_pad(now.day)}';
 
-    // Choose the final extension based on what transformations are applied.
-    final String outerExt;
-    final String innerExt;
-    if (encrypted && compressed) {
-      innerExt = '.enc.db';
-      outerExt = '.enc.zip';
-    } else if (encrypted) {
-      innerExt = '';
-      outerExt = '.enc.db';
-    } else if (compressed) {
-      innerExt = '.db';
-      outerExt = '.zip';
-    } else {
-      innerExt = '';
-      outerExt = '.db';
-    }
+    final String outerExt = compressed ? '.enc.zip' : '.enc.db';
+    final String innerExt = compressed ? '.enc.db' : '';
 
     final fileName = '$base$outerExt';
     final destPath = await _resolveDestination(fileName);
@@ -82,16 +75,14 @@ class BackupService {
       await _createRawBackup(sourcePath, rawTemp);
       String current = rawTemp;
 
-      // ── Step 2: optional encryption ────────────────────────────────────────
-      if (encrypted) {
-        await BackupCryptoService.instance.encryptFile(
-          current,
-          encTemp,
-          password,
-        );
-        await _tryDelete(current);
-        current = encTemp;
-      }
+      // ── Step 2: encrypt ────────────────────────────────────────────────────
+      await BackupCryptoService.instance.encryptFile(
+        current,
+        encTemp,
+        password,
+      );
+      await _tryDelete(current);
+      current = encTemp;
 
       // ── Step 3: optional ZIP compression ──────────────────────────────────
       if (compressed) {

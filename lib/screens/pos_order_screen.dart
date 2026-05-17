@@ -8,6 +8,7 @@ import '../features/pos_order/widgets/order_panel.dart';
 import '../features/pos_order/widgets/product_tile.dart';
 import '../manager/manager_data.dart';
 import '../models/mock_data.dart';
+import '../services/audit_log_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/pos_grid.dart';
 import '../widgets/gg_header.dart';
@@ -125,7 +126,12 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   }
 
   Future<void> _payTable() async {
-    if (_isPaying) return;
+    if (_isPaying) {
+      AuditLogService.instance.logDuplicatePaymentBlocked(
+        tableId: widget.tableNumber,
+      );
+      return;
+    }
     setState(() => _isPaying = true);
 
     try {
@@ -524,6 +530,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           onDelta: _deltaQty,
                           onSend: _sendOrder,
                           onPay: _payTable,
+                          isPaying: _isPaying,
                         ),
                       ),
                     ],
