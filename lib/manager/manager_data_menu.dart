@@ -10,7 +10,7 @@ extension MenuMethods on ManagerData {
     final id = 'cat_${DateTime.now().millisecondsSinceEpoch}';
     final sortOrder = _categories.length;
 
-    await DatabaseService.instance.insertCategory(
+    await ProductRepository.instance.insertCategory(
       id: id,
       name: name.trim(),
       iconCodePoint: iconCodePoint,
@@ -43,7 +43,7 @@ extension MenuMethods on ManagerData {
       (c) => c.id == categoryId,
       orElse: () => CategoryData(id: categoryId, name: '', icon: Icons.category, products: []),
     );
-    await DatabaseService.instance.deleteCategory(categoryId);
+    await ProductRepository.instance.deleteCategory(categoryId);
     _categories = _categories.where((c) => c.id != categoryId).toList();
     AuditLogService.instance.logCategoryDeleted(
       categoryId:   categoryId,
@@ -60,7 +60,7 @@ extension MenuMethods on ManagerData {
     String? imagePath,
   }) async {
     final pid = 'p_${DateTime.now().microsecondsSinceEpoch}';
-    await DatabaseService.instance.insertProduct(
+    await ProductRepository.instance.insertProduct(
       id: pid,
       name: name.trim(),
       price: price,
@@ -105,7 +105,7 @@ extension MenuMethods on ManagerData {
       (p) => p.id == productId,
       orElse: () => ProductItem(id: productId, name: '', price: 0, emoji: ''),
     );
-    await DatabaseService.instance.deleteProduct(productId);
+    await ProductRepository.instance.deleteProduct(productId);
     _categories = _categories.map((c) {
       if (c.id != categoryId) return c;
       return CategoryData(
@@ -149,7 +149,7 @@ extension MenuMethods on ManagerData {
     }
 
     if (fields.isNotEmpty) {
-      await DatabaseService.instance.updateProduct(productId, fields);
+      await ProductRepository.instance.updateProduct(productId, fields);
     }
 
     _categories = _categories.map((c) {
@@ -206,7 +206,10 @@ extension MenuMethods on ManagerData {
     if (product == null) return;
     final prod = product;
 
-    await DatabaseService.instance.moveProductCategory(productId, toCategoryId);
+    await ProductRepository.instance.moveProductCategory(
+      productId,
+      toCategoryId,
+    );
 
     _categories = _categories.map((c) {
       if (c.id == fromCategoryId) {

@@ -10,7 +10,7 @@ extension SalesMethods on ManagerData {
   }) async {
     if (waiterName.trim().isEmpty) return;
     final now = DateTime.now();
-    await DatabaseService.instance.insertSale(
+    await SalesRepository.instance.insertSale(
       waiterName: waiterName,
       tableId: tableId,
       total: amount,
@@ -70,7 +70,7 @@ extension SalesMethods on ManagerData {
     }).toList();
 
     final now = DateTime.now();
-    final saleId = await DatabaseService.instance.insertSaleWithLines(
+    final saleId = await SalesRepository.instance.insertSaleWithLines(
       waiterName: waiterName,
       tableId: tableId,
       total: total,
@@ -123,7 +123,7 @@ extension SalesMethods on ManagerData {
       throw StateError('Porosia #$saleId nuk u gjet.');
     }
 
-    await DatabaseService.instance.deleteSaleById(saleId);
+    await SalesRepository.instance.deleteSaleById(saleId);
     AuditLogService.instance.logAdjustment(
       adjustmentType: 'void',
       saleId: saleId,
@@ -132,7 +132,7 @@ extension SalesMethods on ManagerData {
       performedBy: performedBy ?? 'Menaxher',
       shiftId: _currentShiftId,
     );
-    await _reloadSales(DatabaseService.instance);
+    await _reloadSales();
     _notify();
   }
 
@@ -148,7 +148,7 @@ extension SalesMethods on ManagerData {
     String? reason,
     String? createdBy,
   }) async {
-    final newId = await DatabaseService.instance.insertSaleAdjustment(
+    final newId = await SalesRepository.instance.insertSaleAdjustment(
       saleId: saleId,
       saleLineId: saleLineId,
       adjustmentType: adjustmentType,

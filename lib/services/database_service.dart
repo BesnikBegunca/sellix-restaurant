@@ -16,6 +16,7 @@ class DatabaseService {
   static final DatabaseService instance = DatabaseService._();
 
   Database? _db;
+  String? _cachedSyncDeviceId;
 
   Future<Database> get database async {
     _db ??= await _initDB();
@@ -30,6 +31,7 @@ class DatabaseService {
     if (_db != null) {
       await _db!.close();
       _db = null;
+      _cachedSyncDeviceId = null;
     }
   }
 
@@ -70,7 +72,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 17,
+      version: 22,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
@@ -80,6 +82,31 @@ class DatabaseService {
     );
   }
 
+  /// Stable device UUID from [app_meta] — same key as [AuditContextService].
+  Future<String> syncDeviceId() async {
+    if (_cachedSyncDeviceId != null) return _cachedSyncDeviceId!;
+    final db = await database;
+    _cachedSyncDeviceId = await DatabaseSchema.resolveDeviceId(db);
+    return _cachedSyncDeviceId!;
+  }
+
+  /// businessId / branchId / deviceId stamp for sync-critical inserts.
+  Future<Map<String, String>> syncScope() async {
+    return DatabaseSchema.syncScopeStamp(await syncDeviceId());
+  }
+
+  /// createdAt + updatedAt (or updatedAt only) for sync-critical inserts.
+  Map<String, String> syncTimestamps({
+    bool includeCreatedAt = true,
+    DateTime? when,
+  }) =>
+      DatabaseSchema.syncTimestampStamp(
+        includeCreatedAt: includeCreatedAt,
+        when: when,
+      );
+
+  /// syncStatus pending + lastSyncedAt null for sync-critical inserts.
+  Map<String, Object?> syncStatus() => DatabaseSchema.syncStatusStamp();
 
   // ──────────────────────────── TABLES ──────────────────────────────────────
 
@@ -138,14 +165,29 @@ class DatabaseService {
     required double currentTotal,
   }) async {
     final db = await database;
+    final existing = await fetchCurrentOrderMeta(tableId, waiterName);
+    final scope = await syncScope();
+    final ts = syncTimestamps();
+    final orderUuid = existing?['uuid'] as String? ?? DatabaseSchema.generateUuid();
     await db.insert('current_orders', {
       'tableId': tableId,
       'waiterName': waiterName,
       'orderNumber': orderNumber,
       'currentTotal': currentTotal,
-      'updatedAt': DateTime.now().toIso8601String(),
-      'uuid': DatabaseSchema.generateUuid(),
+      'updatedAt': ts['updatedAt'],
+      'createdAt': existing?['createdAt'] ?? ts['createdAt'],
+      'uuid': orderUuid,
+      ...scope,
+      ...syncStatus(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
+    final row = await fetchCurrentOrderMeta(tableId, waiterName);
+    if (row != null) {
+      await _queueOutboxRow(
+        'current_orders',
+        row,
+        existing == null ? 'create' : 'update',
+      );
+    }
   }
 
   Future<Map<String, dynamic>?> fetchCurrentOrderMeta(
@@ -179,7 +221,22 @@ class DatabaseService {
     List<Map<String, dynamic>> lines,
   ) async {
     final db = await database;
+    final scope = await syncScope();
+    final ts = syncTimestamps();
     await db.transaction((txn) async {
+      final oldLines = await txn.query(
+        'current_order_lines',
+        where: 'tableId = ? AND waiterName = ?',
+        whereArgs: [tableId, waiterName],
+      );
+      for (final row in oldLines) {
+        await _queueOutboxRow(
+          'current_order_lines',
+          row,
+          'delete',
+          txn: txn,
+        );
+      }
       await txn.delete(
         'current_order_lines',
         where: 'tableId = ? AND waiterName = ?',
@@ -196,7 +253,23 @@ class DatabaseService {
           'imagePath': line['imagePath'],
           'qty': line['qty'],
           'uuid': DatabaseSchema.generateUuid(),
+          ...scope,
+          ...syncStatus(),
+          ...ts,
         });
+      }
+      final newLines = await txn.query(
+        'current_order_lines',
+        where: 'tableId = ? AND waiterName = ?',
+        whereArgs: [tableId, waiterName],
+      );
+      for (final row in newLines) {
+        await _queueOutboxRow(
+          'current_order_lines',
+          row,
+          'create',
+          txn: txn,
+        );
       }
     });
   }
@@ -220,16 +293,31 @@ class DatabaseService {
     bool clearPrintHistory = false,
   }) async {
     final db = await database;
-    await db.delete(
-      'current_orders',
-      where: 'tableId = ? AND waiterName = ?',
-      whereArgs: [tableId, waiterName],
-    );
-    await db.delete(
-      'current_order_lines',
-      where: 'tableId = ? AND waiterName = ?',
-      whereArgs: [tableId, waiterName],
-    );
+    final orderMeta = await fetchCurrentOrderMeta(tableId, waiterName);
+    final orderLines = await fetchCurrentOrderLines(tableId, waiterName);
+    await db.transaction((txn) async {
+      if (orderMeta != null) {
+        await _queueOutboxRow('current_orders', orderMeta, 'delete', txn: txn);
+      }
+      for (final row in orderLines) {
+        await _queueOutboxRow(
+          'current_order_lines',
+          row,
+          'delete',
+          txn: txn,
+        );
+      }
+      await txn.delete(
+        'current_orders',
+        where: 'tableId = ? AND waiterName = ?',
+        whereArgs: [tableId, waiterName],
+      );
+      await txn.delete(
+        'current_order_lines',
+        where: 'tableId = ? AND waiterName = ?',
+        whereArgs: [tableId, waiterName],
+      );
+    });
     if (clearPrintHistory) {
       await clearKitchenPrintsForTable(tableId, waiterName);
     }
@@ -247,7 +335,9 @@ class DatabaseService {
   }) async {
     if (lines.isEmpty) return -1;
     final db = await database;
+    final scope = await syncScope();
     final printedAt = DateTime.now().toIso8601String();
+    final ts = syncTimestamps(when: DateTime.now());
     var total = 0.0;
     for (final l in lines) {
       total += (l['lineTotal'] as num).toDouble();
@@ -261,6 +351,10 @@ class DatabaseService {
         'printedAt': printedAt,
         'shiftId': shiftId,
         'uuid': DatabaseSchema.generateUuid(),
+        'createdAt': printedAt,
+        'updatedAt': printedAt,
+        ...scope,
+        ...syncStatus(),
       });
       for (final line in lines) {
         await txn.insert('kitchen_print_lines', {
@@ -273,7 +367,25 @@ class DatabaseService {
           'qty': line['qty'],
           'lineTotal': line['lineTotal'],
           'uuid': DatabaseSchema.generateUuid(),
+          ...scope,
+          ...syncStatus(),
+          ...ts,
         });
+      }
+      await _queueOutboxById(
+        'kitchen_prints',
+        'kitchen_prints',
+        printId,
+        operation: 'create',
+        txn: txn,
+      );
+      final printLines = await txn.query(
+        'kitchen_print_lines',
+        where: 'printId = ?',
+        whereArgs: [printId],
+      );
+      for (final row in printLines) {
+        await _queueOutboxRow('kitchen_print_lines', row, 'create', txn: txn);
       }
       return printId;
     });
@@ -395,19 +507,41 @@ class DatabaseService {
     required int sortOrder,
   }) async {
     final db = await database;
+    final scope = await syncScope();
+    final ts = syncTimestamps();
+    final categoryUuid = DatabaseSchema.generateUuid();
     await db.insert('categories', {
       'id': id,
       'name': name,
       'iconCodePoint': iconCodePoint,
       'sortOrder': sortOrder,
-      'uuid': DatabaseSchema.generateUuid(),
+      'uuid': categoryUuid,
+      ...scope,
+      ...syncStatus(),
+      ...ts,
     });
+    final row = await _fetchEntityRow(
+      'categories',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (row != null) {
+      await _queueOutboxRow('categories', row, 'create');
+    }
   }
 
   Future<void> deleteCategory(String id) async {
     final db = await database;
+    final row = await _fetchEntityRow(
+      'categories',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     // Products with this categoryId are deleted by the ON DELETE CASCADE FK.
     await db.delete('categories', where: 'id = ?', whereArgs: [id]);
+    if (row != null) {
+      await _queueOutboxRow('categories', row, 'delete');
+    }
   }
 
   // ──────────────────────────── PRODUCTS ────────────────────────────────────
@@ -426,6 +560,8 @@ class DatabaseService {
     required String categoryId,
   }) async {
     final db = await database;
+    final scope = await syncScope();
+    final ts = syncTimestamps();
     await db.insert('products', {
       'id': id,
       'name': name,
@@ -434,17 +570,44 @@ class DatabaseService {
       'imagePath': imagePath,
       'categoryId': categoryId,
       'uuid': DatabaseSchema.generateUuid(),
+      ...scope,
+      ...syncStatus(),
+      ...ts,
     });
+    final row = await _fetchEntityRow(
+      'products',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (row != null) {
+      await _queueOutboxRow('products', row, 'create');
+    }
   }
 
   Future<void> updateProduct(String id, Map<String, dynamic> fields) async {
     final db = await database;
     await db.update('products', fields, where: 'id = ?', whereArgs: [id]);
+    final row = await _fetchEntityRow(
+      'products',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (row != null) {
+      await _queueOutboxRow('products', row, 'update');
+    }
   }
 
   Future<void> deleteProduct(String id) async {
     final db = await database;
+    final row = await _fetchEntityRow(
+      'products',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     await db.delete('products', where: 'id = ?', whereArgs: [id]);
+    if (row != null) {
+      await _queueOutboxRow('products', row, 'delete');
+    }
   }
 
   Future<void> moveProductCategory(
@@ -458,6 +621,14 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [productId],
     );
+    final row = await _fetchEntityRow(
+      'products',
+      where: 'id = ?',
+      whereArgs: [productId],
+    );
+    if (row != null) {
+      await _queueOutboxRow('products', row, 'update');
+    }
   }
 
   // ──────────────────────────── WAITERS ─────────────────────────────────────
@@ -469,16 +640,23 @@ class DatabaseService {
 
   Future<int> insertWaiter(String name, String pinHash, String pinSalt) async {
     final db = await database;
+    final scope = await syncScope();
     final now = DateTime.now().toIso8601String();
+    final ts = syncTimestamps(when: DateTime.now());
     // pin column receives the hash as a unique placeholder (legacy compat).
-    return db.insert('waiters', {
+    final waiterId = await db.insert('waiters', {
       'name': name,
       'pin': pinHash,
       'pinHash': pinHash,
       'pinSalt': pinSalt,
       'pinUpdatedAt': now,
       'uuid': DatabaseSchema.generateUuid(),
+      ...scope,
+      ...syncStatus(),
+      ...ts,
     });
+    await _queueOutboxById('waiters', 'waiters', waiterId, operation: 'create');
+    return waiterId;
   }
 
   Future<void> updateWaiterPin(int id, String hash, String salt) async {
@@ -490,11 +668,20 @@ class DatabaseService {
       'pinSalt': salt,
       'pinUpdatedAt': DateTime.now().toIso8601String(),
     }, where: 'id = ?', whereArgs: [id]);
+    await _queueOutboxById('waiters', 'waiters', id, operation: 'update');
   }
 
   Future<void> deleteWaiterById(int id) async {
     final db = await database;
+    final row = await _fetchEntityRow(
+      'waiters',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     await db.delete('waiters', where: 'id = ?', whereArgs: [id]);
+    if (row != null) {
+      await _queueOutboxRow('waiters', row, 'delete');
+    }
   }
 
   // ────────────────────────────── SALES ─────────────────────────────────────
@@ -511,14 +698,20 @@ class DatabaseService {
     int? shiftId,
   }) async {
     final db = await database;
-    await db.insert('sales', {
+    final scope = await syncScope();
+    final ts = syncTimestamps();
+    final saleId = await db.insert('sales', {
       'waiterName': waiterName,
       'tableId': tableId,
       'total': total,
-      'timestamp': DateTime.now().toIso8601String(),
+      'timestamp': ts['createdAt'],
       if (shiftId != null) 'shiftId': shiftId,
       'uuid': DatabaseSchema.generateUuid(),
+      ...scope,
+      ...syncStatus(),
+      ...ts,
     });
+    await _queueOutboxById('sales', 'sales', saleId, operation: 'create');
   }
 
   Future<void> clearSales() async {
@@ -542,8 +735,10 @@ class DatabaseService {
     int? shiftId,
   }) async {
     final db = await database;
+    final scope = await syncScope();
+    final ts = syncTimestamps();
+    final timestamp = ts['createdAt']!;
     return db.transaction<int>((txn) async {
-      final timestamp = DateTime.now().toIso8601String();
       final saleId = await txn.insert('sales', {
         'waiterName': waiterName,
         'tableId': tableId,
@@ -551,9 +746,19 @@ class DatabaseService {
         'timestamp': timestamp,
         'shiftId': shiftId,
         'uuid': DatabaseSchema.generateUuid(),
+        ...scope,
+        ...syncStatus(),
+        ...ts,
       });
+      await _queueOutboxById(
+        'sales',
+        'sales',
+        saleId,
+        operation: 'create',
+        txn: txn,
+      );
       for (final line in lines) {
-        await txn.insert('sale_lines', {
+        final lineId = await txn.insert('sale_lines', {
           'saleId': saleId,
           'productId': line['productId'],
           'productName': line['productName'],
@@ -566,8 +771,18 @@ class DatabaseService {
           'tableName': line['tableName'],
           'waiterName': line['waiterName'],
           'createdAt': timestamp,
+          'updatedAt': timestamp,
           'uuid': DatabaseSchema.generateUuid(),
+          ...scope,
+          ...syncStatus(),
         });
+        await _queueOutboxById(
+          'sale_lines',
+          'sale_lines',
+          lineId,
+          operation: 'create',
+          txn: txn,
+        );
       }
       return saleId;
     });
@@ -652,14 +867,26 @@ class DatabaseService {
     int? shiftId,
   }) async {
     final db = await database;
-    return db.insert('expenses', {
+    final scope = await syncScope();
+    final ts = syncTimestamps(when: date);
+    final expenseId = await db.insert('expenses', {
       'type': type,
       'description': description,
       'amount': amount,
-      'timestamp': date.toIso8601String(),
+      'timestamp': ts['createdAt'],
       'shiftId': shiftId,
       'uuid': DatabaseSchema.generateUuid(),
+      ...scope,
+      ...syncStatus(),
+      ...ts,
     });
+    await _queueOutboxById(
+      'expenses',
+      'expenses',
+      expenseId,
+      operation: 'create',
+    );
+    return expenseId;
   }
 
   Future<void> deleteExpenseById(int id) async {
@@ -809,11 +1036,37 @@ class DatabaseService {
 
   Future<void> upsertWaiterSalary(String waiterName, double dailyRate) async {
     final db = await database;
+    final existing = await db.query(
+      'waiter_salaries',
+      where: 'waiterName = ?',
+      whereArgs: [waiterName],
+      limit: 1,
+    );
+    final scope = await syncScope();
+    final ts = syncTimestamps();
+    final salaryUuid = existing.isEmpty
+        ? DatabaseSchema.generateUuid()
+        : existing.first['uuid'] as String? ?? DatabaseSchema.generateUuid();
     await db.insert('waiter_salaries', {
       'waiterName': waiterName,
       'dailyRate': dailyRate,
-      'uuid': DatabaseSchema.generateUuid(),
+      'uuid': salaryUuid,
+      ...scope,
+      ...syncStatus(),
+      ...ts,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
+    final row = await _fetchEntityRow(
+      'waiter_salaries',
+      where: 'waiterName = ?',
+      whereArgs: [waiterName],
+    );
+    if (row != null) {
+      await _queueOutboxRow(
+        'waiter_salaries',
+        row,
+        existing.isEmpty ? 'create' : 'update',
+      );
+    }
   }
 
   // ───────────────────────── ADVANCES ───────────────────────────────────────
@@ -830,13 +1083,25 @@ class DatabaseService {
     required DateTime date,
   }) async {
     final db = await database;
-    return db.insert('advances', {
+    final scope = await syncScope();
+    final ts = syncTimestamps(when: date);
+    final advanceId = await db.insert('advances', {
       'waiterName': waiterName,
       'amount': amount,
       'note': note,
-      'timestamp': date.toIso8601String(),
+      'timestamp': ts['createdAt'],
       'uuid': DatabaseSchema.generateUuid(),
+      ...scope,
+      ...syncStatus(),
+      ...ts,
     });
+    await _queueOutboxById(
+      'advances',
+      'advances',
+      advanceId,
+      operation: 'create',
+    );
+    return advanceId;
   }
 
   Future<void> deleteAdvanceById(int id) async {
@@ -853,18 +1118,48 @@ class DatabaseService {
 
   Future<void> setWorkedDay(String waiterName, String date, bool worked) async {
     final db = await database;
+    final scope = await syncScope();
+    final ts = syncTimestamps();
     if (worked) {
-      await db.insert('waiter_worked_days', {
-        'waiterName': waiterName,
-        'workDate': date,
-        'uuid': DatabaseSchema.generateUuid(),
-      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      final existing = await db.query(
+        'waiter_worked_days',
+        where: 'waiterName = ? AND workDate = ?',
+        whereArgs: [waiterName, date],
+        limit: 1,
+      );
+      if (existing.isEmpty) {
+        final workedDayId = await db.insert('waiter_worked_days', {
+          'waiterName': waiterName,
+          'workDate': date,
+          'createdAt': date,
+          'updatedAt': ts['updatedAt'],
+          'uuid': DatabaseSchema.generateUuid(),
+          ...scope,
+          ...syncStatus(),
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        if (workedDayId > 0) {
+          await _queueOutboxById(
+            'waiter_worked_days',
+            'waiter_worked_days',
+            workedDayId,
+            operation: 'create',
+          );
+        }
+      }
     } else {
+      final row = await _fetchEntityRow(
+        'waiter_worked_days',
+        where: 'waiterName = ? AND workDate = ?',
+        whereArgs: [waiterName, date],
+      );
       await db.delete(
         'waiter_worked_days',
         where: 'waiterName = ? AND workDate = ?',
         whereArgs: [waiterName, date],
       );
+      if (row != null) {
+        await _queueOutboxRow('waiter_worked_days', row, 'delete');
+      }
     }
   }
 
@@ -877,12 +1172,19 @@ class DatabaseService {
     double openingCash = 0,
   }) async {
     final db = await database;
+    final scope = await syncScope();
+    final opened = openedAt.toIso8601String();
+    final ts = syncTimestamps(when: openedAt);
     return db.insert('shifts', {
-      'openedAt': openedAt.toIso8601String(),
+      'openedAt': opened,
       'openedBy': openedBy,
       'openingCash': openingCash,
       'status': 'open',
       'uuid': DatabaseSchema.generateUuid(),
+      'createdAt': opened,
+      'updatedAt': ts['updatedAt'],
+      ...scope,
+      ...syncStatus(),
     });
   }
 
@@ -917,6 +1219,7 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [shiftId],
     );
+    await _queueOutboxById('shifts', 'shifts', shiftId, operation: 'update');
   }
 
   /// Shuma e [currentTotal] për çdo kamarier (porosi të hapura në tavolina).
@@ -995,7 +1298,9 @@ class DatabaseService {
     String? createdBy,
   }) async {
     final db = await database;
-    return db.insert('sale_adjustments', {
+    final scope = await syncScope();
+    final now = DateTime.now().toIso8601String();
+    final adjustmentId = await db.insert('sale_adjustments', {
       'saleId': saleId,
       'saleLineId': saleLineId,
       'adjustmentType': adjustmentType,
@@ -1004,9 +1309,19 @@ class DatabaseService {
       'amount': amount,
       'reason': reason,
       'createdBy': createdBy,
-      'createdAt': DateTime.now().toIso8601String(),
+      'createdAt': now,
+      'updatedAt': now,
       'uuid': DatabaseSchema.generateUuid(),
+      ...scope,
+      ...syncStatus(),
     });
+    await _queueOutboxById(
+      'sale_adjustments',
+      'sale_adjustments',
+      adjustmentId,
+      operation: 'create',
+    );
+    return adjustmentId;
   }
 
   /// Deletes a sale and all related lines and adjustments (manager void).
@@ -1091,6 +1406,7 @@ class DatabaseService {
     String? platform,
   }) async {
     final db = await database;
+    final scope = await syncScope();
     return db.transaction((txn) async {
       final now = DateTime.now().toIso8601String();
 
@@ -1127,12 +1443,16 @@ class DatabaseService {
         'createdAt':    now,
         'prevHash':     prevHash,
         'rowHash':      rowHash,
-        'deviceId':     deviceId,
+        'deviceId':     deviceId ?? scope['deviceId'],
         'sessionId':    sessionId,
         'terminalName': terminalName,
         'appVersion':   appVersion,
         'platform':     platform,
         'uuid':         DatabaseSchema.generateUuid(),
+        'businessId':   scope['businessId'],
+        'branchId':     scope['branchId'],
+        'updatedAt':    now,
+        ...syncStatus(),
       });
     });
   }
@@ -1187,6 +1507,392 @@ class DatabaseService {
       orderBy: 'id DESC',
       limit: limit,
       offset: offset,
+    );
+  }
+
+  // ─────────────────────────── INVENTORY ────────────────────────────────────
+
+  /// Registers a stock-tracked item (not linked to POS sale deduction yet).
+  Future<int> insertInventoryItem({
+    required String name,
+    required String unit,
+    String? productUuid,
+    double currentQuantity = 0,
+    double lowStockThreshold = 0,
+    double costPerUnit = 0,
+    bool isActive = true,
+  }) async {
+    final db = await database;
+    final scope = await syncScope();
+    final ts = syncTimestamps();
+    final itemId = await db.insert('inventory_items', {
+      'uuid': DatabaseSchema.generateUuid(),
+      'productUuid': productUuid,
+      'name': name,
+      'unit': unit,
+      'currentQuantity': currentQuantity,
+      'lowStockThreshold': lowStockThreshold,
+      'costPerUnit': costPerUnit,
+      'isActive': isActive ? 1 : 0,
+      ...scope,
+      ...ts,
+      ...syncStatus(),
+    });
+    await _queueOutboxById(
+      'inventory_items',
+      'inventory_items',
+      itemId,
+      operation: 'create',
+    );
+    return itemId;
+  }
+
+  /// Updates an inventory item; soft-delete via [deletedAt] / [isActive] = 0.
+  Future<void> updateInventoryItem(
+    int id,
+    Map<String, dynamic> fields,
+  ) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    final patch = Map<String, Object?>.from(fields);
+    patch['updatedAt'] = patch['updatedAt'] ?? now;
+    patch['syncStatus'] = DatabaseSchema.kSyncStatusPending;
+    patch['lastSyncedAt'] = null;
+    if (patch.containsKey('isActive') && patch['isActive'] is bool) {
+      patch['isActive'] = (patch['isActive'] as bool) ? 1 : 0;
+    }
+    await db.update(
+      'inventory_items',
+      patch,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    final row = await _fetchEntityRow(
+      'inventory_items',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (row != null) {
+      final deleted = row['deletedAt'] != null ||
+          (row['isActive'] as num?)?.toInt() == 0;
+      await _queueOutboxRow(
+        'inventory_items',
+        row,
+        deleted ? 'delete' : 'update',
+      );
+    }
+  }
+
+  /// Active, non-deleted inventory items.
+  Future<List<Map<String, dynamic>>> getInventoryItems({
+    bool includeInactive = false,
+  }) async {
+    final db = await database;
+    final where = <String>['deletedAt IS NULL'];
+    if (!includeInactive) {
+      where.add('isActive = 1');
+    }
+    return db.query(
+      'inventory_items',
+      where: where.join(' AND '),
+      orderBy: 'name ASC',
+    );
+  }
+
+  /// Items at or below [lowStockThreshold] (active, not deleted).
+  Future<List<Map<String, dynamic>>> getLowStockItems() async {
+    final db = await database;
+    return db.query(
+      'inventory_items',
+      where: 'deletedAt IS NULL AND isActive = 1 '
+          'AND currentQuantity <= lowStockThreshold',
+      orderBy: 'currentQuantity ASC, name ASC',
+    );
+  }
+
+  /// Records stock movement and updates [currentQuantity] atomically.
+  Future<int> insertStockMovement({
+    required String inventoryItemUuid,
+    required String movementType,
+    required double quantity,
+    String? reason,
+    String? referenceType,
+    String? referenceUuid,
+  }) async {
+    if (!DatabaseSchema.stockMovementTypes.contains(movementType)) {
+      throw ArgumentError.value(
+        movementType,
+        'movementType',
+        'Must be one of: ${DatabaseSchema.stockMovementTypes.join(', ')}',
+      );
+    }
+    if (movementType != 'adjustment' && quantity == 0) {
+      throw ArgumentError.value(quantity, 'quantity', 'Must be non-zero');
+    }
+
+    final db = await database;
+    final scope = await syncScope();
+    final ts = syncTimestamps();
+    final delta = DatabaseSchema.stockQuantityDelta(movementType, quantity);
+
+    return db.transaction<int>((txn) async {
+      final items = await txn.query(
+        'inventory_items',
+        where: 'uuid = ? AND deletedAt IS NULL',
+        whereArgs: [inventoryItemUuid],
+        limit: 1,
+      );
+      if (items.isEmpty) {
+        throw StateError('Inventory item not found: $inventoryItemUuid');
+      }
+      final item = items.first;
+      final itemId = item['id'] as int;
+      final current = (item['currentQuantity'] as num).toDouble();
+      final newQty = current + delta;
+      final now = ts['updatedAt']!;
+
+      await txn.update(
+        'inventory_items',
+        {
+          'currentQuantity': newQty,
+          'updatedAt': now,
+          'syncStatus': DatabaseSchema.kSyncStatusPending,
+          'lastSyncedAt': null,
+        },
+        where: 'id = ?',
+        whereArgs: [itemId],
+      );
+
+      final movementId = await txn.insert('stock_movements', {
+        'uuid': DatabaseSchema.generateUuid(),
+        'inventoryItemUuid': inventoryItemUuid,
+        'movementType': movementType,
+        'quantity': quantity,
+        'reason': reason,
+        'referenceType': referenceType,
+        'referenceUuid': referenceUuid,
+        ...scope,
+        ...ts,
+        ...syncStatus(),
+      });
+
+      await _queueOutboxById(
+        'inventory_items',
+        'inventory_items',
+        itemId,
+        operation: 'update',
+        txn: txn,
+      );
+      await _queueOutboxById(
+        'stock_movements',
+        'stock_movements',
+        movementId,
+        operation: 'create',
+        txn: txn,
+      );
+      return movementId;
+    });
+  }
+
+  /// Movement history for one inventory item, newest first.
+  Future<List<Map<String, dynamic>>> getStockMovementsForItem(
+    String inventoryItemUuid, {
+    int? limit,
+  }) async {
+    final db = await database;
+    return db.query(
+      'stock_movements',
+      where: 'inventoryItemUuid = ? AND deletedAt IS NULL',
+      whereArgs: [inventoryItemUuid],
+      orderBy: 'createdAt DESC',
+      limit: limit,
+    );
+  }
+
+  // ───────────────────────────── OUTBOX ─────────────────────────────────────
+
+  Future<Map<String, dynamic>?> _fetchEntityRow(
+    String table, {
+    required String where,
+    required List<Object?> whereArgs,
+    Transaction? txn,
+  }) async {
+    final rows = txn != null
+        ? await txn.query(
+            table,
+            where: where,
+            whereArgs: whereArgs,
+            limit: 1,
+          )
+        : await (await database).query(
+            table,
+            where: where,
+            whereArgs: whereArgs,
+            limit: 1,
+          );
+    return rows.isEmpty ? null : rows.first;
+  }
+
+  /// Enqueues one outbox row; optional [txn] keeps queue aligned with entity writes.
+  Future<String> _enqueueOutbox({
+    required String entityType,
+    required String entityUuid,
+    required String operation,
+    required Map<String, dynamic> payload,
+    Transaction? txn,
+    String? businessId,
+    String? branchId,
+    String? deviceId,
+  }) async {
+    if (!DatabaseSchema.outboxOperations.contains(operation)) {
+      throw ArgumentError.value(
+        operation,
+        'operation',
+        'Must be one of: ${DatabaseSchema.outboxOperations.join(', ')}',
+      );
+    }
+    final scope = await syncScope();
+    final now = DateTime.now().toIso8601String();
+    final eventUuid = DatabaseSchema.generateUuid();
+    final row = <String, Object?>{
+      'uuid': eventUuid,
+      'businessId': businessId ?? scope['businessId']!,
+      'branchId': branchId ?? scope['branchId']!,
+      'deviceId': deviceId ?? scope['deviceId']!,
+      'entityType': entityType,
+      'entityUuid': entityUuid,
+      'operation': operation,
+      'payloadJson': jsonEncode(payload),
+      'syncStatus': DatabaseSchema.kSyncStatusPending,
+      'retryCount': 0,
+      'createdAt': now,
+      'updatedAt': now,
+    };
+    if (txn != null) {
+      await txn.insert('outbox', row);
+    } else {
+      final db = await database;
+      await db.insert('outbox', row);
+    }
+    return eventUuid;
+  }
+
+  Future<void> _queueOutboxRow(
+    String entityType,
+    Map<String, dynamic> row,
+    String operation, {
+    Transaction? txn,
+  }) async {
+    final entityUuid = row['uuid'] as String?;
+    if (entityUuid == null || entityUuid.isEmpty) return;
+    await _enqueueOutbox(
+      entityType: entityType,
+      entityUuid: entityUuid,
+      operation: operation,
+      payload: row,
+      txn: txn,
+    );
+  }
+
+  Future<void> _queueOutboxById(
+    String entityType,
+    String table,
+    Object id, {
+    required String operation,
+    String idColumn = 'id',
+    Transaction? txn,
+  }) async {
+    final row = await _fetchEntityRow(
+      table,
+      where: '$idColumn = ?',
+      whereArgs: [id],
+      txn: txn,
+    );
+    if (row != null) {
+      await _queueOutboxRow(entityType, row, operation, txn: txn);
+    }
+  }
+
+  /// Enqueues a local change for future upload. Does not perform network I/O.
+  ///
+  /// [operation] must be one of: `create`, `update`, `delete`.
+  /// Returns the new event's [uuid].
+  Future<String> insertOutboxEvent({
+    required String entityType,
+    required String entityUuid,
+    required String operation,
+    required String payloadJson,
+    String? businessId,
+    String? branchId,
+    String? deviceId,
+  }) async {
+    return _enqueueOutbox(
+      entityType: entityType,
+      entityUuid: entityUuid,
+      operation: operation,
+      payload: jsonDecode(payloadJson) as Map<String, dynamic>,
+      businessId: businessId,
+      branchId: branchId,
+      deviceId: deviceId,
+    );
+  }
+
+  /// Pending outbox events, oldest first (FIFO).
+  Future<List<Map<String, dynamic>>> getPendingOutboxEvents({
+    int limit = 100,
+  }) async {
+    final db = await database;
+    return db.query(
+      'outbox',
+      where: 'syncStatus = ?',
+      whereArgs: [DatabaseSchema.kSyncStatusPending],
+      orderBy: 'createdAt ASC',
+      limit: limit,
+    );
+  }
+
+  /// Marks an outbox row as successfully synced.
+  Future<void> markOutboxEventSynced(String uuid) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    await db.update(
+      'outbox',
+      {
+        'syncStatus': DatabaseSchema.kOutboxSyncSynced,
+        'lastSyncedAt': now,
+        'updatedAt': now,
+        'lastError': null,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+    );
+  }
+
+  /// Marks an outbox row as failed and increments [retryCount].
+  Future<void> markOutboxEventFailed(String uuid, String error) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    final rows = await db.query(
+      'outbox',
+      columns: ['retryCount'],
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+      limit: 1,
+    );
+    final retry = rows.isEmpty
+        ? 1
+        : ((rows.first['retryCount'] as num?)?.toInt() ?? 0) + 1;
+    await db.update(
+      'outbox',
+      {
+        'syncStatus': DatabaseSchema.kOutboxSyncFailed,
+        'lastError': error,
+        'retryCount': retry,
+        'updatedAt': now,
+        'lastAttemptAt': now,
+      },
+      where: 'uuid = ?',
+      whereArgs: [uuid],
     );
   }
 }

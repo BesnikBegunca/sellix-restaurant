@@ -7,6 +7,11 @@ import 'package:flutter/material.dart';
 
 import '../models/mock_data.dart';
 import '../models/pos_models.dart';
+import '../repositories/expense_repository.dart';
+import '../repositories/product_repository.dart';
+import '../repositories/salary_repository.dart';
+import '../repositories/sales_repository.dart';
+import '../repositories/shift_repository.dart';
 import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
 export '../models/pos_models.dart';
@@ -133,7 +138,7 @@ class ManagerData extends ChangeNotifier {
 
     // Shift — ensure a permanent shift record exists in [shifts] table.
     shiftOpen = true;
-    await _ensureOpenShift(db);
+    await _ensureOpenShift();
 
     // Waiters
     final waiterRows = await db.fetchWaiters();
@@ -141,7 +146,7 @@ class ManagerData extends ChangeNotifier {
     await _migrateWaiterPins();
 
     // Categories + products
-    await _reloadMenu(db);
+    await _reloadMenu();
 
     // Tables
     final tableRows = await db.fetchTables();
@@ -149,19 +154,19 @@ class ManagerData extends ChangeNotifier {
     tableCount = _cashierTables.length;
 
     // Expenses
-    final expenseRows = await db.fetchExpenses();
+    final expenseRows = await ExpenseRepository.instance.fetchExpenses();
     _expenses = expenseRows.map(ExpenseRow.fromMap).toList();
 
     // Sales → rebuild waiterSales map (current shift only)
-    await _reloadSales(db);
+    await _reloadSales();
 
     // Salaries + advances
-    _salaries = await db.fetchAllSalaries();
-    final advanceRows = await db.fetchAdvances();
+    _salaries = await SalaryRepository.instance.fetchAllSalaries();
+    final advanceRows = await SalaryRepository.instance.fetchAdvances();
     _advances = advanceRows.map(AdvanceRow.fromMap).toList();
 
     // Worked days
-    final workedRows = await db.fetchWorkedDays();
+    final workedRows = await SalaryRepository.instance.fetchWorkedDays();
     _workedDays = {};
     for (final r in workedRows) {
       final name = r['waiterName'] as String;
@@ -182,9 +187,9 @@ class ManagerData extends ChangeNotifier {
   }
 
   /// Reloads categories and their products from the DB.
-  Future<void> _reloadMenu(DatabaseService db) async {
-    final catRows = await db.fetchCategories();
-    final prodRows = await db.fetchProducts();
+  Future<void> _reloadMenu() async {
+    final catRows = await ProductRepository.instance.fetchCategories();
+    final prodRows = await ProductRepository.instance.fetchProducts();
 
     // Group products by categoryId
     final byCategory = <String, List<ProductItem>>{};
@@ -199,8 +204,8 @@ class ManagerData extends ChangeNotifier {
   }
 
   /// Rebuilds [_salesHistory] (all-time) and [waiterSales] (current shift only).
-  Future<void> _reloadSales(DatabaseService db) async {
-    final rows = await db.fetchSales();
+  Future<void> _reloadSales() async {
+    final rows = await SalesRepository.instance.fetchSales();
     _salesHistory = rows.map(SaleRow.fromMap).toList();
     waiterSales = {};
     for (final s in _salesHistory) {
@@ -212,8 +217,8 @@ class ManagerData extends ChangeNotifier {
 
   /// Loads or auto-creates the open shift record in the [shifts] table.
   /// Sets [_currentShiftId] so every subsequent sale is linked to this shift.
-  Future<void> _ensureOpenShift(DatabaseService db) async {
-    final open = await db.fetchOpenShift();
+  Future<void> _ensureOpenShift() async {
+    final open = await ShiftRepository.instance.fetchOpenShift();
     if (open != null) {
       _currentShiftId = (open['id'] as num).toInt();
       final oa = open['openedAt'] as String?;
@@ -221,7 +226,8 @@ class ManagerData extends ChangeNotifier {
     } else {
       // Auto-create a shift so the system is always in a valid state.
       final now = DateTime.now();
-      _currentShiftId = await db.insertShiftRecord(openedAt: now);
+      _currentShiftId =
+          await ShiftRepository.instance.insertShiftRecord(openedAt: now);
       shiftOpenedAt = now;
     }
   }
@@ -289,13 +295,13 @@ class ManagerData extends ChangeNotifier {
     shiftOpenedAt = DateTime.now();
     shiftClosedAt = null;
     // Legacy singleton shift record (kept for backward compat with older UI).
-    await DatabaseService.instance.updateShift(
+    await ShiftRepository.instance.updateShift(
       openedAt: shiftOpenedAt!.toIso8601String(),
       closedAt: null,
       status: 'open',
     );
     // Permanent shift archive — open a new record in [shifts] table.
-    _currentShiftId = await DatabaseService.instance.insertShiftRecord(
+    _currentShiftId = await ShiftRepository.instance.insertShiftRecord(
       openedAt: shiftOpenedAt!,
     );
     AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
@@ -327,8 +333,9 @@ class ManagerData extends ChangeNotifier {
     }
 
     if (saleIdsInShift.isNotEmpty) {
-      final adjRows =
-          await DatabaseService.instance.fetchAdjustmentsForSales(saleIdsInShift);
+      final adjRows = await SalesRepository.instance.fetchAdjustmentsForSales(
+        saleIdsInShift,
+      );
       final saleById = <int, SaleRow>{};
       for (final s in _salesHistory) {
         if (s.dbId != null) saleById[s.dbId!] = s;
@@ -393,7 +400,7 @@ class ManagerData extends ChangeNotifier {
       final shiftGrandTotal = report.grandTotal;
       final snapshotJson = jsonEncode(report.toJson());
 
-      await db.closeShiftRecord(
+      await ShiftRepository.instance.closeShiftRecord(
         shiftId: closingShiftId,
         closedAt: now,
         totalSales: shiftGrandTotal,
@@ -404,7 +411,7 @@ class ManagerData extends ChangeNotifier {
 
       shiftClosedAt = now;
 
-      await db.updateShift(
+      await ShiftRepository.instance.updateShift(
         openedAt: null,
         closedAt: now.toIso8601String(),
         status: 'open',
@@ -416,7 +423,8 @@ class ManagerData extends ChangeNotifier {
         totalExpenses: shiftExpensesTotal,
       );
 
-      _currentShiftId = await db.insertShiftRecord(openedAt: now);
+      _currentShiftId =
+          await ShiftRepository.instance.insertShiftRecord(openedAt: now);
       AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
       shiftOpenedAt = now;
 
@@ -433,7 +441,7 @@ class ManagerData extends ChangeNotifier {
             ),
           )
           .toList();
-      await _reloadSales(db);
+      await _reloadSales();
       notifyListeners();
     } catch (e, st) {
       debugPrint('closeShift failed: $e\n$st');
@@ -551,7 +559,7 @@ class ManagerData extends ChangeNotifier {
   // ─────────────────────────── expenses ─────────────────────────────────────
 
   Future<void> addExpense(ExpenseRow row) async {
-    final newId = await DatabaseService.instance.insertExpense(
+    final newId = await ExpenseRepository.instance.insertExpense(
       type: row.type,
       description: row.description,
       amount: row.amount,
@@ -583,7 +591,7 @@ class ManagerData extends ChangeNotifier {
     if (index < 0 || index >= _expenses.length) return;
     final e = _expenses[index];
     if (e.dbId != null) {
-      await DatabaseService.instance.deleteExpenseById(e.dbId!);
+      await ExpenseRepository.instance.deleteExpenseById(e.dbId!);
     }
     AuditLogService.instance.logExpenseDeleted(
       expenseId:   e.dbId ?? 0,
@@ -603,7 +611,7 @@ class ManagerData extends ChangeNotifier {
 
   Future<void> setSalary(String waiterName, double dailyRate) async {
     final old = _salaries[waiterName];
-    await DatabaseService.instance.upsertWaiterSalary(waiterName, dailyRate);
+    await SalaryRepository.instance.upsertWaiterSalary(waiterName, dailyRate);
     _salaries = {..._salaries, waiterName: dailyRate};
     AuditLogService.instance.logSalaryChanged(
       waiterName: waiterName,
@@ -629,7 +637,7 @@ class ManagerData extends ChangeNotifier {
       advancesFor(waiterName, from, to).fold(0.0, (s, a) => s + a.amount);
 
   Future<void> addAdvance(AdvanceRow row) async {
-    final newId = await DatabaseService.instance.insertAdvance(
+    final newId = await SalaryRepository.instance.insertAdvance(
       waiterName: row.waiterName,
       amount: row.amount,
       note: row.note,
@@ -649,7 +657,7 @@ class ManagerData extends ChangeNotifier {
   }
 
   Future<void> deleteAdvance(int id) async {
-    await DatabaseService.instance.deleteAdvanceById(id);
+    await SalaryRepository.instance.deleteAdvanceById(id);
     _advances.removeWhere((a) => a.dbId == id);
     notifyListeners();
   }
@@ -673,7 +681,7 @@ class ManagerData extends ChangeNotifier {
     final key = _dateKey(date);
     final currentSet = Set<String>.from(_workedDays[waiterName] ?? {});
     final nowWorked = !currentSet.contains(key);
-    await DatabaseService.instance.setWorkedDay(waiterName, key, nowWorked);
+    await SalaryRepository.instance.setWorkedDay(waiterName, key, nowWorked);
     if (nowWorked) {
       currentSet.add(key);
     } else {
