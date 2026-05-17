@@ -85,6 +85,15 @@ class EscPosBytes {
   EscPosBytes boldCenteredLine(String s) =>
       alignCenter().boldOn().textLine(s).boldOff().alignLeft();
 
+  /// Centered, bold, double width/height (titull pagese).
+  EscPosBytes boldCenteredDoubleLine(String s) => alignCenter()
+      .boldOn()
+      .doubleSize(true)
+      .textLine(s)
+      .doubleSize(false)
+      .boldOff()
+      .alignLeft();
+
   /// Print a line feed n times.
   EscPosBytes lf([int n = 1]) {
     for (var i = 0; i < n; i++) {

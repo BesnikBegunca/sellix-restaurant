@@ -120,21 +120,32 @@ Add-Type -AssemblyName System.Drawing
   foreach (\$line in \$lines) {
     \$rect = New-Object System.Drawing.RectangleF(\$printX, \$y, \$printWidth, \$lineHeight)
     \$fmt = New-Object System.Drawing.StringFormat
-    if (\$line.StartsWith('[[CB]]') -and \$line.EndsWith('[[/CB]]')) {
+    if (\$line.StartsWith('[[CBL]]') -and \$line.EndsWith('[[/CBL]]')) {
+      \$clean = \$line.Substring(7, \$line.Length - 15)
+      \$fontLarge = New-Object System.Drawing.Font('Consolas', 16, [System.Drawing.FontStyle]::Bold)
+      \$fmt.Alignment = [System.Drawing.StringAlignment]::Center
+      \$largeHeight = \$fontLarge.GetHeight() + 6
+      \$largeRect = New-Object System.Drawing.RectangleF(\$printX, \$y, \$printWidth, \$largeHeight)
+      \$e.Graphics.DrawString(\$clean, \$fontLarge, \$brush, \$largeRect, \$fmt)
+      \$y += \$largeHeight
+    } elseif (\$line.StartsWith('[[CB]]') -and \$line.EndsWith('[[/CB]]')) {
       \$clean = \$line.Substring(6, \$line.Length - 13)
       \$fmt.Alignment = [System.Drawing.StringAlignment]::Center
       \$e.Graphics.DrawString(\$clean, \$fontBold, \$brush, \$rect, \$fmt)
+      \$y += \$lineHeight
     } elseif (\$line.StartsWith('[[C]]') -and \$line.EndsWith('[[/C]]')) {
       \$clean = \$line.Substring(5, \$line.Length - 11)
       \$fmt.Alignment = [System.Drawing.StringAlignment]::Center
       \$e.Graphics.DrawString(\$clean, \$fontRegular, \$brush, \$rect, \$fmt)
+      \$y += \$lineHeight
     } elseif (\$line.StartsWith('[[B]]') -and \$line.EndsWith('[[/B]]')) {
       \$clean = \$line.Substring(5, \$line.Length - 11)
       \$e.Graphics.DrawString(\$clean, \$fontBold, \$brush, 0, \$y)
+      \$y += \$lineHeight
     } else {
       \$e.Graphics.DrawString(\$line, \$fontRegular, \$brush, 0, \$y)
+      \$y += \$lineHeight
     }
-    \$y += \$lineHeight
   }
   \$e.HasMorePages = \$false
 })

@@ -25,6 +25,11 @@ String buildKitchenOrderReceiptText({
   String markCenterBold(String s) =>
       '[[CB]]${s.replaceAll('\n', ' ')}[[/CB]]';
 
+  String markCenterBoldLarge(String s) =>
+      '[[CBL]]${s.replaceAll('\n', ' ')}[[/CBL]]';
+
+  String markBold(String s) => '[[B]]${s.replaceAll('\n', ' ')}[[/B]]';
+
   String rowLR(String left, String right) {
     if (right.length >= width) return right.substring(0, width);
     final leftMax = width - right.length;
@@ -48,13 +53,14 @@ String buildKitchenOrderReceiptText({
   String fmtMoney(double v) => v.toStringAsFixed(2);
   String two(int v) => v.toString().padLeft(2, '0');
 
-  const productCol = 16;
-  const qtyCol = 6;
-  const priceCol = width - productCol - qtyCol;
+  const productCol = 11;
+  const qtyCol = 5; // "Sasia" = 5 shkronja
+  const unitCol = 7;
+  const valueCol = width - productCol - qtyCol - unitCol;
 
   final out = <String>[];
   if (paymentReceipt) {
-    out.add(markCenterBold('Fakture per Pagese'));
+    out.add(markCenterBoldLarge('TOTALI PER PAGESE'));
     out.add('');
     out.add(markCenterBold(companyName));
     out.add(rule());
@@ -63,27 +69,33 @@ String buildKitchenOrderReceiptText({
     out.add(markCenterBold(companyName));
     out.add(rule());
   }
-  out.add(rowLR('Kamarjeri : $waiterName', 'Tavolina $tableNumber'));
+  out.add(rowLR('Perdoruesi : $waiterName', 'Tavolina $tableNumber'));
   out.add('');
-  out.add(
-    padRight('Produkti', productCol) +
-        padLeft('Sasia', qtyCol) +
-        padLeft('Cmimi', priceCol),
-  );
-  out.add('');
+  final itemsHeader =
+      padRight('Produkti', productCol) +
+      padLeft('Sasia', qtyCol) +
+      padLeft('Cmimi', unitCol) +
+      padLeft('Vlera', valueCol);
+  out.add(markBold(itemsHeader));
+  out.add(rule());
 
   for (final line in lines) {
     final p = line.product;
+    final lineValue = p.price * line.qty;
     out.add(
       padRight(p.name, productCol) +
           padLeft(line.qty.toString(), qtyCol) +
-          padLeft(fmtMoney(p.price), priceCol),
+          padLeft(fmtMoney(p.price), unitCol) +
+          padLeft(fmtMoney(lineValue), valueCol),
     );
   }
 
   out.add('');
   out.add(rule());
-  out.add(padRight('Total:', productCol + qtyCol) + padLeft(fmtMoney(total), priceCol));
+  out.add(
+    padRight('Total:', productCol + qtyCol + unitCol) +
+        padLeft(fmtMoney(total), valueCol),
+  );
   out.add('Order #$orderNumber');
   final now = DateTime.now();
   out.add(
@@ -137,7 +149,7 @@ String buildShiftReceiptText({
   out.add(markCenterBold(companyName));
   out.add(markCenter('GJENDJA'));
   out.add(rule());
-  out.add(padRight('Kamarjeri', waiterCol) + padLeft('Totali', totalCol));
+  out.add(padRight('Perdoruesi', waiterCol) + padLeft('Totali', totalCol));
   out.add('');
 
   for (final name in names) {
