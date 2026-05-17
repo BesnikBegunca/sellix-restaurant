@@ -15,6 +15,7 @@ import '../features/dashboard/panels/staff_payroll_panel.dart';
 import '../features/dashboard/panels/overview_panel.dart';
 import '../features/dashboard/panels/company_settings_panel.dart';
 import '../features/dashboard/panels/refund_panel.dart';
+import '../features/dashboard/panels/sales_daily_panel.dart';
 import '../features/dashboard/widgets/manager_side_nav.dart';
 import '../features/dashboard/widgets/manager_top_bar.dart';
 
@@ -25,6 +26,7 @@ const _kSectionTitles = <String>[
   'Staff',
   'Expenses',
   'Profits',
+  'Shitjet',
   'Reports',
   'Leaderboard',
   'Menu',
@@ -135,22 +137,24 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       case 4:
         return ProfitsPanel(m: _m);
       case 5:
-        return ReportsPanel(m: _m);
+        return SalesDailyPanel(m: _m);
       case 6:
-        return TopEmployeePanel(m: _m);
+        return ReportsPanel(m: _m);
       case 7:
-        return MenuPanel(m: _m);
+        return TopEmployeePanel(m: _m);
       case 8:
-        return TablesConfigPanel(m: _m);
+        return MenuPanel(m: _m);
       case 9:
-        return CompanySettingsPanel(m: _m);
+        return TablesConfigPanel(m: _m);
       case 10:
-        return StaffPayrollPanel(m: _m);
+        return CompanySettingsPanel(m: _m);
       case 11:
-        return RefundPanel(m: _m);
+        return StaffPayrollPanel(m: _m);
       case 12:
-        return const SalesHistoryPanel();
+        return RefundPanel(m: _m);
       case 13:
+        return const SalesHistoryPanel();
+      case 14:
         return const AuditLogPanel();
       default:
         return const SizedBox.shrink();
