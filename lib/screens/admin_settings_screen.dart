@@ -32,6 +32,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   String? _autoBackupFolder;
   bool _hasRestoreUndo = false;
   bool _useCompression = false;
+  bool _autoBackupPasswordSet = false;
 
   // ── ESC/POS + receipt settings ────────────────────────────────────────────
   bool _useEscPos         = true;
@@ -714,6 +715,44 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  _autoBackupPasswordSet
+                      ? Icons.lock_outlined
+                      : Icons.lock_open_outlined,
+                  size: 16,
+                  color: _autoBackupPasswordSet
+                      ? AppColors.primaryGreen
+                      : AppColors.negativeText,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    _autoBackupPasswordSet
+                        ? 'Encryption password configured'
+                        : 'No encryption password — auto-backup disabled',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _autoBackupPasswordSet
+                          ? AppColors.primaryGreen
+                          : AppColors.negativeText,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed:
+                      _isBackupOperation ? null : _setAutoBackupPassword,
+                  child: Text(
+                    _autoBackupPasswordSet
+                        ? 'Change Password'
+                        : 'Set Password',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 4),
 
             if (_autoBackupFolder != null) ...[
@@ -787,11 +826,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final folder = await DatabaseBackupManager.instance.getAutoBackupFolder();
     final hasUndo = await RestoreService.instance.hasUndoAvailable();
     final compress = await DatabaseBackupManager.instance.getUseCompression();
+    final passwordSet =
+        await DatabaseBackupManager.instance.hasAutoBackupPassword();
     if (!mounted) return;
     setState(() {
       _autoBackupFolder = folder;
       _hasRestoreUndo = hasUndo;
       _useCompression = compress;
+      _autoBackupPasswordSet = passwordSet;
     });
   }
 
@@ -815,7 +857,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       AuditLogService.instance.logBackupExported(
         path: path,
         compressed: opts.compressed,
-        encrypted: opts.password != null,
+        encrypted: true, // encryption is now mandatory
       );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -838,19 +880,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
   }
 
-  /// Shows a dialog letting the admin choose export format and optional
-  /// password encryption.  Returns null if cancelled.
+  /// Shows a dialog letting the admin choose export format and set a required
+  /// encryption password (minimum 8 characters).  Returns null if cancelled.
   Future<_ExportOptions?> _showExportOptionsDialog() async {
-    int selectedFormat = 0; // 0=plain, 1=zip, 2=encrypted, 3=enc+zip
+    // 0 = Encrypted (.enc.db), 1 = Encrypted + Compressed (.enc.zip)
+    int selectedFormat = 0;
     final pwCtrl = TextEditingController();
     final pwConfirmCtrl = TextEditingController();
+    String? errorMsg;
 
     final result = await showDialog<_ExportOptions>(
       context: context,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
-            final isEncrypted = selectedFormat >= 2;
             return AlertDialog(
               title: const Text(
                 'Export Options',
@@ -872,7 +915,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     _dialogRadio(
                       ctx: ctx,
                       setState: setDialogState,
-                      label: 'Standard (.db)',
+                      label: 'Encrypted (.enc.db)',
                       value: 0,
                       groupValue: selectedFormat,
                       onChanged: (v) => selectedFormat = v!,
@@ -880,56 +923,48 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     _dialogRadio(
                       ctx: ctx,
                       setState: setDialogState,
-                      label: 'Compressed (.zip)',
+                      label: 'Encrypted + Compressed (.enc.zip)',
                       value: 1,
                       groupValue: selectedFormat,
                       onChanged: (v) => selectedFormat = v!,
                     ),
-                    _dialogRadio(
-                      ctx: ctx,
-                      setState: setDialogState,
-                      label: 'Encrypted (.enc.db)',
-                      value: 2,
-                      groupValue: selectedFormat,
-                      onChanged: (v) => selectedFormat = v!,
-                    ),
-                    _dialogRadio(
-                      ctx: ctx,
-                      setState: setDialogState,
-                      label: 'Encrypted + Compressed (.enc.zip)',
-                      value: 3,
-                      groupValue: selectedFormat,
-                      onChanged: (v) => selectedFormat = v!,
-                    ),
-                    if (isEncrypted) ...[
-                      const SizedBox(height: 16),
-                      const Divider(height: 1),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Password',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.darkGreenText,
-                        ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Encryption Password (required, min 8 characters)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.darkGreenText,
                       ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: pwCtrl,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: pwCtrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Password',
+                        border: OutlineInputBorder(),
+                        isDense: true,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: pwConfirmCtrl,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Confirm password',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    if (errorMsg != null) ...[
                       const SizedBox(height: 8),
-                      TextField(
-                        controller: pwConfirmCtrl,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Confirm password',
-                          border: OutlineInputBorder(),
-                          isDense: true,
+                      Text(
+                        errorMsg!,
+                        style: const TextStyle(
+                          color: AppColors.negativeText,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -938,11 +973,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    pwCtrl.dispose();
-                    pwConfirmCtrl.dispose();
-                    Navigator.pop(ctx);
-                  },
+                  onPressed: () => Navigator.pop(ctx),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
@@ -951,30 +982,23 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     foregroundColor: AppColors.white,
                   ),
                   onPressed: () {
-                    if (isEncrypted) {
-                      if (pwCtrl.text.isEmpty) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter a password.'),
-                          ),
-                        );
-                        return;
-                      }
-                      if (pwCtrl.text != pwConfirmCtrl.text) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                            content: Text('Passwords do not match.'),
-                          ),
-                        );
-                        return;
-                      }
+                    if (pwCtrl.text.length < 8) {
+                      setDialogState(
+                        () => errorMsg =
+                            'Password must be at least 8 characters.',
+                      );
+                      return;
+                    }
+                    if (pwCtrl.text != pwConfirmCtrl.text) {
+                      setDialogState(
+                        () => errorMsg = 'Passwords do not match.',
+                      );
+                      return;
                     }
                     final opts = _ExportOptions(
-                      compressed: selectedFormat == 1 || selectedFormat == 3,
-                      password: isEncrypted ? pwCtrl.text : null,
+                      compressed: selectedFormat == 1,
+                      password: pwCtrl.text,
                     );
-                    pwCtrl.dispose();
-                    pwConfirmCtrl.dispose();
                     Navigator.pop(ctx, opts);
                   },
                   child: const Text('Export'),
@@ -985,6 +1009,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         );
       },
     );
+
+    pwCtrl.dispose();
+    pwConfirmCtrl.dispose();
     return result;
   }
 
@@ -1072,6 +1099,149 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       ),
     );
     return (result == null || result.isEmpty) ? null : result;
+  }
+
+  /// Warning dialog shown before restoring a plaintext (non-encrypted) backup.
+  /// Returns true if the user confirms they want to proceed.
+  Future<bool> _warnUnencryptedBackup() async {
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(
+          'Unencrypted Backup',
+          style: TextStyle(color: AppColors.darkGreenText),
+        ),
+        content: const Text(
+          'This backup file is not encrypted. Restoring an unencrypted backup '
+          'replaces all current data with plaintext data.\n\n'
+          'Are you sure you want to continue?',
+          style: TextStyle(fontSize: 13, color: AppColors.darkGreenText),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.negativeText,
+              foregroundColor: AppColors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Restore Anyway'),
+          ),
+        ],
+      ),
+    );
+    return proceed == true;
+  }
+
+  /// Dialog for setting or changing the auto-backup encryption password.
+  Future<void> _setAutoBackupPassword() async {
+    final pwCtrl = TextEditingController();
+    final pwConfirmCtrl = TextEditingController();
+    String? capturedPassword;
+    String? errorMsg;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text(
+            'Auto-Backup Encryption Password',
+            style: TextStyle(color: AppColors.darkGreenText),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Set a password to encrypt automatic backups. '
+                'You will need this password to restore any auto-backup.',
+                style: TextStyle(fontSize: 13, color: AppColors.darkGreenText),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pwCtrl,
+                obscureText: true,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password (min 8 characters)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: pwConfirmCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm password',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              if (errorMsg != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  errorMsg!,
+                  style: const TextStyle(
+                    color: AppColors.negativeText,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                foregroundColor: AppColors.white,
+              ),
+              onPressed: () {
+                if (pwCtrl.text.length < 8) {
+                  setDialogState(
+                    () => errorMsg =
+                        'Password must be at least 8 characters.',
+                  );
+                  return;
+                }
+                if (pwCtrl.text != pwConfirmCtrl.text) {
+                  setDialogState(
+                    () => errorMsg = 'Passwords do not match.',
+                  );
+                  return;
+                }
+                capturedPassword = pwCtrl.text;
+                Navigator.pop(ctx);
+              },
+              child: const Text('Set Password'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    pwCtrl.dispose();
+    pwConfirmCtrl.dispose();
+
+    if (capturedPassword == null || !mounted) return;
+    await DatabaseBackupManager.instance
+        .setAutoBackupPassword(capturedPassword!);
+    if (!mounted) return;
+    setState(() => _autoBackupPasswordSet = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Auto-backup encryption password set.'),
+        backgroundColor: AppColors.primaryGreen,
+      ),
+    );
   }
 
   Future<void> _undoRestore() async {
@@ -1177,10 +1347,12 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     if (confirmed != true) return;
 
     setState(() => _isBackupOperation = true);
+    AuditLogService.instance.logBackupRestoreAttempt();
     try {
       final success = await RestoreService.instance.restoreDatabase(
         onReloadData: () => ManagerData.instance.reload(),
         onPasswordRequired: _promptForPassword,
+        onPlaintextWarning: _warnUnencryptedBackup,
       );
       if (!mounted) return;
       if (!success) return; // user cancelled file picker or password dialog
@@ -1233,6 +1405,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           'Backup created in:\n${folder ?? 'backup folder'}',
         AutoBackupResult.error => 'Backup failed. Check available disk space.',
         AutoBackupResult.sourceNotFound => 'Database file not found.',
+        AutoBackupResult.noPasswordConfigured =>
+          'Set an encryption password before running auto-backup.',
         _ => 'Backup complete.',
       };
       ScaffoldMessenger.of(context).showSnackBar(

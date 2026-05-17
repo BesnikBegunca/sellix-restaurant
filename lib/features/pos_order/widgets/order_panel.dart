@@ -17,6 +17,7 @@ class OrderPanel extends StatelessWidget {
     required this.onDelta,
     required this.onSend,
     required this.onPay,
+    this.isPaying = false,
   });
 
   final int tableNumber;
@@ -26,6 +27,7 @@ class OrderPanel extends StatelessWidget {
   final void Function(ProductItem p, int delta) onDelta;
   final VoidCallback onSend;
   final VoidCallback onPay;
+  final bool isPaying;
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +129,7 @@ class OrderPanel extends StatelessWidget {
           const SizedBox(height: 24),
           SendOrderButton(enabled: !empty, onSend: onSend),
           const SizedBox(height: 10),
-          PayButton(onPay: onPay),
+          PayButton(onPay: onPay, isPaying: isPaying),
         ],
       ),
     );

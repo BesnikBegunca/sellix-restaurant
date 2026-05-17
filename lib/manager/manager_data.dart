@@ -2,10 +2,16 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
 import '../models/mock_data.dart';
 import '../models/pos_models.dart';
+import '../repositories/expense_repository.dart';
+import '../repositories/product_repository.dart';
+import '../repositories/salary_repository.dart';
+import '../repositories/sales_repository.dart';
+import '../repositories/shift_repository.dart';
 import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
 export '../models/pos_models.dart';
@@ -31,6 +37,11 @@ class ManagerData extends ChangeNotifier {
   // ── loading guard ──────────────────────────────────────────────────────────
 
   bool isLoading = true;
+
+  // ── admin PIN (hashed) ─────────────────────────────────────────────────────
+
+  String? _adminPinHash;
+  String? _adminPinSalt;
 
   // ── company ────────────────────────────────────────────────────────────────
 
@@ -121,18 +132,21 @@ class ManagerData extends ChangeNotifier {
       receiptFooter     = (company['receiptFooter']  as String?) ?? 'Ju Faleminderit!';
       businessAddress   = company['businessAddress'] as String?;
       businessPhone     = company['businessPhone']   as String?;
+      _adminPinHash     = company['adminPinHash']    as String?;
+      _adminPinSalt     = company['adminPinSalt']    as String?;
     }
 
     // Shift — ensure a permanent shift record exists in [shifts] table.
     shiftOpen = true;
-    await _ensureOpenShift(db);
+    await _ensureOpenShift();
 
     // Waiters
     final waiterRows = await db.fetchWaiters();
     _waiters = waiterRows.map(WaiterInfo.fromMap).toList();
+    await _migrateWaiterPins();
 
     // Categories + products
-    await _reloadMenu(db);
+    await _reloadMenu();
 
     // Tables
     final tableRows = await db.fetchTables();
@@ -140,19 +154,19 @@ class ManagerData extends ChangeNotifier {
     tableCount = _cashierTables.length;
 
     // Expenses
-    final expenseRows = await db.fetchExpenses();
+    final expenseRows = await ExpenseRepository.instance.fetchExpenses();
     _expenses = expenseRows.map(ExpenseRow.fromMap).toList();
 
     // Sales → rebuild waiterSales map (current shift only)
-    await _reloadSales(db);
+    await _reloadSales();
 
     // Salaries + advances
-    _salaries = await db.fetchAllSalaries();
-    final advanceRows = await db.fetchAdvances();
+    _salaries = await SalaryRepository.instance.fetchAllSalaries();
+    final advanceRows = await SalaryRepository.instance.fetchAdvances();
     _advances = advanceRows.map(AdvanceRow.fromMap).toList();
 
     // Worked days
-    final workedRows = await db.fetchWorkedDays();
+    final workedRows = await SalaryRepository.instance.fetchWorkedDays();
     _workedDays = {};
     for (final r in workedRows) {
       final name = r['waiterName'] as String;
@@ -173,9 +187,9 @@ class ManagerData extends ChangeNotifier {
   }
 
   /// Reloads categories and their products from the DB.
-  Future<void> _reloadMenu(DatabaseService db) async {
-    final catRows = await db.fetchCategories();
-    final prodRows = await db.fetchProducts();
+  Future<void> _reloadMenu() async {
+    final catRows = await ProductRepository.instance.fetchCategories();
+    final prodRows = await ProductRepository.instance.fetchProducts();
 
     // Group products by categoryId
     final byCategory = <String, List<ProductItem>>{};
@@ -190,8 +204,8 @@ class ManagerData extends ChangeNotifier {
   }
 
   /// Rebuilds [_salesHistory] (all-time) and [waiterSales] (current shift only).
-  Future<void> _reloadSales(DatabaseService db) async {
-    final rows = await db.fetchSales();
+  Future<void> _reloadSales() async {
+    final rows = await SalesRepository.instance.fetchSales();
     _salesHistory = rows.map(SaleRow.fromMap).toList();
     waiterSales = {};
     for (final s in _salesHistory) {
@@ -203,8 +217,8 @@ class ManagerData extends ChangeNotifier {
 
   /// Loads or auto-creates the open shift record in the [shifts] table.
   /// Sets [_currentShiftId] so every subsequent sale is linked to this shift.
-  Future<void> _ensureOpenShift(DatabaseService db) async {
-    final open = await db.fetchOpenShift();
+  Future<void> _ensureOpenShift() async {
+    final open = await ShiftRepository.instance.fetchOpenShift();
     if (open != null) {
       _currentShiftId = (open['id'] as num).toInt();
       final oa = open['openedAt'] as String?;
@@ -212,7 +226,8 @@ class ManagerData extends ChangeNotifier {
     } else {
       // Auto-create a shift so the system is always in a valid state.
       final now = DateTime.now();
-      _currentShiftId = await db.insertShiftRecord(openedAt: now);
+      _currentShiftId =
+          await ShiftRepository.instance.insertShiftRecord(openedAt: now);
       shiftOpenedAt = now;
     }
   }
@@ -280,13 +295,13 @@ class ManagerData extends ChangeNotifier {
     shiftOpenedAt = DateTime.now();
     shiftClosedAt = null;
     // Legacy singleton shift record (kept for backward compat with older UI).
-    await DatabaseService.instance.updateShift(
+    await ShiftRepository.instance.updateShift(
       openedAt: shiftOpenedAt!.toIso8601String(),
       closedAt: null,
       status: 'open',
     );
     // Permanent shift archive — open a new record in [shifts] table.
-    _currentShiftId = await DatabaseService.instance.insertShiftRecord(
+    _currentShiftId = await ShiftRepository.instance.insertShiftRecord(
       openedAt: shiftOpenedAt!,
     );
     AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
@@ -318,8 +333,9 @@ class ManagerData extends ChangeNotifier {
     }
 
     if (saleIdsInShift.isNotEmpty) {
-      final adjRows =
-          await DatabaseService.instance.fetchAdjustmentsForSales(saleIdsInShift);
+      final adjRows = await SalesRepository.instance.fetchAdjustmentsForSales(
+        saleIdsInShift,
+      );
       final saleById = <int, SaleRow>{};
       for (final s in _salesHistory) {
         if (s.dbId != null) saleById[s.dbId!] = s;
@@ -384,7 +400,7 @@ class ManagerData extends ChangeNotifier {
       final shiftGrandTotal = report.grandTotal;
       final snapshotJson = jsonEncode(report.toJson());
 
-      await db.closeShiftRecord(
+      await ShiftRepository.instance.closeShiftRecord(
         shiftId: closingShiftId,
         closedAt: now,
         totalSales: shiftGrandTotal,
@@ -395,7 +411,7 @@ class ManagerData extends ChangeNotifier {
 
       shiftClosedAt = now;
 
-      await db.updateShift(
+      await ShiftRepository.instance.updateShift(
         openedAt: null,
         closedAt: now.toIso8601String(),
         status: 'open',
@@ -407,7 +423,8 @@ class ManagerData extends ChangeNotifier {
         totalExpenses: shiftExpensesTotal,
       );
 
-      _currentShiftId = await db.insertShiftRecord(openedAt: now);
+      _currentShiftId =
+          await ShiftRepository.instance.insertShiftRecord(openedAt: now);
       AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
       shiftOpenedAt = now;
 
@@ -424,7 +441,7 @@ class ManagerData extends ChangeNotifier {
             ),
           )
           .toList();
-      await _reloadSales(db);
+      await _reloadSales();
       notifyListeners();
     } catch (e, st) {
       debugPrint('closeShift failed: $e\n$st');
@@ -434,17 +451,79 @@ class ManagerData extends ChangeNotifier {
     }
   }
 
+  // ─────────────────────────── admin auth ───────────────────────────────────
+
+  /// True when an admin PIN has been set in SQLite.
+  bool get hasAdminPin => _adminPinHash != null && _adminPinSalt != null;
+
+  /// Compares [pin] against the stored SHA-256 hash. Returns false if no PIN is set.
+  Future<bool> verifyAdminPin(String pin) async {
+    if (_adminPinHash == null || _adminPinSalt == null) return false;
+    return _hashPin(pin, _adminPinSalt!) == _adminPinHash;
+  }
+
+  /// Hashes [pin] with a new random salt and stores both in SQLite.
+  Future<void> setAdminPin(String pin) async {
+    final salt = _generateSalt();
+    final hash = _hashPin(pin, salt);
+    await DatabaseService.instance.updateAdminPin(hash, salt);
+    _adminPinHash = hash;
+    _adminPinSalt = salt;
+    notifyListeners();
+  }
+
+  static String _generateSalt() {
+    final rng = math.Random.secure();
+    final bytes = List<int>.generate(32, (_) => rng.nextInt(256));
+    return base64Url.encode(bytes);
+  }
+
+  static String _hashPin(String pin, String salt) {
+    final combined = utf8.encode(pin + salt);
+    return sha256.convert(combined).toString();
+  }
+
   // ─────────────────────────── waiters ──────────────────────────────────────
+
+  Future<void> _migrateWaiterPins() async {
+    bool migrated = false;
+    for (int i = 0; i < _waiters.length; i++) {
+      final w = _waiters[i];
+      if (w.isHashed || w.dbId == null || w.pin.isEmpty) continue;
+      final salt = _generateSalt();
+      final hash = _hashPin(w.pin, salt);
+      await DatabaseService.instance.updateWaiterPin(w.dbId!, hash, salt);
+      _waiters[i] = WaiterInfo(
+        dbId: w.dbId,
+        name: w.name,
+        pin: hash, // replace plaintext with hash in memory too
+        pinHash: hash,
+        pinSalt: salt,
+        pinUpdatedAt: DateTime.now().toIso8601String(),
+      );
+      migrated = true;
+    }
+    if (migrated) notifyListeners();
+  }
 
   Future<void> addWaiter(String name, String pin) async {
     final n = name.trim();
     final p = pin.trim();
     if (n.isEmpty || p.length < 4) return;
-    // Guard against duplicate PINs (cache check is instant)
-    if (_waiters.any((w) => w.pin == p) || p == '9999') return;
+    if (await _waiterPinExists(p)) return;
 
-    final newId = await DatabaseService.instance.insertWaiter(n, p);
-    _waiters.add(WaiterInfo(dbId: newId, name: n, pin: p));
+    final salt = _generateSalt();
+    final hash = _hashPin(p, salt);
+    final now = DateTime.now().toIso8601String();
+    final newId = await DatabaseService.instance.insertWaiter(n, hash, salt);
+    _waiters.add(WaiterInfo(
+      dbId: newId,
+      name: n,
+      pin: hash,
+      pinHash: hash,
+      pinSalt: salt,
+      pinUpdatedAt: now,
+    ));
     AuditLogService.instance.logWaiterAdded(waiterName: n);
     notifyListeners();
   }
@@ -460,18 +539,27 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  WaiterInfo? findWaiterByPin(String pin) {
-    try {
-      return _waiters.firstWhere((w) => w.pin == pin);
-    } catch (_) {
-      return null;
+  Future<bool> _waiterPinExists(String pin) async {
+    for (final w in _waiters) {
+      if (w.isHashed && _hashPin(pin, w.pinSalt!) == w.pinHash) return true;
     }
+    return false;
+  }
+
+  /// Returns true if any existing waiter already uses [pin]. Used by add-waiter UI.
+  Future<bool> waiterPinExists(String pin) => _waiterPinExists(pin);
+
+  Future<WaiterInfo?> findWaiterByPin(String pin) async {
+    for (final w in _waiters) {
+      if (w.isHashed && _hashPin(pin, w.pinSalt!) == w.pinHash) return w;
+    }
+    return null;
   }
 
   // ─────────────────────────── expenses ─────────────────────────────────────
 
   Future<void> addExpense(ExpenseRow row) async {
-    final newId = await DatabaseService.instance.insertExpense(
+    final newId = await ExpenseRepository.instance.insertExpense(
       type: row.type,
       description: row.description,
       amount: row.amount,
@@ -503,7 +591,7 @@ class ManagerData extends ChangeNotifier {
     if (index < 0 || index >= _expenses.length) return;
     final e = _expenses[index];
     if (e.dbId != null) {
-      await DatabaseService.instance.deleteExpenseById(e.dbId!);
+      await ExpenseRepository.instance.deleteExpenseById(e.dbId!);
     }
     AuditLogService.instance.logExpenseDeleted(
       expenseId:   e.dbId ?? 0,
@@ -523,7 +611,7 @@ class ManagerData extends ChangeNotifier {
 
   Future<void> setSalary(String waiterName, double dailyRate) async {
     final old = _salaries[waiterName];
-    await DatabaseService.instance.upsertWaiterSalary(waiterName, dailyRate);
+    await SalaryRepository.instance.upsertWaiterSalary(waiterName, dailyRate);
     _salaries = {..._salaries, waiterName: dailyRate};
     AuditLogService.instance.logSalaryChanged(
       waiterName: waiterName,
@@ -549,7 +637,7 @@ class ManagerData extends ChangeNotifier {
       advancesFor(waiterName, from, to).fold(0.0, (s, a) => s + a.amount);
 
   Future<void> addAdvance(AdvanceRow row) async {
-    final newId = await DatabaseService.instance.insertAdvance(
+    final newId = await SalaryRepository.instance.insertAdvance(
       waiterName: row.waiterName,
       amount: row.amount,
       note: row.note,
@@ -569,7 +657,7 @@ class ManagerData extends ChangeNotifier {
   }
 
   Future<void> deleteAdvance(int id) async {
-    await DatabaseService.instance.deleteAdvanceById(id);
+    await SalaryRepository.instance.deleteAdvanceById(id);
     _advances.removeWhere((a) => a.dbId == id);
     notifyListeners();
   }
@@ -593,7 +681,7 @@ class ManagerData extends ChangeNotifier {
     final key = _dateKey(date);
     final currentSet = Set<String>.from(_workedDays[waiterName] ?? {});
     final nowWorked = !currentSet.contains(key);
-    await DatabaseService.instance.setWorkedDay(waiterName, key, nowWorked);
+    await SalaryRepository.instance.setWorkedDay(waiterName, key, nowWorked);
     if (nowWorked) {
       currentSet.add(key);
     } else {

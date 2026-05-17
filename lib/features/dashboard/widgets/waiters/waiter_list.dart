@@ -73,7 +73,7 @@ class WaiterList extends StatelessWidget {
       itemBuilder: (context, i) {
         final w = waiters[i];
         final name = w.name as String;
-        final pin = w.pin as String;
+        const pin = '••••'; // PIN is hashed — never display raw value
         final salary = m.getSalary(name);
         final initials = _initials(name);
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
 import '../services/audit_log_service.dart';
+import '../services/pin_rate_limiter.dart';
 import '../theme/app_colors.dart';
 
 import 'manager_dashboard_screen.dart';
@@ -118,6 +119,42 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
+  void _showAdminPinSetupDialog(String pin) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Konfiguro PIN e Administratorit'),
+        content: const Text(
+          'Nuk është konfiguruar asnjë PIN i administratorit.\n'
+          'Dëshironi ta vendosni këtë PIN si PIN-in e administratorit?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Anulo'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Capture navigator before async gap to satisfy lint.
+              final nav = Navigator.of(context);
+              Navigator.of(ctx).pop();
+              await ManagerData.instance.setAdminPin(pin);
+              if (!mounted) return;
+              AuditLogService.instance.logManagerLogin();
+              nav.push(
+                MaterialPageRoute(
+                  builder: (_) => const ManagerDashboardScreen(),
+                ),
+              );
+            },
+            child: const Text('Konfirmo'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final waiters = _m.waiters;
@@ -140,28 +177,68 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
               showDialog<void>(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) {
+                builder: (dialogCtx) {
                   return _PinInputDialog(
                     title: 'Admin PIN',
                     hint: 'Enter admin PIN',
                     onSubmit: (pin) async {
-                      Navigator.of(context).pop();
+                      // Capture before async gaps to satisfy lint.
+                      final nav = Navigator.of(context);
+                      final messenger = ScaffoldMessenger.of(context);
 
-                      if (pin == '9999') {
+                      // Lockout check — close dialog and show message.
+                      if (PinRateLimiter.instance.isLocked) {
+                        Navigator.of(dialogCtx).pop();
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                            ),
+                            backgroundColor: AppColors.negativeText,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      Navigator.of(dialogCtx).pop();
+
+                      if (!ManagerData.instance.hasAdminPin) {
+                        // First run: offer setup from this screen too.
+                        if (!mounted) return;
+                        _showAdminPinSetupDialog(pin);
+                        return;
+                      }
+
+                      if (await ManagerData.instance.verifyAdminPin(pin)) {
+                        PinRateLimiter.instance.reset();
                         AuditLogService.instance.logManagerLogin();
                         if (!mounted) return;
-
-                        Navigator.of(context).push(
+                        nav.push(
                           MaterialPageRoute(
                             builder: (_) => const ManagerDashboardScreen(),
                           ),
                         );
                       } else {
+                        final lockedOut = PinRateLimiter.instance.recordFailure();
+                        if (lockedOut) AuditLogService.instance.logPinLockout();
                         AuditLogService.instance.logFailedPin();
                         if (!mounted) return;
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Admin PIN i gabuar.')),
+                        final msg = PinRateLimiter.instance.isLocked
+                            ? 'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.'
+                            : 'Admin PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.';
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(msg),
+                            backgroundColor: AppColors.negativeText,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         );
                       }
                     },

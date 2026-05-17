@@ -5,6 +5,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'manager/manager_data.dart';
 import 'screens/login_screen.dart';
+import 'services/background_sync_service.dart';
+import 'services/connectivity_service.dart';
 import 'theme/app_colors.dart';
 
 void main() async {
@@ -20,6 +22,10 @@ void main() async {
   while (ManagerData.instance.isLoading) {
     await Future<void>.delayed(const Duration(milliseconds: 50));
   }
+
+  await ConnectivityService.instance.initialize();
+  // Sync coordinator: initialized but not started (call [BackgroundSyncService.start] later).
+  await BackgroundSyncService.instance.initialize();
 
   runApp(const PosSystemApp());
 }

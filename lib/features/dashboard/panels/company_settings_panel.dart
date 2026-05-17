@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../manager/manager_data.dart';
 import '../../../services/printer_settings_store.dart';
@@ -25,6 +26,13 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   String _selectedPrinter = '';
   bool _loadingPrinters = true;
 
+  // ── admin PIN change ───────────────────────────────────────────────────────
+  final _currentPinCtrl = TextEditingController();
+  final _newPinCtrl = TextEditingController();
+  final _confirmPinCtrl = TextEditingController();
+  String? _pinErrorMsg;
+  bool _pinChanging = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +47,9 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   void dispose() {
     widget.m.removeListener(_onM);
     _nameCtrl.dispose();
+    _currentPinCtrl.dispose();
+    _newPinCtrl.dispose();
+    _confirmPinCtrl.dispose();
     super.dispose();
   }
 
@@ -114,6 +125,59 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Printeri u zgjodh: $printerName'),
+        backgroundColor: AppColors.primaryGreen,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _changeAdminPin() async {
+    final currentPin = _currentPinCtrl.text.trim();
+    final newPin = _newPinCtrl.text.trim();
+    final confirmPin = _confirmPinCtrl.text.trim();
+
+    if (currentPin.isEmpty || newPin.isEmpty || confirmPin.isEmpty) {
+      setState(() => _pinErrorMsg = 'Të gjitha fushat janë të detyrueshme.');
+      return;
+    }
+    if (!RegExp(r'^\d{4,6}$').hasMatch(newPin)) {
+      setState(() => _pinErrorMsg = 'PIN-i i ri duhet të ketë 4–6 shifra (vetëm numra).');
+      return;
+    }
+    if (newPin != confirmPin) {
+      setState(() => _pinErrorMsg = 'PIN-i i ri dhe konfirmimi nuk përputhen.');
+      return;
+    }
+
+    setState(() {
+      _pinChanging = true;
+      _pinErrorMsg = null;
+    });
+
+    final valid = await widget.m.verifyAdminPin(currentPin);
+    if (!mounted) return;
+
+    if (!valid) {
+      setState(() {
+        _pinErrorMsg = 'PIN-i aktual është i gabuar.';
+        _pinChanging = false;
+      });
+      return;
+    }
+
+    await widget.m.setAdminPin(newPin);
+    if (!mounted) return;
+
+    _currentPinCtrl.clear();
+    _newPinCtrl.clear();
+    _confirmPinCtrl.clear();
+    setState(() {
+      _pinChanging = false;
+      _pinErrorMsg = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('PIN-i i administratorit u ndryshua me sukses.'),
         backgroundColor: AppColors.primaryGreen,
         behavior: SnackBarBehavior.floating,
       ),
@@ -399,6 +463,169 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
             ],
           ),
         ),
+        const SizedBox(height: 20),
+
+        SettingsCard(
+          icon: Icons.lock_outline,
+          title: 'Ndrysho PIN-in e Administratorit',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'PIN Aktual',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.mediumGreenText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _currentPinCtrl,
+                obscureText: true,
+                obscuringCharacter: '•',
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: inputDeco('Shkruaj PIN-in aktual').copyWith(counterText: ''),
+                style: const TextStyle(fontSize: 15, letterSpacing: 4),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'PIN-i i Ri',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.mediumGreenText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _newPinCtrl,
+                obscureText: true,
+                obscuringCharacter: '•',
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: inputDeco('4–6 shifra').copyWith(counterText: ''),
+                style: const TextStyle(fontSize: 15, letterSpacing: 4),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Konfirmo PIN-in e Ri',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.mediumGreenText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _confirmPinCtrl,
+                obscureText: true,
+                obscuringCharacter: '•',
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: inputDeco('Ripërsërit PIN-in e ri').copyWith(counterText: ''),
+                style: const TextStyle(fontSize: 15, letterSpacing: 4),
+                onSubmitted: (_) => _pinChanging ? null : _changeAdminPin(),
+              ),
+              if (_pinErrorMsg != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.negativeText.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.negativeText.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.negativeText,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _pinErrorMsg!,
+                          style: const TextStyle(
+                            color: AppColors.negativeText,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: _pinChanging ? null : _changeAdminPin,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: AppColors.white,
+                        disabledBackgroundColor:
+                            AppColors.primaryGreen.withValues(alpha: 0.5),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: _pinChanging
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.white,
+                              ),
+                            )
+                          : const Text('Ndrysho PIN-in'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton(
+                    onPressed: () {
+                      _currentPinCtrl.clear();
+                      _newPinCtrl.clear();
+                      _confirmPinCtrl.clear();
+                      setState(() => _pinErrorMsg = null);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.darkGreenText,
+                      side: const BorderSide(color: AppColors.lightGreenBorder),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    child: const Text('Anulo'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
         const SizedBox(height: 24),
 
         Row(

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
 import '../services/audit_log_service.dart';
+import '../services/pin_rate_limiter.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_card_button.dart';
@@ -65,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
   static final RegExp _pinDigitsOnly = RegExp(r'^\d+$');
 
   bool get _pinConfirmEnabled {
+    if (PinRateLimiter.instance.isLocked) return false;
     final p = _pinController.text;
     return p.length >= 4 && _pinDigitsOnly.hasMatch(p);
   }
@@ -128,61 +130,134 @@ class _LoginScreenState extends State<LoginScreen> {
     return p - b;
   }
 
-  void _submitPin() {
+  Future<void> _submitPin() async {
+    if (PinRateLimiter.instance.isLocked) return;
     if (!_pinConfirmEnabled) return;
     final pin = _pinController.text;
 
-    if (pin == '9999') {
+    if (ManagerData.instance.loginMode == 'NAMEMODE') {
+      // NAMEMODE: PIN field is admin-only.
+      if (!ManagerData.instance.hasAdminPin) {
+        _pinController.clear();
+        _showAdminPinSetupDialog(pin);
+        return;
+      }
+      if (await ManagerData.instance.verifyAdminPin(pin)) {
+        _pinController.clear();
+        PinRateLimiter.instance.reset();
+        AuditLogService.instance.logManagerLogin();
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const ManagerDashboardScreen()),
+        );
+        return;
+      }
       _pinController.clear();
+      final lockedOutNm = PinRateLimiter.instance.recordFailure();
+      if (lockedOutNm) AuditLogService.instance.logPinLockout();
+      AuditLogService.instance.logFailedPin();
+      if (!mounted) return;
+      setState(() {});
+      final msgNm = PinRateLimiter.instance.isLocked
+          ? 'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.'
+          : 'PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msgNm),
+          backgroundColor: AppColors.negativeText,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    // PINMODE: admin check first, then waiter.
+    if (ManagerData.instance.hasAdminPin &&
+        await ManagerData.instance.verifyAdminPin(pin)) {
+      _pinController.clear();
+      PinRateLimiter.instance.reset();
       AuditLogService.instance.logManagerLogin();
+      if (!mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const ManagerDashboardScreen()),
       );
       return;
     }
 
-    // In PINMODE, check for waiter PIN
-    if (ManagerData.instance.loginMode == 'PINMODE') {
-      final waiter = ManagerData.instance.findWaiterByPin(pin);
-      _pinController.clear();
+    final waiter = await ManagerData.instance.findWaiterByPin(pin);
+    _pinController.clear();
 
-      if (waiter != null) {
-        AuditLogService.instance.logWaiterLogin(waiterName: waiter.name);
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => TableSelectionScreen(waiterName: waiter.name),
-          ),
-        );
-        return;
-      }
-
-      AuditLogService.instance.logFailedPin();
-      // PIN i panjohur
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('PIN i gabuar. Kontakto menaxherin.'),
-          backgroundColor: AppColors.negativeText,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+    if (waiter != null) {
+      PinRateLimiter.instance.reset();
+      AuditLogService.instance.logWaiterLogin(waiterName: waiter.name);
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TableSelectionScreen(waiterName: waiter.name),
         ),
       );
-    } else {
-      // NAMEMODE: Only accept admin PIN
-      _pinController.clear();
-      AuditLogService.instance.logFailedPin();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('PIN i gabuar. Kontakto menaxherin.'),
-          backgroundColor: AppColors.negativeText,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      return;
     }
+
+    // Unknown PIN — offer first-run admin setup if no PIN is stored yet.
+    if (!ManagerData.instance.hasAdminPin) {
+      _showAdminPinSetupDialog(pin);
+      return;
+    }
+
+    final lockedOut = PinRateLimiter.instance.recordFailure();
+    if (lockedOut) AuditLogService.instance.logPinLockout();
+    AuditLogService.instance.logFailedPin();
+    if (!mounted) return;
+    setState(() {});
+    final msg = PinRateLimiter.instance.isLocked
+        ? 'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.'
+        : 'PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: AppColors.negativeText,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showAdminPinSetupDialog(String pin) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Konfiguro PIN e Administratorit'),
+        content: const Text(
+          'Nuk është konfiguruar asnjë PIN i administratorit.\n'
+          'Dëshironi ta vendosni këtë PIN si PIN-in e administratorit?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Anulo'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Capture navigator before async gap to satisfy lint.
+              final nav = Navigator.of(context);
+              Navigator.of(ctx).pop();
+              await ManagerData.instance.setAdminPin(pin);
+              if (!mounted) return;
+              AuditLogService.instance.logManagerLogin();
+              nav.push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const ManagerDashboardScreen(),
+                ),
+              );
+            },
+            child: const Text('Konfirmo'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _goToWaiterSelection() {
@@ -412,7 +487,48 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               onSubmitted: (_) => _submitPin(),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+            if (PinRateLimiter.instance.isLocked) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.negativeBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.negativeText.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Text(
+                  'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.negativeText,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ] else if (PinRateLimiter.instance.remainingAttempts <
+                PinRateLimiter.maxAttempts) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3CD),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  'PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF856404),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             _keypadSection(context),
           ],
         ),
