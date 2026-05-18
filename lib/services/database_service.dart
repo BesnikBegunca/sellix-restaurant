@@ -1361,6 +1361,10 @@ class DatabaseService {
 
   // ────────────────────────── APP META ──────────────────────────────────────
 
+  Future<String?> getPullCursor() => getAppMeta('sync_pull_cursor');
+
+  Future<void> setPullCursor(String cursor) => setAppMeta('sync_pull_cursor', cursor);
+
   Future<String?> getAppMeta(String key) async {
     final db = await database;
     final rows = await db.query(
@@ -1379,6 +1383,67 @@ class DatabaseService {
       {'key': key, 'value': value},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  // ─────────────────────── OUTBOX DIAGNOSTICS ──────────────────────────────
+
+  Future<int> getPendingOutboxCount() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT COUNT(*) AS cnt FROM outbox WHERE syncStatus = ?',
+      [DatabaseSchema.kSyncStatusPending],
+    );
+    return Sqflite.firstIntValue(rows) ?? 0;
+  }
+
+  Future<int> getFailedOutboxCount() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT COUNT(*) AS cnt FROM outbox WHERE syncStatus = ?',
+      [DatabaseSchema.kOutboxSyncFailed],
+    );
+    return Sqflite.firstIntValue(rows) ?? 0;
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentFailedOutboxEvents({
+    int limit = 10,
+  }) async {
+    final db = await database;
+    return db.query(
+      'outbox',
+      where: 'syncStatus = ?',
+      whereArgs: [DatabaseSchema.kOutboxSyncFailed],
+      orderBy: 'updatedAt DESC',
+      limit: limit,
+    );
+  }
+
+  /// Resets all failed outbox events to pending so they are retried on next push.
+  Future<int> retryFailedOutboxEvents() async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    return db.update(
+      'outbox',
+      {
+        'syncStatus': DatabaseSchema.kSyncStatusPending,
+        'lastError':  null,
+        'retryCount': 0,
+        'updatedAt':  now,
+      },
+      where: 'syncStatus = ?',
+      whereArgs: [DatabaseSchema.kOutboxSyncFailed],
+    );
+  }
+
+  /// Deletes already-synced outbox rows and clears the stored sync error flag.
+  Future<void> clearResolvedSyncErrors() async {
+    final db = await database;
+    await db.delete(
+      'outbox',
+      where: 'syncStatus = ?',
+      whereArgs: [DatabaseSchema.kOutboxSyncSynced],
+    );
+    await setAppMeta('sync_last_error', '');
   }
 
   // ─────────────────────────── AUDIT LOGS ───────────────────────────────────

@@ -29,7 +29,25 @@
       "Bash(python3 /tmp/euro_suffix.py)",
       "Bash(awk 'NR>=3180 && NR<=3195' /Users/urim/StudioProjects/pos_system/lib/screens/manager_dashboard_screen.dart)",
       "Bash(awk 'NR>1 && $1 < 200 && $1 >= 150 {print}')",
-      "Bash(grep \"^.*:.*class\\\\|^.*:.*enum\\\\|^.*:.*\\\\bdef\\\\b\\\\|^.*:.*[A-Z].*{$\\\\|^.*:.*AuditCategoryFilter =\\\\|^.*:.*auditAction\\\\|^.*:.*auditTime\")"
+      "Bash(grep \"^.*:.*class\\\\|^.*:.*enum\\\\|^.*:.*\\\\bdef\\\\b\\\\|^.*:.*[A-Z].*{$\\\\|^.*:.*AuditCategoryFilter =\\\\|^.*:.*auditAction\\\\|^.*:.*auditTime\")",
+      "Bash(grep -E \"\\\\.dart$\")",
+      "Bash(mkdir -p /Users/urim/StudioProjects/pos_system/lib/config)",
+      "Bash(mkdir -p /Users/urim/StudioProjects/pos_system/lib/models)",
+      "Bash(find /Users/urim -maxdepth 4 -name \"package.json\" -not -path \"*/node_modules/*\" 2>/dev/null | head -20)",
+      "Read(//Users/urim/**)",
+      "Bash(ls /Users/urim/VscProjects/ 2>/dev/null || echo \"not found\")",
+      "Read(//Users/urim/VscProjects/**)",
+      "Bash(/Users/urim/StudioProjects/pos_api/node_modules/.bin/tsc --noEmit --project /Users/urim/StudioProjects/pos_api/tsconfig.json)",
+      "Bash(/Users/urim/StudioProjects/pos_api/node_modules/.bin/prisma generate *)",
+      "Bash(xargs ls -la)",
+      "Bash(flutter clean *)"
+    ],
+    "additionalDirectories": [
+      "/Users/urim/StudioProjects/pos_api/src/sync",
+      "/Users/urim/StudioProjects/pos_api/docs",
+      "/Users/urim/StudioProjects/pos_api/src/activation/dto",
+      "/Users/urim/StudioProjects/pos_api/src/activation",
+      "/Users/urim/StudioProjects/pos_api/prisma"
     ]
   }
 }

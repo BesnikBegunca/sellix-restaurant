@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
+import '../../../screens/sync_diagnostics_screen.dart';
+import '../../../services/sync_status_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_tokens.dart';
 
@@ -85,6 +87,14 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
           ),
 
           _ShiftStatusChip(open: widget.m.shiftOpen),
+          const SizedBox(width: 12),
+          ListenableBuilder(
+            listenable: SyncStatusService.instance,
+            builder: (context, _) => _SyncStatusChip(
+              status: SyncStatusService.instance,
+              onTap: () => showSyncDiagnosticsDialog(context),
+            ),
+          ),
           const SizedBox(width: 12),
           _TopBarChip(
             icon: Icons.schedule_outlined,
@@ -223,6 +233,103 @@ class _TopBarManagerBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SyncStatusChip extends StatelessWidget {
+  const _SyncStatusChip({required this.status, required this.onTap});
+
+  final SyncStatusService status;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color dotColor;
+    final Color bgColor;
+    final Color borderColor;
+    final Color textColor;
+    final String label;
+    final IconData icon;
+
+    if (!status.isActivated) {
+      dotColor = AppColors.mutedGray;
+      bgColor = AppColors.lightGreenBg;
+      borderColor = AppColors.lightGreenBorder;
+      textColor = AppColors.lightGreenText;
+      label = 'Jo aktivizuar';
+      icon = Icons.sync_disabled_outlined;
+    } else if (!status.isOnline) {
+      dotColor = AppColors.softRed;
+      bgColor = AppColors.softRed.withValues(alpha: 0.07);
+      borderColor = AppColors.softRed.withValues(alpha: 0.25);
+      textColor = AppColors.softRed;
+      label = 'Jo online';
+      icon = Icons.wifi_off_outlined;
+    } else if (status.isSyncing) {
+      dotColor = AppColors.mutedOrange;
+      bgColor = AppColors.mutedOrange.withValues(alpha: 0.08);
+      borderColor = AppColors.mutedOrange.withValues(alpha: 0.3);
+      textColor = AppColors.mutedOrange;
+      label = 'Sinkronizim…';
+      icon = Icons.sync_outlined;
+    } else if (status.hasFailed) {
+      dotColor = AppColors.softRed;
+      bgColor = AppColors.softRed.withValues(alpha: 0.07);
+      borderColor = AppColors.softRed.withValues(alpha: 0.25);
+      textColor = AppColors.softRed;
+      label = '${status.failedOutboxCount} gabime';
+      icon = Icons.sync_problem_outlined;
+    } else if (status.hasPending) {
+      dotColor = AppColors.mutedOrange;
+      bgColor = AppColors.mutedOrange.withValues(alpha: 0.08);
+      borderColor = AppColors.mutedOrange.withValues(alpha: 0.3);
+      textColor = AppColors.mutedOrange;
+      label = '${status.pendingOutboxCount} pritje';
+      icon = Icons.upload_outlined;
+    } else {
+      dotColor = AppColors.successGreen;
+      bgColor = AppColors.successGreen.withValues(alpha: 0.07);
+      borderColor = AppColors.successGreen.withValues(alpha: 0.25);
+      textColor = AppColors.successGreen;
+      label = 'Sinkronizuar';
+      icon = Icons.cloud_done_outlined;
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 7),
+            Icon(icon, size: 13, color: textColor),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -33,11 +33,28 @@ class DatabaseSchema {
     'kitchen_prints', 'kitchen_print_lines',
   ];
 
-  /// Stamp for new rows: local placeholders + this device's stable ID.
+  // ── Activated tenant IDs (updated by ActivationService at startup) ─────────
+
+  static String _activatedBusinessId = kLocalBusinessId;
+  static String _activatedBranchId   = kMainBranchId;
+
+  /// Called by [ActivationService] once real tenant IDs are loaded from
+  /// [app_meta]. Updates the in-memory values used by [syncScopeStamp] so
+  /// all subsequent outbox inserts carry the correct businessId / branchId.
+  static void setActivatedTenant({
+    required String businessId,
+    required String branchId,
+  }) {
+    _activatedBusinessId = businessId;
+    _activatedBranchId   = branchId;
+  }
+
+  /// Stamp for new rows — uses activated tenant IDs when available,
+  /// falls back to local placeholders on unactivated devices.
   static Map<String, String> syncScopeStamp(String deviceId) => {
-        'businessId': kLocalBusinessId,
-        'branchId': kMainBranchId,
-        'deviceId': deviceId,
+        'businessId': _activatedBusinessId,
+        'branchId':   _activatedBranchId,
+        'deviceId':   deviceId,
       };
 
   /// Columns to ADD per table (skips names that already exist on the schema).

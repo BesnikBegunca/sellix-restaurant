@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-/// Default NestJS API root for local development.
+import 'connectivity_service.dart';
+
+/// Fallback NestJS API root used when no config file or env var is present.
 ///
-/// Override via [ApiClient.configureBaseUrl] before production use — do not
-/// hardcode URLs in feature/business code.
-const String kDefaultApiBaseUrl = 'http://localhost:3000/api';
+/// At startup [RuntimeConfigService.load] resolves the real URL and passes it
+/// to [ApiClient.configureBaseUrl] — do not hardcode URLs in feature code.
+const String kDefaultApiBaseUrl = 'http://127.0.0.1:3000';
 
 /// Shared HTTP client for future NestJS sync and auth (no feature calls yet).
 class ApiClient {
@@ -31,9 +33,11 @@ class ApiClient {
   String? get accessToken => _accessToken;
 
   /// Re-point the API root and reset the underlying client.
+  ///
+  /// Strips any trailing slash so that paths like `/activation/desktop` can
+  /// be concatenated cleanly by Dio.
   void configureBaseUrl(String baseUrl) {
-    final trimmed = baseUrl.trim();
-    _baseUrl = trimmed.endsWith('/') ? trimmed : '$trimmed/';
+    _baseUrl = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
     _resetClient();
   }
 
@@ -73,7 +77,12 @@ class ApiClient {
             options.headers['Authorization'] = 'Bearer $token';
           }
           if (kDebugMode) {
-            debugPrint('API → ${options.method} ${options.uri}');
+            debugPrint(
+              'API REQUEST:\n'
+              '  baseUrl=${options.baseUrl}\n'
+              '  path=${options.path}\n'
+              '  full=${options.uri}',
+            );
           }
           handler.next(options);
         },
@@ -87,9 +96,18 @@ class ApiClient {
         },
         onError: (error, handler) {
           if (kDebugMode) {
-            debugPrint(
-              'API ✕ ${error.type} ${error.requestOptions.uri}',
-            );
+            if (error.type == DioExceptionType.connectionError) {
+              final online = ConnectivityService.instance.isOnline;
+              debugPrint(
+                'API CONNECTION ERROR:\n'
+                '  baseUrl=${error.requestOptions.baseUrl}\n'
+                '  type=${error.type}\n'
+                '  message=${error.message}\n'
+                '  connectivity=${online ? "online" : "offline"}',
+              );
+            } else {
+              debugPrint('API ✕ ${error.type} ${error.requestOptions.uri}');
+            }
           }
           handler.next(error);
         },

@@ -4,9 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'manager/manager_data.dart';
+import 'screens/activation_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/activation_service.dart';
+import 'services/api_client.dart';
 import 'services/background_sync_service.dart';
 import 'services/connectivity_service.dart';
+import 'services/runtime_config_service.dart';
+import 'services/sync_status_service.dart';
 import 'theme/app_colors.dart';
 
 void main() async {
@@ -18,20 +23,37 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
 
+  // Resolve API base URL from app_config.json / env var / fallback.
+  await RuntimeConfigService.instance.load();
+  ApiClient.instance.configureBaseUrl(RuntimeConfigService.instance.apiBaseUrl);
+
   // Ensure ManagerData finishes DB loading before deciding the first screen.
   while (ManagerData.instance.isLoading) {
     await Future<void>.delayed(const Duration(milliseconds: 50));
   }
 
   await ConnectivityService.instance.initialize();
-  // Sync coordinator: initialized but not started (call [BackgroundSyncService.start] later).
   await BackgroundSyncService.instance.initialize();
 
-  runApp(const PosSystemApp());
+  // Load persisted activation and wire ApiClient + tenant IDs.
+  await ActivationService.instance.loadPersistedActivation();
+  bool activated = ActivationService.instance.isActivated;
+  if (activated) {
+    // Verify token with backend — revokes locally on 401; continues on network error.
+    await ActivationService.instance.verifyActivation();
+    activated = ActivationService.instance.isActivated;
+    if (activated) BackgroundSyncService.instance.start();
+  }
+
+  SyncStatusService.instance.start();
+
+  runApp(PosSystemApp(activated: activated));
 }
 
 class PosSystemApp extends StatefulWidget {
-  const PosSystemApp({super.key});
+  const PosSystemApp({super.key, required this.activated});
+
+  final bool activated;
 
   @override
   State<PosSystemApp> createState() => _PosSystemAppState();
@@ -183,7 +205,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
           ),
         ),
       ),
-      home: const LoginScreen(),
+      home: widget.activated ? const LoginScreen() : const ActivationScreen(),
     );
   }
 }
