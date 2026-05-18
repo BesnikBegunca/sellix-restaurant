@@ -40,14 +40,17 @@
       "Bash(/Users/urim/StudioProjects/pos_api/node_modules/.bin/tsc --noEmit --project /Users/urim/StudioProjects/pos_api/tsconfig.json)",
       "Bash(/Users/urim/StudioProjects/pos_api/node_modules/.bin/prisma generate *)",
       "Bash(xargs ls -la)",
-      "Bash(flutter clean *)"
+      "Bash(flutter clean *)",
+      "Bash(dart --version)",
+      "Bash(ls /Users/urim/StudioProjects/pos_system/.vscode/ 2>/dev/null || mkdir -p /Users/urim/StudioProjects/pos_system/.vscode)"
     ],
     "additionalDirectories": [
       "/Users/urim/StudioProjects/pos_api/src/sync",
       "/Users/urim/StudioProjects/pos_api/docs",
       "/Users/urim/StudioProjects/pos_api/src/activation/dto",
       "/Users/urim/StudioProjects/pos_api/src/activation",
-      "/Users/urim/StudioProjects/pos_api/prisma"
+      "/Users/urim/StudioProjects/pos_api/prisma",
+      "/Users/urim/StudioProjects/pos_system"
     ]
   }
 }
