@@ -65,10 +65,18 @@ void main() async {
   await ConnectivityService.instance.initialize();
   await BackgroundSyncService.instance.initialize();
 
-  // Migrate legacy plaintext tokens, then load activation + tenant IDs.
-  await ActivationService.instance.migrateTokensFromAppMetaIfNeeded();
-  await ActivationService.instance.loadPersistedActivation();
+  // Restore activation from SQLite metadata + secure token store (survives hot restart).
+  final activationRestored =
+      await ActivationService.instance.loadPersistedActivation();
   final activationState = ActivationStateController.instance;
+  activationState.setActivated(activationRestored);
+
+  if (kDebugMode) {
+    debugPrint(
+      '[Activation] startup restored=$activationRestored '
+      'controller=${activationState.isActivated}',
+    );
+  }
 
   if (configBlocked) {
     BackgroundSyncService.instance.stop();
@@ -76,7 +84,6 @@ void main() async {
       'sync_last_error',
       RuntimeConfigService.syncConfigErrorMessage,
     );
-    activationState.setActivated(ActivationService.instance.isActivated);
   } else if (ActivationService.instance.isActivated) {
     // Verify token with backend — revokes locally on 401; continues on network error.
     await ActivationService.instance.verifyActivation();
@@ -84,11 +91,9 @@ void main() async {
       BackgroundSyncService.instance.start();
     } else if (activationState.serverRevoked) {
       // verifyActivation → handleRevokedByServer already notified controller.
-    } else {
+    } else if (!activationState.serverRevoked) {
       activationState.setActivated(false);
     }
-  } else {
-    activationState.setActivated(false);
   }
 
   SyncStatusService.instance.start();

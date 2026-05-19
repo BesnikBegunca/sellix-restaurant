@@ -4,12 +4,14 @@
     {
       "name": "POS System – local backend (127.0.0.1:3000)",
       "request": "launch",
-      "type": "dart"
+      "type": "dart",
+      "deviceId": "macos"
     },
     {
-      "name": "POS System – Railway production API",
+      "name": "POS macOS - Railway API",
       "request": "launch",
       "type": "dart",
+      "deviceId": "macos",
       "env": {
         "POS_API_BASE_URL": "https://posapi-production-a6e7.up.railway.app"
       }

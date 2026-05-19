@@ -165,7 +165,7 @@ class RuntimeConfigService {
 
   void _logResolved() {
     if (!kDebugMode) return;
-    debugPrint('[RuntimeConfig] source=$sourceLogLabel');
+    debugPrint('[RuntimeConfig] source=$sourceLabel');
     debugPrint('[RuntimeConfig] url=$_apiBaseUrl');
     debugPrint('[RuntimeConfig] localhost=$isLocalhost');
     debugPrint('[RuntimeConfig] blockedInRelease=$isBlockedInRelease');

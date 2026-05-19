@@ -13,6 +13,7 @@ import 'database_service.dart';
 import 'pull_sync_apply_service.dart';
 import 'runtime_config_service.dart';
 import 'sync_backoff_policy.dart';
+import 'sync_push_payload_mapper.dart';
 import 'sync_status_service.dart';
 
 /// Coordinates outbox → NestJS sync upload.
@@ -155,14 +156,20 @@ class BackgroundSyncService {
         return;
       }
 
-      // Decode payloadJson strings → objects so the server receives proper JSON.
-      final events = pending.map((row) {
-        final raw = row['payloadJson'] as String?;
-        return <String, dynamic>{
-          ...row,
-          'payloadJson': raw != null ? jsonDecode(raw) : null,
-        };
-      }).toList();
+      // Map outbox rows to pos_api SyncPushEventDto (no extra DB columns).
+      final events = <Map<String, dynamic>>[];
+      for (final row in pending) {
+        events.add(await _buildSyncPushEvent(row));
+      }
+
+      if (kDebugMode) {
+        debugPrint('BackgroundSyncService: push batch size=${events.length}');
+        if (events.isNotEmpty) {
+          debugPrint(
+            'BackgroundSyncService: first event keys=${events.first.keys.toList()}',
+          );
+        }
+      }
 
       final body = {'events': events};
 
@@ -225,13 +232,35 @@ class BackgroundSyncService {
           'duplicates=${parsed.duplicates.length} '
           'rejected=${parsed.rejected.length}',
         );
+        if (parsed.rejected.isNotEmpty) {
+          final reasons = parsed.rejected
+              .map((r) => r.reason)
+              .toSet()
+              .take(5)
+              .join('; ');
+          debugPrint(
+            'BackgroundSyncService: rejected reasons (sample): $reasons',
+          );
+        }
       }
     } on DioException catch (e) {
       if (_handleLicenseSuspended(e)) return;
+      final status = e.response?.statusCode;
       _recordFailureAndSchedule(
-        'Push network error: ${e.message ?? e.type.name}',
+        status == 400
+            ? 'Push rejected (400): invalid request body'
+            : 'Push network error: ${e.message ?? e.type.name}',
       );
-      if (kDebugMode) debugPrint('BackgroundSyncService: network error: $e');
+      if (kDebugMode) {
+        debugPrint(
+          'BackgroundSyncService: push failed status=$status '
+          'type=${e.type.name}',
+        );
+        final data = e.response?.data;
+        if (data != null) {
+          debugPrint('BackgroundSyncService: push error body=$data');
+        }
+      }
     } catch (e, st) {
       _recordFailureAndSchedule('Push error: ${e.runtimeType}');
       if (kDebugMode) debugPrint('BackgroundSyncService: sync error: $e\n$st');
@@ -583,6 +612,31 @@ class BackgroundSyncService {
   void resetBackoff() {
     _backoff.reset();
     _cancelScheduledRetry();
+  }
+
+  /// Builds one [SyncPushEventDto]-shaped map for POST /sync/push.
+  Future<Map<String, dynamic>> _buildSyncPushEvent(
+    Map<String, dynamic> row,
+  ) async {
+    final raw = row['payloadJson'] as String?;
+    final payload = SyncPushPayloadMapper.decodePayload(raw);
+    final entityType = row['entityType'] as String? ?? '';
+    var mappedPayload = SyncPushPayloadMapper.mapPayload(entityType, payload);
+
+    if (entityType.replaceAll('-', '_') == 'sale_lines' &&
+        !mappedPayload.containsKey('saleUuid')) {
+      final saleId = payload['saleId'];
+      if (saleId is int) {
+        final saleUuid =
+            await DatabaseService.instance.fetchSaleUuidByLocalId(saleId);
+        if (saleUuid != null && saleUuid.isNotEmpty) {
+          mappedPayload = Map<String, dynamic>.from(mappedPayload)
+            ..['saleUuid'] = saleUuid;
+        }
+      }
+    }
+
+    return SyncPushPayloadMapper.buildEvent(row: row, payload: mappedPayload);
   }
 }
 

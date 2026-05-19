@@ -70,7 +70,7 @@ class ActivationService {
     final db = DatabaseService.instance;
     final store = SecureActivationTokenStore.instance;
 
-    if (await store.hasTokens()) {
+    if (await store.hasValidTokenPair()) {
       await _clearLegacyTokenMeta(db);
       return;
     }
@@ -87,9 +87,16 @@ class ActivationService {
       return;
     }
 
+    final refreshValue = refresh ?? '';
+    if (refreshValue.isEmpty && kDebugMode) {
+      debugPrint(
+        'ActivationService: legacy migration has no refresh token — '
+        'activation may require re-login after restart',
+      );
+    }
     await store.saveTokens(
       accessToken: access,
-      refreshToken: refresh ?? '',
+      refreshToken: refreshValue,
     );
     await _clearLegacyTokenMeta(db);
 
@@ -98,22 +105,59 @@ class ActivationService {
     }
   }
 
-  /// Loads activation state from [app_meta] and wires [ApiClient] + tenant IDs.
+  /// Restores activation from [app_meta] + [SecureActivationTokenStore].
   ///
-  /// Idempotent — safe to call multiple times; only restores if
-  /// `activation_completed = 'true'` is found in [app_meta].
-  Future<void> loadPersistedActivation() async {
-    final completed = await DatabaseService.instance.getAppMeta(_kCompleted);
-    if (completed != 'true') return;
+  /// Returns `true` when the device is fully activated and wired for API calls.
+  /// On hot restart, re-reads secure storage (not in-memory cache only).
+  Future<bool> loadPersistedActivation() async {
+    await migrateTokensFromAppMetaIfNeeded();
 
-    final businessId = await DatabaseService.instance.getAppMeta(_kBusinessId);
-    final branchId = await DatabaseService.instance.getAppMeta(_kBranchId);
-    final deviceId = await DatabaseService.instance.getAppMeta(_kDeviceId);
-    final accessToken =
-        await SecureActivationTokenStore.instance.readAccessToken();
+    final db = DatabaseService.instance;
+    final store = SecureActivationTokenStore.instance;
 
-    if (businessId == null || branchId == null || accessToken == null) {
-      return;
+    final completed = await db.getAppMeta(_kCompleted);
+    final businessId = await db.getAppMeta(_kBusinessId);
+    final branchId = await db.getAppMeta(_kBranchId);
+    final deviceId = await db.getAppMeta(_kDeviceId);
+    final accessToken = await store.readAccessToken();
+    final refreshToken = await store.readRefreshToken();
+
+    final completedOk = completed == 'true';
+    final businessOk = _nonEmpty(businessId);
+    final branchOk = _nonEmpty(branchId);
+    final deviceOk = _nonEmpty(deviceId);
+    final accessOk = _nonEmpty(accessToken);
+    final refreshOk = _nonEmpty(refreshToken);
+
+    if (kDebugMode) {
+      debugPrint('[Activation] loadPersistedActivation:');
+      debugPrint('[Activation]   activation_completed=$completedOk');
+      debugPrint('[Activation]   businessId=${businessOk ? "yes" : "no"}');
+      debugPrint('[Activation]   branchId=${branchOk ? "yes" : "no"}');
+      debugPrint('[Activation]   deviceId=${deviceOk ? "yes" : "no"}');
+      debugPrint('[Activation]   secureAccessToken=${accessOk ? "yes" : "no"}');
+      debugPrint('[Activation]   secureRefreshToken=${refreshOk ? "yes" : "no"}');
+    }
+
+    if (!completedOk) {
+      _activated = false;
+      if (kDebugMode) debugPrint('[Activation]   final activated=false');
+      return false;
+    }
+
+    final metadataOk = businessOk && branchOk && deviceOk;
+    final tokensOk = accessOk && refreshOk;
+
+    if (!metadataOk || !tokensOk) {
+      if (kDebugMode) {
+        debugPrint(
+          '[Activation]   invalid persisted activation — clearing metadata',
+        );
+      }
+      await revokeActivation();
+      ActivationStateController.instance.setActivated(false);
+      if (kDebugMode) debugPrint('[Activation]   final activated=false');
+      return false;
     }
 
     _businessId = businessId;
@@ -121,13 +165,22 @@ class ActivationService {
     _serverDeviceId = deviceId;
     _activated = true;
 
-    ApiClient.instance.setAccessToken(accessToken);
+    ApiClient.instance.setAccessToken(accessToken!);
     DatabaseSchema.setActivatedTenant(
-      businessId: businessId,
-      branchId: branchId,
+      businessId: businessId!,
+      branchId: branchId!,
     );
     ActivationStateController.instance.setActivated(true);
+
+    if (kDebugMode) debugPrint('[Activation]   final activated=true');
+    return true;
   }
+
+  /// Public for unit tests and diagnostics.
+  static bool nonEmptyMeta(String? value) => _nonEmpty(value);
+
+  static bool _nonEmpty(String? value) =>
+      value != null && value.trim().isNotEmpty;
 
   /// POST /activation/validate-key — checks key before desktop activation.
   Future<ActivationValidateResponse> validateActivationKey({
@@ -436,6 +489,7 @@ class ActivationService {
 
     ApiClient.instance.clearAccessToken();
     DatabaseSchema.clearActivatedTenant();
+    ActivationStateController.instance.setActivated(false);
     if (kDebugMode) {
       debugPrint(
         'ActivationService: local activation reset — tokens and sync metadata cleared',
@@ -477,9 +531,15 @@ class ActivationService {
     await db.setAppMeta(_kBusinessId, r.businessId);
     await DatabaseService.instance.setAppMeta(_kBranchId, r.branchId);
     await DatabaseService.instance.setAppMeta(_kDeviceId, r.deviceId);
+    final refresh = r.refreshToken?.trim() ?? '';
+    if (refresh.isEmpty) {
+      throw StateError(
+        'Serveri nuk ktheu refresh token — aktivizimi nuk mund të ruhet.',
+      );
+    }
     await SecureActivationTokenStore.instance.saveTokens(
       accessToken: r.accessToken,
-      refreshToken: r.refreshToken ?? '',
+      refreshToken: refresh,
     );
     await _clearLegacyTokenMeta(db);
     if (r.licenseExpiresAt != null) {

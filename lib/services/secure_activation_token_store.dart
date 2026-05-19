@@ -1,7 +1,9 @@
-import 'dart:io' show Platform;
+import 'dart:convert';
+import 'dart:io' show File, Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// OS-backed storage for activation Bearer / refresh tokens (not SQLite).
 ///
@@ -26,11 +28,17 @@ class SecureActivationTokenStore {
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(),
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-    mOptions: MacOsOptions(),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.unlocked,
+    ),
+    mOptions: MacOsOptions(
+      accessibility: KeychainAccessibility.unlocked,
+    ),
     wOptions: WindowsOptions(),
     lOptions: LinuxOptions(),
   );
+
+  static const String _kDebugCacheFileName = '.pos_activation_tokens_debug.json';
 
   String? _debugAccess;
   String? _debugRefresh;
@@ -55,14 +63,16 @@ class SecureActivationTokenStore {
       _debugFallback = false;
       _debugAccess = null;
       _debugRefresh = null;
+      await _deleteDebugCacheFile();
     } catch (e) {
       if (kReleaseMode) rethrow;
       _debugFallback = true;
       _debugAccess = accessToken;
       _debugRefresh = refreshToken;
+      await _writeDebugCacheFile(accessToken, refreshToken);
       if (kDebugMode) {
         debugPrint(
-          'SecureActivationTokenStore: debug memory fallback '
+          'SecureActivationTokenStore: debug cache fallback '
           '(${Platform.operatingSystem}) — $e',
         );
       }
@@ -70,27 +80,33 @@ class SecureActivationTokenStore {
   }
 
   Future<String?> readAccessToken() async {
-    if (_debugFallback && kDebugMode) return _debugAccess;
+    if (_debugFallback && kDebugMode && _nonEmpty(_debugAccess)) {
+      return _debugAccess;
+    }
     try {
-      return await _storage.read(key: _kAccess);
+      final fromStore = await _storage.read(key: _kAccess);
+      if (_nonEmpty(fromStore)) return fromStore;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('SecureActivationTokenStore: read access failed — $e');
       }
-      return _debugAccess;
     }
+    return _restoreFromDebugCache(access: true);
   }
 
   Future<String?> readRefreshToken() async {
-    if (_debugFallback && kDebugMode) return _debugRefresh;
+    if (_debugFallback && kDebugMode && _nonEmpty(_debugRefresh)) {
+      return _debugRefresh;
+    }
     try {
-      return await _storage.read(key: _kRefresh);
+      final fromStore = await _storage.read(key: _kRefresh);
+      if (_nonEmpty(fromStore)) return fromStore;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('SecureActivationTokenStore: read refresh failed — $e');
       }
-      return _debugRefresh;
     }
+    return _restoreFromDebugCache(access: false);
   }
 
   Future<void> clearTokens() async {
@@ -105,10 +121,96 @@ class SecureActivationTokenStore {
         debugPrint('SecureActivationTokenStore: clear failed — $e');
       }
     }
+    await _deleteDebugCacheFile();
   }
 
-  Future<bool> hasTokens() async {
+  Future<bool> hasTokens() async => hasValidTokenPair();
+
+  /// Both access and refresh tokens must be present (refresh may be rotated later).
+  Future<bool> hasValidTokenPair() async {
     final access = await readAccessToken();
-    return access != null && access.isNotEmpty;
+    final refresh = await readRefreshToken();
+    return _nonEmpty(access) && _nonEmpty(refresh);
+  }
+
+  static bool _nonEmpty(String? value) =>
+      value != null && value.trim().isNotEmpty;
+
+  Future<File?> _debugCacheFile() async {
+    if (!kDebugMode) return null;
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      return File('${dir.path}/$_kDebugCacheFileName');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _writeDebugCacheFile(
+    String accessToken,
+    String refreshToken,
+  ) async {
+    if (!kDebugMode) return;
+    final file = await _debugCacheFile();
+    if (file == null) return;
+    try {
+      await file.writeAsString(
+        jsonEncode({
+          'accessToken': accessToken,
+          'refreshToken': refreshToken,
+        }),
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SecureActivationTokenStore: debug cache write failed — $e');
+      }
+    }
+  }
+
+  Future<String?> _restoreFromDebugCache({required bool access}) async {
+    if (!kDebugMode) return null;
+    final file = await _debugCacheFile();
+    if (file == null || !file.existsSync()) return null;
+    try {
+      final json = jsonDecode(await file.readAsString()) as Map<String, dynamic>?;
+      final a = json?['accessToken'] as String?;
+      final r = json?['refreshToken'] as String?;
+      if (_nonEmpty(a) && _nonEmpty(r)) {
+        _debugAccess = a;
+        _debugRefresh = r;
+        _debugFallback = true;
+        if (kDebugMode) {
+          debugPrint(
+            'SecureActivationTokenStore: restored tokens from debug cache',
+          );
+        }
+        try {
+          await _storage.write(key: _kAccess, value: a!);
+          await _storage.write(key: _kRefresh, value: r!);
+          _debugFallback = false;
+          _debugAccess = null;
+          _debugRefresh = null;
+          await _deleteDebugCacheFile();
+        } catch (_) {
+          // Keep debug cache + memory for this session.
+        }
+      }
+      return access ? a : r;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SecureActivationTokenStore: debug cache read failed — $e');
+      }
+      return null;
+    }
+  }
+
+  Future<void> _deleteDebugCacheFile() async {
+    if (!kDebugMode) return;
+    final file = await _debugCacheFile();
+    if (file != null && file.existsSync()) {
+      try {
+        await file.delete();
+      } catch (_) {}
+    }
   }
 }

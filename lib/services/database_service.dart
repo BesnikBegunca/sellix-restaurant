@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -6,6 +7,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../models/sale_insert_result.dart';
+import 'background_sync_service.dart';
 import 'database_schema.dart';
 
 /// Central SQLite service — single source of truth for all persistent data.
@@ -273,6 +275,7 @@ class DatabaseService {
         );
       }
     });
+    _scheduleSyncAfterLocalMutation();
   }
 
   Future<List<Map<String, dynamic>>> fetchCurrentOrderLines(
@@ -319,6 +322,7 @@ class DatabaseService {
         whereArgs: [tableId, waiterName],
       );
     });
+    _scheduleSyncAfterLocalMutation();
     if (clearPrintHistory) {
       await clearKitchenPrintsForTable(tableId, waiterName);
     }
@@ -343,7 +347,7 @@ class DatabaseService {
     for (final l in lines) {
       total += (l['lineTotal'] as num).toDouble();
     }
-    return db.transaction<int>((txn) async {
+    final printId = await db.transaction<int>((txn) async {
       final printId = await txn.insert('kitchen_prints', {
         'tableId': tableId,
         'waiterName': waiterName,
@@ -390,6 +394,10 @@ class DatabaseService {
       }
       return printId;
     });
+    if (printId > 0) {
+      _scheduleSyncAfterLocalMutation();
+    }
+    return printId;
   }
 
   Future<List<Map<String, dynamic>>> fetchKitchenPrintsForWaiter(
@@ -692,6 +700,20 @@ class DatabaseService {
     return db.query('sales', orderBy: 'timestamp DESC');
   }
 
+  /// Resolves a local [sales.id] to the sale's sync [uuid] (for legacy outbox rows).
+  Future<String?> fetchSaleUuidByLocalId(int saleId) async {
+    final db = await database;
+    final rows = await db.query(
+      'sales',
+      columns: ['uuid'],
+      where: 'id = ?',
+      whereArgs: [saleId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['uuid'] as String?;
+  }
+
   Future<void> insertSale({
     required String waiterName,
     required int tableId,
@@ -793,7 +815,7 @@ class DatabaseService {
     final scope = await syncScope();
     final ts = syncTimestamps();
     final timestamp = ts['createdAt']!;
-    return db.transaction<SaleInsertResult>((txn) async {
+    final result = await db.transaction<SaleInsertResult>((txn) async {
       final existing = await txn.query(
         'sales',
         where: 'uuid = ?',
@@ -870,6 +892,7 @@ class DatabaseService {
           lineId,
           operation: 'create',
           txn: txn,
+          payloadExtras: {'saleUuid': saleUuid},
         );
       }
       return SaleInsertResult(
@@ -878,6 +901,8 @@ class DatabaseService {
         wasExisting: false,
       );
     });
+    _scheduleSyncAfterLocalMutation();
+    return result;
   }
 
   /// Returns all sale_lines for a single sale, ordered by insertion order.
@@ -1913,7 +1938,7 @@ class DatabaseService {
     final ts = syncTimestamps();
     final delta = DatabaseSchema.stockQuantityDelta(movementType, quantity);
 
-    return db.transaction<int>((txn) async {
+    final movementId = await db.transaction<int>((txn) async {
       final items = await txn.query(
         'inventory_items',
         where: 'uuid = ? AND deletedAt IS NULL',
@@ -1970,6 +1995,8 @@ class DatabaseService {
       );
       return movementId;
     });
+    _scheduleSyncAfterLocalMutation();
+    return movementId;
   }
 
   /// Movement history for one inventory item, newest first.
@@ -2052,7 +2079,15 @@ class DatabaseService {
       final db = await database;
       await db.insert('outbox', row);
     }
+    if (txn == null) {
+      _scheduleSyncAfterLocalMutation();
+    }
     return eventUuid;
+  }
+
+  /// Nudges immediate outbox push after a successful local commit (non-blocking).
+  void _scheduleSyncAfterLocalMutation() {
+    unawaited(BackgroundSyncService.instance.triggerSyncNow(force: true));
   }
 
   Future<void> _queueOutboxRow(
@@ -2060,14 +2095,19 @@ class DatabaseService {
     Map<String, dynamic> row,
     String operation, {
     Transaction? txn,
+    Map<String, dynamic>? payloadExtras,
   }) async {
     final entityUuid = row['uuid'] as String?;
     if (entityUuid == null || entityUuid.isEmpty) return;
+    final payload = Map<String, dynamic>.from(row);
+    if (payloadExtras != null) {
+      payload.addAll(payloadExtras);
+    }
     await _enqueueOutbox(
       entityType: entityType,
       entityUuid: entityUuid,
       operation: operation,
-      payload: row,
+      payload: payload,
       txn: txn,
     );
   }
@@ -2079,6 +2119,7 @@ class DatabaseService {
     required String operation,
     String idColumn = 'id',
     Transaction? txn,
+    Map<String, dynamic>? payloadExtras,
   }) async {
     final row = await _fetchEntityRow(
       table,
@@ -2087,7 +2128,13 @@ class DatabaseService {
       txn: txn,
     );
     if (row != null) {
-      await _queueOutboxRow(entityType, row, operation, txn: txn);
+      await _queueOutboxRow(
+        entityType,
+        row,
+        operation,
+        txn: txn,
+        payloadExtras: payloadExtras,
+      );
     }
   }
 
@@ -2115,6 +2162,7 @@ class DatabaseService {
     required String operation,
     String idColumn = 'id',
     Transaction? txn,
+    Map<String, dynamic>? payloadExtras,
   }) async {
     final row = await _fetchEntityRow(
       table,
@@ -2134,7 +2182,13 @@ class DatabaseService {
       );
       if (exists) return;
     }
-    await _queueOutboxRow(entityType, row, operation, txn: txn);
+    await _queueOutboxRow(
+      entityType,
+      row,
+      operation,
+      txn: txn,
+      payloadExtras: payloadExtras,
+    );
   }
 
   /// Enqueues a local change for future upload. Does not perform network I/O.
