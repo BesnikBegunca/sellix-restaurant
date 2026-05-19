@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/activation_service.dart';
+import '../services/api_client.dart';
 import '../services/background_sync_service.dart';
 import '../services/database_service.dart';
+import '../services/runtime_config_service.dart';
 import '../services/sync_status_service.dart';
 import '../theme/app_colors.dart';
 import 'activation_screen.dart';
@@ -32,6 +34,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
   bool _retrying = false;
   bool _clearing = false;
   bool _deactivating = false;
+  bool _resetting = false;
 
   @override
   void initState() {
@@ -70,6 +73,50 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
     }
   }
 
+  Future<void> _resetLocalActivation() async {
+    if (_resetting) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rivendos aktivizimin lokal?'),
+        content: const Text(
+          'Fshin token-at, ID-të e aktivizimit dhe cursor-in e sinkronizimit. '
+          'Të dhënat lokale të shitjeve mbeten të paprekura. '
+          'Do të ktheheni në ekranin e aktivizimit.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Anulo'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.softRed),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Rivendos'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _resetting = true);
+    try {
+      BackgroundSyncService.instance.stop();
+      SyncStatusService.instance.stop();
+      await ActivationService.instance.resetLocalActivation();
+    } finally {
+      if (mounted) setState(() => _resetting = false);
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const ActivationScreen()),
+      (_) => false,
+    );
+  }
+
   Future<void> _deactivate() async {
     if (_deactivating) return;
 
@@ -101,7 +148,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
     try {
       BackgroundSyncService.instance.stop();
       SyncStatusService.instance.stop();
-      await ActivationService.instance.revokeActivation();
+      await ActivationService.instance.resetLocalActivation();
     } finally {
       if (mounted) setState(() => _deactivating = false);
     }
@@ -142,6 +189,19 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    _buildSection('API', [
+                      _row('Base URL', ApiClient.instance.baseUrl, copyable: true),
+                      _row(
+                        'Config source',
+                        RuntimeConfigService.instance.isUsingFallback
+                            ? 'localhost fallback'
+                            : 'file / env',
+                        valueColor: RuntimeConfigService.instance.isUsingFallback
+                            ? AppColors.mutedOrange
+                            : AppColors.successGreen,
+                      ),
+                    ]),
+                    const SizedBox(height: 16),
                     _buildSection('Activation', [
                       _row('Status',     _status.isActivated ? 'Active' : 'Inactive',
                           valueColor: _status.isActivated
@@ -191,6 +251,8 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                     ],
                     const SizedBox(height: 24),
                     _buildActions(),
+                    const SizedBox(height: 12),
+                    _buildResetSection(),
                     const SizedBox(height: 12),
                     _buildDeactivateSection(),
                   ],
@@ -443,6 +505,24 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildResetSection() {
+    return OutlinedButton.icon(
+      onPressed: _resetting ? null : _resetLocalActivation,
+      icon: _resetting
+          ? const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.restart_alt_outlined, size: 16),
+      label: Text(_resetting ? 'Duke rivendosur…' : 'Rivendos aktivizimin lokal'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.mediumGreenText,
+        side: const BorderSide(color: AppColors.lightGreenBorder),
+      ),
     );
   }
 

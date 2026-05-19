@@ -7,6 +7,9 @@ const String kApiBaseUrl = 'http://127.0.0.1:3000';
 
 // ── Endpoint paths (relative to [kApiBaseUrl]) ────────────────────────────
 
+/// POST {activationKey} → [ActivationValidateResponse]
+const String kEndpointValidateKey = '/activation/validate-key';
+
 /// POST {activationKey, branchCode, deviceUuid, deviceName, platform}
 /// → [ActivationResponse]
 const String kEndpointActivateDesktop = '/activation/desktop';

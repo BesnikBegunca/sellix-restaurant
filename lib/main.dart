@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -13,6 +14,7 @@ import 'services/connectivity_service.dart';
 import 'services/runtime_config_service.dart';
 import 'services/sync_status_service.dart';
 import 'theme/app_colors.dart';
+import 'widgets/license_blocked_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +27,16 @@ void main() async {
 
   // Resolve API base URL from app_config.json / env var / fallback.
   await RuntimeConfigService.instance.load();
-  ApiClient.instance.configureBaseUrl(RuntimeConfigService.instance.apiBaseUrl);
+  final runtimeConfig = RuntimeConfigService.instance;
+  ApiClient.instance.configureBaseUrl(runtimeConfig.apiBaseUrl);
+  if (kDebugMode) {
+    final source = runtimeConfig.isUsingFallback
+        ? 'fallback (localhost — production keys will NOT work)'
+        : 'app_config.json or POS_API_BASE_URL';
+    debugPrint(
+      'POS API: baseUrl=${runtimeConfig.apiBaseUrl} | source=$source',
+    );
+  }
 
   // Ensure ManagerData finishes DB loading before deciding the first screen.
   while (ManagerData.instance.isLoading) {
@@ -77,6 +88,8 @@ class _PosSystemAppState extends State<PosSystemApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      builder: (context, child) =>
+          LicenseBlockedOverlay(child: child ?? const SizedBox.shrink()),
       title: 'POS System',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

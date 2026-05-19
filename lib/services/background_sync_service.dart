@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import '../repositories/sync_repository.dart';
 import 'activation_service.dart';
+import 'license_gate_service.dart';
 import 'api_client.dart';
 import 'connectivity_service.dart';
 import 'database_service.dart';
@@ -52,8 +53,7 @@ class BackgroundSyncService {
     _initialized = true;
 
     await ConnectivityService.instance.initialize();
-    _connectivitySub =
-        ConnectivityService.instance.onStatusChanged.listen(
+    _connectivitySub = ConnectivityService.instance.onStatusChanged.listen(
       _onConnectivityChanged,
     );
     await refreshPendingCount();
@@ -99,19 +99,26 @@ class BackgroundSyncService {
       return;
     }
     if (_isSyncing) {
-      if (kDebugMode) debugPrint('BackgroundSyncService: skip (already syncing)');
+      if (kDebugMode)
+        debugPrint('BackgroundSyncService: skip (already syncing)');
       return;
     }
     if (!ActivationService.instance.isActivated) {
       if (kDebugMode) debugPrint('BackgroundSyncService: skip (not activated)');
       return;
     }
+    if (LicenseGateService.instance.isBlocked) {
+      if (kDebugMode)
+        debugPrint('BackgroundSyncService: skip (license blocked)');
+      return;
+    }
 
     _isSyncing = true;
     SyncStatusService.instance.setSyncingPush(true);
     try {
-      final pending =
-          await _sync.getPendingOutboxEvents(limit: _defaultBatchLimit);
+      final pending = await _sync.getPendingOutboxEvents(
+        limit: _defaultBatchLimit,
+      );
       _pendingCount = pending.length;
 
       if (pending.isEmpty) {
@@ -138,6 +145,7 @@ class BackgroundSyncService {
           data: body,
         );
       } on DioException catch (e) {
+        if (_handleLicenseSuspended(e)) return;
         if (e.response?.statusCode == 401) {
           // Access token expired — attempt one token refresh then retry.
           await _handleSyncUnauthorized();
@@ -154,10 +162,14 @@ class BackgroundSyncService {
       final parsed = _parseSyncPushResponse(response.data);
       if (parsed == null) {
         _backoff.recordFailure();
-        await DatabaseService.instance
-            .setAppMeta('sync_last_error', 'Push: malformed server response');
+        await DatabaseService.instance.setAppMeta(
+          'sync_last_error',
+          'Push: malformed server response',
+        );
         if (kDebugMode) {
-          debugPrint('BackgroundSyncService: malformed response — batch failed, no events marked');
+          debugPrint(
+            'BackgroundSyncService: malformed response — batch failed, no events marked',
+          );
         }
         return;
       }
@@ -188,6 +200,7 @@ class BackgroundSyncService {
         );
       }
     } on DioException catch (e) {
+      if (_handleLicenseSuspended(e)) return;
       _backoff.recordFailure();
       await DatabaseService.instance.setAppMeta(
         'sync_last_error',
@@ -221,11 +234,18 @@ class BackgroundSyncService {
       return;
     }
     if (_isPulling) {
-      if (kDebugMode) debugPrint('BackgroundSyncService: pull skip (already pulling)');
+      if (kDebugMode)
+        debugPrint('BackgroundSyncService: pull skip (already pulling)');
       return;
     }
     if (!ActivationService.instance.isActivated) {
-      if (kDebugMode) debugPrint('BackgroundSyncService: pull skip (not activated)');
+      if (kDebugMode)
+        debugPrint('BackgroundSyncService: pull skip (not activated)');
+      return;
+    }
+    if (LicenseGateService.instance.isBlocked) {
+      if (kDebugMode)
+        debugPrint('BackgroundSyncService: pull skip (license blocked)');
       return;
     }
 
@@ -235,9 +255,7 @@ class BackgroundSyncService {
       final db = DatabaseService.instance;
       final cursor = await db.getPullCursor();
 
-      final queryParams = <String, dynamic>{
-        'limit': '200',
-      };
+      final queryParams = <String, dynamic>{'limit': '200'};
       if (cursor != null && cursor.isNotEmpty) {
         queryParams['since'] = cursor;
       }
@@ -249,6 +267,7 @@ class BackgroundSyncService {
           queryParameters: queryParams,
         );
       } on DioException catch (e) {
+        if (_handleLicenseSuspended(e)) return;
         if (e.response?.statusCode == 401) {
           await _handleSyncUnauthorized();
           response = await ApiClient.instance.get<Map<String, dynamic>>(
@@ -262,9 +281,14 @@ class BackgroundSyncService {
 
       final parsed = _parsePullResponse(response.data);
       if (parsed == null) {
-        await db.setAppMeta('sync_last_error', 'Pull: malformed server response');
+        await db.setAppMeta(
+          'sync_last_error',
+          'Pull: malformed server response',
+        );
         if (kDebugMode) {
-          debugPrint('BackgroundSyncService: pull — malformed response, skipping');
+          debugPrint(
+            'BackgroundSyncService: pull — malformed response, skipping',
+          );
         }
         return;
       }
@@ -292,8 +316,10 @@ class BackgroundSyncService {
       SyncStatusService.instance.markConflictSkips(applyResult.skipped);
 
       if (kDebugMode) {
-        final counts = parsed.entities.values
-            .fold(0, (sum, list) => sum + (list is List ? list.length : 0));
+        final counts = parsed.entities.values.fold(
+          0,
+          (sum, list) => sum + (list is List ? list.length : 0),
+        );
         debugPrint(
           'BackgroundSyncService: pull complete — '
           'entities=$counts upserted=${applyResult.upserted} '
@@ -301,11 +327,13 @@ class BackgroundSyncService {
         );
       }
     } on DioException catch (e) {
+      if (_handleLicenseSuspended(e)) return;
       await DatabaseService.instance.setAppMeta(
         'sync_last_error',
         'Pull network error: ${e.message ?? e.type.name}',
       );
-      if (kDebugMode) debugPrint('BackgroundSyncService: pull network error: $e');
+      if (kDebugMode)
+        debugPrint('BackgroundSyncService: pull network error: $e');
     } catch (e, st) {
       await DatabaseService.instance.setAppMeta(
         'sync_last_error',
@@ -334,6 +362,7 @@ class BackgroundSyncService {
     try {
       await ActivationService.instance.refreshActivationToken();
     } on DioException catch (e) {
+      if (_handleLicenseSuspended(e)) return;
       final statusCode = e.response?.statusCode;
       if (statusCode != null && statusCode >= 400 && statusCode < 500) {
         await ActivationService.instance.revokeActivation();
@@ -349,6 +378,24 @@ class BackgroundSyncService {
     }
   }
 
+  /// Returns `true` when sync should stop because the tenant is suspended.
+  bool _handleLicenseSuspended(DioException error) {
+    if (!LicenseGateService.isLicenseSuspendedError(error)) return false;
+    LicenseGateService.instance.block();
+    stop();
+    _backoff.recordFailure();
+    unawaited(
+      DatabaseService.instance.setAppMeta(
+        'sync_last_error',
+        'License suspended — sync paused',
+      ),
+    );
+    if (kDebugMode) {
+      debugPrint('BackgroundSyncService: license suspended — sync paused');
+    }
+    return true;
+  }
+
   // ── Response parsing ───────────────────────────────────────────────────────
 
   /// Strictly validates the /sync/push grouped response.
@@ -358,11 +405,13 @@ class BackgroundSyncService {
   static _SyncPushResult? _parseSyncPushResponse(dynamic data) {
     if (data is! Map<String, dynamic>) return null;
 
-    final acceptedRaw   = data['accepted'];
+    final acceptedRaw = data['accepted'];
     final duplicatesRaw = data['duplicates'];
-    final rejectedRaw   = data['rejected'];
+    final rejectedRaw = data['rejected'];
 
-    if (acceptedRaw is! List || duplicatesRaw is! List || rejectedRaw is! List) {
+    if (acceptedRaw is! List ||
+        duplicatesRaw is! List ||
+        rejectedRaw is! List) {
       return null;
     }
 
@@ -384,16 +433,18 @@ class BackgroundSyncService {
       final uuid = item['uuid'];
       if (uuid is! String) return null;
       final reason = item['reason'];
-      rejected.add(_SyncRejectedItem(
-        uuid:   uuid,
-        reason: reason is String ? reason : 'rejected',
-      ));
+      rejected.add(
+        _SyncRejectedItem(
+          uuid: uuid,
+          reason: reason is String ? reason : 'rejected',
+        ),
+      );
     }
 
     return _SyncPushResult(
-      accepted:   accepted,
+      accepted: accepted,
       duplicates: duplicates,
-      rejected:   rejected,
+      rejected: rejected,
     );
   }
 
@@ -412,6 +463,7 @@ class BackgroundSyncService {
 
   void _onConnectivityChanged(ConnectivityStatus status) {
     if (!_isRunning) return;
+    if (LicenseGateService.instance.isBlocked) return;
     if (status == ConnectivityStatus.online) {
       unawaited(triggerSyncNow());
       unawaited(pullSyncNow());
@@ -434,8 +486,8 @@ class _SyncPushResult {
     required this.rejected,
   });
 
-  final List<String>           accepted;
-  final List<String>           duplicates;
+  final List<String> accepted;
+  final List<String> duplicates;
   final List<_SyncRejectedItem> rejected;
 }
 

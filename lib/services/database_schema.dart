@@ -49,6 +49,12 @@ class DatabaseSchema {
     _activatedBranchId   = branchId;
   }
 
+  /// Resets tenant scope to local placeholders after activation is cleared.
+  static void clearActivatedTenant() {
+    _activatedBusinessId = kLocalBusinessId;
+    _activatedBranchId   = kMainBranchId;
+  }
+
   /// Stamp for new rows — uses activated tenant IDs when available,
   /// falls back to local placeholders on unactivated devices.
   static Map<String, String> syncScopeStamp(String deviceId) => {
