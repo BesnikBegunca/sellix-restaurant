@@ -41,6 +41,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
   bool _exporting = false;
   bool _exportingSupportBundle = false;
   bool _clearing = false;
+  bool _cleaningUnsupported = false;
   bool _resetting = false;
   bool _tenantDataWarning = false;
   String? _businessName;
@@ -257,6 +258,50 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
     }
   }
 
+  Future<void> _cleanupUnsupportedOutbox() async {
+    if (_cleaningUnsupported) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Pastro outbox të pambështetur'),
+        content: const Text(
+          'Fshin nga outbox vetëm ngjarjet me entityType që pos_api '
+          'nuk i proceson (waiters, porosi, kuzhinë, etj.). '
+          'Shitjet dhe entitetet e sync-uara nuk preken.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Anulo'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Pastro'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _cleaningUnsupported = true);
+    try {
+      final result =
+          await DatabaseService.instance.cleanupUnsupportedOutboxEvents();
+      await SyncStatusService.instance.refresh();
+      await _loadFailed();
+      if (!mounted) return;
+      final msg = result.totalRemoved == 0
+          ? 'Nuk u gjetën rreshta outbox të pambështetur.'
+          : 'U fshinë ${result.totalRemoved} rreshta outbox të pambështetur.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } finally {
+      if (mounted) setState(() => _cleaningUnsupported = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -377,6 +422,8 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                     ],
                     const SizedBox(height: 24),
                     _buildActions(),
+                    const SizedBox(height: 12),
+                    _buildUnsupportedOutboxCleanup(),
                     const SizedBox(height: 12),
                     _buildSupportBundleExport(),
                     const SizedBox(height: 12),
@@ -756,6 +803,30 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildUnsupportedOutboxCleanup() {
+    final busy = _cleaningUnsupported || _clearing || _retrying;
+    return OutlinedButton.icon(
+      onPressed: busy ? null : _cleanupUnsupportedOutbox,
+      icon: _cleaningUnsupported
+          ? const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.delete_sweep_outlined, size: 16),
+      label: Text(
+        _cleaningUnsupported
+            ? 'Duke pastruar…'
+            : 'Pastro outbox të pambështetur',
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.mediumGreenText,
+        minimumSize: const Size(double.infinity, 44),
+        side: const BorderSide(color: AppColors.lightGreenBorder),
+      ),
     );
   }
 

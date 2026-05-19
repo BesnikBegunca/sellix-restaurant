@@ -3,12 +3,15 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../models/sale_insert_result.dart';
+import '../models/unsupported_outbox_cleanup_result.dart';
 import 'background_sync_service.dart';
 import 'database_schema.dart';
+import 'supported_sync_entity_types.dart';
 
 /// Central SQLite service — single source of truth for all persistent data.
 ///
@@ -1684,6 +1687,59 @@ class DatabaseService {
     await setAppMeta('sync_last_error', '');
   }
 
+  /// Removes legacy outbox rows whose [entityType] is not supported by pos_api.
+  ///
+  /// Only touches the [outbox] table. Does not run automatically — call from
+  /// sync diagnostics or another operator-controlled action.
+  Future<UnsupportedOutboxCleanupResult> cleanupUnsupportedOutboxEvents() async {
+    final db = await database;
+    return db.transaction((txn) async {
+      final rows = await txn.query(
+        'outbox',
+        columns: ['id', 'entityType'],
+      );
+
+      final idsToDelete = <Object>[];
+      final removedByEntityType = <String, int>{};
+
+      for (final row in rows) {
+        final rawType = row['entityType'] as String? ?? '';
+        if (isSupportedSyncEntityType(rawType)) continue;
+
+        final id = row['id'];
+        if (id == null) continue;
+
+        idsToDelete.add(id);
+        final key = normalizeSyncEntityType(rawType);
+        removedByEntityType[key] = (removedByEntityType[key] ?? 0) + 1;
+      }
+
+      if (idsToDelete.isNotEmpty) {
+        final placeholders = List.filled(idsToDelete.length, '?').join(',');
+        await txn.delete(
+          'outbox',
+          where: 'id IN ($placeholders)',
+          whereArgs: idsToDelete,
+        );
+      }
+
+      final result = UnsupportedOutboxCleanupResult(
+        totalRemoved: idsToDelete.length,
+        removedByEntityType: removedByEntityType,
+      );
+
+      if (result.totalRemoved > 0) {
+        debugPrint('[SyncCleanup] Removed unsupported outbox rows:');
+        final sortedKeys = result.removedByEntityType.keys.toList()..sort();
+        for (final key in sortedKeys) {
+          debugPrint('- $key: ${result.removedByEntityType[key]}');
+        }
+      }
+
+      return result;
+    });
+  }
+
   // ─────────────────────────── AUDIT LOGS ───────────────────────────────────
 
   /// Appends one immutable audit log entry.
@@ -2049,6 +2105,13 @@ class DatabaseService {
     String? branchId,
     String? deviceId,
   }) async {
+    if (!isSupportedSyncEntityType(entityType)) {
+      debugPrint(
+        '[Sync] Skipping unsupported entityType: '
+        '${normalizeSyncEntityType(entityType)}',
+      );
+      return '';
+    }
     if (!DatabaseSchema.outboxOperations.contains(operation)) {
       throw ArgumentError.value(
         operation,
