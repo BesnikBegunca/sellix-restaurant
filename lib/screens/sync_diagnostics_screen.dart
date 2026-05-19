@@ -7,6 +7,7 @@ import '../services/activation_service.dart';
 import '../services/api_client.dart';
 import '../services/background_sync_service.dart';
 import '../services/database_service.dart';
+import '../services/local_tenant_data_service.dart';
 import '../services/runtime_config_service.dart';
 import '../services/sync_status_service.dart';
 import '../theme/app_colors.dart';
@@ -35,12 +36,26 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
   bool _clearing = false;
   bool _deactivating = false;
   bool _resetting = false;
+  bool _tenantDataWarning = false;
+  String? _businessName;
 
   @override
   void initState() {
     super.initState();
     _status.addListener(_onStatusChanged);
     unawaited(_loadFailed());
+    unawaited(_loadTenantInfo());
+  }
+
+  Future<void> _loadTenantInfo() async {
+    final name = await ActivationService.instance.activatedBusinessName();
+    final warn =
+        await LocalTenantDataService.instance.localDataMayBeFromPreviousTenant();
+    if (!mounted) return;
+    setState(() {
+      _businessName = name;
+      _tenantDataWarning = warn;
+    });
   }
 
   @override
@@ -207,10 +222,15 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                           valueColor: _status.isActivated
                               ? AppColors.successGreen
                               : AppColors.softRed),
+                      _row('Business', _businessName ?? '—'),
                       _row('Business ID', _status.businessId ?? '—'),
                       _row('Branch ID',   _status.branchId   ?? '—'),
                       _row('Device ID',   _status.deviceId   ?? '—'),
                     ]),
+                    if (_tenantDataWarning) ...[
+                      const SizedBox(height: 12),
+                      _buildTenantWarningBanner(),
+                    ],
                     const SizedBox(height: 16),
                     _buildSection('Connectivity', [
                       _row('Network', _status.isOnline ? 'Online' : 'Offline',
@@ -435,6 +455,34 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
             style: const TextStyle(
               fontSize: 10,
               color: AppColors.lightGreenText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTenantWarningBanner() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.mutedOrange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppColors.mutedOrange.withValues(alpha: 0.35),
+        ),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.warning_amber_outlined,
+              size: 16, color: AppColors.mutedOrange),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Të dhënat lokale mund të jenë nga një biznes tjetër. '
+              'Rivendosni aktivizimin dhe zgjidhni "Pastro të dhënat lokale" '
+              'nëse po kaloni në një biznes të ri.',
+              style: TextStyle(fontSize: 12, color: AppColors.darkGreenText),
             ),
           ),
         ],

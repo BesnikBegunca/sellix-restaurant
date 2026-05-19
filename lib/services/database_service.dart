@@ -1385,6 +1385,94 @@ class DatabaseService {
     );
   }
 
+  /// Deletes local business/operational data for a new tenant activation.
+  ///
+  /// Preserves [company] (printer/admin settings), [shift] singleton row,
+  /// [audit_device_id], and activation-related [app_meta] keys.
+  Future<void> clearLocalBusinessData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final table in DatabaseSchema.tenantResetTables) {
+        await txn.delete(table);
+      }
+      await DatabaseSchema.seedEmptyTables(txn);
+      await txn.update(
+        'shift',
+        {
+          'status': 'closed',
+          'openedAt': null,
+          'closedAt': null,
+        },
+        where: 'id = 1',
+      );
+    });
+    for (final key in DatabaseSchema.tenantResetAppMetaKeys) {
+      await setAppMeta(key, key == 'global_order_number' ? '0' : '');
+    }
+  }
+
+  /// Returns true if any scoped table has rows stamped with [businessId].
+  Future<bool> hasLocalDataForBusiness(String businessId) async {
+    final db = await database;
+    final tables = [
+      ...DatabaseSchema.syncScopeTables,
+      'inventory_items',
+      'stock_movements',
+    ];
+    for (final table in tables) {
+      final rows = await db.rawQuery(
+        'SELECT 1 FROM $table WHERE businessId = ? LIMIT 1',
+        [businessId],
+      );
+      if (rows.isNotEmpty) return true;
+    }
+    return false;
+  }
+
+  /// Returns true if any sync-scoped table has rows for another business.
+  Future<bool> hasLocalDataForOtherBusiness(String businessId) async {
+    final db = await database;
+    for (final table in DatabaseSchema.syncScopeTables) {
+      final rows = await db.rawQuery(
+        'SELECT 1 FROM $table '
+        'WHERE businessId IS NOT NULL AND businessId != ? '
+        'LIMIT 1',
+        [businessId],
+      );
+      if (rows.isNotEmpty) return true;
+    }
+    for (final table in ['inventory_items', 'stock_movements']) {
+      final rows = await db.rawQuery(
+        'SELECT 1 FROM $table '
+        'WHERE businessId IS NOT NULL AND businessId != ? '
+        'LIMIT 1',
+        [businessId],
+      );
+      if (rows.isNotEmpty) return true;
+    }
+    return false;
+  }
+
+  /// Rough signal that the device has operational data (not just empty schema).
+  Future<bool> hasMeaningfulLocalBusinessData() async {
+    final db = await database;
+    final checks = <String>[
+      'SELECT COUNT(*) AS c FROM sales',
+      'SELECT COUNT(*) AS c FROM expenses',
+      'SELECT COUNT(*) AS c FROM waiters',
+      'SELECT COUNT(*) AS c FROM products',
+      'SELECT COUNT(*) AS c FROM outbox',
+    ];
+    for (final sql in checks) {
+      final count = Sqflite.firstIntValue(await db.rawQuery(sql)) ?? 0;
+      if (count > 0) return true;
+    }
+    final occupied = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) AS c FROM tables WHERE occupied = 1'),
+    );
+    return (occupied ?? 0) > 0;
+  }
+
   // ─────────────────────── OUTBOX DIAGNOSTICS ──────────────────────────────
 
   Future<int> getPendingOutboxCount() async {

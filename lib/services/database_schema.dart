@@ -33,6 +33,40 @@ class DatabaseSchema {
     'kitchen_prints', 'kitchen_print_lines',
   ];
 
+  /// Tables wiped on "Pastro të dhënat lokale" during a new-tenant activation.
+  /// Order: children before parents. [company] and [app_meta] are handled separately.
+  static const List<String> tenantResetTables = <String>[
+    'kitchen_print_lines',
+    'kitchen_prints',
+    'sale_lines',
+    'sale_adjustments',
+    'sales',
+    'current_order_lines',
+    'current_orders',
+    'stock_movements',
+    'inventory_items',
+    'outbox',
+    'expenses',
+    'advances',
+    'waiter_worked_days',
+    'waiter_salaries',
+    'waiters',
+    'products',
+    'categories',
+    'shifts',
+    'audit_logs',
+    'tables',
+  ];
+
+  static const List<String> tenantResetAppMetaKeys = <String>[
+    'sync_last_error',
+    'sync_last_push_at',
+    'sync_last_pull_at',
+    'sync_last_success_at',
+    'sync_pull_cursor',
+    'global_order_number',
+  ];
+
   // ── Activated tenant IDs (updated by ActivationService at startup) ─────────
 
   static String _activatedBusinessId = kLocalBusinessId;
@@ -53,6 +87,20 @@ class DatabaseSchema {
   static void clearActivatedTenant() {
     _activatedBusinessId = kLocalBusinessId;
     _activatedBranchId   = kMainBranchId;
+  }
+
+  /// Re-inserts 15 empty restaurant tables after a tenant data reset.
+  static Future<void> seedEmptyTables(Transaction txn) async {
+    await txn.delete('tables');
+    for (var i = 1; i <= 15; i++) {
+      await txn.insert('tables', {
+        'id': i,
+        'occupied': 0,
+        'currentTotal': null,
+        'assignedWaiterName': null,
+        'currentOrderNumber': null,
+      });
+    }
   }
 
   /// Stamp for new rows — uses activated tenant IDs when available,

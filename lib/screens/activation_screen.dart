@@ -2,11 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/activation_validate_response.dart';
+import '../manager/manager_data.dart';
 import '../services/activation_error_message.dart';
 import '../services/activation_service.dart';
 import '../services/background_sync_service.dart';
+import '../services/local_tenant_data_service.dart';
 import '../services/runtime_config_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/tenant_data_conflict_dialog.dart';
 import 'login_screen.dart';
 
 /// First-run screen shown when the device has not yet been activated.
@@ -87,6 +90,25 @@ class _ActivationScreenState extends State<ActivationScreen> {
       return;
     }
 
+    final newBusinessId = _validated!.businessId;
+    if (newBusinessId == null || newBusinessId.isEmpty) {
+      setState(
+        () => _error = 'Serveri nuk ktheu businessId. Provoni përsëri.',
+      );
+      return;
+    }
+
+    final conflict =
+        await LocalTenantDataService.instance.detectConflict(newBusinessId);
+    if (conflict != null) {
+      if (!mounted) return;
+      final wipe = await showTenantDataConflictDialog(context, conflict);
+      if (wipe == null) return;
+      if (wipe) {
+        await LocalTenantDataService.instance.clearLocalBusinessData();
+      }
+    }
+
     setState(() {
       _activating = true;
       _error = null;
@@ -95,7 +117,9 @@ class _ActivationScreenState extends State<ActivationScreen> {
       await ActivationService.instance.activateDesktop(
         activationKey: key,
         branchCode: branch,
+        businessName: _validated!.businessName,
       );
+      await ManagerData.instance.reload();
       BackgroundSyncService.instance.start();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(

@@ -11,6 +11,7 @@ import 'api_client.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
 import 'license_gate_service.dart';
+import 'local_tenant_data_service.dart';
 
 /// Manages device activation against the NestJS backend.
 ///
@@ -119,6 +120,7 @@ class ActivationService {
   Future<ActivationResponse> activateDesktop({
     required String activationKey,
     required String branchCode,
+    String? businessName,
   }) async {
     final deviceUuid = await DatabaseService.instance.syncDeviceId();
     final body = <String, dynamic>{
@@ -144,7 +146,7 @@ class ActivationService {
         throw Exception('Empty activation response from server.');
       }
       final activation = ActivationResponse.fromJson(data);
-      await _persistActivation(activation);
+      await _persistActivation(activation, businessName: businessName);
       return activation;
     } on DioException catch (e) {
       logActivationError(e);
@@ -278,13 +280,36 @@ class ActivationService {
 
   // ── private ───────────────────────────────────────────────────────────────
 
-  Future<void> _persistActivation(ActivationResponse r) async {
+  Future<void> _persistActivation(
+    ActivationResponse r, {
+    String? businessName,
+  }) async {
+    final db = DatabaseService.instance;
+    final previousId = await db.getAppMeta(_kBusinessId);
+    final lastId = await db.getAppMeta(
+      LocalTenantDataService.kLastBusinessIdKey,
+    );
+
     _businessId = r.businessId;
     _branchId = r.branchId;
     _serverDeviceId = r.deviceId;
     _activated = true;
 
-    await DatabaseService.instance.setAppMeta(_kBusinessId, r.businessId);
+    final businessChanged =
+        (previousId != null &&
+            previousId.isNotEmpty &&
+            previousId != r.businessId) ||
+        (lastId != null && lastId.isNotEmpty && lastId != r.businessId);
+
+    if (businessChanged) {
+      await db.setAppMeta('sync_pull_cursor', '');
+      await db.setAppMeta('sync_last_error', '');
+      await db.setAppMeta('sync_last_push_at', '');
+      await db.setAppMeta('sync_last_pull_at', '');
+      await db.setAppMeta('sync_last_success_at', '');
+    }
+
+    await db.setAppMeta(_kBusinessId, r.businessId);
     await DatabaseService.instance.setAppMeta(_kBranchId, r.branchId);
     await DatabaseService.instance.setAppMeta(_kDeviceId, r.deviceId);
     await DatabaseService.instance.setAppMeta(_kAccessToken, r.accessToken);
@@ -307,7 +332,18 @@ class ActivationService {
       businessId: r.businessId,
       branchId: r.branchId,
     );
+
+    await LocalTenantDataService.instance.recordActivatedTenant(
+      businessId: r.businessId,
+      businessName: businessName,
+    );
+    if (businessName != null && businessName.isNotEmpty) {
+      await db.setAppMeta('activation_business_name', businessName);
+    }
   }
+
+  Future<String?> activatedBusinessName() =>
+      DatabaseService.instance.getAppMeta('activation_business_name');
 
   static String _detectPlatform() {
     try {
