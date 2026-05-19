@@ -6,6 +6,7 @@ class TenantDataConflict {
     this.previousBusinessName,
     required this.hasMeaningfulLocalData,
     required this.hasForeignScopedData,
+    this.wipeRequired = false,
   });
 
   final String newBusinessId;
@@ -13,6 +14,9 @@ class TenantDataConflict {
   final String? previousBusinessName;
   final bool hasMeaningfulLocalData;
   final bool hasForeignScopedData;
+
+  /// When true, release builds must not activate without wiping first.
+  final bool wipeRequired;
 
   bool get isDifferentBusiness =>
       previousBusinessId != null &&

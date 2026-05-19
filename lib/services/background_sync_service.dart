@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -13,6 +11,8 @@ import 'api_client.dart';
 import 'connectivity_service.dart';
 import 'database_service.dart';
 import 'pull_sync_apply_service.dart';
+import 'runtime_config_service.dart';
+import 'sync_backoff_policy.dart';
 import 'sync_status_service.dart';
 
 /// Coordinates outbox → NestJS sync upload.
@@ -26,11 +26,19 @@ class BackgroundSyncService {
   final SyncBackoffPolicy _backoff = SyncBackoffPolicy();
 
   StreamSubscription<ConnectivityStatus>? _connectivitySub;
+  Timer? _scheduledRetryTimer;
   bool _initialized = false;
   bool _isRunning = false;
   bool _isSyncing = false;
   bool _isPulling = false;
   int _pendingCount = 0;
+
+  /// Backoff / retry visibility for Sync Diagnostics.
+  int get backoffFailureCount => _backoff.failureCount;
+  bool get backoffExhausted => _backoff.exhausted;
+  DateTime? get nextRetryAt => _backoff.nextRetryAt;
+  Duration? get retryBackoffRemaining => _backoff.remainingDelay;
+  bool get backoffIsReady => _backoff.isReady;
 
   /// `true` after [start] until [stop] / [dispose].
   bool get isRunning => _isRunning;
@@ -61,10 +69,13 @@ class BackgroundSyncService {
 
   /// Enables connectivity-triggered [triggerSyncNow] and [pullSyncNow] when online.
   void start() {
+    if (_isApiConfigBlocked()) {
+      unawaited(_markApiConfigBlocked());
+      return;
+    }
     _isRunning = true;
     if (ConnectivityService.instance.isOnline) {
-      unawaited(triggerSyncNow());
-      unawaited(pullSyncNow());
+      _requestSyncWhenReady();
     }
   }
 
@@ -76,6 +87,7 @@ class BackgroundSyncService {
   Future<void> dispose() async {
     await _connectivitySub?.cancel();
     _connectivitySub = null;
+    _cancelScheduledRetry();
     _isRunning = false;
     _initialized = false;
   }
@@ -93,9 +105,24 @@ class BackgroundSyncService {
   ///
   /// If the server response is malformed the entire batch is treated as
   /// failed — no events are partially marked synced.
-  Future<void> triggerSyncNow() async {
+  ///
+  /// Set [force] to `true` to bypass backoff (manual retry from diagnostics).
+  Future<void> triggerSyncNow({bool force = false}) async {
+    if (_isApiConfigBlocked()) {
+      await _markApiConfigBlocked();
+      return;
+    }
     if (!ConnectivityService.instance.isOnline) {
       if (kDebugMode) debugPrint('BackgroundSyncService: skip (offline)');
+      return;
+    }
+    if (!force && !_backoff.isReady) {
+      if (kDebugMode) {
+        debugPrint(
+          'BackgroundSyncService: skip (backoff until ${_backoff.nextRetryAt})',
+        );
+      }
+      _ensureRetryScheduled();
       return;
     }
     if (_isSyncing) {
@@ -123,6 +150,7 @@ class BackgroundSyncService {
 
       if (pending.isEmpty) {
         _backoff.reset();
+        _cancelScheduledRetry();
         if (kDebugMode) debugPrint('BackgroundSyncService: no pending events');
         return;
       }
@@ -161,9 +189,7 @@ class BackgroundSyncService {
       // Strict parsing — returns null if any field is missing or wrong type.
       final parsed = _parseSyncPushResponse(response.data);
       if (parsed == null) {
-        _backoff.recordFailure();
-        await DatabaseService.instance.setAppMeta(
-          'sync_last_error',
+        _recordFailureAndSchedule(
           'Push: malformed server response',
         );
         if (kDebugMode) {
@@ -185,6 +211,7 @@ class BackgroundSyncService {
       final settled = parsed.accepted.length + parsed.duplicates.length;
       _pendingCount = (_pendingCount - settled).clamp(0, _pendingCount);
       _backoff.reset();
+      _cancelScheduledRetry();
 
       final nowIso = DateTime.now().toIso8601String();
       await DatabaseService.instance.setAppMeta('sync_last_push_at', nowIso);
@@ -201,18 +228,12 @@ class BackgroundSyncService {
       }
     } on DioException catch (e) {
       if (_handleLicenseSuspended(e)) return;
-      _backoff.recordFailure();
-      await DatabaseService.instance.setAppMeta(
-        'sync_last_error',
+      _recordFailureAndSchedule(
         'Push network error: ${e.message ?? e.type.name}',
       );
       if (kDebugMode) debugPrint('BackgroundSyncService: network error: $e');
     } catch (e, st) {
-      _backoff.recordFailure();
-      await DatabaseService.instance.setAppMeta(
-        'sync_last_error',
-        'Push error: ${e.runtimeType}',
-      );
+      _recordFailureAndSchedule('Push error: ${e.runtimeType}');
       if (kDebugMode) debugPrint('BackgroundSyncService: sync error: $e\n$st');
     } finally {
       _isSyncing = false;
@@ -228,9 +249,21 @@ class BackgroundSyncService {
   ///
   /// The pull cursor is persisted only after a successful SQLite commit so
   /// any failure leaves the cursor unchanged and the same batch is retried.
-  Future<void> pullSyncNow() async {
+  Future<void> pullSyncNow({bool force = false}) async {
+    if (_isApiConfigBlocked()) {
+      await _markApiConfigBlocked();
+      return;
+    }
     if (!ConnectivityService.instance.isOnline) {
       if (kDebugMode) debugPrint('BackgroundSyncService: pull skip (offline)');
+      return;
+    }
+    if (!force && !_backoff.isReady) {
+      if (kDebugMode) {
+        debugPrint(
+          'BackgroundSyncService: pull skip (backoff until ${_backoff.nextRetryAt})',
+        );
+      }
       return;
     }
     if (_isPulling) {
@@ -281,10 +314,7 @@ class BackgroundSyncService {
 
       final parsed = _parsePullResponse(response.data);
       if (parsed == null) {
-        await db.setAppMeta(
-          'sync_last_error',
-          'Pull: malformed server response',
-        );
+        _recordFailureAndSchedule('Pull: malformed server response');
         if (kDebugMode) {
           debugPrint(
             'BackgroundSyncService: pull — malformed response, skipping',
@@ -315,6 +345,9 @@ class BackgroundSyncService {
 
       SyncStatusService.instance.markConflictSkips(applyResult.skipped);
 
+      _backoff.reset();
+      _cancelScheduledRetry();
+
       if (kDebugMode) {
         final counts = parsed.entities.values.fold(
           0,
@@ -328,17 +361,13 @@ class BackgroundSyncService {
       }
     } on DioException catch (e) {
       if (_handleLicenseSuspended(e)) return;
-      await DatabaseService.instance.setAppMeta(
-        'sync_last_error',
+      _recordFailureAndSchedule(
         'Pull network error: ${e.message ?? e.type.name}',
       );
       if (kDebugMode)
         debugPrint('BackgroundSyncService: pull network error: $e');
     } catch (e, st) {
-      await DatabaseService.instance.setAppMeta(
-        'sync_last_error',
-        'Pull error: ${e.runtimeType}',
-      );
+      _recordFailureAndSchedule('Pull error: ${e.runtimeType}');
       if (kDebugMode) debugPrint('BackgroundSyncService: pull error: $e\n$st');
     } finally {
       _isPulling = false;
@@ -365,12 +394,15 @@ class BackgroundSyncService {
       if (_handleLicenseSuspended(e)) return;
       final statusCode = e.response?.statusCode;
       if (statusCode != null && statusCode >= 400 && statusCode < 500) {
-        await ActivationService.instance.revokeActivation();
-        stop(); // disable auto-sync since device is no longer activated
+        stop();
         SyncStatusService.instance.stop();
+        await ActivationService.instance.handleRevokedByServer(
+          reason: ActivationService.messageForRevocation(e),
+        );
         if (kDebugMode) {
           debugPrint(
-            'BackgroundSyncService: refresh rejected ($statusCode) — activation revoked, sync stopped',
+            'BackgroundSyncService: refresh rejected ($statusCode) — '
+            'activation revoked, sync stopped',
           );
         }
       }
@@ -383,13 +415,7 @@ class BackgroundSyncService {
     if (!LicenseGateService.isLicenseSuspendedError(error)) return false;
     LicenseGateService.instance.block();
     stop();
-    _backoff.recordFailure();
-    unawaited(
-      DatabaseService.instance.setAppMeta(
-        'sync_last_error',
-        'License suspended — sync paused',
-      ),
-    );
+    _recordFailureAndSchedule('License suspended — sync paused');
     if (kDebugMode) {
       debugPrint('BackgroundSyncService: license suspended — sync paused');
     }
@@ -465,9 +491,98 @@ class BackgroundSyncService {
     if (!_isRunning) return;
     if (LicenseGateService.instance.isBlocked) return;
     if (status == ConnectivityStatus.online) {
-      unawaited(triggerSyncNow());
-      unawaited(pullSyncNow());
+      _requestSyncWhenReady();
+    } else {
+      _cancelScheduledRetry();
     }
+  }
+
+  /// Schedules push+pull when backoff allows (avoids immediate retry storms).
+  void _requestSyncWhenReady({bool force = false}) {
+    if (!_isRunning) return;
+    if (_isApiConfigBlocked()) return;
+    if (!ConnectivityService.instance.isOnline) return;
+    if (LicenseGateService.instance.isBlocked) return;
+
+    if (force || _backoff.isReady) {
+      unawaited(_runScheduledSync(force: force));
+      return;
+    }
+    _ensureRetryScheduled();
+  }
+
+  Future<void> _runScheduledSync({bool force = false}) async {
+    if (!_isRunning) return;
+    if (!ConnectivityService.instance.isOnline) return;
+    await triggerSyncNow(force: force);
+    if (!_isRunning) return;
+    await pullSyncNow(force: force);
+    await refreshPendingCount();
+    unawaited(SyncStatusService.instance.refresh());
+  }
+
+  void _recordFailureAndSchedule(String errorMessage) {
+    _backoff.recordFailure();
+    unawaited(
+      DatabaseService.instance.setAppMeta('sync_last_error', errorMessage),
+    );
+    _ensureRetryScheduled();
+    unawaited(SyncStatusService.instance.refresh());
+    if (kDebugMode) {
+      debugPrint(
+        'BackgroundSyncService: failure #${_backoff.failureCount} — '
+        'next retry at ${_backoff.nextRetryAt}',
+      );
+    }
+  }
+
+  bool _isApiConfigBlocked() =>
+      RuntimeConfigService.instance.isBlockedInRelease;
+
+  Future<void> _markApiConfigBlocked() async {
+    _cancelScheduledRetry();
+    _backoff.reset();
+    await DatabaseService.instance.setAppMeta(
+      'sync_last_error',
+      RuntimeConfigService.syncConfigErrorMessage,
+    );
+    unawaited(SyncStatusService.instance.refresh());
+    if (kDebugMode) {
+      debugPrint(
+        'BackgroundSyncService: blocked — invalid production API config',
+      );
+    }
+  }
+
+  void _ensureRetryScheduled() {
+    if (!_isRunning) return;
+    if (_isApiConfigBlocked()) return;
+    if (!ConnectivityService.instance.isOnline) return;
+    if (LicenseGateService.instance.isBlocked) return;
+    if (_backoff.isReady) return;
+
+    final wait = _backoff.remainingDelay ?? _backoff.delayWithJitter;
+    if (wait <= Duration.zero) {
+      unawaited(_runScheduledSync());
+      return;
+    }
+
+    _scheduledRetryTimer?.cancel();
+    _scheduledRetryTimer = Timer(wait, () {
+      _scheduledRetryTimer = null;
+      unawaited(_runScheduledSync());
+    });
+  }
+
+  void _cancelScheduledRetry() {
+    _scheduledRetryTimer?.cancel();
+    _scheduledRetryTimer = null;
+  }
+
+  /// Clears backoff state after operator resets failed events (manual retry).
+  void resetBackoff() {
+    _backoff.reset();
+    _cancelScheduledRetry();
   }
 }
 
@@ -495,30 +610,4 @@ class _SyncRejectedItem {
   const _SyncRejectedItem({required this.uuid, required this.reason});
   final String uuid;
   final String reason;
-}
-
-/// Exponential backoff for upload retries.
-class SyncBackoffPolicy {
-  static const int maxAttempts = 5;
-  static const Duration baseDelay = Duration(seconds: 2);
-
-  int _failureCount = 0;
-
-  int get failureCount => _failureCount;
-
-  Duration get currentDelay {
-    if (_failureCount <= 0) return Duration.zero;
-    final exponent = math.min(_failureCount - 1, 8);
-    return baseDelay * (1 << exponent);
-  }
-
-  void reset() => _failureCount = 0;
-
-  void recordFailure() {
-    if (_failureCount < maxAttempts) {
-      _failureCount++;
-    }
-  }
-
-  bool get exhausted => _failureCount >= maxAttempts;
 }

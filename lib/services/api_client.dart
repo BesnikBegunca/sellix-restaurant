@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'connectivity_service.dart';
+import 'secure_activation_token_store.dart';
 
 /// Fallback NestJS API root used when no config file or env var is present.
 ///
@@ -21,6 +22,9 @@ class ApiClient {
   Dio? _dio;
   String _baseUrl = kDefaultApiBaseUrl;
   String? _accessToken;
+
+  /// Set from [main] to handle 401 device revocation without circular imports.
+  Future<void> Function(DioException error)? onUnauthorizedRevoke;
 
   /// Lazily built [Dio] instance (no network I/O until a method is called).
   Dio get dio {
@@ -71,10 +75,12 @@ class ApiClient {
 
     client.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
-          final token = _accessToken;
+        onRequest: (options, handler) async {
+          final token =
+              await SecureActivationTokenStore.instance.readAccessToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
+            _accessToken = token;
           }
           if (kDebugMode) {
             debugPrint(
@@ -94,7 +100,7 @@ class ApiClient {
           }
           handler.next(response);
         },
-        onError: (error, handler) {
+        onError: (error, handler) async {
           if (kDebugMode) {
             if (error.type == DioExceptionType.connectionError) {
               final online = ConnectivityService.instance.isOnline;
@@ -109,6 +115,12 @@ class ApiClient {
               debugPrint('API ✕ ${error.type} ${error.requestOptions.uri}');
             }
           }
+
+          final revokeHandler = onUnauthorizedRevoke;
+          if (revokeHandler != null) {
+            await revokeHandler(error);
+          }
+
           handler.next(error);
         },
       ),
@@ -171,6 +183,22 @@ class ApiClient {
     CancelToken? cancelToken,
   }) {
     return dio.delete<T>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  Future<Response<T>> patch<T>(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) {
+    return dio.patch<T>(
       path,
       data: data,
       queryParameters: queryParameters,

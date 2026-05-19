@@ -8,6 +8,7 @@ import '../features/pos_order/widgets/order_panel.dart';
 import '../features/pos_order/widgets/product_tile.dart';
 import '../manager/manager_data.dart';
 import '../models/mock_data.dart';
+import '../models/sale_insert_result.dart';
 import '../services/audit_log_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/pos_grid.dart';
@@ -142,11 +143,33 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       );
       final combined = _mergeLines(persisted, _toCurrentLines(_lines));
       final tableTotal = _sumCurrentLines(combined);
+      final shouldRecordSale =
+          tableTotal > 0 && widget.waiterName.isNotEmpty;
 
-      // Print payment receipt (non-fatal if printer is unavailable).
-      try {
-        if (combined.isNotEmpty) {
-          await ReceiptPrinter.printKitchenOrder(
+      // 1) Save sale first (DB idempotency on stable sale UUID).
+      var printAfterSave = false;
+      SaleInsertResult? payResult;
+      if (shouldRecordSale) {
+        final saleUuid = await data.resolvePaymentSaleUuid(
+          tableId: widget.tableNumber,
+          waiterName: widget.waiterName,
+        );
+        payResult = await data.recordSaleWithLines(
+          saleUuid: saleUuid,
+          waiterName: widget.waiterName,
+          total: tableTotal,
+          tableId: widget.tableNumber,
+          tableName: 'Tavolina ${widget.tableNumber}',
+          lines: combined,
+        );
+        printAfterSave = combined.isNotEmpty && !payResult.wasExisting;
+      }
+
+      // 2) Print receipt after commit (sale valid even if print fails).
+      var printOk = true;
+      if (printAfterSave) {
+        try {
+          printOk = await ReceiptPrinter.printKitchenOrder(
             companyName: data.companyName ?? 'POS System',
             waiterName: widget.waiterName,
             tableNumber: widget.tableNumber,
@@ -157,25 +180,16 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
             total: tableTotal,
             paymentReceipt: true,
           );
-          // Auto-kick cash drawer if enabled.
-          if (data.cashDrawerEnabled) {
-            final printer = await PrinterSettingsStore.loadSelectedPrinterName();
+          if (printOk && data.cashDrawerEnabled) {
+            final printer =
+                await PrinterSettingsStore.loadSelectedPrinterName();
             if (printer.isNotEmpty) {
               EscPosPrinterService.instance.openCashDrawer(printer);
             }
           }
+        } catch (_) {
+          printOk = false;
         }
-      } catch (_) {}
-
-      // Regjistro shitjen me linjat e produkteve në një transaksion atomik.
-      if (tableTotal > 0 && widget.waiterName.isNotEmpty) {
-        await data.recordSaleWithLines(
-          waiterName: widget.waiterName,
-          total: tableTotal,
-          tableId: widget.tableNumber,
-          tableName: 'Tavolina ${widget.tableNumber}',
-          lines: combined,
-        );
       }
 
       await showGeneralDialog<void>(
@@ -273,6 +287,17 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       await data.clearTable(widget.tableNumber, widget.waiterName);
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
+        if (shouldRecordSale && !printOk) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Shitja u ruajt, por printimi dështoi. '
+                'Ridërgojeni nga Historiku i shitjeve.',
+              ),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

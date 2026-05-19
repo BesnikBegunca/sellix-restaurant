@@ -10,6 +10,7 @@ import '../features/sales_history/widgets/sh_filters_card.dart';
 import '../features/sales_history/widgets/sh_top_products_card.dart';
 import '../manager/manager_data.dart';
 import '../services/database_service.dart';
+import '../services/sale_receipt_service.dart';
 import '../services/sales_history_pdf.dart';
 import '../theme/app_colors.dart';
 
@@ -104,6 +105,25 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
         final e = _customRange!.end;
         return '${s.day}/${s.month}/${s.year} – ${e.day}/${e.month}/${e.year}';
     }
+  }
+
+  Future<void> _reprintSaleReceipt(SaleWithLines data) async {
+    final ok = await SaleReceiptService.reprintPaymentReceipt(
+      sale: data.sale,
+      lines: data.lines,
+      companyName: ManagerData.instance.companyName ?? 'POS System',
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Kuponi u dërgua në printer.'
+              : 'Printimi dështoi. Kontrolloni printerin.',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   // ── data loading ───────────────────────────────────────────────────────────
@@ -492,6 +512,9 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                 },
                 onRefund: s.sale.dbId != null
                     ? () => showSHRefundDialog(context, s, onSuccess: _loadData)
+                    : null,
+                onReprint: s.lines.isNotEmpty
+                    ? () => _reprintSaleReceipt(s)
                     : null,
               ),
         ],

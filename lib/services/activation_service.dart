@@ -10,8 +10,11 @@ import 'activation_api_log.dart';
 import 'api_client.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
+import 'activation_state_controller.dart';
 import 'license_gate_service.dart';
 import 'local_tenant_data_service.dart';
+import 'runtime_config_service.dart';
+import 'secure_activation_token_store.dart';
 
 /// Manages device activation against the NestJS backend.
 ///
@@ -26,12 +29,23 @@ class ActivationService {
   ActivationService._();
   static final ActivationService instance = ActivationService._();
 
+  /// Shown on [DeviceRevokedScreen] after server-side device revoke (401).
+  static const String kDefaultServerRevokeMessage =
+      'Kjo pajisje është çaktivizuar nga administratori. '
+      'Aktivizojeni përsëri me një çelës të ri.';
+
+  /// pos_api `PATCH /devices/:id/revoke` is SuperAdmin-only today.
+  /// When the API allows device self-revoke, set this to `true`.
+  static const bool kServerRevokeAvailableToDesktop = false;
+
   // ── app_meta keys ─────────────────────────────────────────────────────────
-  static const String _kBusinessId = 'activation_business_id';
-  static const String _kBranchId = 'activation_branch_id';
-  static const String _kDeviceId = 'activation_device_id';
-  static const String _kAccessToken = 'activation_access_token';
-  static const String _kRefreshToken = 'activation_refresh_token';
+  static const String kMetaBusinessId = 'activation_business_id';
+  static const String kMetaBranchId = 'activation_branch_id';
+  static const String kMetaDeviceId = 'activation_device_id';
+
+  static const String _kBusinessId = kMetaBusinessId;
+  static const String _kBranchId = kMetaBranchId;
+  static const String _kDeviceId = kMetaDeviceId;
   static const String _kLicenseExpiresAt = 'activation_license_expires_at';
   static const String _kCompleted = 'activation_completed';
 
@@ -40,6 +54,7 @@ class ActivationService {
   String? _branchId;
   String? _serverDeviceId;
   bool _activated = false;
+  bool _handlingRevoke = false;
 
   bool get isActivated => _activated;
   String? get businessId => _businessId;
@@ -47,6 +62,41 @@ class ActivationService {
   String? get serverDeviceId => _serverDeviceId;
 
   // ── public API ────────────────────────────────────────────────────────────
+
+  /// Moves legacy plaintext tokens from [app_meta] into [SecureActivationTokenStore].
+  ///
+  /// Safe to call on every startup before [loadPersistedActivation].
+  Future<void> migrateTokensFromAppMetaIfNeeded() async {
+    final db = DatabaseService.instance;
+    final store = SecureActivationTokenStore.instance;
+
+    if (await store.hasTokens()) {
+      await _clearLegacyTokenMeta(db);
+      return;
+    }
+
+    final access = await db.getAppMeta(
+      SecureActivationTokenStore.legacyAccessTokenKey,
+    );
+    final refresh = await db.getAppMeta(
+      SecureActivationTokenStore.legacyRefreshTokenKey,
+    );
+
+    if (access == null || access.isEmpty) {
+      await _clearLegacyTokenMeta(db);
+      return;
+    }
+
+    await store.saveTokens(
+      accessToken: access,
+      refreshToken: refresh ?? '',
+    );
+    await _clearLegacyTokenMeta(db);
+
+    if (kDebugMode) {
+      debugPrint('Activation tokens migrated to secure storage');
+    }
+  }
 
   /// Loads activation state from [app_meta] and wires [ApiClient] + tenant IDs.
   ///
@@ -59,11 +109,12 @@ class ActivationService {
     final businessId = await DatabaseService.instance.getAppMeta(_kBusinessId);
     final branchId = await DatabaseService.instance.getAppMeta(_kBranchId);
     final deviceId = await DatabaseService.instance.getAppMeta(_kDeviceId);
-    final accessToken = await DatabaseService.instance.getAppMeta(
-      _kAccessToken,
-    );
+    final accessToken =
+        await SecureActivationTokenStore.instance.readAccessToken();
 
-    if (businessId == null || branchId == null || accessToken == null) return;
+    if (businessId == null || branchId == null || accessToken == null) {
+      return;
+    }
 
     _businessId = businessId;
     _branchId = branchId;
@@ -75,12 +126,14 @@ class ActivationService {
       businessId: businessId,
       branchId: branchId,
     );
+    ActivationStateController.instance.setActivated(true);
   }
 
   /// POST /activation/validate-key — checks key before desktop activation.
   Future<ActivationValidateResponse> validateActivationKey({
     required String activationKey,
   }) async {
+    _assertProductionApiConfig();
     final trimmed = activationKey.trim();
     final body = <String, dynamic>{'activationKey': trimmed};
     logActivationRequest(
@@ -122,6 +175,7 @@ class ActivationService {
     required String branchCode,
     String? businessName,
   }) async {
+    _assertProductionApiConfig();
     final deviceUuid = await DatabaseService.instance.syncDeviceId();
     final body = <String, dynamic>{
       'activationKey': activationKey.trim(),
@@ -154,10 +208,119 @@ class ActivationService {
     }
   }
 
-  /// Clears all local activation state and returns to a fresh activation flow.
+  /// Clears local activation only (does not call SuperAdmin revoke API).
   ///
   /// Does NOT delete local sales or SQLite business data.
-  Future<void> resetLocalActivation() => revokeActivation();
+  Future<void> resetLocalActivation() async {
+    ActivationStateController.instance.clearServerRevoked();
+    await revokeActivation();
+    ActivationStateController.instance.setActivated(false);
+  }
+
+  /// Attempts `PATCH /devices/:id/revoke` on the server.
+  ///
+  /// Returns `true` if the server confirmed revoke. Returns `false` when skipped
+  /// (no device id, desktop cannot auth, or network/auth error).
+  ///
+  /// Today [kServerRevokeAvailableToDesktop] is `false` because pos_api requires
+  /// SuperAdmin — use SuperAdmin mobile to revoke server-side.
+  Future<bool> revokeDeviceOnServer() async {
+    if (!kServerRevokeAvailableToDesktop) {
+      if (kDebugMode) {
+        debugPrint(
+          'ActivationService: revokeDeviceOnServer skipped — '
+          'endpoint requires SuperAdmin (use SuperAdmin app)',
+        );
+      }
+      return false;
+    }
+
+    final deviceId = await DatabaseService.instance.getAppMeta(_kDeviceId);
+    if (deviceId == null || deviceId.isEmpty) {
+      if (kDebugMode) {
+        debugPrint(
+          'ActivationService: revokeDeviceOnServer skipped — no activation_device_id',
+        );
+      }
+      return false;
+    }
+
+    try {
+      await ApiClient.instance.patch<void>(deviceRevokeEndpoint(deviceId));
+      if (kDebugMode) {
+        debugPrint('ActivationService: device revoked on server ($deviceId)');
+      }
+      return true;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          'ActivationService: revokeDeviceOnServer failed '
+          '(${e.response?.statusCode}): ${e.message}',
+        );
+      }
+      return false;
+    }
+  }
+
+  /// Revokes local tokens and routes UI to [DeviceRevokedScreen].
+  ///
+  /// Callers must stop [BackgroundSyncService] / [SyncStatusService] first.
+  /// Does NOT delete business SQLite data.
+  Future<void> handleRevokedByServer({String? reason}) async {
+    if (_handlingRevoke || !_activated) return;
+    _handlingRevoke = true;
+    final message = reason ?? kDefaultServerRevokeMessage;
+    try {
+      await revokeActivation();
+      ActivationStateController.instance.notifyServerRevoked(message);
+    } finally {
+      _handlingRevoke = false;
+    }
+    if (kDebugMode) {
+      debugPrint('ActivationService: handleRevokedByServer — $message');
+    }
+  }
+
+  /// Whether a [DioException] should clear activation (401), not suspend (403).
+  static bool shouldTreatAsDeviceRevocation(DioException error) {
+    if (error.response?.statusCode != 401) return false;
+    if (LicenseGateService.isLicenseSuspendedError(error)) return false;
+
+    final path = error.requestOptions.path;
+    if (path.contains(kEndpointValidateKey)) return false;
+    if (path.contains(kEndpointActivateDesktop)) return false;
+    return true;
+  }
+
+  /// User-facing Albanian message for [handleRevokedByServer].
+  static String messageForRevocation(DioException error) {
+    final server = _messageFromResponse(error.response?.data);
+    if (server != null && _looksLikeDeviceRevoked(server)) {
+      return server;
+    }
+    return kDefaultServerRevokeMessage;
+  }
+
+  static bool _looksLikeDeviceRevoked(String message) {
+    final lower = message.toLowerCase();
+    return lower.contains('revok') ||
+        lower.contains('not active') ||
+        lower.contains('jo aktiv') ||
+        lower.contains('çaktiviz') ||
+        lower.contains('unauthorized') ||
+        (lower.contains('invalid') && lower.contains('token')) ||
+        lower.contains('refresh');
+  }
+
+  static String? _messageFromResponse(dynamic data) {
+    if (data is! Map) return null;
+    final message = data['message'];
+    if (message is String && message.isNotEmpty) return message;
+    if (message is List && message.isNotEmpty) {
+      return message.first.toString();
+    }
+    return null;
+  }
 
   /// Calls GET /activation/verify with the stored Bearer token.
   ///
@@ -177,8 +340,8 @@ class ActivationService {
         }
         return false;
       }
-      if (e.response?.statusCode == 401) {
-        await revokeActivation();
+      if (shouldTreatAsDeviceRevocation(e)) {
+        await handleRevokedByServer(reason: messageForRevocation(e));
         if (kDebugMode) {
           debugPrint(
             'ActivationService: token revoked by server (401 on verify)',
@@ -199,9 +362,8 @@ class ActivationService {
   /// Throws [DioException] on network error or server rejection (4xx/5xx) —
   /// the caller is responsible for deciding whether to revoke activation.
   Future<void> refreshActivationToken() async {
-    final storedRefreshToken = await DatabaseService.instance.getAppMeta(
-      _kRefreshToken,
-    );
+    final storedRefreshToken =
+        await SecureActivationTokenStore.instance.readRefreshToken();
     if (storedRefreshToken == null || storedRefreshToken.isEmpty) {
       throw Exception('No refresh token stored — re-activation required.');
     }
@@ -228,8 +390,10 @@ class ActivationService {
       throw Exception('Malformed refresh response — missing tokens.');
     }
 
-    await DatabaseService.instance.setAppMeta(_kAccessToken, newAccessToken);
-    await DatabaseService.instance.setAppMeta(_kRefreshToken, newRefreshToken);
+    await SecureActivationTokenStore.instance.saveTokens(
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    );
     final expiresAt = data['licenseExpiresAt'] as String?;
     if (expiresAt != null) {
       await DatabaseService.instance.setAppMeta(_kLicenseExpiresAt, expiresAt);
@@ -255,9 +419,10 @@ class ActivationService {
 
     final db = DatabaseService.instance;
 
+    await SecureActivationTokenStore.instance.clearTokens();
+    await _clearLegacyTokenMeta(db);
+
     await db.setAppMeta(_kCompleted, '');
-    await db.setAppMeta(_kAccessToken, '');
-    await db.setAppMeta(_kRefreshToken, '');
     await db.setAppMeta(_kBusinessId, '');
     await db.setAppMeta(_kBranchId, '');
     await db.setAppMeta(_kDeviceId, '');
@@ -312,13 +477,11 @@ class ActivationService {
     await db.setAppMeta(_kBusinessId, r.businessId);
     await DatabaseService.instance.setAppMeta(_kBranchId, r.branchId);
     await DatabaseService.instance.setAppMeta(_kDeviceId, r.deviceId);
-    await DatabaseService.instance.setAppMeta(_kAccessToken, r.accessToken);
-    if (r.refreshToken != null) {
-      await DatabaseService.instance.setAppMeta(
-        _kRefreshToken,
-        r.refreshToken!,
-      );
-    }
+    await SecureActivationTokenStore.instance.saveTokens(
+      accessToken: r.accessToken,
+      refreshToken: r.refreshToken ?? '',
+    );
+    await _clearLegacyTokenMeta(db);
     if (r.licenseExpiresAt != null) {
       await DatabaseService.instance.setAppMeta(
         _kLicenseExpiresAt,
@@ -332,6 +495,7 @@ class ActivationService {
       businessId: r.businessId,
       branchId: r.branchId,
     );
+    ActivationStateController.instance.setActivated(true);
 
     await LocalTenantDataService.instance.recordActivatedTenant(
       businessId: r.businessId,
@@ -359,5 +523,16 @@ class ActivationService {
     } catch (_) {
       return 'pos-terminal';
     }
+  }
+
+  void _assertProductionApiConfig() {
+    if (RuntimeConfigService.instance.isBlockedInRelease) {
+      throw StateError(RuntimeConfigService.productionConfigErrorTitle);
+    }
+  }
+
+  static Future<void> _clearLegacyTokenMeta(DatabaseService db) async {
+    await db.setAppMeta(SecureActivationTokenStore.legacyAccessTokenKey, '');
+    await db.setAppMeta(SecureActivationTokenStore.legacyRefreshTokenKey, '');
   }
 }

@@ -1,3 +1,4 @@
+import '../models/sale_insert_result.dart';
 import '../services/database_service.dart';
 
 /// Sales headers, lines, adjustments, and history reads.
@@ -50,7 +51,8 @@ class SalesRepository {
         shiftId: shiftId,
       );
 
-  Future<int> insertSaleWithLines({
+  Future<SaleInsertResult> insertSaleWithLines({
+    required String saleUuid,
     required String waiterName,
     required int tableId,
     required double total,
@@ -58,12 +60,25 @@ class SalesRepository {
     int? shiftId,
   }) =>
       _db.insertSaleWithLines(
+        saleUuid: saleUuid,
         waiterName: waiterName,
         tableId: tableId,
         total: total,
         lines: lines,
         shiftId: shiftId,
       );
+
+  Future<String> resolvePaymentSaleUuid({
+    required int tableId,
+    required String waiterName,
+  }) =>
+      _db.resolvePaymentSaleUuid(tableId: tableId, waiterName: waiterName);
+
+  Future<void> clearPendingPaymentSaleUuid(
+    int tableId,
+    String waiterName,
+  ) =>
+      _db.clearPendingPaymentSaleUuid(tableId, waiterName);
 
   Future<int> insertSaleAdjustment({
     required int saleId,

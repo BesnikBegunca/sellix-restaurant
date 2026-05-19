@@ -47,6 +47,7 @@ dependencies:
   flutter_animate: ^4.5.0
   connectivity_plus: ^6.1.4
   dio: ^5.8.0+1
+  flutter_secure_storage: ^10.2.0
 
 dev_dependencies:
   flutter_test:

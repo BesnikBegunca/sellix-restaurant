@@ -190,6 +190,7 @@ extension TablesMethods on ManagerData {
   }
 
   Future<void> clearTable(int tableId, String waiterName) async {
+    await clearPendingPaymentSaleUuid(tableId, waiterName);
     final current = _cashierTables.firstWhere(
       (t) => t.id == tableId,
       orElse: () => TableInfo(id: tableId, occupied: false),

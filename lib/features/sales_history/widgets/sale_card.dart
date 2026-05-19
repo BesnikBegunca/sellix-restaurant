@@ -13,6 +13,7 @@ class SaleCard extends StatelessWidget {
     required this.onToggle,
     this.onRefund,
     this.onDelete,
+    this.onReprint,
   });
 
   final SaleWithLines data;
@@ -20,6 +21,7 @@ class SaleCard extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback? onRefund;
   final VoidCallback? onDelete;
+  final VoidCallback? onReprint;
 
   @override
   Widget build(BuildContext context) {
@@ -290,8 +292,26 @@ class SaleCard extends StatelessWidget {
                       textStyle: const TextStyle(fontSize: 12),
                     ),
                   ),
-                if (onRefund != null) ...[
+                if (onReprint != null) ...[
                   if (onDelete != null) const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: onReprint,
+                    icon: const Icon(Icons.print_outlined, size: 14),
+                    label: const Text('Ridërgo kuponin'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primaryGreen,
+                      side: const BorderSide(color: AppColors.lightGreenBorder),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      textStyle: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+                if (onRefund != null) ...[
+                  if (onDelete != null || onReprint != null)
+                    const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: onRefund,
                     icon: const Icon(Icons.undo_outlined, size: 14),

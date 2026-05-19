@@ -27,3 +27,10 @@ const String kEndpointSyncPush = '/sync/push';
 /// GET ?since=[ISO-8601 cursor]&limit=[int]
 /// → {serverTime, cursor, entities: {categories, products, shifts, sales, ...}}
 const String kEndpointSyncPull = '/sync/pull';
+
+/// PATCH — revoke a device record (pos_api: **SuperAdmin only** today).
+///
+/// Desktop activation tokens cannot call this until the API allows device
+/// self-revoke. See [ActivationService.revokeDeviceOnServer].
+String deviceRevokeEndpoint(String deviceId) =>
+    '/devices/${Uri.encodeComponent(deviceId)}/revoke';

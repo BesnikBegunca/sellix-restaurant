@@ -54,8 +54,16 @@ class DatabaseSchema {
     'products',
     'categories',
     'shifts',
-    'audit_logs',
     'tables',
+  ];
+
+  /// Scoped tables checked for "rows from another business" during activation.
+  /// [audit_logs] is excluded — immutable forensic history is preserved on wipe.
+  static const List<String> tenantForeignDataCheckTables = <String>[
+    'sales', 'sale_lines', 'sale_adjustments', 'expenses', 'shifts',
+    'products', 'categories', 'waiters', 'waiter_salaries', 'advances',
+    'waiter_worked_days', 'current_orders', 'current_order_lines',
+    'kitchen_prints', 'kitchen_print_lines',
   ];
 
   static const List<String> tenantResetAppMetaKeys = <String>[

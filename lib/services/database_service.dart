@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../models/sale_insert_result.dart';
 import 'database_schema.dart';
 
 /// Central SQLite service — single source of truth for all persistent data.
@@ -724,10 +725,64 @@ class DatabaseService {
 
   // ──────────────────────────── SALE LINES ──────────────────────────────────
 
-  /// Inserts a sale header + its line items atomically.
-  /// Returns the new sale row's primary key.
-  /// Rolls back automatically if any insert fails.
-  Future<int> insertSaleWithLines({
+  /// Meta key for in-flight payment idempotency (table + waiter).
+  static String paymentPendingMetaKey(int tableId, String waiterName) =>
+      'payment_pending_${tableId}_${waiterName.trim()}';
+
+  Future<String?> getPendingPaymentSaleUuid(
+    int tableId,
+    String waiterName,
+  ) =>
+      getAppMeta(paymentPendingMetaKey(tableId, waiterName));
+
+  Future<void> setPendingPaymentSaleUuid(
+    int tableId,
+    String waiterName,
+    String saleUuid,
+  ) =>
+      setAppMeta(paymentPendingMetaKey(tableId, waiterName), saleUuid);
+
+  Future<void> clearPendingPaymentSaleUuid(
+    int tableId,
+    String waiterName,
+  ) =>
+      setAppMeta(paymentPendingMetaKey(tableId, waiterName), '');
+
+  /// Returns sale primary key when [saleUuid] exists, else `null`.
+  Future<int?> fetchSaleIdByUuid(String saleUuid) async {
+    final db = await database;
+    final rows = await db.query(
+      'sales',
+      columns: ['id'],
+      where: 'uuid = ?',
+      whereArgs: [saleUuid],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['id'] as int?;
+  }
+
+  /// Resolves or creates a stable sale UUID for the current payment attempt.
+  Future<String> resolvePaymentSaleUuid({
+    required int tableId,
+    required String waiterName,
+  }) async {
+    final pending = await getPendingPaymentSaleUuid(tableId, waiterName);
+    if (pending != null && pending.isNotEmpty) {
+      final existingId = await fetchSaleIdByUuid(pending);
+      if (existingId != null) return pending;
+    }
+    final saleUuid = DatabaseSchema.generateUuid();
+    await setPendingPaymentSaleUuid(tableId, waiterName, saleUuid);
+    return saleUuid;
+  }
+
+  /// Inserts a sale header + line items atomically (idempotent on [saleUuid]).
+  ///
+  /// If a sale with the same [saleUuid] already exists, returns that row and
+  /// does not insert duplicate lines or outbox events.
+  Future<SaleInsertResult> insertSaleWithLines({
+    required String saleUuid,
     required String waiterName,
     required int tableId,
     required double total,
@@ -738,19 +793,52 @@ class DatabaseService {
     final scope = await syncScope();
     final ts = syncTimestamps();
     final timestamp = ts['createdAt']!;
-    return db.transaction<int>((txn) async {
-      final saleId = await txn.insert('sales', {
-        'waiterName': waiterName,
-        'tableId': tableId,
-        'total': total,
-        'timestamp': timestamp,
-        'shiftId': shiftId,
-        'uuid': DatabaseSchema.generateUuid(),
-        ...scope,
-        ...syncStatus(),
-        ...ts,
-      });
-      await _queueOutboxById(
+    return db.transaction<SaleInsertResult>((txn) async {
+      final existing = await txn.query(
+        'sales',
+        where: 'uuid = ?',
+        whereArgs: [saleUuid],
+        limit: 1,
+      );
+      if (existing.isNotEmpty) {
+        final saleId = existing.first['id'] as int;
+        return SaleInsertResult(
+          saleId: saleId,
+          saleUuid: saleUuid,
+          wasExisting: true,
+        );
+      }
+
+      int saleId;
+      try {
+        saleId = await txn.insert('sales', {
+          'waiterName': waiterName,
+          'tableId': tableId,
+          'total': total,
+          'timestamp': timestamp,
+          if (shiftId != null) 'shiftId': shiftId,
+          'uuid': saleUuid,
+          ...scope,
+          ...syncStatus(),
+          ...ts,
+        });
+      } on DatabaseException catch (e) {
+        if (!e.isUniqueConstraintError()) rethrow;
+        final raced = await txn.query(
+          'sales',
+          where: 'uuid = ?',
+          whereArgs: [saleUuid],
+          limit: 1,
+        );
+        if (raced.isEmpty) rethrow;
+        return SaleInsertResult(
+          saleId: raced.first['id'] as int,
+          saleUuid: saleUuid,
+          wasExisting: true,
+        );
+      }
+
+      await _queueOutboxByIdIfAbsent(
         'sales',
         'sales',
         saleId,
@@ -776,7 +864,7 @@ class DatabaseService {
           ...scope,
           ...syncStatus(),
         });
-        await _queueOutboxById(
+        await _queueOutboxByIdIfAbsent(
           'sale_lines',
           'sale_lines',
           lineId,
@@ -784,7 +872,11 @@ class DatabaseService {
           txn: txn,
         );
       }
-      return saleId;
+      return SaleInsertResult(
+        saleId: saleId,
+        saleUuid: saleUuid,
+        wasExisting: false,
+      );
     });
   }
 
@@ -1388,7 +1480,8 @@ class DatabaseService {
   /// Deletes local business/operational data for a new tenant activation.
   ///
   /// Preserves [company] (printer/admin settings), [shift] singleton row,
-  /// [audit_device_id], and activation-related [app_meta] keys.
+  /// [audit_logs] (immutable audit trail), [audit_device_id], and
+  /// activation-related [app_meta] keys.
   Future<void> clearLocalBusinessData() async {
     final db = await database;
     await db.transaction((txn) async {
@@ -1429,10 +1522,13 @@ class DatabaseService {
     return false;
   }
 
-  /// Returns true if any sync-scoped table has rows for another business.
+  /// Returns true if any operational table has rows for another business.
+  ///
+  /// [audit_logs] is not checked — preserved immutable history may reference
+  /// prior tenants and must not block wipe or diagnostics.
   Future<bool> hasLocalDataForOtherBusiness(String businessId) async {
     final db = await database;
-    for (final table in DatabaseSchema.syncScopeTables) {
+    for (final table in DatabaseSchema.tenantForeignDataCheckTables) {
       final rows = await db.rawQuery(
         'SELECT 1 FROM $table '
         'WHERE businessId IS NOT NULL AND businessId != ? '
@@ -1504,6 +1600,35 @@ class DatabaseService {
       orderBy: 'updatedAt DESC',
       limit: limit,
     );
+  }
+
+  /// All failed outbox rows, newest first (no row cap).
+  Future<List<Map<String, dynamic>>> getAllFailedOutboxEvents() async {
+    final db = await database;
+    return db.query(
+      'outbox',
+      where: 'syncStatus = ?',
+      whereArgs: [DatabaseSchema.kOutboxSyncFailed],
+      orderBy: 'updatedAt DESC',
+    );
+  }
+
+  /// Resets one failed outbox row to pending. Returns `true` if a row was updated.
+  Future<bool> retryFailedOutboxEvent(String uuid) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    final count = await db.update(
+      'outbox',
+      {
+        'syncStatus': DatabaseSchema.kSyncStatusPending,
+        'lastError': null,
+        'retryCount': 0,
+        'updatedAt': now,
+      },
+      where: 'uuid = ? AND syncStatus = ?',
+      whereArgs: [uuid, DatabaseSchema.kOutboxSyncFailed],
+    );
+    return count > 0;
   }
 
   /// Resets all failed outbox events to pending so they are retried on next push.
@@ -1964,6 +2089,52 @@ class DatabaseService {
     if (row != null) {
       await _queueOutboxRow(entityType, row, operation, txn: txn);
     }
+  }
+
+  Future<bool> _hasOutboxEventForEntity({
+    required String entityType,
+    required String entityUuid,
+    required String operation,
+    required Transaction txn,
+  }) async {
+    final rows = await txn.query(
+      'outbox',
+      columns: ['id'],
+      where:
+          'entityType = ? AND entityUuid = ? AND operation = ?',
+      whereArgs: [entityType, entityUuid, operation],
+      limit: 1,
+    );
+    return rows.isNotEmpty;
+  }
+
+  Future<void> _queueOutboxByIdIfAbsent(
+    String entityType,
+    String table,
+    Object id, {
+    required String operation,
+    String idColumn = 'id',
+    Transaction? txn,
+  }) async {
+    final row = await _fetchEntityRow(
+      table,
+      where: '$idColumn = ?',
+      whereArgs: [id],
+      txn: txn,
+    );
+    if (row == null) return;
+    final entityUuid = row['uuid'] as String?;
+    if (entityUuid == null || entityUuid.isEmpty) return;
+    if (txn != null) {
+      final exists = await _hasOutboxEventForEntity(
+        entityType: entityType,
+        entityUuid: entityUuid,
+        operation: operation,
+        txn: txn,
+      );
+      if (exists) return;
+    }
+    await _queueOutboxRow(entityType, row, operation, txn: txn);
   }
 
   /// Enqueues a local change for future upload. Does not perform network I/O.

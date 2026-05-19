@@ -7,65 +7,251 @@ const String _kFallbackUrl = 'http://127.0.0.1:3000';
 const String _kEnvVar = 'POS_API_BASE_URL';
 const String _kConfigFile = 'app_config.json';
 
-/// Resolves the API base URL from (in priority order):
-///   1. `app_config.json` beside the executable
-///   2. Environment variable `POS_API_BASE_URL`
-///   3. Fallback `http://127.0.0.1:3000`
+/// How the API base URL was resolved.
+enum ApiConfigSource {
+  /// `app_config.json` beside the executable (or macOS bundle parent).
+  file,
+
+  /// `POS_API_BASE_URL` environment variable.
+  envVar,
+
+  /// `release/app_config.json` in the project tree (debug / profile only).
+  releaseDevFile,
+
+  /// `http://127.0.0.1:3000` when nothing else matched (debug operations only).
+  fallback,
+}
+
+/// Resolves the API base URL (priority):
+///   1. `app_config.json` beside the executable (+ macOS bundle parent)
+///   2. `POS_API_BASE_URL`
+///   3. `release/app_config.json` (debug / profile only — not release builds)
+///   4. localhost fallback (debug operations only; blocked in release)
 class RuntimeConfigService {
   RuntimeConfigService._();
   static final RuntimeConfigService instance = RuntimeConfigService._();
 
+  static const String productionConfigErrorTitle = 'API nuk është konfiguruar';
+
+  static const String productionConfigErrorBody =
+      'Ky version nuk mund të përdorë localhost. Vendosni app_config.json pranë '
+      'aplikacionit ose konfiguroni POS_API_BASE_URL.';
+
+  static const String syncConfigErrorMessage = productionConfigErrorTitle;
+
   String _apiBaseUrl = _kFallbackUrl;
   bool _usingFallback = true;
+  ApiConfigSource _source = ApiConfigSource.fallback;
+  String? _resolvedFromPath;
 
   String get apiBaseUrl => _apiBaseUrl;
 
   bool get isUsingFallback => _usingFallback;
 
+  ApiConfigSource get configSource => _source;
+
+  /// Path of the config file that was loaded, when applicable.
+  String? get resolvedConfigPath => _resolvedFromPath;
+
+  /// Short source id for logs (`file`, `env`, `release_file`, `fallback`).
+  String get sourceLogLabel {
+    switch (_source) {
+      case ApiConfigSource.file:
+        return 'file';
+      case ApiConfigSource.envVar:
+        return 'env';
+      case ApiConfigSource.releaseDevFile:
+        return 'release_file';
+      case ApiConfigSource.fallback:
+        return 'fallback';
+    }
+  }
+
+  String get sourceLabel {
+    switch (_source) {
+      case ApiConfigSource.file:
+        return 'app_config.json';
+      case ApiConfigSource.envVar:
+        return 'POS_API_BASE_URL';
+      case ApiConfigSource.releaseDevFile:
+        return 'release/app_config.json (debug)';
+      case ApiConfigSource.fallback:
+        return 'fallback (localhost)';
+    }
+  }
+
+  bool get isLocalhost => isLocalhostUrl(_apiBaseUrl);
+
+  bool get isBlockedInRelease =>
+      kReleaseMode && (isUsingFallback || isLocalhost);
+
   String getApiBaseUrl() => _apiBaseUrl;
 
-  /// Loads config from file or env var. Safe to call multiple times.
   Future<void> load() async {
-    final fromFile = await _loadFromFile();
-    if (fromFile != null) {
-      _apiBaseUrl = fromFile;
-      _usingFallback = false;
-      if (kDebugMode) debugPrint('RuntimeConfigService: source = file');
-    } else {
-      final fromEnv = _loadFromEnv();
-      if (fromEnv != null) {
-        _apiBaseUrl = fromEnv;
-        _usingFallback = false;
-        if (kDebugMode) debugPrint('RuntimeConfigService: source = env var ($_kEnvVar)');
-      } else {
-        _apiBaseUrl = _kFallbackUrl;
-        _usingFallback = true;
-        if (kDebugMode) debugPrint('RuntimeConfigService: source = fallback (WARNING: localhost)');
+    _resolvedFromPath = null;
+
+    for (final path in _executableConfigPaths()) {
+      if (kDebugMode) debugPrint('[RuntimeConfig] checking: $path');
+      final url = await _readConfigFile(path);
+      if (url != null) {
+        _applyResolved(url, ApiConfigSource.file, usingFallback: false, path: path);
+        _logResolved();
+        return;
       }
     }
-    if (kDebugMode) debugPrint('RuntimeConfigService: resolved API base URL = $_apiBaseUrl');
+
+    if (kDebugMode) {
+      debugPrint(
+        '[RuntimeConfig] checking: env $_kEnvVar=${Platform.environment[_kEnvVar] != null ? "(set)" : "(not set)"}',
+      );
+    }
+    final fromEnv = _loadFromEnv();
+    if (fromEnv != null) {
+      _applyResolved(fromEnv, ApiConfigSource.envVar, usingFallback: false);
+      _logResolved();
+      return;
+    }
+
+    if (!kReleaseMode) {
+      for (final path in _debugReleaseConfigPaths()) {
+        if (kDebugMode) debugPrint('[RuntimeConfig] checking: $path');
+        final url = await _readConfigFile(path);
+        if (url != null) {
+          _applyResolved(
+            url,
+            ApiConfigSource.releaseDevFile,
+            usingFallback: false,
+            path: path,
+          );
+          _logResolved();
+          return;
+        }
+      }
+    }
+
+    _applyResolved(
+      _kFallbackUrl,
+      ApiConfigSource.fallback,
+      usingFallback: true,
+    );
+    _logResolved();
   }
 
   Future<void> reloadConfig() => load();
 
-  Future<String?> _loadFromFile() async {
+  static bool isLocalhostUrl(String url) {
     try {
-      final execDir = File(Platform.resolvedExecutable).parent.path;
-      final configFile = File('$execDir${Platform.pathSeparator}$_kConfigFile');
-      if (!configFile.existsSync()) return null;
-      final contents = await configFile.readAsString();
+      final host = Uri.parse(url.trim()).host.toLowerCase();
+      return host == 'localhost' ||
+          host == '127.0.0.1' ||
+          host == '::1' ||
+          host == '0.0.0.0';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _applyResolved(
+    String url,
+    ApiConfigSource source, {
+    required bool usingFallback,
+    String? path,
+  }) {
+    _apiBaseUrl = url;
+    _source = source;
+    _usingFallback = usingFallback;
+    _resolvedFromPath = path;
+  }
+
+  void _logResolved() {
+    if (!kDebugMode) return;
+    debugPrint('[RuntimeConfig] source=$sourceLogLabel');
+    debugPrint('[RuntimeConfig] url=$_apiBaseUrl');
+    debugPrint('[RuntimeConfig] localhost=$isLocalhost');
+    debugPrint('[RuntimeConfig] blockedInRelease=$isBlockedInRelease');
+    if (_resolvedFromPath != null) {
+      debugPrint('[RuntimeConfig] configPath=$_resolvedFromPath');
+    }
+  }
+
+  /// Beside executable; macOS also checks folder containing `.app` bundle.
+  List<String> _executableConfigPaths() {
+    final sep = Platform.pathSeparator;
+    final paths = <String>[];
+
+    try {
+      final execDir = File(Platform.resolvedExecutable).parent;
+      paths.add('${execDir.path}$sep$_kConfigFile');
+
+      if (Platform.isMacOS) {
+        final bundleParent = execDir.parent.parent.parent;
+        paths.add('${bundleParent.path}$sep$_kConfigFile');
+        final productsDebug = bundleParent.parent;
+        paths.add('${productsDebug.path}$sep$_kConfigFile');
+      }
+    } catch (_) {}
+
+    return paths;
+  }
+
+  /// Debug/profile-only paths under the project tree (`release/app_config.json`).
+  List<String> _debugReleaseConfigPaths() {
+    final sep = Platform.pathSeparator;
+    final paths = <String>[];
+
+    final cwdRelease =
+        '${Directory.current.path}${sep}release${sep}$_kConfigFile';
+    paths.add(cwdRelease);
+
+    final fromWalk = _findReleaseConfigNearExecutable();
+    if (fromWalk != null && !paths.contains(fromWalk)) {
+      paths.add(fromWalk);
+    }
+
+    return paths;
+  }
+
+  /// Walks up from the running binary to find `{project}/release/app_config.json`.
+  static String? _findReleaseConfigNearExecutable() {
+    try {
+      var dir = File(Platform.resolvedExecutable).parent;
+      for (var depth = 0; depth < 14; depth++) {
+        final sep = Platform.pathSeparator;
+        final releaseConfig =
+            '${dir.path}${sep}release${sep}$_kConfigFile';
+        if (File(releaseConfig).existsSync()) return releaseConfig;
+
+        if (File('${dir.path}${sep}pubspec.yaml').existsSync()) {
+          final atPubspec =
+              '${dir.path}${sep}release${sep}$_kConfigFile';
+          if (File(atPubspec).existsSync()) return atPubspec;
+        }
+
+        final parent = dir.parent;
+        if (parent.path == dir.path) break;
+        dir = parent;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<String?> _readConfigFile(String path) async {
+    final file = File(path);
+    if (!file.existsSync()) return null;
+    try {
+      final contents = await file.readAsString();
       final json = jsonDecode(contents) as Map<String, dynamic>?;
-      final raw = json?['apiBaseUrl'] as String?;
-      return _validate(raw);
+      return _validate(json?['apiBaseUrl'] as String?);
     } catch (e) {
-      if (kDebugMode) debugPrint('RuntimeConfigService: file read error: $e');
+      if (kDebugMode) {
+        debugPrint('[RuntimeConfig] read error $path: $e');
+      }
       return null;
     }
   }
 
   String? _loadFromEnv() {
-    final raw = Platform.environment[_kEnvVar];
-    return _validate(raw);
+    return _validate(Platform.environment[_kEnvVar]);
   }
 
   static String? _validate(String? raw) {
@@ -73,7 +259,9 @@ class RuntimeConfigService {
     final trimmed = raw.trim().replaceAll(RegExp(r'/+$'), '');
     if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
       if (kDebugMode) {
-        debugPrint('RuntimeConfigService: invalid URL (must start with http:// or https://): $raw');
+        debugPrint(
+          '[RuntimeConfig] invalid URL (must start with http:// or https://): $raw',
+        );
       }
       return null;
     }

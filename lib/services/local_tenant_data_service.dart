@@ -1,5 +1,10 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 import '../manager/manager_data.dart';
+import '../models/tenant_activation_gate_result.dart';
 import '../models/tenant_data_conflict.dart';
+import '../widgets/tenant_data_conflict_dialog.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
 
@@ -10,6 +15,9 @@ class LocalTenantDataService {
 
   static const String kLastBusinessIdKey = 'activation_last_business_id';
   static const String kLastBusinessNameKey = 'activation_last_business_name';
+
+  /// Production/release builds require wipe before activating a new business.
+  static bool get isMandatoryWipeEnforced => kReleaseMode;
 
   /// Returns a conflict descriptor when local data may belong to another tenant.
   Future<TenantDataConflict?> detectConflict(String newBusinessId) async {
@@ -30,7 +38,19 @@ class LocalTenantDataService {
         newBusinessId != DatabaseSchema.kLocalBusinessId &&
         await db.hasLocalDataForBusiness(DatabaseSchema.kLocalBusinessId);
 
-    if (!differentPrevious && !hasForeign && !placeholderData) return null;
+    // Business change always requires a gate (wipe mandatory in release).
+    if (differentPrevious) {
+      return TenantDataConflict(
+        newBusinessId: newBusinessId,
+        previousBusinessId: previousId,
+        previousBusinessName: previousName,
+        hasMeaningfulLocalData: hasData,
+        hasForeignScopedData: hasForeign || placeholderData,
+        wipeRequired: true,
+      );
+    }
+
+    if (!hasForeign && !placeholderData) return null;
     if (!hasData && !hasForeign && !placeholderData) return null;
 
     return TenantDataConflict(
@@ -39,10 +59,59 @@ class LocalTenantDataService {
       previousBusinessName: previousName,
       hasMeaningfulLocalData: hasData,
       hasForeignScopedData: hasForeign || placeholderData,
+      wipeRequired: isMandatoryWipeEnforced,
     );
   }
 
-  /// Wipes tenant-owned SQLite tables; preserves printer/company settings.
+  /// Shows conflict UI (if needed), wipes when required, and returns whether
+  /// activation may continue.
+  ///
+  /// In release mode, activation cannot proceed without a successful wipe when
+  /// [detectConflict] returns non-null.
+  Future<TenantActivationGateResult> prepareForActivation({
+    required BuildContext context,
+    required String newBusinessId,
+  }) async {
+    final conflict = await detectConflict(newBusinessId);
+    if (conflict == null) {
+      return TenantActivationGateResult.noConflict();
+    }
+
+    if (!context.mounted) {
+      return TenantActivationGateResult.cancelled(conflict);
+    }
+
+    final choice = await showTenantDataConflictDialog(context, conflict);
+    if (choice == null || choice == TenantConflictDialogChoice.cancelled) {
+      return TenantActivationGateResult.cancelled(conflict);
+    }
+
+    if (choice == TenantConflictDialogChoice.keepLocalDebugOnly) {
+      if (isMandatoryWipeEnforced) {
+        if (kDebugMode) {
+          debugPrint(
+            'LocalTenantDataService: blocked keep-local in release mode',
+          );
+        }
+        return TenantActivationGateResult.cancelled(conflict);
+      }
+      return TenantActivationGateResult.keepLocalDebugOnly(conflict);
+    }
+
+    // wipeAndContinue
+    try {
+      await clearLocalBusinessData();
+      return TenantActivationGateResult.wipeCompleted(conflict);
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('LocalTenantDataService: wipe failed: $e\n$st');
+      }
+      return TenantActivationGateResult.wipeFailed(conflict, e);
+    }
+  }
+
+  /// Wipes tenant-owned SQLite tables; preserves printer/company settings and
+  /// immutable [audit_logs].
   Future<void> clearLocalBusinessData() async {
     await DatabaseService.instance.clearLocalBusinessData();
     await ManagerData.instance.reload();
@@ -68,6 +137,36 @@ class LocalTenantDataService {
     return DatabaseService.instance.hasLocalDataForOtherBusiness(activeId);
   }
 
+  /// Last business id stored after a successful activation (for diagnostics).
+  Future<String?> lastActivatedBusinessId() =>
+      DatabaseService.instance.getAppMeta(kLastBusinessIdKey);
+
   Future<String?> lastActivatedBusinessName() =>
       DatabaseService.instance.getAppMeta(kLastBusinessNameKey);
+
+  /// Human-readable tenant isolation status for Sync Diagnostics.
+  Future<String> diagnosticsTenantPolicyLabel() async {
+    final lastId = await lastActivatedBusinessId();
+    final activeId = await DatabaseService.instance.getAppMeta(
+      'activation_business_id',
+    );
+    final foreign = activeId != null &&
+        activeId.isNotEmpty &&
+        await localDataMayBeFromPreviousTenant();
+
+    if (foreign) {
+      return 'Të dhëna nga biznes tjetër në SQLite';
+    }
+    if (lastId != null &&
+        activeId != null &&
+        lastId.isNotEmpty &&
+        activeId.isNotEmpty &&
+        lastId != activeId) {
+      return 'Biznesi aktiv ≠ biznesi i fundit lokal';
+    }
+    if (isMandatoryWipeEnforced) {
+      return 'Pastrim i detyrueshëm në ndryshim biznesi (release)';
+    }
+    return 'Pastrim opsional në debug';
+  }
 }

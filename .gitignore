@@ -44,5 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Runtime API config — contains production URLs; use app_config.example.json as template
+# Runtime API config — contains production URLs; use release/app_config.example.json as template
+app_config.json
 release/app_config.json

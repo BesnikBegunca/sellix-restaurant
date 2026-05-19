@@ -9,9 +9,7 @@ import '../services/background_sync_service.dart';
 import '../services/local_tenant_data_service.dart';
 import '../services/runtime_config_service.dart';
 import '../theme/app_colors.dart';
-import '../widgets/tenant_data_conflict_dialog.dart';
-import 'login_screen.dart';
-
+import '../models/tenant_activation_gate_result.dart';
 /// First-run screen shown when the device has not yet been activated.
 ///
 /// Flow: validate activation key → confirm business/branch → activate desktop.
@@ -98,15 +96,20 @@ class _ActivationScreenState extends State<ActivationScreen> {
       return;
     }
 
-    final conflict =
-        await LocalTenantDataService.instance.detectConflict(newBusinessId);
-    if (conflict != null) {
+    final gate = await LocalTenantDataService.instance.prepareForActivation(
+      context: context,
+      newBusinessId: newBusinessId,
+    );
+    if (!gate.canProceedToActivation) {
       if (!mounted) return;
-      final wipe = await showTenantDataConflictDialog(context, conflict);
-      if (wipe == null) return;
-      if (wipe) {
-        await LocalTenantDataService.instance.clearLocalBusinessData();
+      if (gate.action == TenantActivationGateAction.wipeFailed) {
+        setState(() {
+          _error =
+              'Pastrimi i të dhënave lokale dështoi. Aktivizimi u ndal.\n'
+              '${gate.error}';
+        });
       }
+      return;
     }
 
     setState(() {
@@ -121,12 +124,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
       );
       await ManagerData.instance.reload();
       BackgroundSyncService.instance.start();
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-          (route) => false,
-        );
-      }
+      // [ActivationStateController] → [PosSystemApp] home becomes [LoginScreen].
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -178,7 +176,10 @@ class _ActivationScreenState extends State<ActivationScreen> {
   @override
   Widget build(BuildContext context) {
     final config = RuntimeConfigService.instance;
-    final usingLocalhost = config.isUsingFallback;
+    final configBlocked = config.isBlockedInRelease;
+    final showLocalhostWarning =
+        !configBlocked && (config.isUsingFallback || config.isLocalhost);
+    final inputsEnabled = !_busy && !configBlocked;
 
     return Scaffold(
       backgroundColor: AppColors.beige,
@@ -232,12 +233,14 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     const SizedBox(height: 16),
                     _ApiConfigBanner(
                       baseUrl: config.apiBaseUrl,
-                      usingLocalhost: usingLocalhost,
+                      sourceLabel: config.sourceLabel,
+                      usingLocalhost: showLocalhostWarning,
+                      configBlocked: configBlocked,
                     ),
                     const SizedBox(height: 24),
                     TextField(
                       controller: _keyController,
-                      enabled: !_busy,
+                      enabled: inputsEnabled,
                       decoration: const InputDecoration(
                         labelText: 'Çelësi i Aktivizimit',
                         hintText: 'p.sh. POS-XXXX-XXXX-XXXX',
@@ -248,7 +251,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton(
-                      onPressed: _busy ? null : _validateKey,
+                      onPressed: inputsEnabled ? _validateKey : null,
                       child: _validating
                           ? const SizedBox(
                               width: 20,
@@ -263,7 +266,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _branchController,
-                        enabled: !_busy,
+                        enabled: inputsEnabled,
                         decoration: const InputDecoration(
                           labelText: 'Kodi i Degës',
                           hintText: 'p.sh. MAIN (nga paneli admin)',
@@ -299,7 +302,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     ],
                     if (_validated != null)
                       ElevatedButton(
-                        onPressed: _busy ? null : _activate,
+                        onPressed: inputsEnabled ? _activate : null,
                         child: _activating
                             ? const SizedBox(
                                 width: 20,
@@ -332,23 +335,28 @@ class _ActivationScreenState extends State<ActivationScreen> {
 class _ApiConfigBanner extends StatelessWidget {
   const _ApiConfigBanner({
     required this.baseUrl,
+    required this.sourceLabel,
     required this.usingLocalhost,
+    required this.configBlocked,
   });
 
   final String baseUrl;
+  final String sourceLabel;
   final bool usingLocalhost;
+  final bool configBlocked;
 
   @override
   Widget build(BuildContext context) {
+    final warn = usingLocalhost || configBlocked;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: usingLocalhost
+        color: warn
             ? AppColors.mutedOrange.withValues(alpha: 0.12)
             : AppColors.lightGreenBg,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: usingLocalhost
+          color: warn
               ? AppColors.mutedOrange.withValues(alpha: 0.4)
               : AppColors.lightGreenBorder,
         ),
@@ -364,7 +372,34 @@ class _ApiConfigBanner extends StatelessWidget {
               color: AppColors.darkGreenText,
             ),
           ),
-          if (usingLocalhost) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Burimi: $sourceLabel',
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.mediumGreenText,
+            ),
+          ),
+          if (configBlocked) ...[
+            const SizedBox(height: 8),
+            const Text(
+              RuntimeConfigService.productionConfigErrorTitle,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.softRed,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              RuntimeConfigService.productionConfigErrorBody,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.mutedOrange,
+              ),
+            ),
+          ] else if (usingLocalhost) ...[
             const SizedBox(height: 8),
             const Text(
               'Po përdoret localhost API. Production key nuk do të funksionojë.',

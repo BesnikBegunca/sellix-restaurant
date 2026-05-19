@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -6,11 +7,16 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'manager/manager_data.dart';
 import 'screens/activation_screen.dart';
+import 'screens/config_error_screen.dart';
+import 'screens/device_revoked_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/database_service.dart';
 import 'services/activation_service.dart';
+import 'services/activation_state_controller.dart';
 import 'services/api_client.dart';
 import 'services/background_sync_service.dart';
 import 'services/connectivity_service.dart';
+import 'services/license_gate_service.dart';
 import 'services/runtime_config_service.dart';
 import 'services/sync_status_service.dart';
 import 'theme/app_colors.dart';
@@ -29,12 +35,23 @@ void main() async {
   await RuntimeConfigService.instance.load();
   final runtimeConfig = RuntimeConfigService.instance;
   ApiClient.instance.configureBaseUrl(runtimeConfig.apiBaseUrl);
+
+  ApiClient.instance.onUnauthorizedRevoke = (error) async {
+    if (!ActivationService.instance.isActivated) return;
+    if (LicenseGateService.isLicenseSuspendedError(error)) return;
+    if (!ActivationService.shouldTreatAsDeviceRevocation(error)) return;
+    BackgroundSyncService.instance.stop();
+    SyncStatusService.instance.stop();
+    await ActivationService.instance.handleRevokedByServer(
+      reason: ActivationService.messageForRevocation(error),
+    );
+  };
+
   if (kDebugMode) {
-    final source = runtimeConfig.isUsingFallback
-        ? 'fallback (localhost — production keys will NOT work)'
-        : 'app_config.json or POS_API_BASE_URL';
     debugPrint(
-      'POS API: baseUrl=${runtimeConfig.apiBaseUrl} | source=$source',
+      'POS API: baseUrl=${runtimeConfig.apiBaseUrl} | '
+      'source=${runtimeConfig.sourceLabel} | '
+      'blockedInRelease=${runtimeConfig.isBlockedInRelease}',
     );
   }
 
@@ -43,47 +60,115 @@ void main() async {
     await Future<void>.delayed(const Duration(milliseconds: 50));
   }
 
+  final configBlocked = runtimeConfig.isBlockedInRelease;
+
   await ConnectivityService.instance.initialize();
   await BackgroundSyncService.instance.initialize();
 
-  // Load persisted activation and wire ApiClient + tenant IDs.
+  // Migrate legacy plaintext tokens, then load activation + tenant IDs.
+  await ActivationService.instance.migrateTokensFromAppMetaIfNeeded();
   await ActivationService.instance.loadPersistedActivation();
-  bool activated = ActivationService.instance.isActivated;
-  if (activated) {
+  final activationState = ActivationStateController.instance;
+
+  if (configBlocked) {
+    BackgroundSyncService.instance.stop();
+    await DatabaseService.instance.setAppMeta(
+      'sync_last_error',
+      RuntimeConfigService.syncConfigErrorMessage,
+    );
+    activationState.setActivated(ActivationService.instance.isActivated);
+  } else if (ActivationService.instance.isActivated) {
     // Verify token with backend — revokes locally on 401; continues on network error.
     await ActivationService.instance.verifyActivation();
-    activated = ActivationService.instance.isActivated;
-    if (activated) BackgroundSyncService.instance.start();
+    if (ActivationService.instance.isActivated) {
+      BackgroundSyncService.instance.start();
+    } else if (activationState.serverRevoked) {
+      // verifyActivation → handleRevokedByServer already notified controller.
+    } else {
+      activationState.setActivated(false);
+    }
+  } else {
+    activationState.setActivated(false);
   }
 
   SyncStatusService.instance.start();
 
-  runApp(PosSystemApp(activated: activated));
+  runApp(const PosSystemApp());
 }
 
 class PosSystemApp extends StatefulWidget {
-  const PosSystemApp({super.key, required this.activated});
-
-  final bool activated;
+  const PosSystemApp({super.key});
 
   @override
   State<PosSystemApp> createState() => _PosSystemAppState();
 }
 
 class _PosSystemAppState extends State<PosSystemApp> {
+  final _activation = ActivationStateController.instance;
+  late bool _configOk = !RuntimeConfigService.instance.isBlockedInRelease;
+
   @override
   void initState() {
     super.initState();
     ManagerData.instance.addListener(_onData);
+    _activation.addListener(_onActivationChanged);
   }
 
   @override
   void dispose() {
     ManagerData.instance.removeListener(_onData);
+    _activation.removeListener(_onActivationChanged);
     super.dispose();
   }
 
   void _onData() => setState(() {});
+
+  void _onActivationChanged() => setState(() {});
+
+  Future<void> _retryRuntimeConfig() async {
+    await RuntimeConfigService.instance.reloadConfig();
+    final config = RuntimeConfigService.instance;
+    ApiClient.instance.configureBaseUrl(config.apiBaseUrl);
+    if (!mounted) return;
+
+    final ok = !config.isBlockedInRelease;
+    setState(() => _configOk = ok);
+
+    if (!ok) {
+      BackgroundSyncService.instance.stop();
+      await DatabaseService.instance.setAppMeta(
+        'sync_last_error',
+        RuntimeConfigService.syncConfigErrorMessage,
+      );
+      return;
+    }
+
+    await DatabaseService.instance.setAppMeta('sync_last_error', '');
+    if (ActivationService.instance.isActivated) {
+      await ActivationService.instance.verifyActivation();
+      if (!mounted) return;
+      if (ActivationService.instance.isActivated) {
+        _activation.setActivated(true);
+        BackgroundSyncService.instance.start();
+      } else if (!_activation.serverRevoked) {
+        _activation.setActivated(false);
+      }
+    }
+    unawaited(SyncStatusService.instance.refresh());
+  }
+
+  Widget _buildHome() {
+    if (!_configOk) {
+      return ConfigErrorScreen(onRetry: _retryRuntimeConfig);
+    }
+    if (_activation.isActivated) {
+      return const LoginScreen();
+    }
+    if (_activation.serverRevoked) {
+      return DeviceRevokedScreen(message: _activation.serverRevokeMessage);
+    }
+    return const ActivationScreen();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +303,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
           ),
         ),
       ),
-      home: widget.activated ? const LoginScreen() : const ActivationScreen(),
+      home: _buildHome(),
     );
   }
 }

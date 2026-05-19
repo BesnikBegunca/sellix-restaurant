@@ -34,14 +34,18 @@ extension SalesMethods on ManagerData {
   ///
   /// All product fields (name, price, emoji, category) are snapshotted at call
   /// time, so future catalogue edits never alter historical records.
-  Future<void> recordSaleWithLines({
+  /// Persists sale + lines idempotently; returns DB result for payment UI.
+  Future<SaleInsertResult> recordSaleWithLines({
+    required String saleUuid,
     required String waiterName,
     required double total,
     required int tableId,
     required String tableName,
     required List<CurrentOrderLine> lines,
   }) async {
-    if (waiterName.trim().isEmpty) return;
+    if (waiterName.trim().isEmpty) {
+      throw StateError('Kamarieri mungon.');
+    }
 
     // Build categoryName snapshot from the current in-memory menu.
     final categoryByProductId = <String, String>{};
@@ -70,7 +74,8 @@ extension SalesMethods on ManagerData {
     }).toList();
 
     final now = DateTime.now();
-    final saleId = await SalesRepository.instance.insertSaleWithLines(
+    final result = await SalesRepository.instance.insertSaleWithLines(
+      saleUuid: saleUuid,
       waiterName: waiterName,
       tableId: tableId,
       total: total,
@@ -78,26 +83,50 @@ extension SalesMethods on ManagerData {
       shiftId: _currentShiftId,
     );
 
-    final sale = SaleRow(
-      dbId: saleId,
-      waiterName: waiterName,
-      tableId: tableId,
-      total: total,
-      timestamp: now,
-      shiftId: _currentShiftId,
-    );
-    _salesHistory.insert(0, sale);
-    waiterSales[waiterName] = (waiterSales[waiterName] ?? 0) + total;
-    AuditLogService.instance.logSale(
-      waiterName: waiterName,
-      saleId:     saleId,
-      tableId:    tableId,
-      total:      total,
-      itemCount:  lines.length,
-      shiftId:    _currentShiftId,
-    );
+    if (result.wasExisting) {
+      await _reloadSales();
+    } else {
+      final sale = SaleRow(
+        dbId: result.saleId,
+        waiterName: waiterName,
+        tableId: tableId,
+        total: total,
+        timestamp: now,
+        shiftId: _currentShiftId,
+      );
+      _salesHistory.insert(0, sale);
+      waiterSales[waiterName] = (waiterSales[waiterName] ?? 0) + total;
+      AuditLogService.instance.logSale(
+        waiterName: waiterName,
+        saleId: result.saleId,
+        tableId: tableId,
+        total: total,
+        itemCount: lines.length,
+        shiftId: _currentShiftId,
+      );
+    }
     _notify();
+    return result;
   }
+
+  /// Resolves stable sale UUID for payment (reuses pending if sale already saved).
+  Future<String> resolvePaymentSaleUuid({
+    required int tableId,
+    required String waiterName,
+  }) =>
+      SalesRepository.instance.resolvePaymentSaleUuid(
+        tableId: tableId,
+        waiterName: waiterName,
+      );
+
+  Future<void> clearPendingPaymentSaleUuid(
+    int tableId,
+    String waiterName,
+  ) =>
+      SalesRepository.instance.clearPendingPaymentSaleUuid(
+        tableId,
+        waiterName,
+      );
 
   /// Resets waiter totals for the current view without deleting any DB records.
   /// Historical sales are permanently preserved in [_salesHistory].

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../models/mock_data.dart';
 import '../models/pos_models.dart';
+import '../models/sale_insert_result.dart';
 import '../repositories/expense_repository.dart';
 import '../repositories/product_repository.dart';
 import '../repositories/salary_repository.dart';

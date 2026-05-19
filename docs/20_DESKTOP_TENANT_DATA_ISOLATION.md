@@ -53,23 +53,65 @@ dashboard profits, staff payroll, sales history.
 
 ---
 
-## Strategy (v1): safe reset prompt
+## Production policy: mandatory wipe on business change
 
-Full per-query tenant filtering is deferred. On activation when the business
-changes, the app asks:
+Full per-query tenant filtering is deferred. Until reads are scoped, **release
+builds must not allow “keep local data”** when activating a different business.
 
-> Ky terminal ka të dhëna lokale nga një biznes tjetër.  
-> Dëshironi të filloni me të dhëna të pastra për biznesin e ri?
+| Mode | Conflict dialog |
+|------|-----------------|
+| **Release** (`kReleaseMode`) | **Anulo** · **Pastro dhe vazhdo** only |
+| **Debug** | Same + **Ruaj vetëm për testim** (strong warning) |
 
-| Button | Behavior |
-|--------|----------|
-| **Ruaj të dhënat lokale** | Activates; old rows may still appear |
-| **Pastro të dhënat lokale** | Wipes local business tables, then activates |
+Why **Ruaj të dhënat lokale** is disabled in release:
+
+- All UI reads are still unscoped `SELECT *` queries.
+- Keeping old rows would show Business A products/sales under Business B activation.
+
+Implementation:
+
+- `LocalTenantDataService.isMandatoryWipeEnforced` → `kReleaseMode`
+- `LocalTenantDataService.prepareForActivation()` — returns `TenantActivationGateResult`; activation continues only when `canProceedToActivation` is true.
+- `activation_last_business_id` ≠ new `businessId` always triggers the gate (even if tables look empty).
+
+### What gets cleared on wipe
+
+See [Reset local business data](#reset-local-business-data) below.
+
+### What is preserved
+
+- `company` (printer, admin PIN hash, receipt footer)
+- `shift` singleton (reset to closed)
+- **`audit_logs`** — immutable audit trail (SQLite triggers forbid DELETE/UPDATE)
+- `app_meta.audit_device_id`
+- Theme / runtime config (not in SQLite business tables)
+- Server data (never touched by desktop wipe)
+
+Prior-tenant rows in `audit_logs` may remain after wipe; they are **not** used for
+“data from another business” conflict checks or Sync Diagnostics foreign-data warnings.
+
+### How to test keep-local (debug only)
+
+1. Run a **debug** build (`flutter run`, not `flutter run --release`).
+2. Activate Business A, add data, reset local activation only.
+3. Activate Business B — dialog shows **Ruaj vetëm për testim**.
+4. Expect old data to remain visible (known risk).
+
+---
+
+## Strategy (v1): conflict gate before activation
+
+On activation when a conflict is detected, `prepareForActivation` runs **before**
+`activateDesktop`:
+
+| Button (release) | Behavior |
+|------------------|----------|
+| **Pastro dhe vazhdo** | Wipes local business tables, then activates |
 | **Anulo** | Stops activation |
 
 Conflict is detected when:
 
-- `activation_last_business_id` ≠ new `businessId`, or
+- `activation_last_business_id` ≠ new `businessId` (**always** gates in release), or
 - Rows exist with `businessId` ≠ new tenant (including placeholder `local-business`), or
 - Meaningful local operational data exists
 
@@ -84,8 +126,10 @@ Implemented in `LocalTenantDataService` + `DatabaseService.clearLocalBusinessDat
 `kitchen_print_lines`, `kitchen_prints`, `sale_lines`, `sale_adjustments`,
 `sales`, `current_order_lines`, `current_orders`, `stock_movements`,
 `inventory_items`, `outbox`, `expenses`, `advances`, `waiter_worked_days`,
-`waiter_salaries`, `waiters`, `products`, `categories`, `shifts`, `audit_logs`,
+`waiter_salaries`, `waiters`, `products`, `categories`, `shifts`,
 `tables` (re-seeded as 15 empty tables)
+
+**Not cleared:** `audit_logs` (immutable — DELETE raises SQLite error 1811)
 
 ### Preserved
 
@@ -93,6 +137,7 @@ Implemented in `LocalTenantDataService` + `DatabaseService.clearLocalBusinessDat
 |------|--------|
 | `company` row | Printer name, ESC/POS, admin PIN hash, receipt footer |
 | `shift` id=1 | Reset to `closed` — not deleted |
+| `audit_logs` | Immutable forensic trail; triggers block DELETE/UPDATE |
 | `app_meta.audit_device_id` | Stable device fingerprint |
 | `app_meta` activation keys | Set by activation flow |
 | Theme / runtime config | Not in SQLite business tables |
@@ -124,22 +169,32 @@ Sync Diagnostics shows:
 
 - Business name (from validate-key / activation)
 - Business ID, Branch ID, Device ID
-- Orange warning if scoped rows exist for a business other than the active one
+- Orange warning if **operational** scoped rows exist for a business other than the active one (`audit_logs` excluded)
 
 ---
 
 ## Manual test checklist
 
-- [ ] Activate desktop with Business A; create products/sales/expenses
+### Release / production profile
+
+- [ ] Activate desktop with Business A; create products/sales/waiters
 - [ ] Sync Diagnostics shows Business A name/IDs
 - [ ] Reset local activation only (tokens cleared; SQLite data remains)
-- [ ] Activate with Business B key → conflict dialog appears
-- [ ] Choose **Pastro të dhënat lokale**
-- [ ] Old products/sales/expenses gone; empty menu until pull
+- [ ] Activate with Business B key → dialog **Biznes tjetër u zbulua**
+- [ ] Only **Anulo** and **Pastro dhe vazhdo** (no keep-local)
+- [ ] Choose **Anulo** → activation does not complete
+- [ ] Repeat; choose **Pastro dhe vazhdo**
+- [ ] Old products/sales/waiters gone; empty menu until pull
 - [ ] Pull sync loads Business B catalog
 - [ ] Printer settings still configured (`company.printerName`)
 - [ ] `audit_device_id` unchanged in `app_meta`
-- [ ] Choose **Ruaj të dhënat lokale** on another test → old data still visible (expected)
+- [ ] `audit_logs` rows still present after wipe (immutable; not deleted)
+- [ ] **Pastro dhe vazhdo** completes without SQLite error 1811
+
+### Debug-only
+
+- [ ] `flutter run` (debug) → third button **Ruaj vetëm për testim** visible with warning
+- [ ] Choosing keep-local → old data may still appear (expected risk)
 
 ---
 
@@ -150,8 +205,9 @@ Sync Diagnostics shows:
 | `lib/services/local_tenant_data_service.dart` | Conflict detection + wipe orchestration |
 | `lib/services/database_service.dart` | `clearLocalBusinessData()`, scoped checks |
 | `lib/services/database_schema.dart` | `tenantResetTables`, `seedEmptyTables` |
-| `lib/widgets/tenant_data_conflict_dialog.dart` | Confirmation UI |
-| `lib/screens/activation_screen.dart` | Prompt before `activateDesktop` |
+| `lib/widgets/tenant_data_conflict_dialog.dart` | Release vs debug dialog |
+| `lib/models/tenant_activation_gate_result.dart` | Gate result / proceed flag |
+| `lib/screens/activation_screen.dart` | `prepareForActivation` before `activateDesktop` |
 | `lib/services/activation_service.dart` | Cursor reset on business change |
 
 ---
