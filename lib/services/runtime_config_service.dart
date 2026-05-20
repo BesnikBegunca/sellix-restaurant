@@ -74,9 +74,9 @@ class RuntimeConfigService {
       case ApiConfigSource.envVar:
         return 'POS_API_BASE_URL';
       case ApiConfigSource.releaseDevFile:
-        return 'release/app_config.json (debug)';
+        return 'app_config.json';
       case ApiConfigSource.fallback:
-        return 'fallback (localhost)';
+        return 'fallback_localhost';
     }
   }
 
@@ -164,46 +164,58 @@ class RuntimeConfigService {
   }
 
   void _logResolved() {
-    if (!kDebugMode) return;
-    debugPrint('[RuntimeConfig] source=$sourceLabel');
-    debugPrint('[RuntimeConfig] url=$_apiBaseUrl');
-    debugPrint('[RuntimeConfig] localhost=$isLocalhost');
-    debugPrint('[RuntimeConfig] blockedInRelease=$isBlockedInRelease');
-    if (_resolvedFromPath != null) {
-      debugPrint('[RuntimeConfig] configPath=$_resolvedFromPath');
+    // ignore: avoid_print
+    print('[RuntimeConfig] source=$sourceLabel');
+    if (kReleaseMode && isBlockedInRelease) {
+      // ignore: avoid_print
+      print('[RuntimeConfig] ERROR: No production API configuration found.');
+    }
+    if (kDebugMode) {
+      debugPrint('[RuntimeConfig] url=$_apiBaseUrl');
+      debugPrint('[RuntimeConfig] localhost=$isLocalhost');
+      if (_resolvedFromPath != null) {
+        debugPrint('[RuntimeConfig] configPath=$_resolvedFromPath');
+      }
     }
   }
 
-  /// Beside executable; macOS also checks folder containing `.app` bundle.
+  /// Beside executable; macOS also checks Contents/Resources (Bundle Resource,
+  /// signed with the app) and the folder that contains the .app bundle.
   List<String> _executableConfigPaths() {
     final sep = Platform.pathSeparator;
     final paths = <String>[];
 
     try {
       final execDir = File(Platform.resolvedExecutable).parent;
+      // Windows / Linux: beside the .exe
+      // macOS: Contents/MacOS/ (not used — file should not be there)
       paths.add('${execDir.path}$sep$_kConfigFile');
 
       if (Platform.isMacOS) {
+        // Contents/Resources/ — Bundle Resource, signed with the app
+        final contentsDir = execDir.parent;
+        paths.add('${contentsDir.path}${sep}Resources$sep$_kConfigFile');
+
+        // Beside the .app (external deployment / IT admin drop)
         final bundleParent = execDir.parent.parent.parent;
         paths.add('${bundleParent.path}$sep$_kConfigFile');
-        final productsDebug = bundleParent.parent;
-        paths.add('${productsDebug.path}$sep$_kConfigFile');
       }
     } catch (_) {}
 
     return paths;
   }
 
-  /// Debug/profile-only paths under the project tree (`release/app_config.json`).
+  /// Debug/profile-only paths under the project tree.
   List<String> _debugReleaseConfigPaths() {
     final sep = Platform.pathSeparator;
     final paths = <String>[];
 
-    final cwdRelease =
-        '${Directory.current.path}${sep}release${sep}$_kConfigFile';
-    paths.add(cwdRelease);
+    // Project root (cwd) — primary
+    paths.add('${Directory.current.path}$sep$_kConfigFile');
+    // Legacy: release/app_config.json
+    paths.add('${Directory.current.path}${sep}release$sep$_kConfigFile');
 
-    final fromWalk = _findReleaseConfigNearExecutable();
+    final fromWalk = _findConfigNearExecutable();
     if (fromWalk != null && !paths.contains(fromWalk)) {
       paths.add(fromWalk);
     }
@@ -211,21 +223,21 @@ class RuntimeConfigService {
     return paths;
   }
 
-  /// Walks up from the running binary to find `{project}/release/app_config.json`.
-  static String? _findReleaseConfigNearExecutable() {
+  /// Walks up from the running binary looking for `app_config.json` or
+  /// `release/app_config.json` in the project tree.
+  static String? _findConfigNearExecutable() {
     try {
       var dir = File(Platform.resolvedExecutable).parent;
       for (var depth = 0; depth < 14; depth++) {
         final sep = Platform.pathSeparator;
-        final releaseConfig =
-            '${dir.path}${sep}release${sep}$_kConfigFile';
-        if (File(releaseConfig).existsSync()) return releaseConfig;
 
-        if (File('${dir.path}${sep}pubspec.yaml').existsSync()) {
-          final atPubspec =
-              '${dir.path}${sep}release${sep}$_kConfigFile';
-          if (File(atPubspec).existsSync()) return atPubspec;
-        }
+        // Direct app_config.json (new canonical location)
+        final direct = '${dir.path}$sep$_kConfigFile';
+        if (File(direct).existsSync()) return direct;
+
+        // Legacy release/app_config.json
+        final legacy = '${dir.path}${sep}release$sep$_kConfigFile';
+        if (File(legacy).existsSync()) return legacy;
 
         final parent = dir.parent;
         if (parent.path == dir.path) break;

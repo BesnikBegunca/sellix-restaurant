@@ -106,3 +106,11 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# Auto-copy app_config.json from project root to beside the executable.
+set(APP_CONFIG_JSON "${CMAKE_CURRENT_SOURCE_DIR}/../app_config.json")
+if(EXISTS "${APP_CONFIG_JSON}")
+  install(FILES "${APP_CONFIG_JSON}"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}"
+    COMPONENT Runtime)
+endif()
