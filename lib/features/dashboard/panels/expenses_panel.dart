@@ -417,7 +417,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: amtCtrl,
-                  decoration: inputDeco('Shuma (USD)'),
+                  decoration: inputDeco('Shuma'),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
