@@ -96,10 +96,10 @@ String buildKitchenOrderReceiptText({
     padRight('Total:', productCol + qtyCol + unitCol) +
         padLeft(fmtMoney(total), valueCol),
   );
-  out.add('Order #$orderNumber');
+  out.add('Porosia #$orderNumber');
   final now = DateTime.now();
   out.add(
-    'Date: ${two(now.day)}.${two(now.month)}.${now.year} ${two(now.hour)}:${two(now.minute)}:${two(now.second)}',
+    'Data: ${two(now.day)}.${two(now.month)}.${now.year} ${two(now.hour)}:${two(now.minute)}:${two(now.second)}',
   );
   if (paymentReceipt) {
     out.add('');

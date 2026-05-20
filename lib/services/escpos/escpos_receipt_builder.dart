@@ -300,9 +300,9 @@ class EscPosReceiptBuilder {
 
   static void _metaLines(EscPosBytes b, int orderNumber) {
     final now = DateTime.now();
-    b.textLine('Order #$orderNumber');
+    b.textLine('Porosia #$orderNumber');
     b.textLine(
-      'Date: '
+      'Data: '
       '${_two(now.day)}.${_two(now.month)}.${now.year} '
       '${_two(now.hour)}:${_two(now.minute)}:${_two(now.second)}',
     );
