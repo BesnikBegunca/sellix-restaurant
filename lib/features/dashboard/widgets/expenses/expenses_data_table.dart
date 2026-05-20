@@ -105,24 +105,27 @@ class ExpensesDataTable extends StatelessWidget {
                       ),
                       SizedBox(
                         width: 130,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: catColor.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: catColor.withValues(alpha: 0.30),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
                             ),
-                          ),
-                          child: Text(
-                            e.type,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: catColor,
+                            decoration: BoxDecoration(
+                              color: catColor.withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: catColor.withValues(alpha: 0.30),
+                              ),
+                            ),
+                            child: Text(
+                              e.type,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: catColor,
+                              ),
                             ),
                           ),
                         ),

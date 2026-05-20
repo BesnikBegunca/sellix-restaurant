@@ -36,11 +36,14 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
     _searchCtrl.addListener(_onM);
   }
 
-  void _onM() => setState(() {});
+  void _onM() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
     widget.m.removeListener(_onM);
+    _searchCtrl.removeListener(_onM);
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -373,89 +376,127 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
   }
 
   Future<void> _openAddDialog(BuildContext context) async {
-    final descCtrl = TextEditingController();
-    final amtCtrl = TextEditingController();
-    var selType = 'Shpenzim';
-    final ok = await showDialog<bool>(
+    final result = await showDialog<_AddExpenseResult>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSt) {
-          return AlertDialog(
-            title: const Text('Shto shpenzim / rrogë'),
-            content: SizedBox(
-              width: 480,
-              child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                InputDecorator(
-                  decoration: inputDeco('Lloji'),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selType,
-                      isExpanded: true,
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'Shpenzim',
-                          child: Text('Shpenzim'),
-                        ),
-                        DropdownMenuItem(value: 'Rrogë', child: Text('Rrogë')),
-                        DropdownMenuItem(value: 'Bonus', child: Text('Bonus')),
-                      ],
-                      onChanged: (v) {
-                        if (v != null) {
-                          setSt(() => selType = v);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: descCtrl,
-                  decoration: inputDeco('Përshkrimi'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: amtCtrl,
-                  decoration: inputDeco('Shuma'),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-                  ],
-                ),
-              ],
-            ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Anulo'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Ruaj'),
-              ),
-            ],
-          );
-        },
+      builder: (_) => const _AddExpenseDialog(),
+    );
+    if (result == null || !context.mounted) return;
+    widget.m.addExpense(
+      ExpenseRow(
+        type: result.type,
+        description: result.description,
+        amount: result.amount,
       ),
     );
-    if (ok == true && context.mounted) {
-      final a = double.tryParse(amtCtrl.text.trim()) ?? 0;
-      if (a > 0 && descCtrl.text.trim().isNotEmpty) {
-        widget.m.addExpense(
-          ExpenseRow(
-            type: selType,
-            description: descCtrl.text.trim(),
-            amount: a,
-          ),
-        );
-      }
+  }
+}
+
+class _AddExpenseResult {
+  const _AddExpenseResult({
+    required this.type,
+    required this.description,
+    required this.amount,
+  });
+
+  final String type;
+  final String description;
+  final double amount;
+}
+
+class _AddExpenseDialog extends StatefulWidget {
+  const _AddExpenseDialog();
+
+  @override
+  State<_AddExpenseDialog> createState() => _AddExpenseDialogState();
+}
+
+class _AddExpenseDialogState extends State<_AddExpenseDialog> {
+  final _descCtrl = TextEditingController();
+  final _amtCtrl = TextEditingController();
+  var _selType = 'Shpenzim';
+
+  @override
+  void dispose() {
+    _descCtrl.dispose();
+    _amtCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final amount = double.tryParse(_amtCtrl.text.trim()) ?? 0;
+    final description = _descCtrl.text.trim();
+    if (amount <= 0 || description.isEmpty) {
+      Navigator.of(context).pop();
+      return;
     }
-    descCtrl.dispose();
-    amtCtrl.dispose();
+    Navigator.of(context).pop(
+      _AddExpenseResult(
+        type: _selType,
+        description: description,
+        amount: amount,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Shto shpenzim / rrogë'),
+      content: SizedBox(
+        width: 480,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InputDecorator(
+              decoration: inputDeco('Lloji'),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selType,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'Shpenzim',
+                      child: Text('Shpenzim'),
+                    ),
+                    DropdownMenuItem(value: 'Rrogë', child: Text('Rrogë')),
+                    DropdownMenuItem(value: 'Bonus', child: Text('Bonus')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setState(() => _selType = v);
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _descCtrl,
+              decoration: inputDeco('Përshkrimi'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _amtCtrl,
+              decoration: inputDeco('Shuma'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Anulo'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Ruaj'),
+        ),
+      ],
+    );
   }
 }
 
