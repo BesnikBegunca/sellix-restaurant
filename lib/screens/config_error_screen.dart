@@ -123,6 +123,17 @@ class ConfigErrorScreen extends StatelessWidget {
                     value: config.apiBaseUrl,
                     monospace: true,
                   ),
+                  const SizedBox(height: 8),
+                  _InfoCard(
+                    label: 'Skedari i pritur',
+                    value: config.expectedConfigFilePath,
+                    monospace: true,
+                  ),
+                  const SizedBox(height: 8),
+                  _InfoCard(
+                    label: 'Skedari ekziston',
+                    value: config.configFileExists ? 'po' : 'jo — kopjoni app_config.json këtu',
+                  ),
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
