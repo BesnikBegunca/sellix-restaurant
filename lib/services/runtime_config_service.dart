@@ -67,6 +67,24 @@ class RuntimeConfigService {
     }
   }
 
+  /// Path where release builds expect `app_config.json` (beside the executable).
+  String get expectedConfigFilePath {
+    try {
+      final execDir = File(Platform.resolvedExecutable).parent;
+      return '${execDir.path}${Platform.pathSeparator}$_kConfigFile';
+    } catch (_) {
+      return _kConfigFile;
+    }
+  }
+
+  bool get configFileExists {
+    try {
+      return File(expectedConfigFilePath).existsSync();
+    } catch (_) {
+      return false;
+    }
+  }
+
   String get sourceLabel {
     switch (_source) {
       case ApiConfigSource.file:

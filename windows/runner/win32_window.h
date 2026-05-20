@@ -101,6 +101,7 @@ class Win32Window {
 
   void ApplyLockedBounds(HWND hwnd);
   void RefreshLockedBoundsFromMonitor(HWND hwnd);
+  void ResizeChildToClient();
 
   // window handle for top level window.
   HWND window_handle_ = nullptr;
