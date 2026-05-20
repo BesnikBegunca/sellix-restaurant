@@ -5,6 +5,22 @@ import 'printer_settings_store.dart';
 import 'receipt_text.dart';
 import 'windows_printers_service.dart';
 
+/// Titulli i kuponit të gjendjes (shift) në printer.
+enum ShiftReceiptHeader {
+  /// Kur shtypet «Shtyp gjendjen».
+  pressed,
+
+  /// Kur konfirmohet mbyllja e gjendjes.
+  closed,
+}
+
+extension ShiftReceiptHeaderTitle on ShiftReceiptHeader {
+  String get receiptTitle => switch (this) {
+        ShiftReceiptHeader.pressed => 'GJENDJA E SHTYPUR',
+        ShiftReceiptHeader.closed => 'GJENDJA E MBYLLUR',
+      };
+}
+
 /// High-level receipt printing facade used by [PosOrderScreen].
 ///
 /// Routing logic:
@@ -105,12 +121,14 @@ class ReceiptPrinter {
   // ── Shift status receipt ──────────────────────────────────────────────────
 
   static Future<bool> printShiftStatus({
+    required ShiftReceiptHeader header,
     required String companyName,
     required Map<String, double> waiterTotals,
     double? summaryPaid,
     double? summaryOpen,
     DateTime? reportTime,
   }) async {
+    final title = header.receiptTitle;
     final selectedPrinter = await PrinterSettingsStore.loadSelectedPrinterName();
     if (selectedPrinter.trim().isEmpty) return false;
 
@@ -123,6 +141,7 @@ class ReceiptPrinter {
       );
       final bytes = EscPosReceiptBuilder.buildShiftReceipt(
         profile: profile,
+        title: title,
         companyName: companyName,
         waiterTotals: waiterTotals,
         summaryPaid: summaryPaid,
@@ -130,6 +149,7 @@ class ReceiptPrinter {
         reportTime: reportTime,
       );
       final fallback = buildShiftReceiptText(
+        title: title,
         companyName: companyName,
         waiterTotals: waiterTotals,
         summaryPaid: summaryPaid,
@@ -144,6 +164,7 @@ class ReceiptPrinter {
     }
 
     final text = buildShiftReceiptText(
+      title: title,
       companyName: companyName,
       waiterTotals: waiterTotals,
       summaryPaid: summaryPaid,

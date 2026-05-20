@@ -207,6 +207,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
 
                       final waiterTotals = closureReport.waiterGrandTotalsForPrint();
                       final printed = await ReceiptPrinter.printShiftStatus(
+                        header: ShiftReceiptHeader.closed,
                         companyName: widget.m.companyName ?? 'POS System',
                         waiterTotals: waiterTotals,
                         summaryPaid: closureReport.grandPaid,

@@ -99,9 +99,10 @@ class EscPosReceiptBuilder {
     return b.build();
   }
 
-  /// Shift summary receipt (printed when "Print shift status" is tapped).
+  /// Shift summary receipt («GJENDJA E SHTYPUR» / «GJENDJA E MBYLLUR»).
   static Uint8List buildShiftReceipt({
     required PrinterProfile profile,
+    required String title,
     required String companyName,
     required Map<String, double> waiterTotals,
     double? summaryPaid,
@@ -113,7 +114,7 @@ class EscPosReceiptBuilder {
 
     b.reset();
     b.separator();
-    b.boldCenteredDoubleLine('GJENDJA');
+    b.boldCenteredDoubleLine(title);
     b.lf();
     final name = companyName.trim();
     if (name.isNotEmpty) {
