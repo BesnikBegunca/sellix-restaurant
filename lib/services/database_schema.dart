@@ -139,12 +139,16 @@ class DatabaseSchema {
     'kitchen_print_lines': ['createdAt', 'updatedAt', 'deletedAt'],
   };
 
+  /// UTC ISO-8601 (suffix `Z`) for sync-critical rows pushed to pos_api.
+  static String toSyncUtcIso([DateTime? when]) =>
+      (when ?? DateTime.now()).toUtc().toIso8601String();
+
   /// ISO-8601 createdAt + updatedAt for new sync-critical rows.
   static Map<String, String> syncTimestampStamp({
     bool includeCreatedAt = true,
     DateTime? when,
   }) {
-    final iso = (when ?? DateTime.now()).toIso8601String();
+    final iso = toSyncUtcIso(when);
     if (includeCreatedAt) {
       return {'createdAt': iso, 'updatedAt': iso};
     }

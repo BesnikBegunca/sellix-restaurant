@@ -39,15 +39,38 @@ class SyncPushPayloadMapper {
 
   static Map<String, dynamic> _mapSalesPayload(Map<String, dynamic> payload) {
     final out = Map<String, dynamic>.from(payload);
-    if (out['soldAt'] == null || out['soldAt'].toString().isEmpty) {
-      final ts = out['timestamp'] ?? out['createdAt'];
-      if (ts != null) out['soldAt'] = ts;
-    }
+    _applySoldAtUtc(out);
     final status = out['status'];
     if (status == null || status.toString().isEmpty) {
       out['status'] = 'completed';
     }
+    // ignore: avoid_print
+    print(
+      '[TimezoneFix] payloadSoldAt=${out['soldAt']} '
+      'timestamp=${out['timestamp']} createdAt=${out['createdAt']}',
+    );
     return out;
+  }
+
+  /// Ensures [soldAt] is UTC ISO-8601 (`…Z`) for pos_api / mobile dashboards.
+  static void _applySoldAtUtc(Map<String, dynamic> out) {
+    final existing = out['soldAt'];
+    if (existing != null && existing.toString().trim().isNotEmpty) {
+      final raw = existing.toString().trim();
+      if (raw.endsWith('Z')) return;
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) {
+        out['soldAt'] = parsed.toUtc().toIso8601String();
+      }
+      return;
+    }
+
+    final ts = out['timestamp'] ?? out['createdAt'];
+    if (ts == null) return;
+    final parsed = DateTime.tryParse(ts.toString());
+    if (parsed != null) {
+      out['soldAt'] = parsed.toUtc().toIso8601String();
+    }
   }
 
   static Map<String, dynamic> _mapSaleLinePayload(Map<String, dynamic> payload) {

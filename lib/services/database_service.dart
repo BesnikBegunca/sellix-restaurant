@@ -703,6 +703,57 @@ class DatabaseService {
     return db.query('sales', orderBy: 'timestamp DESC');
   }
 
+  /// [ParityDiag:desktop] — TEMP. Prints sales + outbox parity data to debug console.
+  /// Call from a dev/settings screen or on startup when diagnosing desktop↔mobile count mismatch.
+  /// Remove after root cause is confirmed.
+  Future<void> runSalesParityDiagnostic() async {
+    final db = await database;
+
+    final sales = await db.rawQuery('''
+      SELECT uuid, total, timestamp, syncStatus, deletedAt, businessId, branchId
+      FROM sales
+      ORDER BY timestamp DESC
+      LIMIT 50
+    ''');
+    debugPrint('[ParityDiag:desktop] salesCount=${sales.length}');
+    for (final s in sales) {
+      debugPrint(
+        '[ParityDiag:desktop] sale uuid=${s['uuid']} '
+        'total=${s['total']} soldAt=${s['timestamp']} '
+        'syncStatus=${s['syncStatus']} deletedAt=${s['deletedAt']} '
+        'businessId=${s['businessId']} branchId=${s['branchId']}',
+      );
+    }
+
+    final outbox = await db.rawQuery('''
+      SELECT entityType, entityUuid, syncStatus, retryCount, lastError, createdAt
+      FROM outbox
+      WHERE entityType IN ('sales', 'sale_lines')
+      ORDER BY createdAt DESC
+      LIMIT 50
+    ''');
+    final pendingSales = outbox
+        .where((r) => r['entityType'] == 'sales' && r['syncStatus'] == 'pending')
+        .length;
+    final failedSales = outbox
+        .where((r) => r['entityType'] == 'sales' && r['syncStatus'] == 'failed')
+        .length;
+    final syncedSales = outbox
+        .where((r) => r['entityType'] == 'sales' && r['syncStatus'] == 'synced')
+        .length;
+    debugPrint(
+      '[ParityDiag:desktop] outbox sales: pending=$pendingSales '
+      'failed=$failedSales synced=$syncedSales',
+    );
+    for (final o in outbox) {
+      debugPrint(
+        '[ParityDiag:desktop] outbox entityType=${o['entityType']} '
+        'entityUuid=${o['entityUuid']} syncStatus=${o['syncStatus']} '
+        'retryCount=${o['retryCount']} lastError=${o['lastError']}',
+      );
+    }
+  }
+
   /// Resolves a local [sales.id] to the sale's sync [uuid] (for legacy outbox rows).
   Future<String?> fetchSaleUuidByLocalId(int saleId) async {
     final db = await database;
@@ -818,6 +869,12 @@ class DatabaseService {
     final scope = await syncScope();
     final ts = syncTimestamps();
     final timestamp = ts['createdAt']!;
+    // ignore: avoid_print
+    print(
+      '[TimezoneFix] localNow=${DateTime.now().toIso8601String()} '
+      'utcNow=${DateTime.now().toUtc().toIso8601String()} '
+      'soldAt=$timestamp',
+    );
     final result = await db.transaction<SaleInsertResult>((txn) async {
       final existing = await txn.query(
         'sales',
@@ -871,7 +928,7 @@ class DatabaseService {
       }
 
       // ignore: avoid_print
-      print('[SyncDiag] sale inserted SQLite saleId=$saleId uuid=$saleUuid total=$total');
+      print('[SyncDiag] sale created uuid=$saleUuid saleId=$saleId');
 
       await _queueOutboxByIdIfAbsent(
         'sales',
@@ -881,7 +938,14 @@ class DatabaseService {
         txn: txn,
       );
       // ignore: avoid_print
-      print('[SyncDiag] outbox queued entityType=sales saleId=$saleId');
+      print(
+        '[SyncDiag] queued to outbox entityType=sales uuid=$saleUuid '
+        'soldAt=$timestamp',
+      );
+      // ignore: avoid_print
+      print(
+        '[TimezoneFix] queued to outbox uuid=$saleUuid soldAt=$timestamp',
+      );
       for (final line in lines) {
         final lineUuid = DatabaseSchema.generateUuid();
         final lineId = await txn.insert('sale_lines', {
@@ -902,12 +966,6 @@ class DatabaseService {
           ...scope,
           ...syncStatus(),
         });
-        // ignore: avoid_print
-        print(
-          '[SyncDiag] line inserted lineId=$lineId uuid=$lineUuid '
-          'saleId=$saleId saleUuid=$saleUuid '
-          'productName=${line['productName']} qty=${line['quantity']} lineTotal=${line['lineTotal']}',
-        );
         await _queueOutboxByIdIfAbsent(
           'sale_lines',
           'sale_lines',
@@ -917,7 +975,7 @@ class DatabaseService {
           payloadExtras: {'saleUuid': saleUuid},
         );
         // ignore: avoid_print
-        print('[SyncDiag] outbox queued entityType=sale_lines lineId=$lineId uuid=$lineUuid');
+        print('[SyncDiag] queued to outbox entityType=sale_lines uuid=$lineUuid');
       }
       return SaleInsertResult(
         saleId: saleId,
@@ -1314,7 +1372,7 @@ class DatabaseService {
   }) async {
     final db = await database;
     final scope = await syncScope();
-    final opened = openedAt.toIso8601String();
+    final opened = DatabaseSchema.toSyncUtcIso(openedAt);
     final ts = syncTimestamps(when: openedAt);
     return db.insert('shifts', {
       'openedAt': opened,
@@ -1343,7 +1401,7 @@ class DatabaseService {
     final db = await database;
     await DatabaseSchema.ensureShiftsSnapshotColumn(db);
     final row = <String, Object?>{
-      'closedAt': closedAt.toIso8601String(),
+      'closedAt': DatabaseSchema.toSyncUtcIso(closedAt),
       'closedBy': closedBy,
       'closingCash': closingCash,
       'totalSales': totalSales,
@@ -2171,7 +2229,7 @@ class DatabaseService {
 
   /// Nudges immediate outbox push after a successful local commit (non-blocking).
   void _scheduleSyncAfterLocalMutation() {
-    unawaited(BackgroundSyncService.instance.triggerSyncNow(force: true));
+    unawaited(BackgroundSyncService.instance.triggerImmediateSync());
   }
 
   Future<void> _queueOutboxRow(
@@ -2307,17 +2365,32 @@ class DatabaseService {
     );
   }
 
-  /// Pending outbox events, oldest first (FIFO).
+  /// Pending outbox events — revenue entities first, then FIFO within tier.
   Future<List<Map<String, dynamic>>> getPendingOutboxEvents({
     int limit = 100,
   }) async {
     final db = await database;
-    return db.query(
-      'outbox',
-      where: 'syncStatus = ?',
-      whereArgs: [DatabaseSchema.kSyncStatusPending],
-      orderBy: 'createdAt ASC',
-      limit: limit,
+    return db.rawQuery(
+      '''
+      SELECT * FROM outbox
+      WHERE syncStatus = ?
+      ORDER BY
+        CASE REPLACE(LOWER(TRIM(entityType)), '-', '_')
+          WHEN 'sales' THEN 0
+          WHEN 'sale_lines' THEN 1
+          WHEN 'sale_adjustments' THEN 2
+          WHEN 'categories' THEN 3
+          WHEN 'products' THEN 4
+          WHEN 'shifts' THEN 5
+          WHEN 'expenses' THEN 6
+          WHEN 'inventory_items' THEN 7
+          WHEN 'stock_movements' THEN 8
+          ELSE 50
+        END ASC,
+        createdAt ASC
+      LIMIT ?
+      ''',
+      [DatabaseSchema.kSyncStatusPending, limit],
     );
   }
 

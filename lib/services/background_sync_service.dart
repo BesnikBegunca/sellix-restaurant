@@ -28,6 +28,10 @@ class BackgroundSyncService {
 
   StreamSubscription<ConnectivityStatus>? _connectivitySub;
   Timer? _scheduledRetryTimer;
+  Timer? _idlePushTimer;
+  bool _syncPendingAfterCurrent = false;
+  int _pushChainDepth = 0;
+  int _lastBatchSettled = 0;
   bool _initialized = false;
   bool _isRunning = false;
   bool _isSyncing = false;
@@ -75,6 +79,7 @@ class BackgroundSyncService {
       return;
     }
     _isRunning = true;
+    _startIdlePushPolling();
     if (ConnectivityService.instance.isOnline) {
       _requestSyncWhenReady();
     }
@@ -83,14 +88,24 @@ class BackgroundSyncService {
   /// Disables automatic sync triggers; in-flight [triggerSyncNow] may still finish.
   void stop() {
     _isRunning = false;
+    _idlePushTimer?.cancel();
+    _idlePushTimer = null;
   }
 
   Future<void> dispose() async {
     await _connectivitySub?.cancel();
     _connectivitySub = null;
     _cancelScheduledRetry();
+    _idlePushTimer?.cancel();
+    _idlePushTimer = null;
     _isRunning = false;
     _initialized = false;
+  }
+
+  /// Push-only sync right after a local mutation (e.g. payment). Bypasses backoff.
+  Future<void> triggerImmediateSync() async {
+    _pushChainDepth = 0;
+    await triggerSyncNow(force: true);
   }
 
   /// Refreshes [pendingCount] from SQLite (no network).
@@ -131,8 +146,13 @@ class BackgroundSyncService {
       return;
     }
     if (_isSyncing) {
-      if (kDebugMode)
+      if (force) {
+        _syncPendingAfterCurrent = true;
+        // ignore: avoid_print
+        print('[SyncDiag] sync deferred: push already in flight (will retry)');
+      } else if (kDebugMode) {
         debugPrint('BackgroundSyncService: skip (already syncing)');
+      }
       return;
     }
     if (!ActivationService.instance.isActivated) {
@@ -150,7 +170,10 @@ class BackgroundSyncService {
     }
 
     _isSyncing = true;
+    _lastBatchSettled = 0;
     SyncStatusService.instance.setSyncingPush(true);
+    final pushStartedAt = DateTime.now();
+    final stopwatch = Stopwatch()..start();
     try {
       final pending = await _sync.getPendingOutboxEvents(
         limit: _defaultBatchLimit,
@@ -172,31 +195,25 @@ class BackgroundSyncService {
         events.add(await _buildSyncPushEvent(row));
       }
 
-      // TEMP [SyncDiag] — log every event being sent to API.
       // ignore: avoid_print
-      print('[SyncDiag] triggerSyncNow: pushing ${events.length} event(s)');
+      print(
+        '[SyncDiag] sync started pending=${pending.length} '
+        'force=$force at=${pushStartedAt.toIso8601String()}',
+      );
       for (final ev in events) {
-        final pl = ev['payload'];
-        final payloadKeys = pl is Map ? pl.keys.toList() : '<not-a-map>';
-        // ignore: avoid_print
-        print(
-          '[SyncDiag] event entityType=${ev['entityType']} '
-          'entityUuid=${ev['entityUuid']} '
-          'payloadKeys=$payloadKeys',
-        );
-        if (pl is Map && (ev['entityType'] == 'sales' || ev['entityType'] == 'sale_lines')) {
+        final type = ev['entityType'];
+        final entityUuid = ev['entityUuid'];
+        if (type == 'sales' || type == 'sale_lines') {
           // ignore: avoid_print
-          print('[SyncDiag] payload=$pl');
+          print(
+            '[SyncDiag] POST /sync/push queued entityType=$type '
+            'entityUuid=$entityUuid',
+          );
         }
       }
 
       if (kDebugMode) {
         debugPrint('BackgroundSyncService: push batch size=${events.length}');
-        if (events.isNotEmpty) {
-          debugPrint(
-            'BackgroundSyncService: first event keys=${events.first.keys.toList()}',
-          );
-        }
       }
 
       final body = {'events': events};
@@ -263,6 +280,7 @@ class BackgroundSyncService {
       }
 
       final settled = parsed.accepted.length + parsed.duplicates.length;
+      _lastBatchSettled = settled;
       _pendingCount = (_pendingCount - settled).clamp(0, _pendingCount);
       _backoff.reset();
       _cancelScheduledRetry();
@@ -272,6 +290,36 @@ class BackgroundSyncService {
       await DatabaseService.instance.setAppMeta('sync_last_success_at', nowIso);
       await DatabaseService.instance.setAppMeta('sync_last_error', '');
 
+      stopwatch.stop();
+      // ignore: avoid_print
+      print(
+        '[SyncDiag] POST /sync/push success latencyMs=${stopwatch.elapsedMilliseconds} '
+        'accepted=${parsed.accepted.length} '
+        'duplicates=${parsed.duplicates.length} '
+        'rejected=${parsed.rejected.length}',
+      );
+      for (final ev in events) {
+        final eventUuid = ev['uuid'] as String?;
+        if (eventUuid == null) continue;
+        final type = ev['entityType'];
+        if (type != 'sales' && type != 'sale_lines') continue;
+        final entityUuid = ev['entityUuid'];
+        if (parsed.accepted.contains(eventUuid) ||
+            parsed.duplicates.contains(eventUuid)) {
+          // ignore: avoid_print
+          print(
+            '[SyncDiag] POST /sync/push success entityType=$type '
+            'entityUuid=$entityUuid',
+          );
+        }
+      }
+      await refreshPendingCount();
+      // ignore: avoid_print
+      print(
+        '[SyncDiag] sync completed latencyMs=${stopwatch.elapsedMilliseconds} '
+        'remainingPending=$_pendingCount',
+      );
+
       if (kDebugMode) {
         debugPrint(
           'BackgroundSyncService: push complete — '
@@ -279,16 +327,6 @@ class BackgroundSyncService {
           'duplicates=${parsed.duplicates.length} '
           'rejected=${parsed.rejected.length}',
         );
-        if (parsed.rejected.isNotEmpty) {
-          final reasons = parsed.rejected
-              .map((r) => r.reason)
-              .toSet()
-              .take(5)
-              .join('; ');
-          debugPrint(
-            'BackgroundSyncService: rejected reasons (sample): $reasons',
-          );
-        }
       }
     } on DioException catch (e) {
       if (_handleLicenseSuspended(e)) return;
@@ -317,9 +355,11 @@ class BackgroundSyncService {
       print('[SyncDiag] PUSH EXCEPTION ${e.runtimeType}: $e');
       if (kDebugMode) debugPrint('BackgroundSyncService: sync error: $e\n$st');
     } finally {
+      stopwatch.stop();
       _isSyncing = false;
       SyncStatusService.instance.setSyncingPush(false);
       unawaited(SyncStatusService.instance.refresh());
+      unawaited(_finishPushAttempt(force: force));
     }
   }
 
@@ -658,6 +698,51 @@ class BackgroundSyncService {
   void _cancelScheduledRetry() {
     _scheduledRetryTimer?.cancel();
     _scheduledRetryTimer = null;
+  }
+
+  static const Duration _idlePushInterval = Duration(seconds: 5);
+  static const int _maxPushChainDepth = 15;
+
+  void _startIdlePushPolling() {
+    _idlePushTimer?.cancel();
+    _idlePushTimer = Timer.periodic(_idlePushInterval, (_) {
+      unawaited(_idlePushTick());
+    });
+  }
+
+  Future<void> _idlePushTick() async {
+    if (!_isRunning) return;
+    if (_isApiConfigBlocked()) return;
+    if (!ConnectivityService.instance.isOnline) return;
+    if (LicenseGateService.instance.isBlocked) return;
+    if (!ActivationService.instance.isActivated) return;
+    if (_isSyncing || _isPulling) return;
+
+    await refreshPendingCount();
+    if (_pendingCount <= 0) return;
+
+    await triggerSyncNow(force: true);
+  }
+
+  Future<void> _finishPushAttempt({required bool force}) async {
+    await refreshPendingCount();
+
+    final deferred = _syncPendingAfterCurrent;
+    if (deferred) _syncPendingAfterCurrent = false;
+
+    final shouldChain = force &&
+        _pushChainDepth < _maxPushChainDepth &&
+        (deferred || (_pendingCount > 0 && _lastBatchSettled > 0));
+
+    _lastBatchSettled = 0;
+
+    if (!shouldChain) {
+      _pushChainDepth = 0;
+      return;
+    }
+
+    _pushChainDepth++;
+    await triggerSyncNow(force: true);
   }
 
   /// Clears backoff state after operator resets failed events (manual retry).

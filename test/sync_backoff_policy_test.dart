@@ -12,12 +12,12 @@ void main() {
       policy.recordFailure();
       expect(policy.currentDelay, const Duration(seconds: 2));
 
-      for (var i = 0; i < 10; i++) {
+      for (var i = 0; i < 7; i++) {
         policy.recordFailure();
       }
-      // maxAttempts=8 → exponent 7 → 2^8 s = 256s (below 5 min cap)
-      expect(policy.currentDelay, const Duration(seconds: 256));
+      // failures 1–3: fast tier; 4+ exponential from baseDelay
       expect(policy.failureCount, SyncBackoffPolicy.maxAttempts);
+      expect(policy.currentDelay, const Duration(seconds: 64));
     });
 
     test('delayWithJitter is within 50-100% of base', () {
@@ -27,6 +27,12 @@ void main() {
       final jitterMs = policy.delayWithJitter.inMilliseconds;
       expect(jitterMs, greaterThanOrEqualTo((baseMs * 0.5).round()));
       expect(jitterMs, lessThanOrEqualTo(baseMs));
+    });
+
+    test('fast first retry is 2 seconds', () {
+      final policy = SyncBackoffPolicy(random: _FakeRandom(0.0));
+      policy.recordFailure();
+      expect(policy.currentDelay, const Duration(seconds: 2));
     });
 
     test('isReady false until nextRetryAt elapses', () async {

@@ -8,6 +8,13 @@ class SyncBackoffPolicy {
   static const Duration baseDelay = Duration(seconds: 2);
   static const Duration maxDelay = Duration(minutes: 5);
 
+  /// Fast retries before exponential backoff (2s → 5s → 10s).
+  static const List<Duration> fastRetryDelays = [
+    Duration(seconds: 2),
+    Duration(seconds: 5),
+    Duration(seconds: 10),
+  ];
+
   final math.Random _random;
 
   int _failureCount = 0;
@@ -19,10 +26,13 @@ class SyncBackoffPolicy {
 
   bool get exhausted => _failureCount >= maxAttempts;
 
-  /// Base exponential delay before jitter (capped at [maxDelay]).
+  /// Delay before next retry: [fastRetryDelays] first, then exponential (capped).
   Duration get currentDelay {
     if (_failureCount <= 0) return Duration.zero;
-    final exponent = math.min(_failureCount - 1, 10);
+    if (_failureCount <= fastRetryDelays.length) {
+      return fastRetryDelays[_failureCount - 1];
+    }
+    final exponent = math.min(_failureCount - fastRetryDelays.length, 10);
     var delay = baseDelay * (1 << exponent);
     if (delay > maxDelay) delay = maxDelay;
     return delay;

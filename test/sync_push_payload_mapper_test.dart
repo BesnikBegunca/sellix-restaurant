@@ -31,6 +31,25 @@ void main() {
       expect(out['status'], 'completed');
     });
 
+    test('sales converts local ISO without Z to UTC soldAt', () {
+      final local = DateTime(2026, 5, 20, 14, 35);
+      final out = SyncPushPayloadMapper.mapPayload('sales', {
+        'total': 10.0,
+        'timestamp': local.toIso8601String(),
+      });
+      expect(out['soldAt'], local.toUtc().toIso8601String());
+      expect(out['soldAt'] as String, endsWith('Z'));
+    });
+
+    test('sales keeps valid UTC soldAt unchanged', () {
+      const utc = '2026-05-20T12:35:00.000Z';
+      final out = SyncPushPayloadMapper.mapPayload('sales', {
+        'soldAt': utc,
+        'total': 5.0,
+      });
+      expect(out['soldAt'], utc);
+    });
+
     test('buildEvent uses exact DTO keys only', () {
       final mapped = SyncPushPayloadMapper.mapPayload('sales', {'total': 10.0});
       final event = SyncPushPayloadMapper.buildEvent(
