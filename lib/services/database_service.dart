@@ -834,6 +834,13 @@ class DatabaseService {
         );
       }
 
+      // TEMP [SyncDiag] — log sync scope stamp to catch 'local-business' IDs.
+      // ignore: avoid_print
+      print(
+        '[SyncDiag] insertSaleWithLines scope: businessId=${scope['businessId']} '
+        'branchId=${scope['branchId']} deviceId=${scope['deviceId']}',
+      );
+
       int saleId;
       try {
         saleId = await txn.insert('sales', {
@@ -863,6 +870,9 @@ class DatabaseService {
         );
       }
 
+      // ignore: avoid_print
+      print('[SyncDiag] sale inserted SQLite saleId=$saleId uuid=$saleUuid total=$total');
+
       await _queueOutboxByIdIfAbsent(
         'sales',
         'sales',
@@ -870,7 +880,10 @@ class DatabaseService {
         operation: 'create',
         txn: txn,
       );
+      // ignore: avoid_print
+      print('[SyncDiag] outbox queued entityType=sales saleId=$saleId');
       for (final line in lines) {
+        final lineUuid = DatabaseSchema.generateUuid();
         final lineId = await txn.insert('sale_lines', {
           'saleId': saleId,
           'productId': line['productId'],
@@ -885,10 +898,16 @@ class DatabaseService {
           'waiterName': line['waiterName'],
           'createdAt': timestamp,
           'updatedAt': timestamp,
-          'uuid': DatabaseSchema.generateUuid(),
+          'uuid': lineUuid,
           ...scope,
           ...syncStatus(),
         });
+        // ignore: avoid_print
+        print(
+          '[SyncDiag] line inserted lineId=$lineId uuid=$lineUuid '
+          'saleId=$saleId saleUuid=$saleUuid '
+          'productName=${line['productName']} qty=${line['quantity']} lineTotal=${line['lineTotal']}',
+        );
         await _queueOutboxByIdIfAbsent(
           'sale_lines',
           'sale_lines',
@@ -897,6 +916,8 @@ class DatabaseService {
           txn: txn,
           payloadExtras: {'saleUuid': saleUuid},
         );
+        // ignore: avoid_print
+        print('[SyncDiag] outbox queued entityType=sale_lines lineId=$lineId uuid=$lineUuid');
       }
       return SaleInsertResult(
         saleId: saleId,
@@ -2233,9 +2254,17 @@ class DatabaseService {
       whereArgs: [id],
       txn: txn,
     );
-    if (row == null) return;
+    if (row == null) {
+      // ignore: avoid_print
+      print('[SyncDiag] WARN _queueOutboxByIdIfAbsent: row not found entityType=$entityType id=$id — outbox entry skipped');
+      return;
+    }
     final entityUuid = row['uuid'] as String?;
-    if (entityUuid == null || entityUuid.isEmpty) return;
+    if (entityUuid == null || entityUuid.isEmpty) {
+      // ignore: avoid_print
+      print('[SyncDiag] WARN _queueOutboxByIdIfAbsent: uuid is null/empty entityType=$entityType id=$id — outbox entry skipped');
+      return;
+    }
     if (txn != null) {
       final exists = await _hasOutboxEventForEntity(
         entityType: entityType,

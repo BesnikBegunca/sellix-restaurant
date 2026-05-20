@@ -146,6 +146,26 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       final shouldRecordSale =
           tableTotal > 0 && widget.waiterName.isNotEmpty;
 
+      // TEMP [SyncDiag] — log payment totals to verify total vs lineTotal sum.
+      // ignore: avoid_print
+      print(
+        '[SyncDiag] _payTable tableId=${widget.tableNumber} '
+        'waiter=${widget.waiterName} items=${combined.length} '
+        'tableTotal=$tableTotal',
+      );
+      if (shouldRecordSale) {
+        final sumRounded = combined.fold<double>(0, (s, l) {
+          return s + double.parse((l.product.price * l.qty).toStringAsFixed(2));
+        });
+        final delta = (tableTotal - sumRounded).abs();
+        // ignore: avoid_print
+        print(
+          '[SyncDiag] totalVsLineTotals tableTotal=$tableTotal '
+          'sumRoundedLineTotals=$sumRounded delta=${delta.toStringAsFixed(6)} '
+          'wouldFailValidation=${delta > 0.02}',
+        );
+      }
+
       // 1) Save sale first (DB idempotency on stable sale UUID).
       var printAfterSave = false;
       SaleInsertResult? payResult;
@@ -154,6 +174,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           tableId: widget.tableNumber,
           waiterName: widget.waiterName,
         );
+        // ignore: avoid_print
+        print('[SyncDiag] resolvedSaleUuid=$saleUuid');
         payResult = await data.recordSaleWithLines(
           saleUuid: saleUuid,
           waiterName: widget.waiterName,
@@ -161,6 +183,11 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           tableId: widget.tableNumber,
           tableName: 'Tavolina ${widget.tableNumber}',
           lines: combined,
+        );
+        // ignore: avoid_print
+        print(
+          '[SyncDiag] recordSaleWithLines saleId=${payResult.saleId} '
+          'wasExisting=${payResult.wasExisting}',
         );
         printAfterSave = combined.isNotEmpty && !payResult.wasExisting;
       }

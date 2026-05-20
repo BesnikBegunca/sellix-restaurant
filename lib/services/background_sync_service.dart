@@ -115,6 +115,8 @@ class BackgroundSyncService {
     }
     if (!ConnectivityService.instance.isOnline) {
       if (kDebugMode) debugPrint('BackgroundSyncService: skip (offline)');
+      // ignore: avoid_print
+      print('[SyncDiag] triggerSyncNow GATED: offline');
       return;
     }
     if (!force && !_backoff.isReady) {
@@ -123,6 +125,8 @@ class BackgroundSyncService {
           'BackgroundSyncService: skip (backoff until ${_backoff.nextRetryAt})',
         );
       }
+      // ignore: avoid_print
+      print('[SyncDiag] triggerSyncNow GATED: backoff nextRetryAt=${_backoff.nextRetryAt} failures=${_backoff.failureCount}');
       _ensureRetryScheduled();
       return;
     }
@@ -133,11 +137,15 @@ class BackgroundSyncService {
     }
     if (!ActivationService.instance.isActivated) {
       if (kDebugMode) debugPrint('BackgroundSyncService: skip (not activated)');
+      // ignore: avoid_print
+      print('[SyncDiag] triggerSyncNow GATED: not activated');
       return;
     }
     if (LicenseGateService.instance.isBlocked) {
       if (kDebugMode)
         debugPrint('BackgroundSyncService: skip (license blocked)');
+      // ignore: avoid_print
+      print('[SyncDiag] triggerSyncNow GATED: license blocked');
       return;
     }
 
@@ -153,6 +161,8 @@ class BackgroundSyncService {
         _backoff.reset();
         _cancelScheduledRetry();
         if (kDebugMode) debugPrint('BackgroundSyncService: no pending events');
+        // ignore: avoid_print
+        print('[SyncDiag] triggerSyncNow: outbox is empty — nothing to push');
         return;
       }
 
@@ -160,6 +170,24 @@ class BackgroundSyncService {
       final events = <Map<String, dynamic>>[];
       for (final row in pending) {
         events.add(await _buildSyncPushEvent(row));
+      }
+
+      // TEMP [SyncDiag] — log every event being sent to API.
+      // ignore: avoid_print
+      print('[SyncDiag] triggerSyncNow: pushing ${events.length} event(s)');
+      for (final ev in events) {
+        final pl = ev['payload'];
+        final payloadKeys = pl is Map ? pl.keys.toList() : '<not-a-map>';
+        // ignore: avoid_print
+        print(
+          '[SyncDiag] event entityType=${ev['entityType']} '
+          'entityUuid=${ev['entityUuid']} '
+          'payloadKeys=$payloadKeys',
+        );
+        if (pl is Map && (ev['entityType'] == 'sales' || ev['entityType'] == 'sale_lines')) {
+          // ignore: avoid_print
+          print('[SyncDiag] payload=$pl');
+        }
       }
 
       if (kDebugMode) {
@@ -207,6 +235,25 @@ class BackgroundSyncService {
         return;
       }
 
+      // TEMP [SyncDiag] — log complete API response.
+      // ignore: avoid_print
+      print(
+        '[SyncDiag] syncPushResponse: '
+        'accepted=${parsed.accepted.length} '
+        'duplicates=${parsed.duplicates.length} '
+        'rejected=${parsed.rejected.length}',
+      );
+      if (parsed.accepted.isNotEmpty) {
+        // ignore: avoid_print
+        print('[SyncDiag] accepted uuids=${parsed.accepted}');
+      }
+      if (parsed.rejected.isNotEmpty) {
+        for (final r in parsed.rejected) {
+          // ignore: avoid_print
+          print('[SyncDiag] REJECTED uuid=${r.uuid} reason=${r.reason}');
+        }
+      }
+
       // Apply outbox state changes only after full parse succeeds.
       for (final uuid in [...parsed.accepted, ...parsed.duplicates]) {
         await _sync.markOutboxEventSynced(uuid);
@@ -251,18 +298,23 @@ class BackgroundSyncService {
             ? 'Push rejected (400): invalid request body'
             : 'Push network error: ${e.message ?? e.type.name}',
       );
+      // ignore: avoid_print
+      print('[SyncDiag] PUSH FAILED status=$status type=${e.type.name}');
+      final data = e.response?.data;
+      if (data != null) {
+        // ignore: avoid_print
+        print('[SyncDiag] push error body=$data');
+      }
       if (kDebugMode) {
         debugPrint(
           'BackgroundSyncService: push failed status=$status '
           'type=${e.type.name}',
         );
-        final data = e.response?.data;
-        if (data != null) {
-          debugPrint('BackgroundSyncService: push error body=$data');
-        }
       }
     } catch (e, st) {
       _recordFailureAndSchedule('Push error: ${e.runtimeType}');
+      // ignore: avoid_print
+      print('[SyncDiag] PUSH EXCEPTION ${e.runtimeType}: $e');
       if (kDebugMode) debugPrint('BackgroundSyncService: sync error: $e\n$st');
     } finally {
       _isSyncing = false;

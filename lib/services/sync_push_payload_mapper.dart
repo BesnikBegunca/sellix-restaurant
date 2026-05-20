@@ -51,6 +51,18 @@ class SyncPushPayloadMapper {
   }
 
   static Map<String, dynamic> _mapSaleLinePayload(Map<String, dynamic> payload) {
+    // TEMP [SyncDiag] — log raw payload fields before stripping.
+    // ignore: avoid_print
+    print(
+      '[SyncDiag] _mapSaleLinePayload input: '
+      'keys=${payload.keys.toList()} '
+      'saleUuid=${payload['saleUuid']} '
+      'price=${payload['price'] ?? payload['productPrice']} '
+      'qty=${payload['quantity']} '
+      'lineTotal=${payload['lineTotal']} '
+      'name=${payload['name'] ?? payload['productName']}',
+    );
+
     final out = <String, dynamic>{};
 
     final saleUuid = payload['saleUuid'];
@@ -69,6 +81,18 @@ class SyncPushPayloadMapper {
 
     final name = payload['name'] ?? payload['productName'];
     if (name != null) out['name'] = name;
+
+    final saleUuidOut = out['saleUuid'];
+    final saleUuidIsUuid = saleUuidOut is String &&
+        RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+            .hasMatch(saleUuidOut);
+    // ignore: avoid_print
+    print(
+      '[SyncDiag] _mapSaleLinePayload output: '
+      'keys=${out.keys.toList()} '
+      'saleUuidPresent=${out.containsKey('saleUuid')} '
+      'saleUuidIsUuid=$saleUuidIsUuid',
+    );
 
     return out;
   }
