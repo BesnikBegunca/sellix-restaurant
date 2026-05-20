@@ -31,6 +31,7 @@ class ShiftPanel extends StatelessWidget {
 
     final waiterTotals = report.waiterGrandTotalsForPrint();
     final ok = await ReceiptPrinter.printShiftStatus(
+      header: ShiftReceiptHeader.pressed,
       companyName: m.companyName ?? 'POS System',
       waiterTotals: waiterTotals,
       summaryPaid: report.grandPaid,

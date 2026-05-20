@@ -110,6 +110,7 @@ String buildKitchenOrderReceiptText({
 }
 
 String buildShiftReceiptText({
+  required String title,
   required String companyName,
   required Map<String, double> waiterTotals,
   double? summaryPaid,
@@ -151,7 +152,7 @@ String buildShiftReceiptText({
 
   final out = <String>[];
   out.add(rule());
-  out.add(markCenterBoldLarge('GJENDJA'));
+  out.add(markCenterBoldLarge(title));
   out.add('');
   out.add(markCenterBold(companyName));
   out.add(rule());
