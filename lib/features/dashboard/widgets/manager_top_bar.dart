@@ -23,6 +23,7 @@ class ManagerTopBar extends StatefulWidget {
 }
 
 class _ManagerTopBarState extends State<ManagerTopBar> {
+  static const String _syncDiagnosticsPassword = 'Superadmin12?';
   Timer? _timer;
 
   @override
@@ -92,7 +93,7 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
             listenable: SyncStatusService.instance,
             builder: (context, _) => _SyncStatusChip(
               status: SyncStatusService.instance,
-              onTap: () => showSyncDiagnosticsDialog(context),
+              onTap: _openSyncDiagnosticsProtected,
             ),
           ),
           const SizedBox(width: 12),
@@ -106,6 +107,79 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
         ],
       ),
     );
+  }
+
+  Future<void> _openSyncDiagnosticsProtected() async {
+    final allowed = await _askSyncPassword();
+    if (!mounted || !allowed) return;
+    await showSyncDiagnosticsDialog(context);
+  }
+
+  Future<bool> _askSyncPassword() async {
+    String password = '';
+    String? errorText;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Kërkohet fjalëkalim'),
+              content: SizedBox(
+                width: 360,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Vendos password për të hapur diagnostikën e sinkronizimit.',
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      onChanged: (value) => password = value,
+                      onSubmitted: (_) {
+                        final value = password.trim();
+                        if (value == _syncDiagnosticsPassword) {
+                          Navigator.of(dialogContext).pop(true);
+                          return;
+                        }
+                        setStateDialog(() => errorText = 'Password i pasaktë.');
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        errorText: errorText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Anulo'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final value = password.trim();
+                    if (value == _syncDiagnosticsPassword) {
+                      Navigator.of(dialogContext).pop(true);
+                      return;
+                    }
+                    setStateDialog(() => errorText = 'Password i pasaktë.');
+                  },
+                  child: const Text('Hap'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    return ok == true;
   }
 }
 
