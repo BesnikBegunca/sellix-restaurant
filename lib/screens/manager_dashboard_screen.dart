@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
+import '../services/database_service.dart';
 import '../screens/audit_log_screen.dart';
 import '../screens/sales_history_screen.dart';
 import '../services/admin_session_service.dart';
@@ -25,6 +27,7 @@ import '../features/dashboard/panels/refund_panel.dart';
 import '../features/dashboard/panels/sales_daily_panel.dart';
 import '../features/dashboard/widgets/manager_side_nav.dart';
 import '../features/dashboard/widgets/manager_top_bar.dart';
+import '../widgets/session_lock_dialog.dart';
 
 
 const _kSectionTitles = <String>[
@@ -65,12 +68,14 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   final TextEditingController _headerSearchController = TextEditingController();
   late int _railIndex;
   bool _sidebarExpanded = true;
+  static bool _desktopRealityDiagRan = false;
 
   // ── Session timeout ────────────────────────────────────────────────────────
   bool _sessionLocked = false;
+  bool _lockDialogVisible = false;
+  VoidCallback? _rebuildLockDialog;
   Timer? _activityTimer;
   final TextEditingController _lockPinController = TextEditingController();
-  final FocusNode _lockPinFocus = FocusNode();
   String? _lockErrorMsg;
 
   @override
@@ -85,7 +90,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       const Duration(seconds: 1),
       _checkIdleTimeout,
     );
-    _lockPinController.addListener(() => setState(() {}));
+    if (kDebugMode && !_desktopRealityDiagRan) {
+      _desktopRealityDiagRan = true;
+      unawaited(DatabaseService.instance.runSalesParityDiagnostic());
+    }
   }
 
   void _onData() => setState(() {});
@@ -96,7 +104,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     _activityTimer?.cancel();
     _headerSearchController.dispose();
     _lockPinController.dispose();
-    _lockPinFocus.dispose();
     _m.removeListener(_onData);
     super.dispose();
   }
@@ -128,12 +135,71 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         _lockErrorMsg = null;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _lockPinFocus.requestFocus();
+        if (mounted) _presentLockDialog();
       });
     } else if (_sessionLocked) {
-      // Refresh every second so the PIN-rate-limiter countdown stays current.
-      setState(() {});
+      // Refresh lock dialog for PIN-rate-limiter countdown.
+      _rebuildLockDialog?.call();
     }
+  }
+
+  void _presentLockDialog() {
+    if (_lockDialogVisible || !mounted || !_sessionLocked) return;
+    _lockDialogVisible = true;
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withValues(alpha: 0.72),
+        builder: (dialogContext) {
+          return PopScope(
+            canPop: false,
+            child: StatefulBuilder(
+              builder: (context, setDialogState) {
+                _rebuildLockDialog = () => setDialogState(() {});
+                return Dialog(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  insetPadding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 48,
+                  ),
+                  child: SessionLockDialogContent(
+                    pinController: _lockPinController,
+                    errorMessage: _lockErrorMsg,
+                    rateLimited: PinRateLimiter.instance.isLocked,
+                    lockoutSeconds:
+                        PinRateLimiter.instance.lockoutSecondsRemaining,
+                    onPinChanged: () {
+                      if (_lockErrorMsg != null) {
+                        setState(() => _lockErrorMsg = null);
+                      }
+                      _rebuildLockDialog?.call();
+                    },
+                    onSubmit: _unlockSession,
+                    onCancel: () {
+                      Navigator.of(dialogContext).pop();
+                      _lockDialogVisible = false;
+                      _rebuildLockDialog = null;
+                      setState(() => _sessionLocked = false);
+                      _exitToLogin();
+                    },
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ).whenComplete(() {
+        _lockDialogVisible = false;
+        _rebuildLockDialog = null;
+      }),
+    );
+  }
+
+  void _dismissLockDialog() {
+    if (!_lockDialogVisible || !mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
   // ── Re-authentication ──────────────────────────────────────────────────────
@@ -155,7 +221,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         _sessionLocked = false;
         _lockErrorMsg = null;
       });
+      _dismissLockDialog();
     } else {
+      _rebuildLockDialog?.call();
       final lockedOut = PinRateLimiter.instance.recordFailure();
       if (lockedOut) AuditLogService.instance.logPinLockout();
       AuditLogService.instance.logFailedPin();
@@ -165,6 +233,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             ? 'Shumë tentativa. Provo pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.'
             : 'PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.';
       });
+      _rebuildLockDialog?.call();
     }
   }
 
@@ -227,7 +296,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               ],
             ),
           ),
-          if (_sessionLocked) _buildLockOverlay(),
         ],
       ),
     );
@@ -273,210 +341,4 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     }
   }
 
-  // ── Lock overlay ───────────────────────────────────────────────────────────
-
-  Widget _buildLockOverlay() {
-    final rateLimited = PinRateLimiter.instance.isLocked;
-    final pinText = _lockPinController.text;
-    final canSubmit = !rateLimited &&
-        pinText.length >= 4 &&
-        _pinDigits.hasMatch(pinText);
-
-    return Positioned.fill(
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.72),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Container(
-              padding: const EdgeInsets.all(40),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    blurRadius: 40,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: const BoxDecoration(
-                      color: AppColors.lightGreenBg,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.lock_outline,
-                      size: 36,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Sesioni u Bllokua',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Vendos PIN-in e administratorit për të vazhduar.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  TextField(
-                    controller: _lockPinController,
-                    focusNode: _lockPinFocus,
-                    obscureText: true,
-                    obscuringCharacter: '•',
-                    keyboardType: TextInputType.number,
-                    enabled: !rateLimited,
-                    textInputAction: TextInputAction.done,
-                    maxLines: 1,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onChanged: (_) => setState(() => _lockErrorMsg = null),
-                    onSubmitted: (_) => _unlockSession(),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 6,
-                      color: AppColors.darkGreenText,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'PIN',
-                      hintStyle: TextStyle(
-                        fontSize: 18,
-                        color: AppColors.lightGreenText.withValues(alpha: 0.7),
-                      ),
-                      filled: true,
-                      fillColor: AppColors.beige,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 18,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.lightGreenBorderEmpty(),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.lightGreenBorderEmpty(),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.primaryGreen,
-                          width: 2,
-                        ),
-                      ),
-                      disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.lightGreenBorderEmpty(),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (rateLimited) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.negativeBg,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppColors.negativeText.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Text(
-                        'Shumë tentativa. Provo pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.negativeText,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ] else if (_lockErrorMsg != null) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3CD),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        _lockErrorMsg!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF856404),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: canSubmit ? _unlockSession : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: AppColors.lightGreenBg,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Shkyç',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _exitToLogin,
-                    child: const Text(
-                      'Dil nga sistemi',
-                      style: TextStyle(color: AppColors.mediumGreenText),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

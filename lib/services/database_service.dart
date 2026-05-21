@@ -703,53 +703,67 @@ class DatabaseService {
     return db.query('sales', orderBy: 'timestamp DESC');
   }
 
-  /// [ParityDiag:desktop] — TEMP. Prints sales + outbox parity data to debug console.
-  /// Call from a dev/settings screen or on startup when diagnosing desktop↔mobile count mismatch.
-  /// Remove after root cause is confirmed.
+  /// [DesktopReality] — TEMP. Latest completed sales in SQLite + matching outbox rows.
+  /// Triggered from manager dashboard in debug mode. Remove after parity confirmed.
   Future<void> runSalesParityDiagnostic() async {
     final db = await database;
 
     final sales = await db.rawQuery('''
       SELECT uuid, total, timestamp, syncStatus, deletedAt, businessId, branchId
       FROM sales
+      WHERE deletedAt IS NULL
       ORDER BY timestamp DESC
-      LIMIT 50
+      LIMIT 20
     ''');
-    debugPrint('[ParityDiag:desktop] salesCount=${sales.length}');
+
+    debugPrint('[DesktopReality] salesCount=${sales.length}');
     for (final s in sales) {
       debugPrint(
-        '[ParityDiag:desktop] sale uuid=${s['uuid']} '
+        '[DesktopReality] sale uuid=${s['uuid']} '
         'total=${s['total']} soldAt=${s['timestamp']} '
-        'syncStatus=${s['syncStatus']} deletedAt=${s['deletedAt']} '
+        'status=completed syncStatus=${s['syncStatus']} '
+        'deletedAt=${s['deletedAt']} '
         'businessId=${s['businessId']} branchId=${s['branchId']}',
       );
     }
 
+    if (sales.isEmpty) return;
+
+    final uuids = sales
+        .map((s) => s['uuid'] as String?)
+        .whereType<String>()
+        .toList();
+    final placeholders = List.filled(uuids.length, '?').join(',');
     final outbox = await db.rawQuery('''
-      SELECT entityType, entityUuid, syncStatus, retryCount, lastError, createdAt
+      SELECT entityType, entityUuid, syncStatus, retryCount, lastError
       FROM outbox
-      WHERE entityType IN ('sales', 'sale_lines')
-      ORDER BY createdAt DESC
-      LIMIT 50
-    ''');
-    final pendingSales = outbox
-        .where((r) => r['entityType'] == 'sales' && r['syncStatus'] == 'pending')
-        .length;
-    final failedSales = outbox
-        .where((r) => r['entityType'] == 'sales' && r['syncStatus'] == 'failed')
-        .length;
-    final syncedSales = outbox
-        .where((r) => r['entityType'] == 'sales' && r['syncStatus'] == 'synced')
-        .length;
+      WHERE entityType = 'sales' AND entityUuid IN ($placeholders)
+    ''', uuids);
+
+    final pending = outbox.where((r) => r['syncStatus'] == 'pending').length;
+    final failed = outbox.where((r) => r['syncStatus'] == 'failed').length;
+    final synced = outbox.where((r) => r['syncStatus'] == 'synced').length;
     debugPrint(
-      '[ParityDiag:desktop] outbox sales: pending=$pendingSales '
-      'failed=$failedSales synced=$syncedSales',
+      '[DesktopReality] outboxForLatestSales pending=$pending '
+      'failed=$failed synced=$synced total=${outbox.length}',
     );
-    for (final o in outbox) {
+
+    final outboxByUuid = {
+      for (final o in outbox) o['entityUuid'] as String: o,
+    };
+    for (final uuid in uuids) {
+      final o = outboxByUuid[uuid];
+      if (o == null) {
+        debugPrint(
+          '[DesktopReality] outbox uuid=$uuid status=NOT_QUEUED '
+          'retryCount=0 lastError=null',
+        );
+        continue;
+      }
       debugPrint(
-        '[ParityDiag:desktop] outbox entityType=${o['entityType']} '
-        'entityUuid=${o['entityUuid']} syncStatus=${o['syncStatus']} '
-        'retryCount=${o['retryCount']} lastError=${o['lastError']}',
+        '[DesktopReality] outbox uuid=${o['entityUuid']} '
+        'status=${o['syncStatus']} retryCount=${o['retryCount']} '
+        'lastError=${o['lastError']}',
       );
     }
   }
