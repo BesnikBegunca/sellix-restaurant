@@ -1086,6 +1086,9 @@ class _LoginExitButton extends StatefulWidget {
 }
 
 class _LoginExitButtonState extends State<_LoginExitButton> {
+  static const Color _darkRed = Color(0xFF8B1A1A);
+  static const Color _darkRedHover = Color(0xFFA52A2A);
+
   bool _hover = false;
 
   @override
@@ -1098,30 +1101,16 @@ class _LoginExitButtonState extends State<_LoginExitButton> {
         cursor: SystemMouseCursors.click,
         child: GestureDetector(
           onTap: widget.onPressed,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+          behavior: HitTestBehavior.opaque,
+          child: SizedBox(
             width: 96,
             height: 96,
-            decoration: BoxDecoration(
-              color: _hover ? AppColors.white : AppColors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _hover
-                    ? AppColors.softRed.withValues(alpha: 0.35)
-                    : AppColors.lightGreenBorder,
+            child: Center(
+              child: Icon(
+                Icons.logout_rounded,
+                size: 48,
+                color: _hover ? _darkRedHover : _darkRed,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: _hover ? 0.1 : 0.05),
-                  blurRadius: _hover ? 16 : 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.logout_rounded,
-              size: 48,
-              color: _hover ? AppColors.softRed : AppColors.mediumGreenText,
             ),
           ),
         ),
