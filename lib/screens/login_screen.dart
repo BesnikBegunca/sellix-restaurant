@@ -1,16 +1,17 @@
 import 'dart:async';
+import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
+import '../services/activation_service.dart';
 import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_card_button.dart';
 import '../widgets/hover_interaction.dart';
-import '../widgets/hover_small_chip.dart';
 import '../widgets/num_key_body.dart';
 
 // Reuse hover widgets already defined in `hover_interaction.dart`.
@@ -39,6 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   DateTime _now = DateTime.now();
   Timer? _clockTimer;
+  int? _licenseDaysRemaining;
 
   @override
   void initState() {
@@ -48,6 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _now = DateTime.now());
     });
+    _refreshLicenseDaysRemaining();
+  }
+
+  Future<void> _refreshLicenseDaysRemaining() async {
+    final days = await ActivationService.instance.licenseDaysRemaining();
+    if (!mounted) return;
+    setState(() => _licenseDaysRemaining = days);
   }
 
   @override
@@ -266,12 +275,22 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  void _exitApplication() {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      exit(0);
+    } else {
+      SystemNavigator.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.beige,
       body: SafeArea(
-        child: LayoutBuilder(
+        child: Stack(
+          children: [
+            LayoutBuilder(
           builder: (context, constraints) {
             final narrow = constraints.maxWidth < 960;
             return Center(
@@ -324,6 +343,19 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           },
+        ),
+            if (_licenseDaysRemaining != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _LicenseExpiryChip(daysRemaining: _licenseDaysRemaining!),
+              ),
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: _LoginExitButton(onPressed: _exitApplication),
+            ),
+          ],
         ),
       ),
     );
@@ -454,7 +486,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: AppColors.darkGreenText,
               ),
               decoration: InputDecoration(
-                hintText: 'PIN!',
+                hintText: 'PIN',
                 hintStyle: TextStyle(
                   fontSize: 18,
                   color: AppColors.lightGreenText.withValues(alpha: 0.7),
@@ -662,82 +694,91 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-      child: IntrinsicHeight(
-        child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Column(
+          IntrinsicHeight(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Llogaritësi i Kusurit',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.darkGreenText,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Llogaritësi i Kusurit',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.darkGreenText,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _moneyField(
+                        label: 'Shuma e Faturës',
+                        value: _bill,
+                        selected: _calcField == 0,
+                        onTap: () => _setCalcField(0),
+                      ),
+                      const SizedBox(height: 12),
+                      _moneyField(
+                        label: 'Pagoi Klienti',
+                        value: _paid,
+                        selected: _calcField == 1,
+                        onTap: () => _setCalcField(1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Container(
+                          height: 1,
+                          color: AppColors.borderSubtle(0.1),
+                        ),
+                      ),
+                      const Text(
+                        'Kusuri',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.lightGreenText,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Container(
+                        height: 52,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        alignment: Alignment.centerLeft,
+                        decoration: BoxDecoration(
+                          color: change == null
+                              ? AppColors.beige
+                              : (negative
+                                  ? AppColors.negativeBg
+                                  : AppColors.lightGreenBg),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          change == null
+                              ? '0.00€'
+                              : '${change.abs().toStringAsFixed(2)}€${negative ? ' borxh' : ''}',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w600,
+                            color: change == null
+                                ? AppColors.lightGreenText
+                                : (negative
+                                    ? AppColors.negativeText
+                                    : AppColors.primaryGreen),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                _moneyField(
-                  label: 'Shuma e Faturës',
-                  value: _bill,
-                  selected: _calcField == 0,
-                  onTap: () => _setCalcField(0),
-                ),
-                const SizedBox(height: 12),
-                _moneyField(
-                  label: 'Pagoi Klienti',
-                  value: _paid,
-                  selected: _calcField == 1,
-                  onTap: () => _setCalcField(1),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Container(height: 1, color: AppColors.borderSubtle(0.1)),
-                ),
-                const Text(
-                  'Kusuri',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  alignment: Alignment.centerLeft,
-                  decoration: BoxDecoration(
-                    color: change == null
-                        ? AppColors.beige
-                        : (negative
-                            ? AppColors.negativeBg
-                            : AppColors.lightGreenBg),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    change == null
-                        ? '0.00€'
-                        : '${change.abs().toStringAsFixed(2)}€${negative ? ' borxh' : ''}',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      color: change == null
-                          ? AppColors.lightGreenText
-                          : (negative
-                                ? AppColors.negativeText
-                                : AppColors.primaryGreen),
-                    ),
-                  ),
-                ),
+                const SizedBox(width: 16),
+                SizedBox(width: 152, child: _calcNumpad()),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          SizedBox(width: 152, child: _calcNumpad()),
         ],
-      ),
       ),
     );
   }
@@ -961,6 +1002,118 @@ class _LoginScreenState extends State<LoginScreen> {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: NumKeyBody(label: label),
+      ),
+    );
+  }
+}
+
+/// Kënd i sipërm djathtas — ditë të mbetura të licencës.
+class _LicenseExpiryChip extends StatelessWidget {
+  const _LicenseExpiryChip({required this.daysRemaining});
+
+  final int daysRemaining;
+
+  String get _label {
+    if (daysRemaining < 0) return 'Licenca juaj ka skaduar';
+    if (daysRemaining == 0) return 'Licenca juaj skadon: sot';
+    if (daysRemaining == 1) return 'Licenca juaj skadon: 1 ditë';
+    return 'Licenca juaj skadon: $daysRemaining ditë';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final urgent = daysRemaining <= 7;
+    final expired = daysRemaining < 0;
+    final fg = expired
+        ? AppColors.negativeText
+        : (urgent ? AppColors.mutedOrange : AppColors.primaryGreen);
+    final bg = expired
+        ? AppColors.negativeBg
+        : (urgent
+            ? AppColors.mutedOrange.withValues(alpha: 0.12)
+            : AppColors.lightGreenBg);
+    final border = expired
+        ? AppColors.negativeText.withValues(alpha: 0.25)
+        : (urgent
+            ? AppColors.mutedOrange.withValues(alpha: 0.35)
+            : AppColors.lightGreenBorder);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            expired ? Icons.event_busy_outlined : Icons.event_outlined,
+            size: 18,
+            color: fg,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: fg,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dalje nga aplikacioni (kënd i poshtëm djathtas, jashtë kalkulatorit).
+class _LoginExitButton extends StatefulWidget {
+  const _LoginExitButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  State<_LoginExitButton> createState() => _LoginExitButtonState();
+}
+
+class _LoginExitButtonState extends State<_LoginExitButton> {
+  static const Color _darkRed = Color(0xFF8B1A1A);
+  static const Color _darkRedHover = Color(0xFFA52A2A);
+
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Mbyll aplikacionin',
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onPressed,
+          behavior: HitTestBehavior.opaque,
+          child: SizedBox(
+            width: 96,
+            height: 96,
+            child: Center(
+              child: Icon(
+                Icons.logout_rounded,
+                size: 48,
+                color: _hover ? _darkRedHover : _darkRed,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -3,31 +3,36 @@ import 'package:flutter/material.dart';
 import '../manager/manager_data.dart';
 import '../theme/app_colors.dart';
 
+/// Logo e përhershme e POS System (zëvendëson ikonën e kafes / logo të kompanisë).
 class GgLogoBox extends StatelessWidget {
-  const GgLogoBox({super.key, this.size = 48, this.radius = 12});
+  const GgLogoBox({
+    super.key,
+    this.size = 48,
+    this.radius = 12,
+    this.horizontal = true,
+  });
+
+  static const String permanentLogoAsset = 'assets/images/permanentlogo.png';
 
   final double size;
   final double radius;
 
+  /// Logoja është horizontale — jep më shumë gjerësi se lartësi.
+  final bool horizontal;
+
   @override
   Widget build(BuildContext context) {
-    final logo = ManagerData.instance.companyLogoBytes;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: logo == null ? AppColors.primaryGreen : null,
-        borderRadius: BorderRadius.circular(radius),
+    final height = size;
+    final width = horizontal ? size * 2.25 : size;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: Image.asset(
+        permanentLogoAsset,
+        width: width,
+        height: height,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
       ),
-      clipBehavior: logo != null ? Clip.hardEdge : Clip.none,
-      alignment: Alignment.center,
-      child: logo != null
-          ? Image.memory(logo, width: size, height: size, fit: BoxFit.contain)
-          : Icon(
-              Icons.local_cafe,
-              color: AppColors.white,
-              size: size * (28 / 48),
-            ),
     );
   }
 }

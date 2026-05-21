@@ -569,6 +569,19 @@ class ActivationService {
   Future<String?> activatedBusinessName() =>
       DatabaseService.instance.getAppMeta('activation_business_name');
 
+  /// Ditë të mbetura deri në skadimin e licencës (`null` = pa datë të ruajtur).
+  Future<int?> licenseDaysRemaining() async {
+    final raw =
+        await DatabaseService.instance.getAppMeta(_kLicenseExpiresAt);
+    if (raw == null || raw.trim().isEmpty) return null;
+    final expires = DateTime.tryParse(raw.trim());
+    if (expires == null) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final expiryDay = DateTime(expires.year, expires.month, expires.day);
+    return expiryDay.difference(today).inDays;
+  }
+
   static String _detectPlatform() {
     try {
       return Platform.operatingSystem;

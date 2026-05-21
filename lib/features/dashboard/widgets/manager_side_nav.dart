@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../widgets/gg_header.dart';
 
 class ManagerSideNav extends StatelessWidget {
   const ManagerSideNav({
@@ -59,19 +60,7 @@ class ManagerSideNav extends StatelessWidget {
                 child: expanded
                     ? Row(
                         children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGreen,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.restaurant,
-                              color: AppColors.white,
-                              size: 18,
-                            ),
-                          ),
+                          const GgLogoBox(size: 32, radius: 8),
                           const SizedBox(width: 10),
                           const Expanded(
                             child: Text(
@@ -90,11 +79,16 @@ class ManagerSideNav extends StatelessWidget {
                           ),
                         ],
                       )
-                    : Center(
-                        child: _ToggleButton(
-                          expanded: expanded,
-                          onPressed: onToggle,
-                        ),
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const GgLogoBox(size: 28, radius: 6),
+                          const SizedBox(height: 6),
+                          _ToggleButton(
+                            expanded: expanded,
+                            onPressed: onToggle,
+                          ),
+                        ],
                       ),
               ),
             ),
