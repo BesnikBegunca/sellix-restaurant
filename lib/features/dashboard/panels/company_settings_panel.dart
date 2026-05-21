@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -65,40 +64,6 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cilësimet e kompanisë u ruajtën.'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.primaryGreen,
-        ),
-      );
-    }
-  }
-
-  Future<void> _pickLogo() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final bytes = result.files.first.bytes;
-    if (bytes == null || bytes.isEmpty) return;
-    await widget.m.saveCompanyLogo(bytes);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Logo e kompanisë u ruajt.'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.primaryGreen,
-        ),
-      );
-    }
-  }
-
-  Future<void> _clearLogo() async {
-    await widget.m.clearCompanyLogo();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Logo e kompanisë u fshi.'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.primaryGreen,
         ),
@@ -237,104 +202,6 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 style: const TextStyle(fontSize: 15),
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _save(),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.lightGreenBg,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.lightGreenBorder),
-                    ),
-                    clipBehavior: Clip.hardEdge,
-                    child: widget.m.companyLogoBytes != null
-                        ? Image.memory(
-                            widget.m.companyLogoBytes!,
-                            fit: BoxFit.cover,
-                          )
-                        : const Icon(
-                            Icons.business,
-                            color: AppColors.mediumGreenText,
-                            size: 28,
-                          ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.m.companyLogoBytes != null
-                              ? 'Logo e Kompanisë'
-                              : 'Nuk ka logo',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.darkGreenText,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        const Text(
-                          'PNG, JPG or JPEG. Recommended 512×512 px.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.lightGreenText,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: _pickLogo,
-                              icon: const Icon(
-                                Icons.upload_outlined,
-                                size: 15,
-                              ),
-                              label: Text(
-                                widget.m.companyLogoBytes != null
-                                    ? 'Ndrysho logon'
-                                    : 'Ngarko logon',
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primaryGreen,
-                                side: const BorderSide(
-                                  color: AppColors.primaryGreen,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 8,
-                                ),
-                                textStyle: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            if (widget.m.companyLogoBytes != null) ...[
-                              const SizedBox(width: 8),
-                              TextButton.icon(
-                                onPressed: _clearLogo,
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  size: 15,
-                                ),
-                                label: const Text('Hiq'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.negativeText,
-                                  textStyle: const TextStyle(fontSize: 13),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
               if (_errorMsg != null) ...[
                 const SizedBox(height: 16),

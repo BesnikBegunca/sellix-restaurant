@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,7 +11,6 @@ import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_card_button.dart';
 import '../widgets/hover_interaction.dart';
-import '../widgets/hover_small_chip.dart';
 import '../widgets/num_key_body.dart';
 
 // Reuse hover widgets already defined in `hover_interaction.dart`.
@@ -264,6 +264,14 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const WaiterSelectionScreen()),
     );
+  }
+
+  void _exitApplication() {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      exit(0);
+    } else {
+      SystemNavigator.pop();
+    }
   }
 
   @override
@@ -662,82 +670,96 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-      child: IntrinsicHeight(
-        child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Column(
+          IntrinsicHeight(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Llogaritësi i Kusurit',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.darkGreenText,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Llogaritësi i Kusurit',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.darkGreenText,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _moneyField(
+                        label: 'Shuma e Faturës',
+                        value: _bill,
+                        selected: _calcField == 0,
+                        onTap: () => _setCalcField(0),
+                      ),
+                      const SizedBox(height: 12),
+                      _moneyField(
+                        label: 'Pagoi Klienti',
+                        value: _paid,
+                        selected: _calcField == 1,
+                        onTap: () => _setCalcField(1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Container(
+                          height: 1,
+                          color: AppColors.borderSubtle(0.1),
+                        ),
+                      ),
+                      const Text(
+                        'Kusuri',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.lightGreenText,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Container(
+                        height: 52,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        alignment: Alignment.centerLeft,
+                        decoration: BoxDecoration(
+                          color: change == null
+                              ? AppColors.beige
+                              : (negative
+                                  ? AppColors.negativeBg
+                                  : AppColors.lightGreenBg),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          change == null
+                              ? '0.00€'
+                              : '${change.abs().toStringAsFixed(2)}€${negative ? ' borxh' : ''}',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w600,
+                            color: change == null
+                                ? AppColors.lightGreenText
+                                : (negative
+                                    ? AppColors.negativeText
+                                    : AppColors.primaryGreen),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                _moneyField(
-                  label: 'Shuma e Faturës',
-                  value: _bill,
-                  selected: _calcField == 0,
-                  onTap: () => _setCalcField(0),
-                ),
-                const SizedBox(height: 12),
-                _moneyField(
-                  label: 'Pagoi Klienti',
-                  value: _paid,
-                  selected: _calcField == 1,
-                  onTap: () => _setCalcField(1),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Container(height: 1, color: AppColors.borderSubtle(0.1)),
-                ),
-                const Text(
-                  'Kusuri',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  alignment: Alignment.centerLeft,
-                  decoration: BoxDecoration(
-                    color: change == null
-                        ? AppColors.beige
-                        : (negative
-                            ? AppColors.negativeBg
-                            : AppColors.lightGreenBg),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    change == null
-                        ? '0.00€'
-                        : '${change.abs().toStringAsFixed(2)}€${negative ? ' borxh' : ''}',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      color: change == null
-                          ? AppColors.lightGreenText
-                          : (negative
-                                ? AppColors.negativeText
-                                : AppColors.primaryGreen),
-                    ),
-                  ),
-                ),
+                const SizedBox(width: 16),
+                SizedBox(width: 152, child: _calcNumpad()),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          SizedBox(width: 152, child: _calcNumpad()),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: _LoginExitButton(onPressed: _exitApplication),
+          ),
         ],
-      ),
       ),
     );
   }
@@ -961,6 +983,61 @@ class _LoginScreenState extends State<LoginScreen> {
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: NumKeyBody(label: label),
+      ),
+    );
+  }
+}
+
+/// Dalje nga aplikacioni (kënd i poshtëm majtas në login).
+class _LoginExitButton extends StatefulWidget {
+  const _LoginExitButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  State<_LoginExitButton> createState() => _LoginExitButtonState();
+}
+
+class _LoginExitButtonState extends State<_LoginExitButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Mbyll aplikacionin',
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onPressed,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: _hover ? AppColors.white : AppColors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _hover
+                    ? AppColors.softRed.withValues(alpha: 0.35)
+                    : AppColors.lightGreenBorder,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: _hover ? 0.08 : 0.04),
+                  blurRadius: _hover ? 12 : 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.logout_rounded,
+              size: 24,
+              color: _hover ? AppColors.softRed : AppColors.mediumGreenText,
+            ),
+          ),
+        ),
       ),
     );
   }
