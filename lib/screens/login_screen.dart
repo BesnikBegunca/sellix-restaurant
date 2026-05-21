@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
+import '../services/activation_service.dart';
 import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
 import '../theme/app_colors.dart';
@@ -39,6 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   DateTime _now = DateTime.now();
   Timer? _clockTimer;
+  int? _licenseDaysRemaining;
 
   @override
   void initState() {
@@ -48,6 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _now = DateTime.now());
     });
+    _refreshLicenseDaysRemaining();
+  }
+
+  Future<void> _refreshLicenseDaysRemaining() async {
+    final days = await ActivationService.instance.licenseDaysRemaining();
+    if (!mounted) return;
+    setState(() => _licenseDaysRemaining = days);
   }
 
   @override
@@ -279,7 +288,9 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.beige,
       body: SafeArea(
-        child: LayoutBuilder(
+        child: Stack(
+          children: [
+            LayoutBuilder(
           builder: (context, constraints) {
             final narrow = constraints.maxWidth < 960;
             return Center(
@@ -332,6 +343,19 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           },
+        ),
+            if (_licenseDaysRemaining != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _LicenseExpiryChip(daysRemaining: _licenseDaysRemaining!),
+              ),
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: _LoginExitButton(onPressed: _exitApplication),
+            ),
+          ],
         ),
       ),
     );
@@ -754,11 +778,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: _LoginExitButton(onPressed: _exitApplication),
-          ),
         ],
       ),
     );
@@ -988,7 +1007,75 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Dalje nga aplikacioni (kënd i poshtëm majtas në login).
+/// Kënd i sipërm djathtas — ditë të mbetura të licencës.
+class _LicenseExpiryChip extends StatelessWidget {
+  const _LicenseExpiryChip({required this.daysRemaining});
+
+  final int daysRemaining;
+
+  String get _label {
+    if (daysRemaining < 0) return 'Licenca juaj ka skaduar';
+    if (daysRemaining == 0) return 'Licenca juaj skadon: sot';
+    if (daysRemaining == 1) return 'Licenca juaj skadon: 1 ditë';
+    return 'Licenca juaj skadon: $daysRemaining ditë';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final urgent = daysRemaining <= 7;
+    final expired = daysRemaining < 0;
+    final fg = expired
+        ? AppColors.negativeText
+        : (urgent ? AppColors.mutedOrange : AppColors.primaryGreen);
+    final bg = expired
+        ? AppColors.negativeBg
+        : (urgent
+            ? AppColors.mutedOrange.withValues(alpha: 0.12)
+            : AppColors.lightGreenBg);
+    final border = expired
+        ? AppColors.negativeText.withValues(alpha: 0.25)
+        : (urgent
+            ? AppColors.mutedOrange.withValues(alpha: 0.35)
+            : AppColors.lightGreenBorder);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            expired ? Icons.event_busy_outlined : Icons.event_outlined,
+            size: 18,
+            color: fg,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: fg,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dalje nga aplikacioni (kënd i poshtëm djathtas, jashtë kalkulatorit).
 class _LoginExitButton extends StatefulWidget {
   const _LoginExitButton({required this.onPressed});
 
@@ -1013,11 +1100,11 @@ class _LoginExitButtonState extends State<_LoginExitButton> {
           onTap: widget.onPressed,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 48,
-            height: 48,
+            width: 96,
+            height: 96,
             decoration: BoxDecoration(
               color: _hover ? AppColors.white : AppColors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: _hover
                     ? AppColors.softRed.withValues(alpha: 0.35)
@@ -1025,15 +1112,15 @@ class _LoginExitButtonState extends State<_LoginExitButton> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: _hover ? 0.08 : 0.04),
-                  blurRadius: _hover ? 12 : 8,
-                  offset: const Offset(0, 3),
+                  color: Colors.black.withValues(alpha: _hover ? 0.1 : 0.05),
+                  blurRadius: _hover ? 16 : 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Icon(
               Icons.logout_rounded,
-              size: 24,
+              size: 48,
               color: _hover ? AppColors.softRed : AppColors.mediumGreenText,
             ),
           ),
