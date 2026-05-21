@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
 import '../services/audit_log_service.dart';
@@ -46,8 +47,10 @@ class _PinInputDialogState extends State<_PinInputDialog> {
             TextField(
               controller: _controller,
               keyboardType: TextInputType.number,
-              maxLength: 6,
               obscureText: true,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
               decoration: InputDecoration(
                 hintText: widget.hint,
                 counterText: '',

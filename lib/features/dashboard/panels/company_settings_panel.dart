@@ -140,8 +140,11 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       setState(() => _pinErrorMsg = 'Të gjitha fushat janë të detyrueshme.');
       return;
     }
-    if (!RegExp(r'^\d{4,6}$').hasMatch(newPin)) {
-      setState(() => _pinErrorMsg = 'PIN-i i ri duhet të ketë 4–6 shifra (vetëm numra).');
+    if (newPin.length < 4 || !RegExp(r'^\d+$').hasMatch(newPin)) {
+      setState(
+        () => _pinErrorMsg =
+            'PIN-i i ri: minimum 4 shifra, vetëm numra (pa kufi maksimal).',
+      );
       return;
     }
     if (newPin != confirmPin) {
@@ -485,7 +488,6 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 obscureText: true,
                 obscuringCharacter: '•',
                 keyboardType: TextInputType.number,
-                maxLength: 6,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: inputDeco('Shkruaj PIN-in aktual').copyWith(counterText: ''),
                 style: const TextStyle(fontSize: 15, letterSpacing: 4),
@@ -505,9 +507,9 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 obscureText: true,
                 obscuringCharacter: '•',
                 keyboardType: TextInputType.number,
-                maxLength: 6,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: inputDeco('4–6 shifra').copyWith(counterText: ''),
+                decoration: inputDeco('Minimum 4 shifra, vetëm numra')
+                    .copyWith(counterText: ''),
                 style: const TextStyle(fontSize: 15, letterSpacing: 4),
               ),
               const SizedBox(height: 16),
@@ -525,7 +527,6 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 obscureText: true,
                 obscuringCharacter: '•',
                 keyboardType: TextInputType.number,
-                maxLength: 6,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: inputDeco('Ripërsërit PIN-in e ri').copyWith(counterText: ''),
                 style: const TextStyle(fontSize: 15, letterSpacing: 4),
