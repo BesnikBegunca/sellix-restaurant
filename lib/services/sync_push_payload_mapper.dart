@@ -44,6 +44,12 @@ class SyncPushPayloadMapper {
     if (status == null || status.toString().isEmpty) {
       out['status'] = 'completed';
     }
+    out.remove('tableId');
+    out.remove('table_id');
+    out.remove('tableName');
+    out.remove('table_name');
+    out.remove('waiterName');
+    out.remove('waiter_name');
     // ignore: avoid_print
     print(
       '[TimezoneFix] payloadSoldAt=${out['soldAt']} '
@@ -104,6 +110,14 @@ class SyncPushPayloadMapper {
 
     final name = payload['name'] ?? payload['productName'];
     if (name != null) out['name'] = name;
+
+    // Order metadata belongs on sales only (not sent); strip if present on lines.
+    out.remove('tableId');
+    out.remove('table_id');
+    out.remove('tableName');
+    out.remove('table_name');
+    out.remove('waiterName');
+    out.remove('waiter_name');
 
     final saleUuidOut = out['saleUuid'];
     final saleUuidIsUuid = saleUuidOut is String &&
