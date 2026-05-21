@@ -374,6 +374,8 @@ class _MenuPanelState extends State<MenuPanel> {
                             child: _newProductImage != null
                                 ? productImage(
                                     _newProductImage,
+                                    width: 52,
+                                    height: 52,
                                     fit: BoxFit.cover,
                                     placeholder: () => const Icon(
                                       Icons.add_photo_alternate_outlined,
