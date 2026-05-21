@@ -454,7 +454,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: AppColors.darkGreenText,
               ),
               decoration: InputDecoration(
-                hintText: 'PIN!',
+                hintText: 'PIN',
                 hintStyle: TextStyle(
                   fontSize: 18,
                   color: AppColors.lightGreenText.withValues(alpha: 0.7),

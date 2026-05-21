@@ -1,11 +1,11 @@
-# Pas: flutter build windows --release
-# Kopjon app_config.json në Release dhe përgatit për Inno Setup.
+# Para build: .\scripts\sync_windows_app_icon.ps1
+# Pastaj: flutter build windows --release
+# Pastaj: ky skript (app_config + Inno)
 
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-if (-not (Test-Path "$root\pubspec.yaml")) {
-    $root = Split-Path -Parent $PSScriptRoot
-}
+$root = Split-Path -Parent $PSScriptRoot
+
+& (Join-Path $PSScriptRoot 'sync_windows_app_icon.ps1')
 
 $configSrc = Join-Path $root 'release\app_config.json'
 $configExample = Join-Path $root 'release\app_config.example.json'
@@ -25,4 +25,4 @@ if (-not (Test-Path $releaseDir)) {
 
 Copy-Item $configSrc (Join-Path $releaseDir 'app_config.json') -Force
 Write-Host "OK: app_config.json -> $releaseDir"
-Write-Host "Tani kompiloni installers\first_script.iss në Inno Setup."
+Write-Host "Tani kompiloni installers\urimi_script.iss (ose windows\installer\pos_system.iss) në Inno Setup."

@@ -2,10 +2,11 @@
 ; Requires Inno Setup 6.x — https://jrsoftware.org/isinfo.php
 ;
 ; BEFORE building this installer:
-;   1. Run: flutter build windows --release
-;   2. Copy release\app_config.example.json to release\app_config.json
-;   3. Edit release\app_config.json with the production apiBaseUrl
-;   4. Open this file in Inno Setup Compiler and click Build → Compile
+;   1. Run: .\scripts\sync_windows_app_icon.ps1  (iconpos.ico -> app_icon.ico)
+;   2. Run: flutter build windows --release
+;   3. Copy release\app_config.example.json to release\app_config.json
+;   4. Run: .\scripts\prepare_windows_release.ps1
+;   5. Open this file in Inno Setup Compiler and click Build → Compile
 
 #define AppName      "POS System"
 #define AppVersion   "1.0.0"
@@ -13,11 +14,14 @@
 #define AppExeName   "pos_system.exe"
 #define ReleaseDir   "..\..\build\windows\x64\runner\Release"
 #define ConfigDir    "..\..\release"
+#define AppIcon      "..\..\assets\images\iconpos.ico"
 
 [Setup]
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
+SetupIconFile={#AppIcon}
+UninstallDisplayIcon={#AppIcon}
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
@@ -40,9 +44,12 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: "{#ReleaseDir}\*"; DestDir: "{app}"; \
   Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Production API config — operator must fill this in before compiling
-Source: "{#ConfigDir}\app_config.json"; DestDir: "{app}"; \
-  Flags: ignoreversion
+; Production API config pranë exe (app_config.json ose shembulli)
+#ifnexist "..\..\release\app_config.json"
+Source: "{#ConfigDir}\app_config.example.json"; DestDir: "{app}"; DestName: "app_config.json"; Flags: ignoreversion
+#else
+Source: "{#ConfigDir}\app_config.json"; DestDir: "{app}"; Flags: ignoreversion
+#endif
 
 [Icons]
 ; Start Menu shortcut
