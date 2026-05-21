@@ -58,7 +58,6 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
         children: [
           GgAppHeader(
             showBack: true,
-            showLogo: false,
             title: 'Tavolinat',
             userName: widget.waiterName,
             onBack: () => Navigator.of(context).maybePop(),

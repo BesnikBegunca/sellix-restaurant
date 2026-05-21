@@ -9,6 +9,7 @@ import '../services/background_sync_service.dart';
 import '../services/local_tenant_data_service.dart';
 import '../services/runtime_config_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/gg_header.dart';
 import '../models/tenant_activation_gate_result.dart';
 /// First-run screen shown when the device has not yet been activated.
 ///
@@ -195,20 +196,8 @@ class _ActivationScreenState extends State<ActivationScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Center(
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: AppColors.lightGreenBg,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.store_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 34,
-                        ),
-                      ),
+                    const Center(
+                      child: GgLogoBox(size: 64, radius: 16),
                     ),
                     const SizedBox(height: 24),
                     const Text(

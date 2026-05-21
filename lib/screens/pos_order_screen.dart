@@ -488,7 +488,6 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
               children: [
                 GgAppHeader(
                   showBack: true,
-                  showLogo: false,
                   title: 'Porosia',
                   userName: widget.waiterName,
                   onBack: () => Navigator.of(context).maybePop(),
@@ -515,7 +514,6 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
             children: [
               GgAppHeader(
                 showBack: true,
-                showLogo: false,
                 title: 'Porosia',
                 userName: widget.waiterName,
                 onBack: () => Navigator.of(context).maybePop(),
