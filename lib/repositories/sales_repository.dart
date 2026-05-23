@@ -58,6 +58,8 @@ class SalesRepository {
     required double total,
     required List<Map<String, dynamic>> lines,
     int? shiftId,
+    int? orderNumber,
+    String? tableName,
   }) =>
       _db.insertSaleWithLines(
         saleUuid: saleUuid,
@@ -66,6 +68,8 @@ class SalesRepository {
         total: total,
         lines: lines,
         shiftId: shiftId,
+        orderNumber: orderNumber,
+        tableName: tableName,
       );
 
   Future<String> resolvePaymentSaleUuid({

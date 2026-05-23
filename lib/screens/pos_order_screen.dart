@@ -183,6 +183,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           tableId: widget.tableNumber,
           tableName: 'Tavolina ${widget.tableNumber}',
           lines: combined,
+          orderNumber:
+              _activeOrderNumber > 0 ? _activeOrderNumber : null,
         );
         // ignore: avoid_print
         print(

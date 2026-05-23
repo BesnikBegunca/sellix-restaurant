@@ -50,17 +50,38 @@ void main() {
       expect(out['soldAt'], utc);
     });
 
-    test('sales strips order metadata from push payload', () {
+    test('sales preserves order metadata in push payload', () {
       final out = SyncPushPayloadMapper.mapPayload('sales', {
         'total': 25.5,
         'timestamp': '2026-05-19T12:00:00.000Z',
-        'tableId': 1,
-        'tableName': 'Tavolina 1',
-        'waiterName': 'John Smith',
+        'tableId': 3,
+        'tableName': 'Tavolina 3',
+        'waiterName': 'Arta',
+        'orderNumber': 152,
       });
-      expect(out.containsKey('tableId'), isFalse);
-      expect(out.containsKey('tableName'), isFalse);
-      expect(out.containsKey('waiterName'), isFalse);
+      expect(out['tableId'], 3);
+      expect(out['tableName'], 'Tavolina 3');
+      expect(out['waiterName'], 'Arta');
+      expect(out['orderNumber'], 152);
+      expect(out['soldAt'], '2026-05-19T12:00:00.000Z');
+      expect(out['status'], 'completed');
+    });
+
+    test('sales normalizes snake_case order metadata aliases', () {
+      final out = SyncPushPayloadMapper.mapPayload('sales', {
+        'total': 10.0,
+        'timestamp': '2026-05-19T12:00:00.000Z',
+        'table_id': 5,
+        'table_name': 'Tavolina 5',
+        'waiter_name': 'Blend',
+        'order_number': 99,
+      });
+      expect(out['tableId'], 5);
+      expect(out['tableName'], 'Tavolina 5');
+      expect(out['waiterName'], 'Blend');
+      expect(out['orderNumber'], 99);
+      expect(out.containsKey('table_id'), isFalse);
+      expect(out.containsKey('waiter_name'), isFalse);
     });
 
     test('sale_lines strips order metadata from push payload', () {

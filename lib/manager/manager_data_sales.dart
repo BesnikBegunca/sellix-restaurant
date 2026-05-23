@@ -43,6 +43,7 @@ extension SalesMethods on ManagerData {
     required int tableId,
     required String tableName,
     required List<CurrentOrderLine> lines,
+    int? orderNumber,
   }) async {
     LicenseGateService.instance.enforceOrThrow();
     if (waiterName.trim().isEmpty) {
@@ -83,6 +84,8 @@ extension SalesMethods on ManagerData {
       total: total,
       lines: lineMaps,
       shiftId: _currentShiftId,
+      orderNumber: orderNumber,
+      tableName: tableName,
     );
 
     if (result.wasExisting) {

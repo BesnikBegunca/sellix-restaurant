@@ -40,16 +40,11 @@ class SyncPushPayloadMapper {
   static Map<String, dynamic> _mapSalesPayload(Map<String, dynamic> payload) {
     final out = Map<String, dynamic>.from(payload);
     _applySoldAtUtc(out);
+    _normalizeSalesOrderMetadata(out);
     final status = out['status'];
     if (status == null || status.toString().isEmpty) {
       out['status'] = 'completed';
     }
-    out.remove('tableId');
-    out.remove('table_id');
-    out.remove('tableName');
-    out.remove('table_name');
-    out.remove('waiterName');
-    out.remove('waiter_name');
     // ignore: avoid_print
     print(
       '[TimezoneFix] payloadSoldAt=${out['soldAt']} '
@@ -161,4 +156,39 @@ class SyncPushPayloadMapper {
 
   static bool _looksLikeUuid(String value) =>
       _uuidPattern.hasMatch(value.trim());
+
+  /// Canonicalizes order metadata field names for pos_api (preserves values).
+  static void _normalizeSalesOrderMetadata(Map<String, dynamic> out) {
+    _copyAlias(out, 'waiterName', 'waiter_name');
+    _copyAlias(out, 'tableName', 'table_name');
+    _copyAlias(out, 'orderNumber', 'order_number');
+
+    final tableId = out['tableId'] ?? out['table_id'];
+    if (tableId != null && tableId.toString().trim().isNotEmpty) {
+      out['tableId'] = tableId is num ? tableId.toInt() : tableId;
+      out.remove('table_id');
+    }
+
+    final orderNumber = out['orderNumber'];
+    if (orderNumber is num && orderNumber > 0) {
+      out['orderNumber'] = orderNumber.toInt();
+    }
+  }
+
+  static void _copyAlias(
+    Map<String, dynamic> out,
+    String canonical,
+    String alias,
+  ) {
+    final current = out[canonical];
+    if (current != null && current.toString().trim().isNotEmpty) {
+      out.remove(alias);
+      return;
+    }
+    final fromAlias = out[alias];
+    if (fromAlias != null && fromAlias.toString().trim().isNotEmpty) {
+      out[canonical] = fromAlias;
+    }
+    out.remove(alias);
+  }
 }

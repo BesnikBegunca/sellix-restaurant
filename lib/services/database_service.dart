@@ -78,7 +78,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 22,
+      version: 23,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
@@ -878,6 +878,8 @@ class DatabaseService {
     required double total,
     required List<Map<String, dynamic>> lines,
     int? shiftId,
+    int? orderNumber,
+    String? tableName,
   }) async {
     final db = await database;
     final scope = await syncScope();
@@ -920,6 +922,9 @@ class DatabaseService {
           'total': total,
           'timestamp': timestamp,
           if (shiftId != null) 'shiftId': shiftId,
+          if (orderNumber != null && orderNumber > 0) 'orderNumber': orderNumber,
+          if (tableName != null && tableName.trim().isNotEmpty)
+            'tableName': tableName.trim(),
           'uuid': saleUuid,
           ...scope,
           ...syncStatus(),
