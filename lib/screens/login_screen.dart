@@ -1033,9 +1033,6 @@ class _LoginExitButton extends StatefulWidget {
 }
 
 class _LoginExitButtonState extends State<_LoginExitButton> {
-  static const Color _darkRed = Color(0xFF8B1A1A);
-  static const Color _darkRedHover = Color(0xFFA52A2A);
-
   bool _hover = false;
 
   @override
@@ -1056,7 +1053,9 @@ class _LoginExitButtonState extends State<_LoginExitButton> {
               child: Icon(
                 Icons.logout_rounded,
                 size: 48,
-                color: _hover ? _darkRedHover : _darkRed,
+                color: _hover
+                    ? AppColors.softRed.withValues(alpha: 0.82)
+                    : AppColors.softRed,
               ),
             ),
           ),
