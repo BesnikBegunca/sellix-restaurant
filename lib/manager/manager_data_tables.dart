@@ -29,6 +29,7 @@ extension TablesMethods on ManagerData {
   }
 
   Future<void> updateTableTotal(int tableId, double total, String waiterName) async {
+    LicenseGateService.instance.enforceOrThrow();
     final current = _cashierTables.firstWhere(
       (t) => t.id == tableId,
       orElse: () => TableInfo(id: tableId, occupied: false),
@@ -190,6 +191,7 @@ extension TablesMethods on ManagerData {
   }
 
   Future<void> clearTable(int tableId, String waiterName) async {
+    LicenseGateService.instance.enforceOrThrow();
     await clearPendingPaymentSaleUuid(tableId, waiterName);
     final current = _cashierTables.firstWhere(
       (t) => t.id == tableId,
@@ -239,6 +241,7 @@ extension TablesMethods on ManagerData {
     required String waiterName,
     required List<CurrentOrderLine> lines,
   }) async {
+    LicenseGateService.instance.enforceOrThrow();
     final currentTotal = lines.fold<double>(
       0,
       (sum, l) => sum + (l.product.price * l.qty),

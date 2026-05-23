@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import '../repositories/sync_repository.dart';
 import 'activation_service.dart';
+import 'api_enforcement_parser.dart';
 import 'license_gate_service.dart';
 import 'api_client.dart';
 import 'connectivity_service.dart';
@@ -225,7 +226,7 @@ class BackgroundSyncService {
           data: body,
         );
       } on DioException catch (e) {
-        if (_handleLicenseSuspended(e)) return;
+        if (await _handleLicenseSuspended(e)) return;
         if (e.response?.statusCode == 401) {
           // Access token expired — attempt one token refresh then retry.
           await _handleSyncUnauthorized();
@@ -329,7 +330,7 @@ class BackgroundSyncService {
         );
       }
     } on DioException catch (e) {
-      if (_handleLicenseSuspended(e)) return;
+      if (await _handleLicenseSuspended(e)) return;
       final status = e.response?.statusCode;
       _recordFailureAndSchedule(
         status == 400
@@ -421,7 +422,7 @@ class BackgroundSyncService {
           queryParameters: queryParams,
         );
       } on DioException catch (e) {
-        if (_handleLicenseSuspended(e)) return;
+        if (await _handleLicenseSuspended(e)) return;
         if (e.response?.statusCode == 401) {
           await _handleSyncUnauthorized();
           response = await ApiClient.instance.get<Map<String, dynamic>>(
@@ -481,7 +482,7 @@ class BackgroundSyncService {
         );
       }
     } on DioException catch (e) {
-      if (_handleLicenseSuspended(e)) return;
+      if (await _handleLicenseSuspended(e)) return;
       _recordFailureAndSchedule(
         'Pull network error: ${e.message ?? e.type.name}',
       );
@@ -512,7 +513,7 @@ class BackgroundSyncService {
     try {
       await ActivationService.instance.refreshActivationToken();
     } on DioException catch (e) {
-      if (_handleLicenseSuspended(e)) return;
+      if (await _handleLicenseSuspended(e)) return;
       final statusCode = e.response?.statusCode;
       if (statusCode != null && statusCode >= 400 && statusCode < 500) {
         stop();
@@ -532,9 +533,17 @@ class BackgroundSyncService {
   }
 
   /// Returns `true` when sync should stop because the tenant is suspended.
-  bool _handleLicenseSuspended(DioException error) {
-    if (!LicenseGateService.isLicenseSuspendedError(error)) return false;
-    LicenseGateService.instance.block();
+  Future<bool> _handleLicenseSuspended(DioException error) async {
+    if (ApiEnforcementParser.requiresDeviceRevoke(error)) {
+      stop();
+      SyncStatusService.instance.stop();
+      await ActivationService.instance.handleRevokedByServer(
+        reason: ActivationService.messageForRevocation(error),
+      );
+      return true;
+    }
+    if (!ApiEnforcementParser.requiresLicenseBlock(error)) return false;
+    await LicenseGateService.instance.handleDioException(error);
     stop();
     _recordFailureAndSchedule('License suspended — sync paused');
     if (kDebugMode) {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../services/activation_service.dart';
 import '../services/background_sync_service.dart';
+import '../services/api_enforcement_parser.dart';
 import '../services/license_gate_service.dart';
 import '../theme/app_colors.dart';
 
@@ -42,12 +43,17 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
       });
     } on DioException catch (e) {
       if (!mounted) return;
-      if (LicenseGateService.isLicenseSuspendedError(e)) {
-        LicenseGateService.instance.block();
+      if (await LicenseGateService.instance.handleDioException(e)) {
         setState(() {
           _statusMessage =
               'Licenca është ende pezulluar. Kontaktoni administratorin.';
         });
+      } else if (ApiEnforcementParser.requiresDeviceRevoke(e)) {
+        await ActivationService.instance.handleRevokedByServer(
+          reason: ActivationService.messageForRevocation(e),
+        );
+        if (!mounted) return;
+        return;
       } else if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout) {
         setState(() {
@@ -147,7 +153,7 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
                                 color: AppColors.white,
                               ),
                             )
-                          : const Text('Kontrollo statusin'),
+                          : const Text('Riprovo'),
                     ),
                   ),
                 ],

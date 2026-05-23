@@ -8,6 +8,7 @@ extension SalesMethods on ManagerData {
     double amount, {
     int tableId = 0,
   }) async {
+    LicenseGateService.instance.enforceOrThrow();
     if (waiterName.trim().isEmpty) return;
     final now = DateTime.now();
     await SalesRepository.instance.insertSale(
@@ -43,6 +44,7 @@ extension SalesMethods on ManagerData {
     required String tableName,
     required List<CurrentOrderLine> lines,
   }) async {
+    LicenseGateService.instance.enforceOrThrow();
     if (waiterName.trim().isEmpty) {
       throw StateError('Kamarieri mungon.');
     }

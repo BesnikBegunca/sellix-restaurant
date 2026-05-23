@@ -38,19 +38,36 @@ void main() {
       expect(ActivationService.shouldTreatAsDeviceRevocation(error), isFalse);
     });
 
-    test('403 is not device revocation', () {
+    test('403 LICENSE_SUSPENDED is not device revocation', () {
       final error = DioException(
         requestOptions: RequestOptions(path: kEndpointVerifyActivation),
         response: Response(
-          requestOptions: RequestOptions(
-            path: kEndpointVerifyActivation,
-            data: {'message': 'License suspended'},
-          ),
+          requestOptions: RequestOptions(path: kEndpointVerifyActivation),
           statusCode: 403,
+          data: {
+            'code': 'LICENSE_SUSPENDED',
+            'message': 'License suspended',
+          },
         ),
         type: DioExceptionType.badResponse,
       );
       expect(ActivationService.shouldTreatAsDeviceRevocation(error), isFalse);
+    });
+
+    test('403 DEVICE_REVOKED is device revocation', () {
+      final error = DioException(
+        requestOptions: RequestOptions(path: kEndpointVerifyActivation),
+        response: Response(
+          requestOptions: RequestOptions(path: kEndpointVerifyActivation),
+          statusCode: 403,
+          data: {
+            'code': 'DEVICE_REVOKED',
+            'message': 'Device revoked',
+          },
+        ),
+        type: DioExceptionType.badResponse,
+      );
+      expect(ActivationService.shouldTreatAsDeviceRevocation(error), isTrue);
     });
   });
 }
