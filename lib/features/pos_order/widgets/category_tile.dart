@@ -55,30 +55,17 @@ class _CategoryTileState extends State<CategoryTile> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.data.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                          color: a
-                              ? AppColors.darkGreenText
-                              : AppColors.mediumGreenText,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      widget.data.icon,
-                      size: 20,
-                      color: a
-                          ? AppColors.primaryGreen
-                          : AppColors.lightGreenText,
-                    ),
-                  ],
+                Text(
+                  widget.data.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                    color: a
+                        ? AppColors.darkGreenText
+                        : AppColors.mediumGreenText,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
