@@ -970,6 +970,12 @@ class DatabaseSchema {
       await db.execute("ALTER TABLE sales ADD COLUMN shiftId INTEGER");
     } catch (_) {}
     try {
+      await db.execute('ALTER TABLE sales ADD COLUMN orderNumber INTEGER');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE sales ADD COLUMN tableName TEXT');
+    } catch (_) {}
+    try {
       await db.execute("ALTER TABLE expenses ADD COLUMN shiftId INTEGER");
     } catch (_) {}
     try {
