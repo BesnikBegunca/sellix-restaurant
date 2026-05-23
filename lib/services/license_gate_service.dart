@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import 'activation_license_controller.dart';
 import 'api_enforcement_parser.dart';
 import 'database_service.dart';
 
@@ -107,6 +108,7 @@ class LicenseGateService extends ChangeNotifier {
     _blockedAt = null;
     await clearPersistedStateQuietly();
     notifyListeners();
+    await ActivationLicenseController.instance.reloadFromStorage();
   }
 
   void enforceOrThrow() {

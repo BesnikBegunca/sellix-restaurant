@@ -32,7 +32,7 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
       if (!mounted) return;
 
       if (ok && !LicenseGateService.instance.isBlocked) {
-        LicenseGateService.instance.unblock();
+        await LicenseGateService.instance.unblock();
         BackgroundSyncService.instance.start();
         return;
       }

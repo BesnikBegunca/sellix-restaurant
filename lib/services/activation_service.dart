@@ -11,6 +11,7 @@ import 'api_client.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
 import 'activation_state_controller.dart';
+import 'activation_license_controller.dart';
 import 'api_enforcement_parser.dart';
 import 'license_gate_service.dart';
 import 'local_tenant_data_service.dart';
@@ -174,6 +175,7 @@ class ActivationService {
     ActivationStateController.instance.setActivated(true);
 
     if (kDebugMode) debugPrint('[Activation]   final activated=true');
+    await ActivationLicenseController.instance.reloadFromStorage();
     return true;
   }
 
@@ -376,6 +378,9 @@ class ActivationService {
       if (data != null) {
         final handled = await _handleActivationEnforcementBody(data);
         if (handled) return false;
+        await _syncLicenseExpiresFromActivationBody(data);
+      } else {
+        await ActivationLicenseController.instance.reloadFromStorage();
       }
       return !LicenseGateService.instance.isBlocked;
     } on DioException catch (e) {
@@ -411,6 +416,9 @@ class ActivationService {
         if (data != null) {
           final handled = await _handleActivationEnforcementBody(data);
           if (handled) return false;
+          await _syncLicenseExpiresFromActivationBody(data);
+        } else {
+          await ActivationLicenseController.instance.reloadFromStorage();
         }
         return !LicenseGateService.instance.isBlocked;
       } on DioException catch (retry) {
@@ -493,13 +501,11 @@ class ActivationService {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
     );
-    final expiresAt = data['licenseExpiresAt'] as String?;
-    if (expiresAt != null) {
-      await DatabaseService.instance.setAppMeta(_kLicenseExpiresAt, expiresAt);
-    }
+    await _syncLicenseExpiresFromActivationBody(data);
 
     ApiClient.instance.setAccessToken(newAccessToken);
-    LicenseGateService.instance.unblock();
+    await LicenseGateService.instance.unblock();
+    await ActivationLicenseController.instance.reloadFromStorage();
     if (kDebugMode) debugPrint('ActivationService: access token refreshed');
   }
 
@@ -528,6 +534,7 @@ class ActivationService {
     await db.setAppMeta(_kLicenseExpiresAt, '');
 
     await LicenseGateService.instance.clearForRevocation();
+    ActivationLicenseController.instance.clearInMemory();
 
     await db.setAppMeta('sync_last_error', '');
     await db.setAppMeta('sync_last_push_at', '');
@@ -591,9 +598,8 @@ class ActivationService {
     );
     await _clearLegacyTokenMeta(db);
     if (r.licenseExpiresAt != null) {
-      await DatabaseService.instance.setAppMeta(
-        _kLicenseExpiresAt,
-        r.licenseExpiresAt!,
+      await ActivationLicenseController.instance.setExpiresAt(
+        r.licenseExpiresAt,
       );
     }
     await DatabaseService.instance.setAppMeta(_kCompleted, 'true');
@@ -619,15 +625,21 @@ class ActivationService {
 
   /// Ditë të mbetura deri në skadimin e licencës (`null` = pa datë të ruajtur).
   Future<int?> licenseDaysRemaining() async {
-    final raw =
-        await DatabaseService.instance.getAppMeta(_kLicenseExpiresAt);
-    if (raw == null || raw.trim().isEmpty) return null;
-    final expires = DateTime.tryParse(raw.trim());
-    if (expires == null) return null;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final expiryDay = DateTime(expires.year, expires.month, expires.day);
-    return expiryDay.difference(today).inDays;
+    if (ActivationLicenseController.instance.expiresAtIso == null) {
+      await ActivationLicenseController.instance.reloadFromStorage();
+    }
+    return ActivationLicenseController.instance.daysRemaining;
+  }
+
+  Future<void> _syncLicenseExpiresFromActivationBody(
+    Map<String, dynamic> data,
+  ) async {
+    final expires = data['licenseExpiresAt'];
+    if (expires is String && expires.trim().isNotEmpty) {
+      await ActivationLicenseController.instance.setExpiresAt(expires);
+      return;
+    }
+    await ActivationLicenseController.instance.reloadFromStorage();
   }
 
   static String _detectPlatform() {

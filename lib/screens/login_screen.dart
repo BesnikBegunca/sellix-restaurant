@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
-import '../services/activation_service.dart';
+import '../services/activation_license_controller.dart';
 import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
 import '../theme/app_colors.dart';
@@ -50,7 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _now = DateTime.now());
     });
-    _refreshLicenseDaysRemaining();
+    _syncLicenseBadgeFromController();
+    ActivationLicenseController.instance.addListener(_onLicenseExpiryChanged);
+    unawaited(_warmLicenseExpiryCache());
     _schedulePinFocus();
   }
 
@@ -80,15 +82,29 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {});
   }
 
-  Future<void> _refreshLicenseDaysRemaining() async {
-    final days = await ActivationService.instance.licenseDaysRemaining();
+  Future<void> _warmLicenseExpiryCache() async {
+    await ActivationLicenseController.instance.reloadFromStorage();
     if (!mounted) return;
-    setState(() => _licenseDaysRemaining = days);
+    _syncLicenseBadgeFromController();
+  }
+
+  void _onLicenseExpiryChanged() {
+    if (!mounted) return;
+    _syncLicenseBadgeFromController();
+  }
+
+  void _syncLicenseBadgeFromController() {
+    setState(() {
+      _licenseDaysRemaining =
+          ActivationLicenseController.instance.daysRemaining;
+    });
   }
 
   @override
   void dispose() {
     _clockTimer?.cancel();
+    ActivationLicenseController.instance
+        .removeListener(_onLicenseExpiryChanged);
     _pinController.dispose();
     _pinFocus.dispose();
     ManagerData.instance.removeListener(_onDataChanged);
