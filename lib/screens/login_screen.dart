@@ -46,11 +46,38 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     ManagerData.instance.addListener(_onDataChanged);
-    _pinController.addListener(() => setState(() {}));
+    _pinController.addListener(_onPinControllerChanged);
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _now = DateTime.now());
     });
     _refreshLicenseDaysRemaining();
+    _schedulePinFocus();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _schedulePinFocus();
+  }
+
+  void _schedulePinFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _pinFocus.requestFocus();
+    });
+  }
+
+  void _onPinControllerChanged() {
+    final raw = _pinController.text;
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits != raw) {
+      _pinController.value = TextEditingValue(
+        text: digits,
+        selection: TextSelection.collapsed(offset: digits.length),
+      );
+      return;
+    }
+    setState(() {});
   }
 
   Future<void> _refreshLicenseDaysRemaining() async {
@@ -178,6 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
+      _schedulePinFocus();
       return;
     }
 
@@ -231,6 +259,7 @@ class _LoginScreenState extends State<LoginScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+    _schedulePinFocus();
   }
 
   void _showAdminPinSetupDialog(String pin) {
@@ -471,11 +500,14 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: _pinController,
               focusNode: _pinFocus,
+              autofocus: true,
               obscureText: true,
               obscuringCharacter: '•',
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
               maxLines: 1,
+              enableSuggestions: false,
+              autocorrect: false,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
