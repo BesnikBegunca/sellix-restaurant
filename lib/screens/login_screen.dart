@@ -1011,54 +1011,12 @@ class _LicenseExpiryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final urgent = daysRemaining <= 7;
-    final expired = daysRemaining < 0;
-    final fg = expired
-        ? AppColors.negativeText
-        : (urgent ? AppColors.mutedOrange : AppColors.primaryGreen);
-    final bg = expired
-        ? AppColors.negativeBg
-        : (urgent
-            ? AppColors.mutedOrange.withValues(alpha: 0.12)
-            : AppColors.lightGreenBg);
-    final border = expired
-        ? AppColors.negativeText.withValues(alpha: 0.25)
-        : (urgent
-            ? AppColors.mutedOrange.withValues(alpha: 0.35)
-            : AppColors.lightGreenBorder);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            expired ? Icons.event_busy_outlined : Icons.event_outlined,
-            size: 18,
-            color: fg,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: fg,
-            ),
-          ),
-        ],
+    return Text(
+      _label,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w300,
+        color: AppColors.lightGreenText,
       ),
     );
   }
