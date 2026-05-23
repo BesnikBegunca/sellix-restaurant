@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import '../manager/manager_data.dart';
 import '../services/activation_license_controller.dart';
 import '../services/audit_log_service.dart';
-import '../services/pin_rate_limiter.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_card_button.dart';
@@ -118,7 +117,6 @@ class _LoginScreenState extends State<LoginScreen> {
   static final RegExp _pinDigitsOnly = RegExp(r'^\d+$');
 
   bool get _pinConfirmEnabled {
-    if (PinRateLimiter.instance.isLocked) return false;
     final p = _pinController.text;
     return p.length >= 4 && _pinDigitsOnly.hasMatch(p);
   }
@@ -183,7 +181,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submitPin() async {
-    if (PinRateLimiter.instance.isLocked) return;
     if (!_pinConfirmEnabled) return;
     final pin = _pinController.text;
 
@@ -196,7 +193,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (await ManagerData.instance.verifyAdminPin(pin)) {
         _pinController.clear();
-        PinRateLimiter.instance.reset();
         AuditLogService.instance.logManagerLogin();
         if (!mounted) return;
         Navigator.of(context).push(
@@ -205,17 +201,11 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       _pinController.clear();
-      final lockedOutNm = PinRateLimiter.instance.recordFailure();
-      if (lockedOutNm) AuditLogService.instance.logPinLockout();
       AuditLogService.instance.logFailedPin();
       if (!mounted) return;
-      setState(() {});
-      final msgNm = PinRateLimiter.instance.isLocked
-          ? 'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.'
-          : 'PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(msgNm),
+          content: const Text('PIN i gabuar.'),
           backgroundColor: AppColors.negativeText,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -229,7 +219,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (ManagerData.instance.hasAdminPin &&
         await ManagerData.instance.verifyAdminPin(pin)) {
       _pinController.clear();
-      PinRateLimiter.instance.reset();
       AuditLogService.instance.logManagerLogin();
       if (!mounted) return;
       Navigator.of(context).push(
@@ -242,7 +231,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _pinController.clear();
 
     if (waiter != null) {
-      PinRateLimiter.instance.reset();
       AuditLogService.instance.logWaiterLogin(waiterName: waiter.name);
       if (!mounted) return;
       Navigator.of(context).push(
@@ -259,17 +247,11 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    final lockedOut = PinRateLimiter.instance.recordFailure();
-    if (lockedOut) AuditLogService.instance.logPinLockout();
     AuditLogService.instance.logFailedPin();
     if (!mounted) return;
-    setState(() {});
-    final msg = PinRateLimiter.instance.isLocked
-        ? 'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.'
-        : 'PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: const Text('PIN i gabuar.'),
         backgroundColor: AppColors.negativeText,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -568,47 +550,6 @@ class _LoginScreenState extends State<LoginScreen> {
               onSubmitted: (_) => _submitPin(),
             ),
             const SizedBox(height: 16),
-            if (PinRateLimiter.instance.isLocked) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.negativeBg,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppColors.negativeText.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(
-                  'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.negativeText,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ] else if (PinRateLimiter.instance.remainingAttempts <
-                PinRateLimiter.maxAttempts) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3CD),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  'PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF856404),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
             _keypadSection(context),
           ],
         ),
