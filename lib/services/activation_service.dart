@@ -11,6 +11,7 @@ import 'api_client.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
 import 'activation_state_controller.dart';
+import 'api_enforcement_parser.dart';
 import 'license_gate_service.dart';
 import 'local_tenant_data_service.dart';
 import 'runtime_config_service.dart';
@@ -334,11 +335,18 @@ class ActivationService {
     }
   }
 
-  /// Whether a [DioException] should clear activation (401), not suspend (403).
+  /// Whether a [DioException] should clear activation (revoke), not license block.
   static bool shouldTreatAsDeviceRevocation(DioException error) {
+    final action = ApiEnforcementParser.actionFromDio(error);
+    if (action == ApiEnforcementAction.blockLicense) return false;
+    if (action == ApiEnforcementAction.refreshToken) return false;
+    if (action == ApiEnforcementAction.revokeDevice) {
+      final path = error.requestOptions.path;
+      if (path.contains(kEndpointValidateKey)) return false;
+      if (path.contains(kEndpointActivateDesktop)) return false;
+      return true;
+    }
     if (error.response?.statusCode != 401) return false;
-    if (LicenseGateService.isLicenseSuspendedError(error)) return false;
-
     final path = error.requestOptions.path;
     if (path.contains(kEndpointValidateKey)) return false;
     if (path.contains(kEndpointActivateDesktop)) return false;
@@ -347,63 +355,97 @@ class ActivationService {
 
   /// User-facing Albanian message for [handleRevokedByServer].
   static String messageForRevocation(DioException error) {
-    final server = _messageFromResponse(error.response?.data);
-    if (server != null && _looksLikeDeviceRevoked(server)) {
-      return server;
-    }
+    final server = ApiEnforcementParser.messageFromData(error.response?.data);
+    if (server != null && server.isNotEmpty) return server;
     return kDefaultServerRevokeMessage;
-  }
-
-  static bool _looksLikeDeviceRevoked(String message) {
-    final lower = message.toLowerCase();
-    return lower.contains('revok') ||
-        lower.contains('not active') ||
-        lower.contains('jo aktiv') ||
-        lower.contains('çaktiviz') ||
-        lower.contains('unauthorized') ||
-        (lower.contains('invalid') && lower.contains('token')) ||
-        lower.contains('refresh');
-  }
-
-  static String? _messageFromResponse(dynamic data) {
-    if (data is! Map) return null;
-    final message = data['message'];
-    if (message is String && message.isNotEmpty) return message;
-    if (message is List && message.isNotEmpty) {
-      return message.first.toString();
-    }
-    return null;
   }
 
   /// Calls GET /activation/verify with the stored Bearer token.
   ///
-  /// Returns `true` if the token is valid.
-  /// Returns `false` on any network error — the app continues in offline mode.
-  /// On **401 Unauthorized** the local activation is revoked and `false` is returned.
+  /// Returns `true` when activation is valid and license is not blocked.
+  /// Returns `false` on network error (offline) unless locally expired (strict).
   Future<bool> verifyActivation() async {
     if (!_activated) return false;
+    if (LicenseGateService.instance.isBlocked) return false;
+
     try {
-      await ApiClient.instance.get(kEndpointVerifyActivation);
-      return true;
+      final response = await ApiClient.instance.get<Map<String, dynamic>>(
+        kEndpointVerifyActivation,
+      );
+      final data = response.data;
+      if (data != null) {
+        final handled = await _handleActivationEnforcementBody(data);
+        if (handled) return false;
+      }
+      return !LicenseGateService.instance.isBlocked;
     } on DioException catch (e) {
-      if (LicenseGateService.isLicenseSuspendedError(e)) {
-        LicenseGateService.instance.block();
-        if (kDebugMode) {
-          debugPrint('ActivationService: license suspended (403 on verify)');
-        }
-        return false;
-      }
-      if (shouldTreatAsDeviceRevocation(e)) {
-        await handleRevokedByServer(reason: messageForRevocation(e));
-        if (kDebugMode) {
-          debugPrint(
-            'ActivationService: token revoked by server (401 on verify)',
-          );
-        }
-      }
-      return false;
+      return _handleVerifyDioError(e);
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<bool> _handleVerifyDioError(DioException e) async {
+    if (await LicenseGateService.instance.handleDioException(e)) {
+      if (kDebugMode) {
+        debugPrint('ActivationService: license blocked on verify');
+      }
+      return false;
+    }
+
+    if (ApiEnforcementParser.requiresDeviceRevoke(e)) {
+      await handleRevokedByServer(reason: messageForRevocation(e));
+      return false;
+    }
+
+    if (ApiEnforcementParser.requiresTokenRefresh(e)) {
+      try {
+        await refreshActivationToken();
+        if (!_activated || LicenseGateService.instance.isBlocked) {
+          return false;
+        }
+        final response = await ApiClient.instance.get<Map<String, dynamic>>(
+          kEndpointVerifyActivation,
+        );
+        final data = response.data;
+        if (data != null) {
+          final handled = await _handleActivationEnforcementBody(data);
+          if (handled) return false;
+        }
+        return !LicenseGateService.instance.isBlocked;
+      } on DioException catch (retry) {
+        return _handleVerifyDioError(retry);
+      }
+    }
+
+    if (shouldTreatAsDeviceRevocation(e)) {
+      await handleRevokedByServer(reason: messageForRevocation(e));
+    }
+    return false;
+  }
+
+  Future<bool> _handleActivationEnforcementBody(
+    Map<String, dynamic> data,
+  ) async {
+    final action = ApiEnforcementParser.actionFromActivationBody(data);
+    final message = ApiEnforcementParser.messageFromData(data);
+    final code = ApiEnforcementParser.codeFromData(data);
+
+    switch (action) {
+      case ApiEnforcementAction.blockLicense:
+        await LicenseGateService.instance.blockFromApiCode(
+          code ?? ApiEnforcementCodes.licenseSuspended,
+          message: message,
+        );
+        return true;
+      case ApiEnforcementAction.revokeDevice:
+        await handleRevokedByServer(
+          reason: message ?? kDefaultServerRevokeMessage,
+        );
+        return true;
+      case ApiEnforcementAction.refreshToken:
+      case ApiEnforcementAction.none:
+        return false;
     }
   }
 
@@ -428,8 +470,12 @@ class ActivationService {
         data: {'refreshToken': storedRefreshToken},
       );
     } on DioException catch (e) {
-      if (LicenseGateService.isLicenseSuspendedError(e)) {
-        LicenseGateService.instance.block();
+      if (await LicenseGateService.instance.handleDioException(e)) {
+        rethrow;
+      }
+      if (ApiEnforcementParser.requiresDeviceRevoke(e)) {
+        await handleRevokedByServer(reason: messageForRevocation(e));
+        rethrow;
       }
       rethrow;
     }
@@ -480,6 +526,8 @@ class ActivationService {
     await db.setAppMeta(_kBranchId, '');
     await db.setAppMeta(_kDeviceId, '');
     await db.setAppMeta(_kLicenseExpiresAt, '');
+
+    await LicenseGateService.instance.clearForRevocation();
 
     await db.setAppMeta('sync_last_error', '');
     await db.setAppMeta('sync_last_push_at', '');

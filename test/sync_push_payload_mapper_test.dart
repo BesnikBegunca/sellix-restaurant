@@ -50,6 +50,34 @@ void main() {
       expect(out['soldAt'], utc);
     });
 
+    test('sales strips order metadata from push payload', () {
+      final out = SyncPushPayloadMapper.mapPayload('sales', {
+        'total': 25.5,
+        'timestamp': '2026-05-19T12:00:00.000Z',
+        'tableId': 1,
+        'tableName': 'Tavolina 1',
+        'waiterName': 'John Smith',
+      });
+      expect(out.containsKey('tableId'), isFalse);
+      expect(out.containsKey('tableName'), isFalse);
+      expect(out.containsKey('waiterName'), isFalse);
+    });
+
+    test('sale_lines strips order metadata from push payload', () {
+      final out = SyncPushPayloadMapper.mapPayload('sale_lines', {
+        'saleUuid': '550e8400-e29b-41d4-a716-446655440010',
+        'productPrice': 5.5,
+        'quantity': 1,
+        'lineTotal': 5.5,
+        'tableId': 1,
+        'tableName': 'Tavolina 1',
+        'waiterName': 'John Smith',
+      });
+      expect(out.containsKey('tableId'), isFalse);
+      expect(out.containsKey('tableName'), isFalse);
+      expect(out.containsKey('waiterName'), isFalse);
+    });
+
     test('buildEvent uses exact DTO keys only', () {
       final mapped = SyncPushPayloadMapper.mapPayload('sales', {'total': 10.0});
       final event = SyncPushPayloadMapper.buildEvent(

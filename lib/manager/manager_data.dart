@@ -15,6 +15,7 @@ import '../repositories/sales_repository.dart';
 import '../repositories/shift_repository.dart';
 import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
+import '../services/license_gate_service.dart';
 export '../models/pos_models.dart';
 
 part 'manager_data_sales.dart';
@@ -292,6 +293,7 @@ class ManagerData extends ChangeNotifier {
   // ─────────────────────────────── shift ────────────────────────────────────
 
   Future<void> openShift() async {
+    LicenseGateService.instance.enforceOrThrow();
     shiftOpen = true;
     shiftOpenedAt = DateTime.now();
     shiftClosedAt = null;
@@ -385,6 +387,7 @@ class ManagerData extends ChangeNotifier {
   /// Para pastrimit ruhet snapshot-i (paguar + hapur) në rreshtin e shift-it.
   /// Nëse ruajtja dështon, shift-i mbetet aktiv dhe porositë e hapura intakte.
   Future<void> closeShift() async {
+    LicenseGateService.instance.enforceOrThrow();
     if (_shiftClosingInProgress) return;
     final closingShiftId = _currentShiftId;
     if (closingShiftId == null) return;

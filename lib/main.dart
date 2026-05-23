@@ -36,9 +36,13 @@ void main() async {
   final runtimeConfig = RuntimeConfigService.instance;
   ApiClient.instance.configureBaseUrl(runtimeConfig.apiBaseUrl);
 
+  LicenseGateService.instance.onBlocked = () {
+    BackgroundSyncService.instance.stop();
+  };
+
   ApiClient.instance.onUnauthorizedRevoke = (error) async {
     if (!ActivationService.instance.isActivated) return;
-    if (LicenseGateService.isLicenseSuspendedError(error)) return;
+    if (await LicenseGateService.instance.handleDioException(error)) return;
     if (!ActivationService.shouldTreatAsDeviceRevocation(error)) return;
     BackgroundSyncService.instance.stop();
     SyncStatusService.instance.stop();
@@ -85,13 +89,20 @@ void main() async {
       RuntimeConfigService.syncConfigErrorMessage,
     );
   } else if (ActivationService.instance.isActivated) {
-    // Verify token with backend — revokes locally on 401; continues on network error.
-    await ActivationService.instance.verifyActivation();
-    if (ActivationService.instance.isActivated) {
+    await LicenseGateService.instance.loadPersistedState();
+    await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
+
+    if (!LicenseGateService.instance.isBlocked) {
+      await ActivationService.instance.verifyActivation();
+    }
+
+    if (ActivationService.instance.isActivated &&
+        !LicenseGateService.instance.isBlocked) {
       BackgroundSyncService.instance.start();
     } else if (activationState.serverRevoked) {
       // verifyActivation → handleRevokedByServer already notified controller.
-    } else if (!activationState.serverRevoked) {
+    } else if (!activationState.serverRevoked &&
+        !LicenseGateService.instance.isBlocked) {
       activationState.setActivated(false);
     }
   }
@@ -150,12 +161,18 @@ class _PosSystemAppState extends State<PosSystemApp> {
 
     await DatabaseService.instance.setAppMeta('sync_last_error', '');
     if (ActivationService.instance.isActivated) {
-      await ActivationService.instance.verifyActivation();
+      await LicenseGateService.instance.loadPersistedState();
+      await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
+      if (!LicenseGateService.instance.isBlocked) {
+        await ActivationService.instance.verifyActivation();
+      }
       if (!mounted) return;
-      if (ActivationService.instance.isActivated) {
+      if (ActivationService.instance.isActivated &&
+          !LicenseGateService.instance.isBlocked) {
         _activation.setActivated(true);
         BackgroundSyncService.instance.start();
-      } else if (!_activation.serverRevoked) {
+      } else if (!_activation.serverRevoked &&
+          !LicenseGateService.instance.isBlocked) {
         _activation.setActivated(false);
       }
     }
