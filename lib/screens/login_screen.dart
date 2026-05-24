@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
 import '../services/activation_license_controller.dart';
+import '../services/activation_service.dart';
 import '../services/audit_log_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
@@ -83,6 +84,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _warmLicenseExpiryCache() async {
     await ActivationLicenseController.instance.reloadFromStorage();
+    if (!mounted) return;
+    _syncLicenseBadgeFromController();
+    await ActivationService.instance.syncLicenseExpiryFromApiIfActivated();
     if (!mounted) return;
     _syncLicenseBadgeFromController();
   }

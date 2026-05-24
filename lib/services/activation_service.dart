@@ -362,7 +362,7 @@ class ActivationService {
     return kDefaultServerRevokeMessage;
   }
 
-  /// Calls GET /activation/verify with the stored Bearer token.
+  /// POST /activation/verify with stored access token (pos_api contract).
   ///
   /// Returns `true` when activation is valid and license is not blocked.
   /// Returns `false` on network error (offline) unless locally expired (strict).
@@ -371,23 +371,75 @@ class ActivationService {
     if (LicenseGateService.instance.isBlocked) return false;
 
     try {
-      final response = await ApiClient.instance.get<Map<String, dynamic>>(
-        kEndpointVerifyActivation,
-      );
-      final data = response.data;
-      if (data != null) {
-        final handled = await _handleActivationEnforcementBody(data);
-        if (handled) return false;
-        await _syncLicenseExpiresFromActivationBody(data);
-      } else {
-        await ActivationLicenseController.instance.reloadFromStorage();
-      }
-      return !LicenseGateService.instance.isBlocked;
+      final response = await _postVerifyActivation();
+      return await _processVerifyResponse(response);
     } on DioException catch (e) {
       return _handleVerifyDioError(e);
     } catch (_) {
       return false;
     }
+  }
+
+  /// Refreshes license expiry from API (verify) for UI badge without reinstall.
+  Future<void> syncLicenseExpiryFromApiIfActivated() async {
+    if (!_activated) return;
+    await verifyActivation();
+  }
+
+  /// Parses `licenseExpiresAt` from activation API JSON (string or ISO-like).
+  @visibleForTesting
+  static String? parseLicenseExpiresAtValue(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is String) {
+      final trimmed = raw.trim();
+      if (trimmed.isEmpty) return null;
+      if (DateTime.tryParse(trimmed) != null) return trimmed;
+      return null;
+    }
+    if (raw is DateTime) return raw.toUtc().toIso8601String();
+    if (raw is num) {
+      final dt = DateTime.fromMillisecondsSinceEpoch(raw.toInt(), isUtc: true);
+      return dt.toIso8601String();
+    }
+    final asString = raw.toString().trim();
+    if (asString.isEmpty) return null;
+    if (DateTime.tryParse(asString) != null) return asString;
+    return null;
+  }
+
+  /// Test hook for license expiry sync from API-shaped response bodies.
+  @visibleForTesting
+  Future<void> applyLicenseExpiresFromApiBody(Map<String, dynamic> data) =>
+      _syncLicenseExpiresFromActivationBody(data, source: 'test');
+
+  Future<Response<Map<String, dynamic>>> _postVerifyActivation() async {
+    final accessToken =
+        await SecureActivationTokenStore.instance.readAccessToken();
+    if (!_nonEmpty(accessToken)) {
+      throw StateError('No access token stored for activation verify.');
+    }
+    return ApiClient.instance.post<Map<String, dynamic>>(
+      kEndpointVerifyActivation,
+      data: {'accessToken': accessToken},
+    );
+  }
+
+  Future<bool> _processVerifyResponse(
+    Response<Map<String, dynamic>> response,
+  ) async {
+    final data = response.data;
+    if (data == null) {
+      return !LicenseGateService.instance.isBlocked;
+    }
+    if (data['valid'] == false) {
+      final handled = await _handleActivationEnforcementBody(data);
+      if (handled) return false;
+      return false;
+    }
+    final handled = await _handleActivationEnforcementBody(data);
+    if (handled) return false;
+    await _syncLicenseExpiresFromActivationBody(data, source: 'verify');
+    return !LicenseGateService.instance.isBlocked;
   }
 
   Future<bool> _handleVerifyDioError(DioException e) async {
@@ -409,18 +461,8 @@ class ActivationService {
         if (!_activated || LicenseGateService.instance.isBlocked) {
           return false;
         }
-        final response = await ApiClient.instance.get<Map<String, dynamic>>(
-          kEndpointVerifyActivation,
-        );
-        final data = response.data;
-        if (data != null) {
-          final handled = await _handleActivationEnforcementBody(data);
-          if (handled) return false;
-          await _syncLicenseExpiresFromActivationBody(data);
-        } else {
-          await ActivationLicenseController.instance.reloadFromStorage();
-        }
-        return !LicenseGateService.instance.isBlocked;
+        final response = await _postVerifyActivation();
+        return await _processVerifyResponse(response);
       } on DioException catch (retry) {
         return _handleVerifyDioError(retry);
       }
@@ -505,7 +547,6 @@ class ActivationService {
 
     ApiClient.instance.setAccessToken(newAccessToken);
     await LicenseGateService.instance.unblock();
-    await ActivationLicenseController.instance.reloadFromStorage();
     if (kDebugMode) debugPrint('ActivationService: access token refreshed');
   }
 
@@ -632,14 +673,34 @@ class ActivationService {
   }
 
   Future<void> _syncLicenseExpiresFromActivationBody(
-    Map<String, dynamic> data,
-  ) async {
-    final expires = data['licenseExpiresAt'];
-    if (expires is String && expires.trim().isNotEmpty) {
-      await ActivationLicenseController.instance.setExpiresAt(expires);
+    Map<String, dynamic> data, {
+    String source = 'activation_api',
+  }) async {
+    final oldIso = ActivationLicenseController.instance.expiresAtIso;
+    final parsed = parseLicenseExpiresAtValue(data['licenseExpiresAt']);
+    if (parsed == null) {
+      if (kDebugMode) {
+        debugPrint(
+          '[LicenseExpiry] source=$source missing licenseExpiresAt '
+          '(raw=${data['licenseExpiresAt']}) — keeping cache old=$oldIso',
+        );
+      }
       return;
     }
-    await ActivationLicenseController.instance.reloadFromStorage();
+
+    if (kDebugMode) {
+      debugPrint('[LicenseExpiry] source=$source old=$oldIso new=$parsed');
+    }
+    await ActivationLicenseController.instance.setExpiresAt(parsed);
+    if (kDebugMode) {
+      final saved = await DatabaseService.instance.getAppMeta(
+        LicenseGateService.kLicenseExpiresAtMeta,
+      );
+      debugPrint(
+        '[LicenseExpiry] saved app_meta=$saved '
+        'days=${ActivationLicenseController.instance.daysRemaining}',
+      );
+    }
   }
 
   static String _detectPlatform() {
