@@ -52,6 +52,8 @@ Widget productImage(
       width: width,
       height: height,
       fit: fit,
+      key: ValueKey(path),
+      gaplessPlayback: false,
       errorBuilder: (_, _, _) => fallback(),
     );
   }
@@ -61,6 +63,8 @@ Widget productImage(
     width: width,
     height: height,
     fit: fit,
+    key: ValueKey(path),
+    gaplessPlayback: false,
     errorBuilder: (_, _, _) => fallback(),
   );
 }

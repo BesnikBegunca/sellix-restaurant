@@ -147,7 +147,8 @@ class ManagerData extends ChangeNotifier {
     _waiters = waiterRows.map(WaiterInfo.fromMap).toList();
     await _migrateWaiterPins();
 
-    // Categories + products
+    // Categories + products (parazgjedhjet e paketuara + menu ekzistuese)
+    await db.ensureDefaultMenuPresent();
     await _reloadMenu();
 
     // Tables
@@ -193,11 +194,17 @@ class ManagerData extends ChangeNotifier {
     final catRows = await ProductRepository.instance.fetchCategories();
     final prodRows = await ProductRepository.instance.fetchProducts();
 
-    // Group products by categoryId
+    // Group products by categoryId, sorted by sortOrder.
     final byCategory = <String, List<ProductItem>>{};
     for (final row in prodRows) {
       final catId = row['categoryId'] as String;
       byCategory.putIfAbsent(catId, () => []).add(ProductItem.fromMap(row));
+    }
+    for (final list in byCategory.values) {
+      list.sort((a, b) {
+        final c = a.sortOrder.compareTo(b.sortOrder);
+        return c != 0 ? c : a.id.compareTo(b.id);
+      });
     }
 
     _categories = catRows

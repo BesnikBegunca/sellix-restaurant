@@ -186,6 +186,28 @@ extension MenuMethods on ManagerData {
     _notify();
   }
 
+  /// Lëviz produktin lart/poshtë në listë brenda kategorisë ([direction] -1 ose +1).
+  Future<void> reorderProduct(
+    String categoryId,
+    String productId,
+    int direction,
+  ) async {
+    final cat = _categories.firstWhere(
+      (c) => c.id == categoryId,
+      orElse: () => CategoryData(id: categoryId, name: '', icon: Icons.category, products: []),
+    );
+    final ids = cat.products.map((p) => p.id).toList();
+    final idx = ids.indexOf(productId);
+    if (idx < 0) return;
+    final newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= ids.length) return;
+    final moved = ids.removeAt(idx);
+    ids.insert(newIdx, moved);
+    await ProductRepository.instance.setProductOrderInCategory(categoryId, ids);
+    await _reloadMenu();
+    _notify();
+  }
+
   Future<void> moveProduct(
     String fromCategoryId,
     String productId,

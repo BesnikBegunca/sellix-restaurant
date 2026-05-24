@@ -84,6 +84,7 @@ class DatabaseService {
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
         await DatabaseSchema.ensureShiftsSnapshotColumn(db);
+        await DatabaseSchema.ensureDefaultMenuPresent(db);
       },
     );
   }
@@ -574,6 +575,7 @@ class DatabaseService {
 
   Future<void> deleteCategory(String id) async {
     final db = await database;
+    await DatabaseSchema.markBuiltinCategoryHidden(db, id);
     final row = await _fetchEntityRow(
       'categories',
       where: 'id = ?',
@@ -590,7 +592,45 @@ class DatabaseService {
 
   Future<List<Map<String, dynamic>>> fetchProducts() async {
     final db = await database;
-    return db.query('products', orderBy: 'categoryId ASC, rowid ASC');
+    return db.query(
+      'products',
+      orderBy: 'categoryId ASC, sortOrder ASC, rowid ASC',
+    );
+  }
+
+  Future<int> _nextProductSortOrder(DatabaseExecutor db, String categoryId) async {
+    final r = await db.rawQuery(
+      'SELECT COALESCE(MAX(sortOrder), -1) + 1 AS n FROM products WHERE categoryId = ?',
+      [categoryId],
+    );
+    return (r.first['n'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<void> setProductOrderInCategory(
+    String categoryId,
+    List<String> orderedProductIds,
+  ) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (var i = 0; i < orderedProductIds.length; i++) {
+        await txn.update(
+          'products',
+          {'sortOrder': i},
+          where: 'id = ? AND categoryId = ?',
+          whereArgs: [orderedProductIds[i], categoryId],
+        );
+      }
+    });
+    for (final id in orderedProductIds) {
+      final row = await _fetchEntityRow(
+        'products',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      if (row != null) {
+        await _queueOutboxRow('products', row, 'update');
+      }
+    }
   }
 
   Future<void> insertProduct({
@@ -604,6 +644,7 @@ class DatabaseService {
     final db = await database;
     final scope = await syncScope();
     final ts = syncTimestamps();
+    final sortOrder = await _nextProductSortOrder(db, categoryId);
     await db.insert('products', {
       'id': id,
       'name': name,
@@ -611,6 +652,7 @@ class DatabaseService {
       'emoji': emoji,
       'imagePath': imagePath,
       'categoryId': categoryId,
+      'sortOrder': sortOrder,
       'uuid': DatabaseSchema.generateUuid(),
       ...scope,
       ...syncStatus(),
@@ -641,6 +683,7 @@ class DatabaseService {
 
   Future<void> deleteProduct(String id) async {
     final db = await database;
+    await DatabaseSchema.markBuiltinProductHidden(db, id);
     final row = await _fetchEntityRow(
       'products',
       where: 'id = ?',
@@ -657,9 +700,10 @@ class DatabaseService {
     String newCategoryId,
   ) async {
     final db = await database;
+    final sortOrder = await _nextProductSortOrder(db, newCategoryId);
     await db.update(
       'products',
-      {'categoryId': newCategoryId},
+      {'categoryId': newCategoryId, 'sortOrder': sortOrder},
       where: 'id = ?',
       whereArgs: [productId],
     );
@@ -1662,6 +1706,13 @@ class DatabaseService {
         await setAppMeta(key, '');
       }
     }
+    await ensureDefaultMenuPresent();
+  }
+
+  /// Rikthen kategori/pije parazgjedhura nëse mungojnë.
+  Future<void> ensureDefaultMenuPresent() async {
+    final db = await database;
+    await DatabaseSchema.ensureDefaultMenuPresent(db);
   }
 
   /// Returns true if any scoped table has rows stamped with [businessId].

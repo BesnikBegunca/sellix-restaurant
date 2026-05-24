@@ -1,7 +1,8 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
+
+import '../config/default_menu_catalog.dart';
 
 /// Schema creation, migration, and seeding — extracted from [DatabaseService]
 /// to keep the service class focused on data-access methods only.
@@ -13,6 +14,57 @@ class DatabaseSchema {
   static const String kMainBranchId = 'main-branch';
   static const String kDeviceMetaKey = 'audit_device_id';
   static const String kSyncStatusPending = 'pending';
+
+  static const String _kHiddenBuiltinCategoriesKey =
+      'default_menu_hidden_category_ids';
+  static const String _kHiddenBuiltinProductsKey =
+      'default_menu_hidden_product_ids';
+  static Future<Set<String>> _readHiddenBuiltinIds(
+    Database db,
+    String metaKey,
+  ) async {
+    final rows = await db.query(
+      'app_meta',
+      where: 'key = ?',
+      whereArgs: [metaKey],
+      limit: 1,
+    );
+    if (rows.isEmpty) return {};
+    final raw = rows.first['value']?.toString() ?? '';
+    if (raw.isEmpty) return {};
+    return raw.split(',').where((e) => e.isNotEmpty).toSet();
+  }
+
+  static Future<void> _appendHiddenBuiltinId(
+    Database db,
+    String metaKey,
+    String id,
+  ) async {
+    final set = await _readHiddenBuiltinIds(db, metaKey);
+    if (set.contains(id)) return;
+    set.add(id);
+    await db.insert(
+      'app_meta',
+      {'key': metaKey, 'value': set.join(',')},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Pas fshirjes së një kategorie/produkti builtin, mos e ri-shto në hapjen tjetër.
+  static Future<void> markBuiltinCategoryHidden(Database db, String id) async {
+    if (!DefaultMenuCatalog.isBuiltinCategoryId(id)) return;
+    await _appendHiddenBuiltinId(db, _kHiddenBuiltinCategoriesKey, id);
+    for (final p in DefaultMenuCatalog.products) {
+      if (p.categoryId == id) {
+        await _appendHiddenBuiltinId(db, _kHiddenBuiltinProductsKey, p.id);
+      }
+    }
+  }
+
+  static Future<void> markBuiltinProductHidden(Database db, String id) async {
+    if (!DefaultMenuCatalog.isBuiltinProductId(id)) return;
+    await _appendHiddenBuiltinId(db, _kHiddenBuiltinProductsKey, id);
+  }
   static const String kOutboxSyncSynced = 'synced';
   static const String kOutboxSyncFailed = 'failed';
 
@@ -523,6 +575,7 @@ class DatabaseSchema {
         emoji      TEXT NOT NULL DEFAULT '☕',
         imagePath  TEXT,
         categoryId TEXT NOT NULL,
+        sortOrder  INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE CASCADE
       )
     ''');
@@ -1039,6 +1092,30 @@ class DatabaseSchema {
     try {
       await db.execute("ALTER TABLE company ADD COLUMN adminPinUpdatedAt TEXT");
     } catch (_) {}
+    // v23: renditja e produkteve brenda kategorisë
+    try {
+      await db.execute(
+        'ALTER TABLE products ADD COLUMN sortOrder INTEGER NOT NULL DEFAULT 0',
+      );
+      final catRows = await db.query('categories');
+      for (final cat in catRows) {
+        final catId = cat['id'] as String;
+        final prods = await db.query(
+          'products',
+          where: 'categoryId = ?',
+          whereArgs: [catId],
+          orderBy: 'rowid ASC',
+        );
+        for (var i = 0; i < prods.length; i++) {
+          await db.update(
+            'products',
+            {'sortOrder': i},
+            where: 'id = ?',
+            whereArgs: [prods[i]['id']],
+          );
+        }
+      }
+    } catch (_) {}
     // v15: waiter PIN hashing (pinHash + pinSalt + pinUpdatedAt)
     try {
       await db.execute("ALTER TABLE waiters ADD COLUMN pinHash TEXT");
@@ -1120,39 +1197,117 @@ class DatabaseSchema {
   }
 
   static Future<void> seedDefaultMenu(Database db) async {
-    final cats = [
-      {
-        'id': 'coffee',
-        'name': 'Coffee',
-        'iconCodePoint': Icons.local_cafe_outlined.codePoint,
-        'sortOrder': 0,
-      },
-      {
-        'id': 'spirits',
-        'name': 'Spirits',
-        'iconCodePoint': Icons.liquor_outlined.codePoint,
-        'sortOrder': 1,
-      },
-      {
-        'id': 'cocktails',
-        'name': 'Cocktails',
-        'iconCodePoint': Icons.local_bar_outlined.codePoint,
-        'sortOrder': 2,
-      },
-      {
-        'id': 'snack',
-        'name': 'Snack',
-        'iconCodePoint': Icons.cookie_outlined.codePoint,
-        'sortOrder': 3,
-      },
-    ];
+    await ensureDefaultMenuPresent(db);
+  }
+
+  /// Përditëson emër, çmim, foto dhe renditje nga katalogu për produktet builtin.
+  static Future<void> _syncBuiltinCatalogProducts(
+    Database db,
+    Set<String> hiddenCats,
+    Set<String> hiddenProds,
+  ) async {
+    final sortByCategory = <String, int>{};
+    for (final p in DefaultMenuCatalog.products) {
+      if (hiddenProds.contains(p.id) || hiddenCats.contains(p.categoryId)) {
+        continue;
+      }
+
+      final order = sortByCategory[p.categoryId] ?? 0;
+      sortByCategory[p.categoryId] = order + 1;
+
+      final fields = <String, Object?>{
+        'name': p.name,
+        'price': p.price,
+        'emoji': p.emoji,
+        'imagePath': p.imagePath,
+        'sortOrder': order,
+      };
+
+      final byId = await db.query(
+        'products',
+        where: 'id = ?',
+        whereArgs: [p.id],
+        limit: 1,
+      );
+      if (byId.isNotEmpty) {
+        final row = byId.first;
+        final needsUpdate = row['name'] != p.name ||
+            (row['price'] as num?)?.toDouble() != p.price ||
+            row['emoji'] != p.emoji ||
+            row['imagePath'] != p.imagePath ||
+            (row['sortOrder'] as num?)?.toInt() != order;
+        if (needsUpdate) {
+          await db.update(
+            'products',
+            fields,
+            where: 'id = ?',
+            whereArgs: [p.id],
+          );
+        }
+        continue;
+      }
+
+      // Legacy: rreshta pa prefix default_ me të njëjtin emër në kategori.
+      final byName = await db.query(
+        'products',
+        where: 'name = ? AND categoryId = ?',
+        whereArgs: [p.name, p.categoryId],
+      );
+      for (final row in byName) {
+        final needsUpdate = (row['price'] as num?)?.toDouble() != p.price ||
+            row['emoji'] != p.emoji ||
+            row['imagePath'] != p.imagePath ||
+            (row['sortOrder'] as num?)?.toInt() != order;
+        if (!needsUpdate) continue;
+        await db.update(
+          'products',
+          fields,
+          where: 'id = ?',
+          whereArgs: [row['id']],
+        );
+      }
+    }
+
+    // Rrugë të vjetra të fshira ose të zëvendësuara nga assets.
+    await db.update(
+      'products',
+      {'imagePath': 'assets/images/tekilla.png'},
+      where: "imagePath = 'assets/images/tequila.png'",
+    );
+    await db.update(
+      'products',
+      {'imagePath': 'assets/images/sexonthebeach.png'},
+      where: "imagePath = 'assets/images/fruta mali.png' AND categoryId = '${DefaultMenuCatalog.kIdPrefix}cat_cocktails'",
+    );
+  }
+
+  /// Shton kategori/pije parazgjedhura që mungojnë.
+  ///
+  /// Produktet builtin marrin emër, çmim, foto dhe renditje nga katalogu në çdo hapje.
+  static Future<void> ensureDefaultMenuPresent(Database db) async {
     final deviceId = await resolveDeviceId(db);
     final scope = syncScopeStamp(deviceId);
     final timestamps = syncTimestampStamp();
     final status = syncStatusStamp();
-    for (final c in cats) {
+    final hiddenCats = await _readHiddenBuiltinIds(db, _kHiddenBuiltinCategoriesKey);
+    final hiddenProds = await _readHiddenBuiltinIds(db, _kHiddenBuiltinProductsKey);
+
+    await _syncBuiltinCatalogProducts(db, hiddenCats, hiddenProds);
+
+    for (final c in DefaultMenuCatalog.categories) {
+      if (hiddenCats.contains(c.id)) continue;
+      final existing = await db.query(
+        'categories',
+        where: 'id = ?',
+        whereArgs: [c.id],
+        limit: 1,
+      );
+      if (existing.isNotEmpty) continue;
       await db.insert('categories', {
-        ...c,
+        'id': c.id,
+        'name': c.name,
+        'iconCodePoint': c.iconCodePoint.codePoint,
+        'sortOrder': c.sortOrder,
         'uuid': generateUuid(),
         ...scope,
         ...timestamps,
@@ -1160,196 +1315,56 @@ class DatabaseSchema {
       });
     }
 
-    final products = [
-      // Coffee
-      {
-        'id': 'c1',
-        'name': 'Espresso',
-        'price': 2.50,
-        'emoji': '☕',
-        'imagePath': 'assets/images/espreso.webp',
-        'categoryId': 'coffee',
-      },
-      {
-        'id': 'c2',
-        'name': 'Macchiato',
-        'price': 4.00,
-        'emoji': '☕',
-        'imagePath': 'assets/images/makiato.png',
-        'categoryId': 'coffee',
-      },
-      {
-        'id': 'c3',
-        'name': 'Cappuccino',
-        'price': 4.25,
-        'emoji': '☕',
-        'imagePath': 'assets/images/kapuqino.png',
-        'categoryId': 'coffee',
-      },
-      // Spirits
-      {
-        'id': 'sp9',
-        'name': 'Coca Cola',
-        'price': 2.50,
-        'emoji': '🥤',
-        'imagePath': 'assets/images/cocacola.png',
-        'categoryId': 'spirits',
-      },
-      {
-        'id': 'sp10',
-        'name': 'Fanta',
-        'price': 2.50,
-        'emoji': '🥤',
-        'imagePath': 'assets/images/fanta.webp',
-        'categoryId': 'spirits',
-      },
-      {
-        'id': 'sp11',
-        'name': 'Sprite',
-        'price': 2.50,
-        'emoji': '🥤',
-        'imagePath': 'assets/images/sprite.png',
-        'categoryId': 'spirits',
-      },
-      {
-        'id': 'sp12',
-        'name': 'Heineken',
-        'price': 3.50,
-        'emoji': '🍺',
-        'imagePath': 'assets/images/heineken.png',
-        'categoryId': 'spirits',
-      },
-      {
-        'id': 'sp13',
-        'name': 'Peja',
-        'price': 3.00,
-        'emoji': '🍺',
-        'imagePath': 'assets/images/peja.png',
-        'categoryId': 'spirits',
-      },
-      {
-        'id': 'sp14',
-        'name': 'Shkupi',
-        'price': 3.00,
-        'emoji': '🍺',
-        'imagePath': 'assets/images/shkupi.png',
-        'categoryId': 'spirits',
-      },
-      {
-        'id': 'sp15',
-        'name': 'Tuborg',
-        'price': 3.50,
-        'emoji': '🍺',
-        'imagePath': 'assets/images/tuborg.png',
-        'categoryId': 'spirits',
-      },
-      // Cocktails
-      {
-        'id': 'ck1',
-        'name': 'Mojito',
-        'price': 9.00,
-        'emoji': '🍹',
-        'imagePath': null,
-        'categoryId': 'cocktails',
-      },
-      {
-        'id': 'ck2',
-        'name': 'Margarita',
-        'price': 9.50,
-        'emoji': '🍸',
-        'imagePath': null,
-        'categoryId': 'cocktails',
-      },
-      {
-        'id': 'ck3',
-        'name': 'Martini',
-        'price': 10.00,
-        'emoji': '🍸',
-        'imagePath': null,
-        'categoryId': 'cocktails',
-      },
-      {
-        'id': 'ck4',
-        'name': 'Cosmopolitan',
-        'price': 9.75,
-        'emoji': '🍸',
-        'imagePath': null,
-        'categoryId': 'cocktails',
-      },
-      {
-        'id': 'ck5',
-        'name': 'Old Fashioned',
-        'price': 10.50,
-        'emoji': '🥃',
-        'imagePath': null,
-        'categoryId': 'cocktails',
-      },
-      {
-        'id': 'ck6',
-        'name': 'Negroni',
-        'price': 10.00,
-        'emoji': '🍹',
-        'imagePath': null,
-        'categoryId': 'cocktails',
-      },
-      {
-        'id': 'ck7',
-        'name': 'Aperol Spritz',
-        'price': 9.25,
-        'emoji': '🧡',
-        'imagePath': null,
-        'categoryId': 'cocktails',
-      },
-      {
-        'id': 'ck8',
-        'name': 'Moscow Mule',
-        'price': 9.00,
-        'emoji': '🫚',
-        'imagePath': null,
-        'categoryId': 'cocktails',
-      },
-      // Snack
-      {
-        'id': 's1',
-        'name': 'Croissant',
-        'price': 3.50,
-        'emoji': '🥐',
-        'imagePath': null,
-        'categoryId': 'snack',
-      },
-      {
-        'id': 's2',
-        'name': 'Muffin',
-        'price': 3.00,
-        'emoji': '🧁',
-        'imagePath': null,
-        'categoryId': 'snack',
-      },
-      {
-        'id': 's3',
-        'name': 'Bagel',
-        'price': 2.75,
-        'emoji': '🥯',
-        'imagePath': null,
-        'categoryId': 'snack',
-      },
-      {
-        'id': 's4',
-        'name': 'Brownie',
-        'price': 3.25,
-        'emoji': '🍫',
-        'imagePath': null,
-        'categoryId': 'snack',
-      },
-    ];
-    for (final p in products) {
+    final sortByCategory = <String, int>{};
+    for (final p in DefaultMenuCatalog.products) {
+      if (hiddenProds.contains(p.id) || hiddenCats.contains(p.categoryId)) {
+        continue;
+      }
+      final existing = await db.query(
+        'products',
+        where: 'id = ?',
+        whereArgs: [p.id],
+        limit: 1,
+      );
+      if (existing.isNotEmpty) continue;
+      final order = sortByCategory[p.categoryId] ?? 0;
+      sortByCategory[p.categoryId] = order + 1;
       await db.insert('products', {
-        ...p,
+        'id': p.id,
+        'name': p.name,
+        'price': p.price,
+        'emoji': p.emoji,
+        'imagePath': p.imagePath,
+        'categoryId': p.categoryId,
+        'sortOrder': order,
         'uuid': generateUuid(),
         ...scope,
         ...timestamps,
         ...status,
       });
+    }
+
+    // Heq produktet/kategoritë builtin që nuk janë më në katalog (vetëm legacy).
+    final legacyProducts = await db.query(
+      'products',
+      where: "id LIKE '${DefaultMenuCatalog.kIdPrefix}%'",
+    );
+    for (final row in legacyProducts) {
+      final id = row['id'] as String;
+      if (!DefaultMenuCatalog.builtinProductIds.contains(id)) {
+        await db.delete('products', where: 'id = ?', whereArgs: [id]);
+      }
+    }
+
+    final legacyCategories = await db.query(
+      'categories',
+      where: "id LIKE '${DefaultMenuCatalog.kIdPrefix}%'",
+    );
+    for (final row in legacyCategories) {
+      final id = row['id'] as String;
+      if (!DefaultMenuCatalog.builtinCategoryIds.contains(id)) {
+        await db.delete('categories', where: 'id = ?', whereArgs: [id]);
+      }
     }
   }
 }

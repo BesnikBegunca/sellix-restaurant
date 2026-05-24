@@ -34,6 +34,7 @@ class ProductItem {
     required this.price,
     required this.emoji,
     this.imagePath,
+    this.sortOrder = 0,
   });
 
   final String id;
@@ -41,6 +42,7 @@ class ProductItem {
   final double price;
   final String emoji;
   final String? imagePath;
+  final int sortOrder;
 
   factory ProductItem.fromMap(Map<String, dynamic> m) => ProductItem(
         id: m['id'] as String,
@@ -48,6 +50,7 @@ class ProductItem {
         price: (m['price'] as num).toDouble(),
         emoji: m['emoji'] as String? ?? '☕',
         imagePath: m['imagePath'] as String?,
+        sortOrder: (m['sortOrder'] as num?)?.toInt() ?? 0,
       );
 }
 
