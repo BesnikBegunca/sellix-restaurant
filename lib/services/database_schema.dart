@@ -529,6 +529,25 @@ class DatabaseSchema {
     });
   }
 
+  /// Kolonat [orderNumber] / [tableName] në [sales] — migrim v24; sigurohen në
+  /// çdo hapje (p.sh. DB tashmë në v23 para shtimit të ALTER në upgrade).
+  static Future<void> ensureSalesOrderMetadataColumns(Database db) async {
+    try {
+      final cols = await db.rawQuery('PRAGMA table_info(sales)');
+      if (cols.isEmpty) return;
+      final names = {
+        for (final r in cols)
+          if (r['name'] != null) r['name'] as String,
+      };
+      if (!names.contains('orderNumber')) {
+        await db.execute('ALTER TABLE sales ADD COLUMN orderNumber INTEGER');
+      }
+      if (!names.contains('tableName')) {
+        await db.execute('ALTER TABLE sales ADD COLUMN tableName TEXT');
+      }
+    } catch (_) {}
+  }
+
   /// Kolona [snapshotJson] në [shifts] u shtua më vonë; bazat në v12 pa këtë
   /// kolonë dështojnë në UPDATE. Sigurohemi në çdo hapje lidhjeje (pa u varur
   /// nga ri-migrimi i versionit).
@@ -591,12 +610,14 @@ class DatabaseSchema {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS sales (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        waiterName TEXT    NOT NULL,
-        tableId    INTEGER NOT NULL,
-        total      REAL    NOT NULL,
-        timestamp  TEXT    NOT NULL,
-        shiftId    INTEGER
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        waiterName  TEXT    NOT NULL,
+        tableId     INTEGER NOT NULL,
+        total       REAL    NOT NULL,
+        timestamp   TEXT    NOT NULL,
+        shiftId     INTEGER,
+        orderNumber INTEGER,
+        tableName   TEXT
       )
     ''');
     await db.execute('''
@@ -908,6 +929,9 @@ class DatabaseSchema {
 
     // ── v22: inventory + stock movements ─────────────────────────────────────
     await ensureInventoryTables(db);
+
+    // ── v24: sales order metadata (mobile sync) ─────────────────────────────
+    await ensureSalesOrderMetadataColumns(db);
   }
 
   /// Creates [inventory_items] and [stock_movements] (idempotent).
@@ -1029,6 +1053,8 @@ class DatabaseSchema {
     try {
       await db.execute('ALTER TABLE sales ADD COLUMN tableName TEXT');
     } catch (_) {}
+    // v24: idempotent guard for DBs that reached v23 before these ALTERs shipped.
+    await ensureSalesOrderMetadataColumns(db);
     try {
       await db.execute("ALTER TABLE expenses ADD COLUMN shiftId INTEGER");
     } catch (_) {}
@@ -1178,6 +1204,7 @@ class DatabaseSchema {
 
   static Future<void> create(Database db, int version) async {
     await ensureTables(db);
+    await ensureSalesOrderMetadataColumns(db);
 
     // Seed required singleton rows
     await db.insert('shift', {'id': 1, 'status': 'closed'});

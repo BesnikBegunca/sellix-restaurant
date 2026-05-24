@@ -63,7 +63,7 @@ Desktop ruajti gjithmonë `waiterName`, `tableId`, `tableName` (në rreshta) dhe
 
 ## Përputhshmëri prapa
 
-- DB ekzistuese: `ALTER TABLE` me `try/catch` në `DatabaseSchema.upgrade` (jo-destruktiv).
+- DB ekzistuese: migrim **v24** + `ensureSalesOrderMetadataColumns()` në `onOpen`/`upgrade`/`create` (idempotent, PRAGMA `table_info`).
 - Shitje të vjetra lokale: kolonat e reja `NULL` — sync i ri i dërgon metadata vetëm për shitje të reja.
 - `sale_lines` strip metadata — **e qëllimshme** (metadata vetëm në header `sales`).
 

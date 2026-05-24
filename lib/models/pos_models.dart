@@ -185,6 +185,8 @@ class SaleRow {
     required this.total,
     required this.timestamp,
     this.shiftId,
+    this.orderNumber,
+    this.tableName,
   });
 
   final int? dbId;
@@ -193,6 +195,8 @@ class SaleRow {
   final double total;
   final DateTime timestamp;
   final int? shiftId;
+  final int? orderNumber;
+  final String? tableName;
 
   factory SaleRow.fromMap(Map<String, dynamic> m) => SaleRow(
     dbId: m['id'] as int?,
@@ -201,6 +205,8 @@ class SaleRow {
     total: (m['total'] as num).toDouble(),
     timestamp: DateTime.parse(m['timestamp'] as String),
     shiftId: m['shiftId'] as int?,
+    orderNumber: (m['orderNumber'] as num?)?.toInt(),
+    tableName: m['tableName'] as String?,
   );
 }
 

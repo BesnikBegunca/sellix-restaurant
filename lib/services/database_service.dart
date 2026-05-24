@@ -78,12 +78,13 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 23,
+      version: 24,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
         await DatabaseSchema.ensureShiftsSnapshotColumn(db);
+        await DatabaseSchema.ensureSalesOrderMetadataColumns(db);
         await DatabaseSchema.ensureDefaultMenuPresent(db);
       },
     );
