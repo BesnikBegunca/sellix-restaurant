@@ -63,168 +63,61 @@ class _MenuPanelState extends State<MenuPanel> {
     setState(() => _newProductImage = null);
   }
 
+  Future<void> _confirmDeleteCategory(
+    BuildContext context,
+    CategoryData category,
+  ) async {
+    final count = category.products.length;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Fshi kategorinë?'),
+        content: Text(
+          count > 0
+              ? 'Kategoria «${category.name}» dhe $count produkte do të fshihen përgjithmonë.'
+              : 'Kategoria «${category.name}» do të fshihet.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Anulo'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.negativeText),
+            child: const Text('Fshi'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    await widget.m.removeCategory(category.id);
+    if (!mounted) return;
+    final cats = ManagerData.instance.categories;
+    setState(() {
+      if (cats.isEmpty) {
+        _selectedCatId = null;
+      } else if (_selectedCatId == category.id ||
+          !cats.any((c) => c.id == _selectedCatId)) {
+        _selectedCatId = cats.first.id;
+      }
+    });
+  }
+
   Future<void> _openEditDialog(
     BuildContext context,
     String catId,
     ProductItem p,
   ) async {
-    final nameCtrl = TextEditingController(text: p.name);
-    final priceCtrl = TextEditingController(text: p.price.toStringAsFixed(2));
-    String? editImage = p.imagePath;
-
     await showDialog<void>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSt) => Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: SizedBox(
-              width: 400,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Ndrysho produktin',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: editImage != null
-                            ? productImage(
-                                editImage,
-                                width: 64,
-                                height: 64,
-                                fit: BoxFit.cover,
-                                placeholder: _noImageBox,
-                              )
-                            : _noImageBox(),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Fotoja',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.lightGreenText,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              final picked = await showImageSourcePicker(
-                                context,
-                                editImage,
-                              );
-                              if (picked != null) {
-                                setSt(
-                                  () => editImage = picked.isEmpty
-                                      ? null
-                                      : picked,
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.image_outlined, size: 16),
-                            label: const Text('Ndrysho foton'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primaryGreen,
-                              side: const BorderSide(
-                                color: AppColors.primaryGreen,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: nameCtrl,
-                    decoration: inputDeco('Emri i produktit'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: priceCtrl,
-                    decoration: inputDeco('Çmimi'),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Anulo'),
-                      ),
-                      const SizedBox(width: 8),
-                      FilledButton(
-                        onPressed: () {
-                          final pr =
-                              double.tryParse(priceCtrl.text.trim()) ?? 0;
-                          if (nameCtrl.text.trim().isEmpty || pr <= 0) return;
-                          widget.m.editProduct(
-                            catId,
-                            p.id,
-                            name: nameCtrl.text.trim(),
-                            price: pr,
-                            imagePath: editImage,
-                            clearImage: editImage == null,
-                          );
-                          Navigator.pop(ctx);
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primaryGreen,
-                          foregroundColor: AppColors.white,
-                        ),
-                        child: const Text('Ruaj ndryshimet'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      builder: (ctx) => _EditProductDialog(
+        catId: catId,
+        product: p,
+        manager: widget.m,
       ),
     );
-    nameCtrl.dispose();
-    priceCtrl.dispose();
   }
-
-  Widget _noImageBox() => Container(
-    width: 64,
-    height: 64,
-    decoration: BoxDecoration(
-      color: AppColors.lightGreenBg,
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: const Icon(
-      Icons.hide_image_outlined,
-      size: 28,
-      color: AppColors.lightGreenText,
-    ),
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -440,14 +333,195 @@ class _MenuPanelState extends State<MenuPanel> {
         for (final c in cats) ...[
           CategoryProductTable(
             category: c,
-            onDeleteCategory: () => m.removeCategory(c.id),
+            onDeleteCategory: () => _confirmDeleteCategory(context, c),
             onDeleteProduct: (pid) => m.removeProduct(c.id, pid),
             onEditProduct: (p) => _openEditDialog(context, c.id, p),
             onMoveIn: (p, fromCatId) => m.moveProduct(fromCatId, p.id, c.id),
+            onReorderProduct: (pid, dir) => m.reorderProduct(c.id, pid, dir),
           ),
           const SizedBox(height: 20),
         ],
       ],
+    );
+  }
+}
+
+class _EditProductDialog extends StatefulWidget {
+  const _EditProductDialog({
+    required this.catId,
+    required this.product,
+    required this.manager,
+  });
+
+  final String catId;
+  final ProductItem product;
+  final ManagerData manager;
+
+  @override
+  State<_EditProductDialog> createState() => _EditProductDialogState();
+}
+
+class _EditProductDialogState extends State<_EditProductDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _priceCtrl;
+  String? _editImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.product.name);
+    _priceCtrl = TextEditingController(
+      text: widget.product.price.toStringAsFixed(2),
+    );
+    _editImage = widget.product.imagePath;
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _priceCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await showImageSourcePicker(context, _editImage);
+    if (!mounted) return;
+    if (picked != null) {
+      setState(() => _editImage = picked.isEmpty ? null : picked);
+    }
+  }
+
+  void _save() {
+    final pr = double.tryParse(_priceCtrl.text.trim()) ?? 0;
+    if (_nameCtrl.text.trim().isEmpty || pr <= 0) return;
+    widget.manager.editProduct(
+      widget.catId,
+      widget.product.id,
+      name: _nameCtrl.text.trim(),
+      price: pr,
+      imagePath: _editImage,
+      clearImage: _editImage == null,
+    );
+    Navigator.of(context).pop();
+  }
+
+  Widget _noImageBox() => Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: AppColors.lightGreenBg,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(
+          Icons.hide_image_outlined,
+          size: 28,
+          color: AppColors.lightGreenText,
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Ndrysho produktin',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.darkGreenText,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: _editImage != null
+                        ? productImage(
+                            _editImage,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                            placeholder: _noImageBox,
+                          )
+                        : _noImageBox(),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Fotoja',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.lightGreenText,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      OutlinedButton.icon(
+                        onPressed: _pickImage,
+                        icon: const Icon(Icons.image_outlined, size: 16),
+                        label: const Text('Ndrysho foton'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryGreen,
+                          side: const BorderSide(color: AppColors.primaryGreen),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _nameCtrl,
+                decoration: inputDeco('Emri i produktit'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _priceCtrl,
+                decoration: inputDeco('Çmimi'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Anulo'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: _save,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: AppColors.white,
+                    ),
+                    child: const Text('Ruaj ndryshimet'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

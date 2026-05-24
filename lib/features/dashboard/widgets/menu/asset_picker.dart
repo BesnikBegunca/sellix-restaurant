@@ -46,6 +46,7 @@ Future<String?> showImageSourcePicker(
 ) async {
   final choice = await showDialog<String>(
     context: context,
+    useRootNavigator: false,
     builder: (ctx) {
       final w = _assetDialogWidth(ctx).clamp(320.0, 420.0);
       return Dialog(
@@ -130,6 +131,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
 
   return showDialog<String>(
     context: context,
+    useRootNavigator: false,
     builder: (ctx) {
       final dialogW = _assetDialogWidth(ctx);
       final dialogH = _assetDialogHeight(ctx);

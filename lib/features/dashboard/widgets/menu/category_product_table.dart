@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../config/default_menu_catalog.dart';
 import '../../../../models/mock_data.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../utils/image_utils.dart';
@@ -14,6 +15,7 @@ class CategoryProductTable extends StatefulWidget {
     required this.onDeleteProduct,
     required this.onEditProduct,
     required this.onMoveIn,
+    required this.onReorderProduct,
   });
 
   final CategoryData category;
@@ -21,6 +23,7 @@ class CategoryProductTable extends StatefulWidget {
   final void Function(String productId) onDeleteProduct;
   final void Function(ProductItem product) onEditProduct;
   final void Function(ProductItem product, String fromCatId) onMoveIn;
+  final void Function(String productId, int direction) onReorderProduct;
 
   @override
   State<CategoryProductTable> createState() => _CategoryProductTableState();
@@ -181,7 +184,7 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                                     textAlign: TextAlign.right,
                                   ),
                                 ),
-                                SizedBox(width: 88),
+                                SizedBox(width: 120),
                               ],
                             ),
                           ),
@@ -194,6 +197,19 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                             _ProductTableRow(
                               product: c.products[i],
                               isLast: i == c.products.length - 1,
+                              canMoveUp: i > 0,
+                              canMoveDown: i < c.products.length - 1,
+                              canDelete: !DefaultMenuCatalog.isBuiltinProductId(
+                                c.products[i].id,
+                              ),
+                              onMoveUp: () => widget.onReorderProduct(
+                                c.products[i].id,
+                                -1,
+                              ),
+                              onMoveDown: () => widget.onReorderProduct(
+                                c.products[i].id,
+                                1,
+                              ),
                               onEdit: () => widget.onEditProduct(c.products[i]),
                               onDelete: () =>
                                   widget.onDeleteProduct(c.products[i].id),
@@ -218,12 +234,22 @@ class _ProductTableRow extends StatefulWidget {
   const _ProductTableRow({
     required this.product,
     required this.isLast,
+    required this.canMoveUp,
+    required this.canMoveDown,
+    required this.canDelete,
+    required this.onMoveUp,
+    required this.onMoveDown,
     required this.onEdit,
     required this.onDelete,
   });
 
   final ProductItem product;
   final bool isLast;
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final bool canDelete;
+  final VoidCallback onMoveUp;
+  final VoidCallback onMoveDown;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -291,23 +317,41 @@ class _ProductTableRowState extends State<_ProductTableRow> {
             ),
             const SizedBox(width: 8),
             SizedBox(
-              width: 80,
+              width: 120,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  _ActionBtn(
+                    icon: Icons.arrow_upward_rounded,
+                    tooltip: 'Lart',
+                    color: AppColors.mediumGreenText,
+                    onTap: widget.canMoveUp ? widget.onMoveUp : null,
+                    enabled: widget.canMoveUp,
+                  ),
+                  const SizedBox(width: 2),
+                  _ActionBtn(
+                    icon: Icons.arrow_downward_rounded,
+                    tooltip: 'Poshtë',
+                    color: AppColors.mediumGreenText,
+                    onTap: widget.canMoveDown ? widget.onMoveDown : null,
+                    enabled: widget.canMoveDown,
+                  ),
+                  const SizedBox(width: 4),
                   _ActionBtn(
                     icon: Icons.edit_outlined,
                     tooltip: 'Ndrysho',
                     color: AppColors.primaryGreen,
                     onTap: widget.onEdit,
                   ),
-                  const SizedBox(width: 4),
-                  _ActionBtn(
-                    icon: Icons.delete_outline,
-                    tooltip: 'Fshi',
-                    color: AppColors.negativeText,
-                    onTap: widget.onDelete,
-                  ),
+                  if (widget.canDelete) ...[
+                    const SizedBox(width: 4),
+                    _ActionBtn(
+                      icon: Icons.delete_outline,
+                      tooltip: 'Fshi',
+                      color: AppColors.negativeText,
+                      onTap: widget.onDelete,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -337,13 +381,15 @@ class _ActionBtn extends StatefulWidget {
     required this.icon,
     required this.tooltip,
     required this.color,
-    required this.onTap,
+    this.onTap,
+    this.enabled = true,
   });
 
   final IconData icon;
   final String tooltip;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final bool enabled;
 
   @override
   State<_ActionBtn> createState() => _ActionBtnState();
@@ -354,25 +400,30 @@ class _ActionBtnState extends State<_ActionBtn> {
 
   @override
   Widget build(BuildContext context) {
+    final fg = widget.enabled
+        ? widget.color
+        : AppColors.lightGreenText.withValues(alpha: 0.35);
     return Tooltip(
       message: widget.tooltip,
       child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
+        cursor: widget.enabled
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
+        onEnter: widget.enabled ? (_) => setState(() => _hover = true) : null,
+        onExit: widget.enabled ? (_) => setState(() => _hover = false) : null,
         child: GestureDetector(
-          onTap: widget.onTap,
+          onTap: widget.enabled ? widget.onTap : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: _hover
+              color: _hover && widget.enabled
                   ? widget.color.withValues(alpha: 0.1)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(widget.icon, size: 18, color: widget.color),
+            child: Icon(widget.icon, size: 18, color: fg),
           ),
         ),
       ),

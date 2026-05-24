@@ -50,4 +50,10 @@ class ProductRepository {
 
   Future<void> moveProductCategory(String productId, String newCategoryId) =>
       _db.moveProductCategory(productId, newCategoryId);
+
+  Future<void> setProductOrderInCategory(
+    String categoryId,
+    List<String> orderedProductIds,
+  ) =>
+      _db.setProductOrderInCategory(categoryId, orderedProductIds);
 }
