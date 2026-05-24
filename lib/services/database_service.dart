@@ -485,18 +485,48 @@ class DatabaseService {
     });
   }
 
+  /// Numri i radhës për «Porosia #» — rinishet nga 1 çdo ditë kalendari (lokal).
+  static String _localOrderDateKey() {
+    final n = DateTime.now();
+    final m = n.month.toString().padLeft(2, '0');
+    final d = n.day.toString().padLeft(2, '0');
+    return '${n.year}-$m-$d';
+  }
+
   Future<int> consumeNextGlobalOrderNumber() async {
     final db = await database;
+    final today = _localOrderDateKey();
     return db.transaction<int>((txn) async {
-      final rows = await txn.query(
+      final dateRows = await txn.query(
+        'app_meta',
+        where: 'key = ?',
+        whereArgs: ['global_order_number_date'],
+        limit: 1,
+      );
+      final storedDate = dateRows.isEmpty
+          ? ''
+          : dateRows.first['value']?.toString() ?? '';
+
+      final counterRows = await txn.query(
         'app_meta',
         where: 'key = ?',
         whereArgs: ['global_order_number'],
         limit: 1,
       );
-      final raw = rows.isEmpty ? '0' : rows.first['value']?.toString() ?? '0';
-      final current = int.tryParse(raw) ?? 0;
+
+      var current = 0;
+      if (storedDate == today) {
+        final raw = counterRows.isEmpty
+            ? '0'
+            : counterRows.first['value']?.toString() ?? '0';
+        current = int.tryParse(raw) ?? 0;
+      }
+
       final next = current + 1;
+      await txn.insert('app_meta', {
+        'key': 'global_order_number_date',
+        'value': today,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
       await txn.insert('app_meta', {
         'key': 'global_order_number',
         'value': next.toString(),
@@ -1626,7 +1656,11 @@ class DatabaseService {
       );
     });
     for (final key in DatabaseSchema.tenantResetAppMetaKeys) {
-      await setAppMeta(key, key == 'global_order_number' ? '0' : '');
+      if (key == 'global_order_number') {
+        await setAppMeta(key, '0');
+      } else {
+        await setAppMeta(key, '');
+      }
     }
   }
 
