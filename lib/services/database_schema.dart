@@ -73,6 +73,7 @@ class DatabaseSchema {
     'sync_last_success_at',
     'sync_pull_cursor',
     'global_order_number',
+    'global_order_number_date',
   ];
 
   // ── Activated tenant IDs (updated by ActivationService at startup) ─────────
