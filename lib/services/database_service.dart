@@ -487,6 +487,74 @@ class DatabaseService {
     });
   }
 
+  static const String _waiterOrderCountersKey = 'waiter_order_counters';
+
+  static String _normalizeWaiterForOrderCounter(String raw) {
+    final n = raw.trim();
+    return n.isEmpty ? 'Panjohur' : n;
+  }
+
+  /// Numri «Porosia #» për kamarier — rinishet nga 1 kur mbyllhet gjendja.
+  Future<int> consumeNextWaiterOrderNumber(String waiterName) async {
+    final name = _normalizeWaiterForOrderCounter(waiterName);
+    final db = await database;
+    return db.transaction<int>((txn) async {
+      final rows = await txn.query(
+        'app_meta',
+        where: 'key = ?',
+        whereArgs: [_waiterOrderCountersKey],
+        limit: 1,
+      );
+      final map = <String, int>{};
+      if (rows.isNotEmpty) {
+        final raw = rows.first['value']?.toString() ?? '{}';
+        try {
+          final decoded = jsonDecode(raw) as Map<String, dynamic>?;
+          if (decoded != null) {
+            for (final e in decoded.entries) {
+              final v = e.value;
+              if (v is num) map[e.key] = v.toInt();
+            }
+          }
+        } catch (_) {}
+      }
+      final next = (map[name] ?? 0) + 1;
+      map[name] = next;
+      await txn.insert(
+        'app_meta',
+        {
+          'key': _waiterOrderCountersKey,
+          'value': jsonEncode(map),
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      return next;
+    });
+  }
+
+  /// Pas mbylljes së gjendjes: çdo kamarier fillon përsëri nga Porosia #1.
+  Future<void> resetOrderNumberCountersForNewShift() async {
+    final db = await database;
+    final today = _localOrderDateKey();
+    await db.transaction((txn) async {
+      await txn.insert(
+        'app_meta',
+        {'key': _waiterOrderCountersKey, 'value': '{}'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      await txn.insert(
+        'app_meta',
+        {'key': 'global_order_number_date', 'value': today},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      await txn.insert(
+        'app_meta',
+        {'key': 'global_order_number', 'value': '0'},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    });
+  }
+
   /// Numri i radhës për «Porosia #» — rinishet nga 1 çdo ditë kalendari (lokal).
   static String _localOrderDateKey() {
     final n = DateTime.now();

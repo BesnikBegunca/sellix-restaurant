@@ -12,6 +12,7 @@ import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_card_button.dart';
 import '../widgets/hover_interaction.dart';
+import '../navigation/app_route_observer.dart';
 import '../widgets/num_key_body.dart';
 
 // Reuse hover widgets already defined in `hover_interaction.dart`.
@@ -29,7 +30,7 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with RouteAware {
   final TextEditingController _pinController = TextEditingController();
   final FocusNode _pinFocus = FocusNode();
   String _bill = '';
@@ -57,15 +58,32 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  void activate() {
-    super.activate();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<void>) {
+      appRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPopNext() {
     _schedulePinFocus();
   }
 
   void _schedulePinFocus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || _calcField != null) return;
+      final len = _pinController.text.length;
       _pinFocus.requestFocus();
+      _pinController.selection = TextSelection.collapsed(offset: len);
+    });
+  }
+
+  Future<T?> _pushRoute<T>(Route<T> route) {
+    return Navigator.of(context).push(route).then((value) {
+      _schedulePinFocus();
+      return value;
     });
   }
 
@@ -105,6 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
     _clockTimer?.cancel();
     ActivationLicenseController.instance
         .removeListener(_onLicenseExpiryChanged);
@@ -127,6 +146,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _setCalcField(int? field) {
     setState(() => _calcField = field);
+    if (field == null) {
+      _schedulePinFocus();
+    } else {
+      _pinFocus.unfocus();
+    }
   }
 
   void _appendDigit(String d) {
@@ -199,8 +223,10 @@ class _LoginScreenState extends State<LoginScreen> {
         _pinController.clear();
         AuditLogService.instance.logManagerLogin();
         if (!mounted) return;
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const ManagerDashboardScreen()),
+        _pushRoute(
+          MaterialPageRoute<void>(
+            builder: (_) => const ManagerDashboardScreen(),
+          ),
         );
         return;
       }
@@ -225,8 +251,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _pinController.clear();
       AuditLogService.instance.logManagerLogin();
       if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const ManagerDashboardScreen()),
+      _pushRoute(
+        MaterialPageRoute<void>(
+          builder: (_) => const ManagerDashboardScreen(),
+        ),
       );
       return;
     }
@@ -237,7 +265,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (waiter != null) {
       AuditLogService.instance.logWaiterLogin(waiterName: waiter.name);
       if (!mounted) return;
-      Navigator.of(context).push(
+      _pushRoute(
         MaterialPageRoute<void>(
           builder: (_) => TableSelectionScreen(waiterName: waiter.name),
         ),
@@ -301,7 +329,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _goToWaiterSelection() {
-    Navigator.of(context).push(
+    _pushRoute(
       MaterialPageRoute<void>(builder: (_) => const WaiterSelectionScreen()),
     );
   }
@@ -508,6 +536,7 @@ class _LoginScreenState extends State<LoginScreen> {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
               maxLines: 1,
+              enableInteractiveSelection: false,
               enableSuggestions: false,
               autocorrect: false,
               inputFormatters: [

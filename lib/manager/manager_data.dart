@@ -440,6 +440,7 @@ class ManagerData extends ChangeNotifier {
       shiftOpenedAt = now;
 
       await db.clearAllCurrentOrdersAndResetTables();
+      await db.resetOrderNumberCountersForNewShift();
       waiterSales = {};
       _cashierTables = _cashierTables
           .map(
@@ -767,6 +768,11 @@ class ManagerData extends ChangeNotifier {
 
   Future<int> nextGlobalOrderNumber() async {
     return DatabaseService.instance.consumeNextGlobalOrderNumber();
+  }
+
+  /// Numri i radhës «Porosia #» për kamarierin (riniset kur mbyllhet gjendja).
+  Future<int> nextWaiterOrderNumber(String waiterName) async {
+    return DatabaseService.instance.consumeNextWaiterOrderNumber(waiterName);
   }
 
   void _notify() => notifyListeners();
