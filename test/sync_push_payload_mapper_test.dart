@@ -99,6 +99,58 @@ void main() {
       expect(out.containsKey('waiterName'), isFalse);
     });
 
+    test('printed_orders maps expected open-order fields', () {
+      final out = SyncPushPayloadMapper.mapPayload('printed_orders', {
+        'uuid': '550e8400-e29b-41d4-a716-446655440099',
+        'orderNumber': 6,
+        'tableId': 1,
+        'tableName': 'Tavolina 1',
+        'waiterName': 'Urim',
+        'total': 3.0,
+        'itemsCount': 1,
+        'printedAt': '2026-05-25T10:00:00.000Z',
+        'businessId': 'local-business',
+        'id': 42,
+      });
+      expect(out['uuid'], '550e8400-e29b-41d4-a716-446655440099');
+      expect(out['orderNumber'], 6);
+      expect(out['tableId'], 1);
+      expect(out['tableName'], 'Tavolina 1');
+      expect(out['waiterName'], 'Urim');
+      expect(out['total'], 3.0);
+      expect(out['itemsCount'], 1);
+      expect(out['status'], 'printed');
+      expect(out['printedAt'], '2026-05-25T10:00:00.000Z');
+      expect(out.containsKey('businessId'), isFalse);
+      expect(out.containsKey('id'), isFalse);
+    });
+
+    test('printed_orders converts local printedAt to UTC', () {
+      final local = DateTime(2026, 5, 25, 14, 0);
+      final out = SyncPushPayloadMapper.mapPayload('printed_orders', {
+        'uuid': '550e8400-e29b-41d4-a716-446655440099',
+        'orderNumber': 1,
+        'tableId': 1,
+        'total': 1.0,
+        'itemsCount': 1,
+        'printedAt': local.toIso8601String(),
+      });
+      expect(out['printedAt'], local.toUtc().toIso8601String());
+      expect(out['printedAt'] as String, endsWith('Z'));
+    });
+
+    test('printed_orders paid lifecycle update is minimal', () {
+      final out = SyncPushPayloadMapper.mapPayload('printed_orders', {
+        'uuid': '550e8400-e29b-41d4-a716-446655440099',
+        'status': 'paid',
+        'saleUuid': '660e8400-e29b-41d4-a716-446655440010',
+      });
+      expect(out.keys.toList(), ['uuid', 'status', 'saleUuid']);
+      expect(out['uuid'], '550e8400-e29b-41d4-a716-446655440099');
+      expect(out['status'], 'paid');
+      expect(out['saleUuid'], '660e8400-e29b-41d4-a716-446655440010');
+    });
+
     test('buildEvent uses exact DTO keys only', () {
       final mapped = SyncPushPayloadMapper.mapPayload('sales', {'total': 10.0});
       final event = SyncPushPayloadMapper.buildEvent(

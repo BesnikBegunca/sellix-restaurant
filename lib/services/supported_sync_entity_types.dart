@@ -6,6 +6,7 @@ const Set<String> supportedSyncEntityTypes = {
   'sales',
   'sale_lines',
   'sale_adjustments',
+  'printed_orders',
   'products',
   'categories',
   'expenses',
