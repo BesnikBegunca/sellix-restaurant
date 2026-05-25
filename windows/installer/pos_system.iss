@@ -2,7 +2,7 @@
 ; Requires Inno Setup 6.x — https://jrsoftware.org/isinfo.php
 ;
 ; BEFORE building this installer:
-;   1. Run: .\scripts\sync_windows_app_icon.ps1  (iconpos.ico -> app_icon.ico)
+;   1. Run: .\scripts\sync_windows_app_icon.ps1  (app_icon.png -> app_icon.ico)
 ;   2. Run: flutter build windows --release
 ;   3. Copy release\app_config.example.json to release\app_config.json
 ;   4. Run: .\scripts\prepare_windows_release.ps1
@@ -14,7 +14,7 @@
 #define AppExeName   "pos_system.exe"
 #define ReleaseDir   "..\..\build\windows\x64\runner\Release"
 #define ConfigDir    "..\..\release"
-#define AppIcon      "..\..\assets\images\iconpos.ico"
+#define AppIcon      "..\..\assets\images\app_icon.ico"
 
 [Setup]
 AppName={#AppName}

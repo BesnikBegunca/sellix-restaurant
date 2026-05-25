@@ -1,4 +1,4 @@
-# Para build: .\scripts\sync_windows_app_icon.ps1
+# Para build: .\scripts\sync_windows_app_icon.ps1  (app_icon.png -> .ico)
 # Pastaj: flutter build windows --release
 # Pastaj: ky skript (app_config + Inno)
 
