@@ -397,6 +397,14 @@ class DefaultMenuCatalog {
       emoji: '🍹',
       imagePath: 'assets/images/Long Island Ice tea.png',
     ),
+    DefaultProductDef(
+      id: '${kIdPrefix}prod_qaj',
+      name: 'Qaj',
+      categoryId: '${kIdPrefix}cat_kafe',
+      price: 1.00,
+      emoji: '🍵',
+      imagePath: 'assets/images/qaj.png',
+    ),
   ];
 }
 
