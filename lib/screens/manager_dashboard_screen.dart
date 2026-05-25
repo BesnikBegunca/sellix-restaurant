@@ -16,7 +16,6 @@ import '../features/dashboard/panels/shift_panel.dart';
 import '../features/dashboard/panels/waiters_panel.dart';
 import '../features/dashboard/panels/expenses_panel.dart';
 import '../features/dashboard/panels/profits_panel.dart';
-import '../features/dashboard/panels/reports_panel.dart';
 import '../features/dashboard/panels/top_employee_panel.dart';
 import '../features/dashboard/panels/menu_panel.dart';
 import '../features/dashboard/panels/tables_config_panel.dart';
@@ -37,7 +36,6 @@ const _kSectionTitles = <String>[
   'Expenses',
   'Profits',
   'Shitjet',
-  'Reports',
   'Leaderboard',
   'Menu',
   'Tavolinat',
@@ -81,7 +79,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _railIndex = widget.initialIndex;
+    _railIndex = widget.initialIndex.clamp(0, _kSectionTitles.length - 1);
     _m.addListener(_onData);
 
     AdminSessionService.instance.reset();
@@ -319,22 +317,20 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       case 5:
         return SalesDailyPanel(m: _m);
       case 6:
-        return ReportsPanel(m: _m);
-      case 7:
         return TopEmployeePanel(m: _m);
-      case 8:
+      case 7:
         return MenuPanel(m: _m);
-      case 9:
+      case 8:
         return TablesConfigPanel(m: _m);
-      case 10:
+      case 9:
         return CompanySettingsPanel(m: _m);
-      case 11:
+      case 10:
         return StaffPayrollPanel(m: _m);
-      case 12:
+      case 11:
         return RefundPanel(m: _m);
-      case 13:
+      case 12:
         return const SalesHistoryPanel();
-      case 14:
+      case 13:
         return const AuditLogPanel();
       default:
         return const SizedBox.shrink();
