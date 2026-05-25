@@ -87,8 +87,6 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
             ),
           ),
 
-          _ShiftStatusChip(open: widget.m.shiftOpen),
-          const SizedBox(width: 12),
           ListenableBuilder(
             listenable: SyncStatusService.instance,
             builder: (context, _) => _SyncStatusChip(
@@ -180,51 +178,6 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
       },
     );
     return ok == true;
-  }
-}
-
-class _ShiftStatusChip extends StatelessWidget {
-  const _ShiftStatusChip({required this.open});
-  final bool open;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: open
-            ? AppColors.primaryGreen.withValues(alpha: 0.08)
-            : AppColors.lightGreenBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: open
-              ? AppColors.primaryGreen.withValues(alpha: 0.25)
-              : AppColors.lightGreenBorder,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(
-              color: open ? AppColors.primaryGreen : AppColors.lightGreenText,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 7),
-          Text(
-            open ? 'Gjendja e hapur' : 'Gjendja e mbyllur',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: open ? AppColors.primaryGreen : AppColors.lightGreenText,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
