@@ -345,9 +345,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   Future<void> _sendOrder() async {
     if (_lines.isEmpty) return;
-    // Çdo PRINTO merr order number global të ri (+1), pavarësisht kamarierit/tavolinës.
+    // Çdo PRINTO: numër i ri për këtë kamarier (riniset nga 1 pas mbylljes së gjendjes).
     final printOrderNumber =
-        await ManagerData.instance.nextGlobalOrderNumber();
+        await ManagerData.instance.nextWaiterOrderNumber(widget.waiterName);
     setState(() => _activeOrderNumber = printOrderNumber);
     final persisted = await ManagerData.instance.loadCurrentOrderLines(
       widget.tableNumber,

@@ -126,6 +126,7 @@ class DatabaseSchema {
     'sync_pull_cursor',
     'global_order_number',
     'global_order_number_date',
+    'waiter_order_counters',
   ];
 
   // ── Activated tenant IDs (updated by ActivationService at startup) ─────────
