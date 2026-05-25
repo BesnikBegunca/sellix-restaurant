@@ -52,63 +52,75 @@ class _ProductTileState extends State<ProductTile> {
                     ),
                   ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Center(
-                  child: widget.product.imagePath != null
-                      ? productImage(
-                          widget.product.imagePath,
-                          fit: BoxFit.contain,
-                        )
-                      : FittedBox(
-                          fit: BoxFit.contain,
-                          child: Text(
-                            widget.product.emoji,
-                            style: const TextStyle(fontSize: 96),
-                          ),
-                        ),
-                ),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          child: LayoutBuilder(
+            builder: (context, constraints) => FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 100,
+                      child: Center(
+                        child: widget.product.imagePath != null
+                            ? productImage(
+                                widget.product.imagePath,
+                                fit: BoxFit.contain,
+                              )
+                            : FittedBox(
+                                fit: BoxFit.contain,
+                                child: Text(
+                                  widget.product.emoji,
+                                  style: const TextStyle(fontSize: 96),
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          widget.product.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.darkGreenText,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.product.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.darkGreenText,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${widget.product.price.toStringAsFixed(2)}€',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.lightGreenText,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${widget.product.price.toStringAsFixed(2)}€',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.lightGreenText,
+                        HoverScaleButton(
+                          onPressed: widget.onAdd,
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: _AddCircle(hover: _hover),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  HoverScaleButton(
-                    onPressed: widget.onAdd,
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: _AddCircle(hover: _hover),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),

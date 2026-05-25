@@ -59,4 +59,41 @@ abstract final class PosGrid {
 
   static double tableCellHeightFor(double gridInnerWidth, int columns) =>
       tableCellWidthFor(gridInnerWidth, columns) / childAspectRatio;
+
+  /// Rrit kolonat derisa të gjithë [itemCount] qelizat përshtaten në [height]
+  /// (pa scroll — i njëjti algoritëm si te ekrani i tavolinave).
+  static int resolveCrossAxisCount({
+    required int itemCount,
+    required double width,
+    required double height,
+    int startColumns = crossAxisCount,
+    int minColumns = 2,
+    int maxColumns = 12,
+  }) {
+    if (itemCount <= 0) return startColumns.clamp(minColumns, maxColumns);
+
+    final W = width;
+    final H = height;
+    var columns = startColumns.clamp(minColumns, maxColumns);
+
+    while (columns < itemCount && columns < maxColumns) {
+      final rows = (itemCount / columns).ceil();
+      final cellW = (W - (columns - 1) * spacing) / columns;
+      final cellH = cellW / childAspectRatio;
+      final needed = rows * cellH + (rows - 1) * spacing;
+      if (needed <= H) break;
+      columns++;
+    }
+    return columns;
+  }
+
+  static SliverGridDelegateWithFixedCrossAxisCount delegateFor(int columns) {
+    final c = columns.clamp(2, 12);
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: c,
+      crossAxisSpacing: spacing,
+      mainAxisSpacing: spacing,
+      childAspectRatio: childAspectRatio,
+    );
+  }
 }

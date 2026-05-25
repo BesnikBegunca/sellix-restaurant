@@ -554,14 +554,30 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                 ),
                                 const SizedBox(height: PosGrid.spacing),
                                 Expanded(
-                                  child: GridView.builder(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    gridDelegate: PosGrid.delegate,
-                                    itemCount: products.length,
-                                    itemBuilder: (context, i) {
-                                      return ProductTile(
-                                        product: products[i],
-                                        onAdd: () => _addProduct(products[i]),
+                                  child: LayoutBuilder(
+                                    builder: (context, gridConstraints) {
+                                      final columns =
+                                          PosGrid.resolveCrossAxisCount(
+                                        itemCount: products.length,
+                                        width: gridConstraints.maxWidth,
+                                        height: gridConstraints.maxHeight,
+                                      );
+                                      return GridView.builder(
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        padding: const EdgeInsets.only(
+                                          bottom: 16,
+                                        ),
+                                        gridDelegate:
+                                            PosGrid.delegateFor(columns),
+                                        itemCount: products.length,
+                                        itemBuilder: (context, i) {
+                                          return ProductTile(
+                                            product: products[i],
+                                            onAdd: () =>
+                                                _addProduct(products[i]),
+                                          );
+                                        },
                                       );
                                     },
                                   ),
