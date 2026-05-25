@@ -241,7 +241,7 @@ class ShiftPanel extends StatelessWidget {
           runSpacing: 16,
           children: [
             StatCard(
-              title: 'Shitje (sesioni)',
+              title: 'Shitje',
               value: '${m.waiterSales.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)}€',
               icon: Icons.point_of_sale_outlined,
               accentColor: AppColors.warmGold,
@@ -253,7 +253,7 @@ class ShiftPanel extends StatelessWidget {
               accentColor: AppColors.softRed,
             ),
             StatCard(
-              title: 'Fitim neto',
+              title: 'Fitimi',
               value: '${m.profitToday.toStringAsFixed(0)}€',
               icon: Icons.trending_up,
               accentColor: AppColors.primaryGreen,

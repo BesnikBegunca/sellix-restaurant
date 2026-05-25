@@ -120,7 +120,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
         sectionTitle('Fitime'),
         const SizedBox(height: 6),
         const Text(
-          'Fitimi neto = shitje – shpenzime, sipas periudhës.',
+          'Fitimi = shitje – shpenzime, sipas periudhës.',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
         const SizedBox(height: 24),
@@ -440,7 +440,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: ProfitBreakdownRow(
-                              label: 'Fitim Neto',
+                              label: 'Fitimi',
                               value: '${selProfit.toStringAsFixed(0)}€',
                               valueColor: AppColors.primaryGreen,
                               bold: true,
