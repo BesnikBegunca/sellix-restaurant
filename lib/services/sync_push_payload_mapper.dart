@@ -32,6 +32,7 @@ class SyncPushPayloadMapper {
       'sale_lines' => _mapSaleLinePayload(payload),
       'sales' => _mapSalesPayload(payload),
       'sale_adjustments' => _mapSaleAdjustmentPayload(payload),
+      'printed_orders' => _mapPrintedOrdersPayload(payload),
       'products' => _mapProductPayload(payload),
       _ => payload,
     };
@@ -137,6 +138,83 @@ class SyncPushPayloadMapper {
       out['type'] = out['adjustmentType'];
     }
     return out;
+  }
+
+  static Map<String, dynamic> _mapPrintedOrdersPayload(
+    Map<String, dynamic> payload,
+  ) {
+    final out = <String, dynamic>{};
+
+    final uuid = payload['uuid'];
+    if (uuid is String && uuid.trim().isNotEmpty) {
+      out['uuid'] = uuid.trim();
+    }
+
+    final orderNumber = payload['orderNumber'] ?? payload['order_number'];
+    if (orderNumber is num && orderNumber > 0) {
+      out['orderNumber'] = orderNumber.toInt();
+    }
+
+    final tableId = payload['tableId'] ?? payload['table_id'];
+    if (tableId != null) {
+      out['tableId'] = tableId is num ? tableId.toInt() : tableId;
+    }
+
+    final tableName = payload['tableName'] ?? payload['table_name'];
+    if (tableName != null && tableName.toString().trim().isNotEmpty) {
+      out['tableName'] = tableName.toString().trim();
+    }
+
+    final waiterName = payload['waiterName'] ?? payload['waiter_name'];
+    if (waiterName != null && waiterName.toString().trim().isNotEmpty) {
+      out['waiterName'] = waiterName.toString().trim();
+    }
+
+    final total = payload['total'];
+    if (total != null) out['total'] = total;
+
+    final itemsCount = payload['itemsCount'] ?? payload['items_count'];
+    if (itemsCount != null) out['itemsCount'] = itemsCount;
+
+    final status = payload['status'];
+    if (status != null && status.toString().isNotEmpty) {
+      out['status'] = status.toString();
+    } else if (!_isPrintedOrderPaidLifecycleUpdate(payload)) {
+      out['status'] = 'printed';
+    }
+
+    final printedAt = payload['printedAt'] ?? payload['printed_at'];
+    if (printedAt != null && printedAt.toString().trim().isNotEmpty) {
+      final raw = printedAt.toString().trim();
+      if (raw.endsWith('Z')) {
+        out['printedAt'] = raw;
+      } else {
+        final parsed = DateTime.tryParse(raw);
+        if (parsed != null) {
+          out['printedAt'] = parsed.toUtc().toIso8601String();
+        } else {
+          out['printedAt'] = raw;
+        }
+      }
+    }
+
+    final saleUuid = payload['saleUuid'] ?? payload['sale_uuid'];
+    if (saleUuid is String && saleUuid.trim().isNotEmpty) {
+      out['saleUuid'] = saleUuid.trim();
+    }
+
+    return out;
+  }
+
+  /// Paid transition uses uuid + status + saleUuid only (no second row).
+  static bool _isPrintedOrderPaidLifecycleUpdate(Map<String, dynamic> payload) {
+    final status = payload['status']?.toString();
+    final saleUuid = payload['saleUuid'] ?? payload['sale_uuid'];
+    if (status != 'paid' || saleUuid == null) return false;
+    return payload['orderNumber'] == null &&
+        payload['order_number'] == null &&
+        payload['tableId'] == null &&
+        payload['table_id'] == null;
   }
 
   static Map<String, dynamic> _mapProductPayload(Map<String, dynamic> payload) {

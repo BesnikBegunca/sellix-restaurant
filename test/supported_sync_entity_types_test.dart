@@ -3,7 +3,8 @@ import 'package:pos_system/services/supported_sync_entity_types.dart';
 
 void main() {
   group('isSupportedSyncEntityType', () {
-    test('accepts pos_api supported types', () {
+    test('accepts pos_api supported types including printed_orders', () {
+      expect(supportedSyncEntityTypes, contains('printed_orders'));
       for (final type in supportedSyncEntityTypes) {
         expect(isSupportedSyncEntityType(type), isTrue);
         expect(isSupportedSyncEntityType(type.toUpperCase()), isTrue);

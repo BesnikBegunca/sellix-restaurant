@@ -11,6 +11,7 @@ import '../models/sale_insert_result.dart';
 import '../models/unsupported_outbox_cleanup_result.dart';
 import 'background_sync_service.dart';
 import 'database_schema.dart';
+import 'printed_order_sync_payload.dart';
 import 'supported_sync_entity_types.dart';
 
 /// Central SQLite service — single source of truth for all persistent data.
@@ -300,6 +301,9 @@ class DatabaseService {
     int tableId,
     String waiterName, {
     bool clearPrintHistory = false,
+    /// When true (manual cancel / void), queue [printed_orders] delete to cloud.
+    /// After PAGUAJ, leave false so paid rows stay visible on mobile.
+    bool queuePrintedOrderDeleteOnClear = false,
   }) async {
     final db = await database;
     final orderMeta = await fetchCurrentOrderMeta(tableId, waiterName);
@@ -329,7 +333,11 @@ class DatabaseService {
     });
     _scheduleSyncAfterLocalMutation();
     if (clearPrintHistory) {
-      await clearKitchenPrintsForTable(tableId, waiterName);
+      await clearKitchenPrintsForTable(
+        tableId,
+        waiterName,
+        queueSyncDelete: queuePrintedOrderDeleteOnClear,
+      );
     }
   }
 
@@ -382,20 +390,19 @@ class DatabaseService {
           ...ts,
         });
       }
-      await _queueOutboxById(
+      final printRow = await _fetchEntityRow(
         'kitchen_prints',
-        'kitchen_prints',
-        printId,
-        operation: 'create',
+        where: 'id = ?',
+        whereArgs: [printId],
         txn: txn,
       );
-      final printLines = await txn.query(
-        'kitchen_print_lines',
-        where: 'printId = ?',
-        whereArgs: [printId],
-      );
-      for (final row in printLines) {
-        await _queueOutboxRow('kitchen_print_lines', row, 'create', txn: txn);
+      if (printRow != null) {
+        await _queuePrintedOrderOutbox(
+          printRow: printRow,
+          batchLines: lines,
+          operation: 'create',
+          txn: txn,
+        );
       }
       return printId;
     });
@@ -447,21 +454,45 @@ class DatabaseService {
     return rows.isEmpty ? null : rows.first;
   }
 
-  Future<void> deleteKitchenPrint(int printId) async {
+  /// Removes one kitchen print batch. Sync delete only when [queueSyncDelete] is
+  /// true (void/cancel); after payment, clear local history without cloud delete.
+  Future<void> deleteKitchenPrint(
+    int printId, {
+    bool queueSyncDelete = true,
+  }) async {
     final db = await database;
-    await db.delete(
-      'kitchen_print_lines',
-      where: 'printId = ?',
-      whereArgs: [printId],
-    );
-    await db.delete(
-      'kitchen_prints',
-      where: 'id = ?',
-      whereArgs: [printId],
-    );
+    final meta = await fetchKitchenPrintById(printId);
+    await db.transaction((txn) async {
+      if (queueSyncDelete && meta != null) {
+        await _queuePrintedOrderOutbox(
+          printRow: meta,
+          batchLines: const [],
+          operation: 'delete',
+          txn: txn,
+        );
+      }
+      await txn.delete(
+        'kitchen_print_lines',
+        where: 'printId = ?',
+        whereArgs: [printId],
+      );
+      await txn.delete(
+        'kitchen_prints',
+        where: 'id = ?',
+        whereArgs: [printId],
+      );
+    });
+    if (queueSyncDelete) {
+      _scheduleSyncAfterLocalMutation();
+    }
   }
 
-  Future<void> clearKitchenPrintsForTable(int tableId, String waiterName) async {
+  /// Clears local [kitchen_prints] for a table. Default: no cloud delete (post-pay).
+  Future<void> clearKitchenPrintsForTable(
+    int tableId,
+    String waiterName, {
+    bool queueSyncDelete = false,
+  }) async {
     final db = await database;
     final prints = await db.query(
       'kitchen_prints',
@@ -469,7 +500,10 @@ class DatabaseService {
       whereArgs: [tableId, waiterName],
     );
     for (final p in prints) {
-      await deleteKitchenPrint((p['id'] as num).toInt());
+      await deleteKitchenPrint(
+        (p['id'] as num).toInt(),
+        queueSyncDelete: queueSyncDelete,
+      );
     }
   }
 
@@ -1043,6 +1077,12 @@ class DatabaseService {
       );
       if (existing.isNotEmpty) {
         final saleId = existing.first['id'] as int;
+        await _linkPrintedOrdersToSale(
+          tableId: tableId,
+          waiterName: waiterName,
+          saleUuid: saleUuid,
+          txn: txn,
+        );
         return SaleInsertResult(
           saleId: saleId,
           saleUuid: saleUuid,
@@ -1139,6 +1179,12 @@ class DatabaseService {
         // ignore: avoid_print
         print('[SyncDiag] queued to outbox entityType=sale_lines uuid=$lineUuid');
       }
+      await _linkPrintedOrdersToSale(
+        tableId: tableId,
+        waiterName: waiterName,
+        saleUuid: saleUuid,
+        txn: txn,
+      );
       return SaleInsertResult(
         saleId: saleId,
         saleUuid: saleUuid,
@@ -2449,6 +2495,116 @@ class DatabaseService {
         operation,
         txn: txn,
         payloadExtras: payloadExtras,
+      );
+    }
+  }
+
+  Map<String, dynamic> _buildPrintedOrderPayload({
+    required Map<String, dynamic> printRow,
+    required List<Map<String, dynamic>> batchLines,
+    String status = 'printed',
+    String? saleUuid,
+  }) {
+    final tableId = (printRow['tableId'] as num).toInt();
+    final entityUuid = printRow['uuid'] as String? ?? '';
+    if (status == 'paid' && saleUuid != null && saleUuid.isNotEmpty) {
+      return PrintedOrderSyncPayload.paidUpdate(
+        uuid: entityUuid,
+        saleUuid: saleUuid,
+      );
+    }
+    return PrintedOrderSyncPayload.create(
+      uuid: entityUuid,
+      orderNumber: (printRow['orderNumber'] as num).toInt(),
+      tableId: tableId,
+      waiterName: printRow['waiterName'] as String,
+      total: (printRow['total'] as num).toDouble(),
+      itemsCount: PrintedOrderSyncPayload.itemsCountFromLines(batchLines),
+      printedAt: printRow['printedAt'] as String,
+    );
+  }
+
+  Future<void> _queuePrintedOrderOutbox({
+    required Map<String, dynamic> printRow,
+    required List<Map<String, dynamic>> batchLines,
+    required String operation,
+    Transaction? txn,
+    String status = 'printed',
+    String? saleUuid,
+  }) async {
+    final entityUuid = printRow['uuid'] as String?;
+    if (entityUuid == null || entityUuid.isEmpty) return;
+
+    if (operation == 'create' && txn != null) {
+      final exists = await _hasOutboxEventForEntity(
+        entityType: 'printed_orders',
+        entityUuid: entityUuid,
+        operation: 'create',
+        txn: txn,
+      );
+      if (exists) return;
+    }
+
+    if (operation == 'update' &&
+        status == 'paid' &&
+        txn != null &&
+        saleUuid != null) {
+      final exists = await _hasOutboxEventForEntity(
+        entityType: 'printed_orders',
+        entityUuid: entityUuid,
+        operation: 'update',
+        txn: txn,
+      );
+      if (exists) return;
+    }
+
+    final payload = _buildPrintedOrderPayload(
+      printRow: printRow,
+      batchLines: batchLines,
+      status: status,
+      saleUuid: saleUuid,
+    );
+    await _enqueueOutbox(
+      entityType: 'printed_orders',
+      entityUuid: entityUuid,
+      operation: operation,
+      payload: payload,
+      txn: txn,
+    );
+  }
+
+  Future<void> _linkPrintedOrdersToSale({
+    required int tableId,
+    required String waiterName,
+    required String saleUuid,
+    required Transaction txn,
+  }) async {
+    final prints = await txn.query(
+      'kitchen_prints',
+      where: 'tableId = ? AND waiterName = ?',
+      whereArgs: [tableId, waiterName],
+    );
+    for (final printRow in prints) {
+      final printId = (printRow['id'] as num).toInt();
+      final lineRows = await txn.query(
+        'kitchen_print_lines',
+        where: 'printId = ?',
+        whereArgs: [printId],
+      );
+      final batchLines = lineRows
+          .map(
+            (r) => <String, dynamic>{
+              'qty': r['qty'],
+            },
+          )
+          .toList();
+      await _queuePrintedOrderOutbox(
+        printRow: printRow,
+        batchLines: batchLines,
+        operation: 'update',
+        txn: txn,
+        status: 'paid',
+        saleUuid: saleUuid,
       );
     }
   }
