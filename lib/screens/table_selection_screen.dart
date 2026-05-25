@@ -77,33 +77,16 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        const spacing = PosGrid.spacing;
-                        const ratio = PosGrid.childAspectRatio;
                         final itemCount = tables.length + 1;
-                        final W = constraints.maxWidth;
-                        final H = constraints.maxHeight;
-
-                        // Start from 4 columns and increase until all rows
-                        // fit in the available height (proportional shrink).
-                        int columns = PosGrid.crossAxisCount;
-                        while (columns < itemCount) {
-                          final rows = (itemCount / columns).ceil();
-                          final cellW = (W - (columns - 1) * spacing) / columns;
-                          final cellH = cellW / ratio;
-                          final needed = rows * cellH + (rows - 1) * spacing;
-                          if (needed <= H) break;
-                          columns++;
-                        }
+                        final columns = PosGrid.resolveCrossAxisCount(
+                          itemCount: itemCount,
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                        );
 
                         return GridView.builder(
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: columns,
-                                crossAxisSpacing: spacing,
-                                mainAxisSpacing: spacing,
-                                childAspectRatio: ratio,
-                              ),
+                          gridDelegate: PosGrid.tableDelegateFor(columns),
                           itemCount: itemCount,
                           itemBuilder: (context, i) {
                             if (i == tables.length) {
