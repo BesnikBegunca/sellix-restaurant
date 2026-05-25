@@ -39,6 +39,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   final List<CartLine> _lines = [];
   bool _hydrated = false;
   bool _isPaying = false;
+  bool _isSendingOrder = false;
 
   @override
   void initState() {
@@ -344,7 +345,18 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   }
 
   Future<void> _sendOrder() async {
-    if (_lines.isEmpty) return;
+    if (_lines.isEmpty || _isSendingOrder || _isPaying) return;
+    _isSendingOrder = true;
+    if (mounted) setState(() {});
+    try {
+      await _sendOrderImpl();
+    } finally {
+      _isSendingOrder = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _sendOrderImpl() async {
     // Çdo PRINTO: numër i ri për këtë kamarier (riniset nga 1 pas mbylljes së gjendjes).
     final printOrderNumber =
         await ManagerData.instance.nextWaiterOrderNumber(widget.waiterName);
@@ -599,6 +611,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           onSend: _sendOrder,
                           onPay: _payTable,
                           isPaying: _isPaying,
+                          isSendingOrder: _isSendingOrder,
                         ),
                       ),
                     ],

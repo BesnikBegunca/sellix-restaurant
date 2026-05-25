@@ -18,6 +18,7 @@ class OrderPanel extends StatelessWidget {
     required this.onSend,
     required this.onPay,
     this.isPaying = false,
+    this.isSendingOrder = false,
   });
 
   final int tableNumber;
@@ -28,6 +29,7 @@ class OrderPanel extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onPay;
   final bool isPaying;
+  final bool isSendingOrder;
 
   @override
   Widget build(BuildContext context) {
@@ -127,9 +129,12 @@ class OrderPanel extends StatelessWidget {
             child: _moneyRow('Totali', total, large: true),
           ),
           const SizedBox(height: 24),
-          SendOrderButton(enabled: !empty, onSend: onSend),
+          SendOrderButton(
+            enabled: !empty && !isSendingOrder && !isPaying,
+            onSend: onSend,
+          ),
           const SizedBox(height: 10),
-          PayButton(onPay: onPay, isPaying: isPaying),
+          PayButton(onPay: onPay, isPaying: isPaying || isSendingOrder),
         ],
       ),
     );
