@@ -437,7 +437,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Order Sent!',
+                    'Porosia u Dergua!',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w500,
@@ -446,7 +446,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Order #$_activeOrderNumber',
+                    'Porosia #$_activeOrderNumber',
                     style: const TextStyle(
                       fontSize: 16,
                       color: AppColors.lightGreenText,
