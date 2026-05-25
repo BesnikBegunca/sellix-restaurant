@@ -9,6 +9,7 @@ import 'manager/manager_data.dart';
 import 'screens/activation_screen.dart';
 import 'screens/config_error_screen.dart';
 import 'screens/device_revoked_screen.dart';
+import 'navigation/app_route_observer.dart';
 import 'screens/login_screen.dart';
 import 'services/database_service.dart';
 import 'services/activation_service.dart';
@@ -325,6 +326,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
           ),
         ),
       ),
+      navigatorObservers: [appRouteObserver],
       home: _buildHome(),
     );
   }
