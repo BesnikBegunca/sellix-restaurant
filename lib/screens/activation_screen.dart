@@ -6,6 +6,7 @@ import '../manager/manager_data.dart';
 import '../services/activation_error_message.dart';
 import '../services/activation_service.dart';
 import '../services/background_sync_service.dart';
+import '../services/device_transfer_exception.dart';
 import '../services/local_tenant_data_service.dart';
 import '../services/runtime_config_service.dart';
 import '../theme/app_colors.dart';
@@ -27,6 +28,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
 
   bool _validating = false;
   bool _activating = false;
+  bool _transferPending = false;
   String? _error;
   ActivationValidateResponse? _validated;
 
@@ -115,6 +117,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
 
     setState(() {
       _activating = true;
+      _transferPending = false;
       _error = null;
     });
     try {
@@ -126,6 +129,14 @@ class _ActivationScreenState extends State<ActivationScreen> {
       await ManagerData.instance.reload();
       BackgroundSyncService.instance.start();
       // [ActivationStateController] → [PosSystemApp] home becomes [LoginScreen].
+    } on DeviceTransferRequiredException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _activating = false;
+        _transferPending = true;
+        _error = null;
+      });
+      await _showTransferPendingDialog(isDuplicate: e.isDuplicate);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -133,6 +144,37 @@ class _ActivationScreenState extends State<ActivationScreen> {
         _error = activationErrorMessage(e);
       });
     }
+  }
+
+  Future<void> _showTransferPendingDialog({required bool isDuplicate}) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Kërkohet aprovim nga SuperAdmin'),
+        content: Text(
+          isDuplicate
+              ? 'Kërkesa ekziston dhe është në pritje të aprovimit.'
+              : 'Kjo licencë është përdorur më parë në një pajisje tjetër. '
+                  'Kërkesa për transferim u dërgua te SuperAdmin. '
+                  'Pas aprovimit, provo aktivizimin përsëri.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Në rregull'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _activate();
+            },
+            child: const Text('Provo përsëri'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _resetLocalActivation() async {
@@ -266,6 +308,30 @@ class _ActivationScreenState extends State<ActivationScreen> {
                       ),
                     ],
                     const SizedBox(height: 24),
+                    if (_transferPending) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.mutedOrange.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.mutedOrange.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: const Text(
+                          'Kërkesa për transferim u dërgua te SuperAdmin. '
+                          'Pas aprovimit, provo aktivizimin përsëri.',
+                          style: TextStyle(
+                            color: AppColors.mutedOrange,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     if (_error != null) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(

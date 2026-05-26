@@ -42,7 +42,8 @@
       "Bash(xargs ls -la)",
       "Bash(flutter clean *)",
       "Bash(dart --version)",
-      "Bash(ls /Users/urim/StudioProjects/pos_system/.vscode/ 2>/dev/null || mkdir -p /Users/urim/StudioProjects/pos_system/.vscode)"
+      "Bash(ls /Users/urim/StudioProjects/pos_system/.vscode/ 2>/dev/null || mkdir -p /Users/urim/StudioProjects/pos_system/.vscode)",
+      "Bash(flutter test *)"
     ],
     "additionalDirectories": [
       "/Users/urim/StudioProjects/pos_api/src/sync",

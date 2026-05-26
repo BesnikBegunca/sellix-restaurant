@@ -28,6 +28,13 @@ const String kEndpointSyncPush = '/sync/push';
 /// → {serverTime, cursor, entities: {categories, products, shifts, sales, ...}}
 const String kEndpointSyncPull = '/sync/pull';
 
+/// POST {licenseId, oldDeviceId?, oldDeviceName?, newDeviceFingerprint, newDeviceName, reason}
+/// → [DeviceTransferResponse]
+///
+/// Called when activation fails with [requiresTransferApproval] == true.
+/// A 409 response means a pending request already exists — treat as success.
+const String kEndpointRequestTransfer = '/licenses/request-transfer';
+
 /// PATCH — revoke a device record (pos_api: **SuperAdmin only** today).
 ///
 /// Desktop activation tokens cannot call this until the API allows device
