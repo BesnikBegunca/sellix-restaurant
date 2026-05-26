@@ -6,8 +6,11 @@ import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import '../models/activation_response.dart';
 import '../models/activation_validate_response.dart';
+import '../models/device_transfer_required_response.dart';
+import '../models/device_transfer_response.dart';
 import 'activation_api_log.dart';
 import 'api_client.dart';
+import 'device_transfer_exception.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
 import 'activation_state_controller.dart';
@@ -226,6 +229,10 @@ class ActivationService {
   /// Sends POST /activation/desktop and persists the server response locally.
   ///
   /// Uses the stable device UUID from [app_meta] (same key as [AuditContextService]).
+  ///
+  /// Throws [DeviceTransferRequiredException] when the license is already bound
+  /// to another device — a transfer request is submitted automatically before
+  /// throwing, so the UI only needs to show the pending-approval message.
   Future<ActivationResponse> activateDesktop({
     required String activationKey,
     required String branchCode,
@@ -233,11 +240,12 @@ class ActivationService {
   }) async {
     _assertProductionApiConfig();
     final deviceUuid = await DatabaseService.instance.syncDeviceId();
+    final deviceName = _detectHostname();
     final body = <String, dynamic>{
       'activationKey': activationKey.trim(),
       'branchCode': branchCode.trim(),
       'deviceUuid': deviceUuid,
-      'deviceName': _detectHostname(),
+      'deviceName': deviceName,
       'platform': _detectPlatform(),
     };
     logActivationRequest(
@@ -255,11 +263,112 @@ class ActivationService {
       if (data == null) {
         throw Exception('Empty activation response from server.');
       }
+
+      if (data['requiresTransferApproval'] == true) {
+        final required = DeviceTransferRequiredResponse.fromJson(data);
+        final transfer = await requestDeviceTransfer(
+          licenseId: required.licenseId,
+          oldDeviceId: required.oldDeviceId,
+          oldDeviceName: required.oldDeviceName,
+          newDeviceFingerprint: deviceUuid,
+          newDeviceName: deviceName,
+        );
+        throw DeviceTransferRequiredException(transfer);
+      }
+
       final activation = ActivationResponse.fromJson(data);
       await _persistActivation(activation, businessName: businessName);
       return activation;
+    } on DeviceTransferRequiredException {
+      rethrow;
     } on DioException catch (e) {
+      final errorData = e.response?.data;
+      if (errorData is Map<String, dynamic> &&
+          errorData['requiresTransferApproval'] == true) {
+        final required = DeviceTransferRequiredResponse.fromJson(errorData);
+        final transfer = await requestDeviceTransfer(
+          licenseId: required.licenseId,
+          oldDeviceId: required.oldDeviceId,
+          oldDeviceName: required.oldDeviceName,
+          newDeviceFingerprint: deviceUuid,
+          newDeviceName: deviceName,
+        );
+        throw DeviceTransferRequiredException(transfer);
+      }
       logActivationError(e);
+      rethrow;
+    }
+  }
+
+  /// Submits POST /licenses/request-transfer to ask SuperAdmin to move the
+  /// license from its current device to this one.
+  ///
+  /// Returns a [DeviceTransferResponse] with [isDuplicate] == true when the
+  /// server reports a pending request already exists (HTTP 409) — the caller
+  /// should treat this the same as a freshly created request.
+  Future<DeviceTransferResponse> requestDeviceTransfer({
+    required String licenseId,
+    String? oldDeviceId,
+    String? oldDeviceName,
+    required String newDeviceFingerprint,
+    required String newDeviceName,
+    String reason = 'Device replacement requested from desktop POS',
+  }) async {
+    final body = <String, dynamic>{
+      'licenseId': licenseId,
+      if (oldDeviceId != null && oldDeviceId.isNotEmpty)
+        'oldDeviceId': oldDeviceId,
+      if (oldDeviceName != null && oldDeviceName.isNotEmpty)
+        'oldDeviceName': oldDeviceName,
+      'newDeviceFingerprint': newDeviceFingerprint,
+      'newDeviceName': newDeviceName,
+      'reason': reason,
+    };
+
+    if (kDebugMode) {
+      debugPrint(
+        'ActivationService: requestDeviceTransfer → $kEndpointRequestTransfer '
+        'licenseId=$licenseId newDevice=$newDeviceName',
+      );
+    }
+
+    try {
+      final response = await ApiClient.instance.post<Map<String, dynamic>>(
+        kEndpointRequestTransfer,
+        data: body,
+      );
+      final data = response.data;
+      if (data == null) {
+        throw Exception('Empty transfer request response from server.');
+      }
+      if (kDebugMode) {
+        debugPrint(
+          'ActivationService: transfer request created id=${data['id']} '
+          'status=${data['status']}',
+        );
+      }
+      return DeviceTransferResponse.fromJson(data);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        if (kDebugMode) {
+          debugPrint(
+            'ActivationService: duplicate transfer request (409) — '
+            'treating as pending',
+          );
+        }
+        final errorData = e.response?.data;
+        if (errorData is Map<String, dynamic>) {
+          return DeviceTransferResponse.fromJson(
+            errorData,
+            isDuplicate: true,
+          );
+        }
+        return const DeviceTransferResponse(
+          id: '',
+          status: 'pending',
+          isDuplicate: true,
+        );
+      }
       rethrow;
     }
   }

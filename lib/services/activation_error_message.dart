@@ -10,6 +10,44 @@ String activationErrorMessage(Object error) {
   return text.replaceFirst('Exception: ', '');
 }
 
+/// Maps errors from POST /licenses/request-transfer to Albanian messages.
+String transferRequestErrorMessage(Object error) {
+  if (error is DioException) return _fromTransferDio(error);
+  return activationErrorMessage(error);
+}
+
+String _fromTransferDio(DioException e) {
+  final serverMsg = _extractServerMessage(e.response?.data);
+  if (serverMsg != null && serverMsg.isNotEmpty) return serverMsg;
+
+  switch (e.type) {
+    case DioExceptionType.connectionError:
+    case DioExceptionType.connectionTimeout:
+    case DioExceptionType.sendTimeout:
+    case DioExceptionType.receiveTimeout:
+      return 'Nuk ka lidhje me serverin. Kontrolloni internetin dhe provoni përsëri.';
+    case DioExceptionType.badCertificate:
+      return 'Lidhja me serverin dështoi (certifikatë e pavlefshme).';
+    case DioExceptionType.cancel:
+      return 'Kërkesa u anulua.';
+    case DioExceptionType.badResponse:
+    case DioExceptionType.unknown:
+      break;
+  }
+
+  switch (e.response?.statusCode) {
+    case 401:
+    case 403:
+      return 'Kërkesa nuk u lejua. Kontaktoni administratorin.';
+    case 404:
+      return 'Licenca nuk u gjet. Kontrolloni çelësin e aktivizimit.';
+    case 409:
+      return 'Kërkesa ekziston dhe është në pritje të aprovimit.';
+    default:
+      return 'Kërkesa për transferim dështoi (HTTP ${e.response?.statusCode ?? '—'}).';
+  }
+}
+
 String _fromDio(DioException e) {
   final serverMsg = _extractServerMessage(e.response?.data);
   if (serverMsg != null && serverMsg.isNotEmpty) return serverMsg;
