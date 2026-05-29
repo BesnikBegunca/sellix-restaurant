@@ -103,6 +103,7 @@ class DatabaseSchema {
     'waiter_worked_days',
     'waiter_salaries',
     'waiters',
+    'managers',
     'products',
     'categories',
     'shifts',
@@ -113,7 +114,7 @@ class DatabaseSchema {
   /// [audit_logs] is excluded — immutable forensic history is preserved on wipe.
   static const List<String> tenantForeignDataCheckTables = <String>[
     'sales', 'sale_lines', 'sale_adjustments', 'expenses', 'shifts',
-    'products', 'categories', 'waiters', 'waiter_salaries', 'advances',
+    'products', 'categories', 'waiters', 'managers', 'waiter_salaries', 'advances',
     'waiter_worked_days', 'current_orders', 'current_order_lines',
     'kitchen_prints', 'kitchen_print_lines',
   ];
@@ -601,6 +602,16 @@ class DatabaseSchema {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS waiters (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        name         TEXT    NOT NULL,
+        pin          TEXT    NOT NULL DEFAULT '',
+        pinHash      TEXT,
+        pinSalt      TEXT,
+        pinUpdatedAt TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS managers (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         name         TEXT    NOT NULL,
         pin          TEXT    NOT NULL DEFAULT '',
@@ -1228,74 +1239,8 @@ class DatabaseSchema {
     await ensureDefaultMenuPresent(db);
   }
 
-  /// Përditëson emër, çmim, foto dhe renditje nga katalogu për produktet builtin.
-  static Future<void> _syncBuiltinCatalogProducts(
-    Database db,
-    Set<String> hiddenCats,
-    Set<String> hiddenProds,
-  ) async {
-    final sortByCategory = <String, int>{};
-    for (final p in DefaultMenuCatalog.products) {
-      if (hiddenProds.contains(p.id) || hiddenCats.contains(p.categoryId)) {
-        continue;
-      }
-
-      final order = sortByCategory[p.categoryId] ?? 0;
-      sortByCategory[p.categoryId] = order + 1;
-
-      final fields = <String, Object?>{
-        'name': p.name,
-        'price': p.price,
-        'emoji': p.emoji,
-        'imagePath': p.imagePath,
-        'sortOrder': order,
-      };
-
-      final byId = await db.query(
-        'products',
-        where: 'id = ?',
-        whereArgs: [p.id],
-        limit: 1,
-      );
-      if (byId.isNotEmpty) {
-        final row = byId.first;
-        final needsUpdate = row['name'] != p.name ||
-            (row['price'] as num?)?.toDouble() != p.price ||
-            row['emoji'] != p.emoji ||
-            row['imagePath'] != p.imagePath ||
-            (row['sortOrder'] as num?)?.toInt() != order;
-        if (needsUpdate) {
-          await db.update(
-            'products',
-            fields,
-            where: 'id = ?',
-            whereArgs: [p.id],
-          );
-        }
-        continue;
-      }
-
-      // Legacy: rreshta pa prefix default_ me të njëjtin emër në kategori.
-      final byName = await db.query(
-        'products',
-        where: 'name = ? AND categoryId = ?',
-        whereArgs: [p.name, p.categoryId],
-      );
-      for (final row in byName) {
-        final needsUpdate = (row['price'] as num?)?.toDouble() != p.price ||
-            row['emoji'] != p.emoji ||
-            row['imagePath'] != p.imagePath ||
-            (row['sortOrder'] as num?)?.toInt() != order;
-        if (!needsUpdate) continue;
-        await db.update(
-          'products',
-          fields,
-          where: 'id = ?',
-          whereArgs: [row['id']],
-        );
-      }
-    }
-
+  /// Migrime njëherëshe të rrugëve të vjetra të fotove — nuk prek emrin/çmimin në DB.
+  static Future<void> _applyLegacyProductAssetMigrations(Database db) async {
     // Rrugë të vjetra të fshira ose të zëvendësuara nga assets.
     await db.update(
       'products',
@@ -1311,7 +1256,8 @@ class DatabaseSchema {
 
   /// Shton kategori/pije parazgjedhura që mungojnë.
   ///
-  /// Produktet builtin marrin emër, çmim, foto dhe renditje nga katalogu në çdo hapje.
+  /// Produktet ekzistuese në DB ruajnë emrin/çmimin e ndryshuar nga menaxheri;
+  /// katalogu përdoret vetëm për rreshta të rinj që mungojnë.
   static Future<void> ensureDefaultMenuPresent(Database db) async {
     final deviceId = await resolveDeviceId(db);
     final scope = syncScopeStamp(deviceId);
@@ -1320,7 +1266,7 @@ class DatabaseSchema {
     final hiddenCats = await _readHiddenBuiltinIds(db, _kHiddenBuiltinCategoriesKey);
     final hiddenProds = await _readHiddenBuiltinIds(db, _kHiddenBuiltinProductsKey);
 
-    await _syncBuiltinCatalogProducts(db, hiddenCats, hiddenProds);
+    await _applyLegacyProductAssetMigrations(db);
 
     for (final c in DefaultMenuCatalog.categories) {
       if (hiddenCats.contains(c.id)) continue;

@@ -17,6 +17,7 @@ class OrderPanel extends StatelessWidget {
     required this.onDelta,
     required this.onSend,
     required this.onPay,
+    this.canPay = false,
     this.isPaying = false,
     this.isSendingOrder = false,
   });
@@ -25,6 +26,8 @@ class OrderPanel extends StatelessWidget {
   final int orderNumber;
   final List<CartLine> lines;
   final double total;
+  /// Pagesë e lejuar: tavolinë e zënë (e hapur) ose artikuj në listë.
+  final bool canPay;
   final void Function(ProductItem p, int delta) onDelta;
   final VoidCallback onSend;
   final VoidCallback onPay;
@@ -131,10 +134,15 @@ class OrderPanel extends StatelessWidget {
           const SizedBox(height: 24),
           SendOrderButton(
             enabled: !empty && !isSendingOrder && !isPaying,
+            isSending: isSendingOrder,
             onSend: onSend,
           ),
           const SizedBox(height: 10),
-          PayButton(onPay: onPay, isPaying: isPaying || isSendingOrder),
+          PayButton(
+            enabled: canPay && !isPaying && !isSendingOrder,
+            onPay: onPay,
+            isPaying: isPaying,
+          ),
         ],
       ),
     );

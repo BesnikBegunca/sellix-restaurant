@@ -71,6 +71,8 @@ abstract final class AuditAction {
   // ── Staff ──────────────────────────────────────────────────────────────────
   static const String waiterAdded   = 'waiter_added';
   static const String waiterRemoved = 'waiter_removed';
+  static const String managerAdded   = 'manager_added';
+  static const String managerRemoved = 'manager_removed';
   static const String salaryChanged = 'salary_changed';
 
   // ── Display labels ─────────────────────────────────────────────────────────
@@ -121,6 +123,8 @@ abstract final class AuditAction {
     companyNameChanged   => 'Company Name Changed',
     waiterAdded          => 'Waiter Added',
     waiterRemoved        => 'Waiter Removed',
+    managerAdded         => 'Menaxher i Shtuar',
+    managerRemoved       => 'Menaxher i Hequr',
     salaryChanged        => 'Salary Changed',
     _                    => action,
   };
@@ -920,6 +924,22 @@ class AuditLogService {
     performedBy:  'manager',
     performedRole: 'manager',
     details:      {'name': waiterName},
+  );
+
+  void logManagerAdded({required String managerName}) => log(
+    actionType: AuditAction.managerAdded,
+    entityType: 'manager',
+    performedBy: 'manager',
+    performedRole: 'manager',
+    details: {'name': managerName},
+  );
+
+  void logManagerRemoved({required String managerName}) => log(
+    actionType: AuditAction.managerRemoved,
+    entityType: 'manager',
+    performedBy: 'manager',
+    performedRole: 'manager',
+    details: {'name': managerName},
   );
 
   void logSalaryChanged({

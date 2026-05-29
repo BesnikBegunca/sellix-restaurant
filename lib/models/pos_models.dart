@@ -336,6 +336,36 @@ class WaiterInfo {
   );
 }
 
+/// Menaxher me PIN të hash-uar — hyrje në dashboard me të drejta menaxheri.
+class ManagerInfo {
+  ManagerInfo({
+    this.dbId,
+    required this.name,
+    this.pin = '',
+    this.pinHash,
+    this.pinSalt,
+    this.pinUpdatedAt,
+  });
+
+  final int? dbId;
+  final String name;
+  final String pin;
+  final String? pinHash;
+  final String? pinSalt;
+  final String? pinUpdatedAt;
+
+  bool get isHashed => pinHash != null && pinSalt != null;
+
+  factory ManagerInfo.fromMap(Map<String, dynamic> m) => ManagerInfo(
+        dbId: m['id'] as int?,
+        name: m['name'] as String,
+        pin: (m['pin'] as String?) ?? '',
+        pinHash: m['pinHash'] as String?,
+        pinSalt: m['pinSalt'] as String?,
+        pinUpdatedAt: m['pinUpdatedAt'] as String?,
+      );
+}
+
 class CurrentOrderLine {
   const CurrentOrderLine({required this.product, required this.qty});
 
