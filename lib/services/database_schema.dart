@@ -1294,6 +1294,29 @@ class DatabaseSchema {
       where:
           "id = '${DefaultMenuCatalog.kIdPrefix}prod_cognac_shishe' AND price >= 2.99 AND price <= 3.01",
     );
+    await db.update(
+      'products',
+      {'name': 'Tequila Shots'},
+      where:
+          "id = '${DefaultMenuCatalog.kIdPrefix}prod_tequila_shot' AND name = 'Tequila'",
+    );
+    await db.update(
+      'products',
+      {'name': 'B52 Shots'},
+      where: "id = '${DefaultMenuCatalog.kIdPrefix}prod_b52' AND name = 'B52'",
+    );
+    await db.update(
+      'products',
+      {'name': 'Blue Kamikaze Shots'},
+      where:
+          "id = '${DefaultMenuCatalog.kIdPrefix}prod_kamikaz' AND name = 'Kamikaz'",
+    );
+    await db.update(
+      'products',
+      {'name': 'Kamikaze Shots'},
+      where:
+          "id = '${DefaultMenuCatalog.kIdPrefix}prod_kamikaz_green' AND name = 'Kamikaz Green'",
+    );
   }
 
   /// Shton kategori/pije parazgjedhura që mungojnë.

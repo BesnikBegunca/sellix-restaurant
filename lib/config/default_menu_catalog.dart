@@ -332,7 +332,7 @@ class DefaultMenuCatalog {
     // ── Shots ─────────────────────────────────────────────────────────────
     DefaultProductDef(
       id: '${kIdPrefix}prod_tequila_shot',
-      name: 'Tequila',
+      name: 'Tequila Shots',
       categoryId: '${kIdPrefix}cat_shots',
       price: 3.00,
       emoji: '🥃',
@@ -340,7 +340,7 @@ class DefaultMenuCatalog {
     ),
     DefaultProductDef(
       id: '${kIdPrefix}prod_b52',
-      name: 'B52',
+      name: 'B52 Shots',
       categoryId: '${kIdPrefix}cat_shots',
       price: 3.00,
       emoji: '🥃',
@@ -348,7 +348,7 @@ class DefaultMenuCatalog {
     ),
     DefaultProductDef(
       id: '${kIdPrefix}prod_kamikaz',
-      name: 'Kamikaz',
+      name: 'Blue Kamikaze Shots',
       categoryId: '${kIdPrefix}cat_shots',
       price: 3.00,
       emoji: '🥃',
@@ -356,7 +356,7 @@ class DefaultMenuCatalog {
     ),
     DefaultProductDef(
       id: '${kIdPrefix}prod_kamikaz_green',
-      name: 'Kamikaz Green',
+      name: 'Kamikaze Shots',
       categoryId: '${kIdPrefix}cat_shots',
       price: 3.00,
       emoji: '🥃',
