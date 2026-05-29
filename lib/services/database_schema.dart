@@ -1252,6 +1252,36 @@ class DatabaseSchema {
       {'imagePath': 'assets/images/sexonthebeach.png'},
       where: "imagePath = 'assets/images/fruta mali.png' AND categoryId = '${DefaultMenuCatalog.kIdPrefix}cat_cocktails'",
     );
+    await db.update(
+      'products',
+      {'name': 'Makiato e Madhe'},
+      where:
+          "id = '${DefaultMenuCatalog.kIdPrefix}prod_makiato' AND name = 'Makiato'",
+    );
+    await db.update(
+      'products',
+      {'price': 1.20},
+      where:
+          "categoryId = '${DefaultMenuCatalog.kIdPrefix}cat_pije' AND price >= 0.99 AND price <= 1.01",
+    );
+    await db.update(
+      'products',
+      {'price': 1.20},
+      where:
+          "id = '${DefaultMenuCatalog.kIdPrefix}prod_frappe' AND price >= 1.49 AND price <= 1.51",
+    );
+    await db.update(
+      'products',
+      {'price': 1.50},
+      where:
+          "id = '${DefaultMenuCatalog.kIdPrefix}prod_lasko' AND price >= 1.99 AND price <= 2.01",
+    );
+    await db.update(
+      'products',
+      {'price': 4.00},
+      where:
+          "id = '${DefaultMenuCatalog.kIdPrefix}prod_cognac_shishe' AND price >= 2.99 AND price <= 3.01",
+    );
   }
 
   /// Shton kategori/pije parazgjedhura që mungojnë.
