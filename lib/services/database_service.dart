@@ -773,7 +773,16 @@ class DatabaseService {
 
   Future<void> updateProduct(String id, Map<String, dynamic> fields) async {
     final db = await database;
-    await db.update('products', fields, where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'products',
+      {
+        ...fields,
+        ...syncTimestamps(includeCreatedAt: false),
+        ...syncStatus(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     final row = await _fetchEntityRow(
       'products',
       where: 'id = ?',
