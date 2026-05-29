@@ -607,7 +607,8 @@ class DatabaseSchema {
         pin          TEXT    NOT NULL DEFAULT '',
         pinHash      TEXT,
         pinSalt      TEXT,
-        pinUpdatedAt TEXT
+        pinUpdatedAt TEXT,
+        pinView      TEXT
       )
     ''');
     await db.execute('''
@@ -617,7 +618,8 @@ class DatabaseSchema {
         pin          TEXT    NOT NULL DEFAULT '',
         pinHash      TEXT,
         pinSalt      TEXT,
-        pinUpdatedAt TEXT
+        pinUpdatedAt TEXT,
+        pinView      TEXT
       )
     ''');
     await db.execute('''
@@ -666,7 +668,8 @@ class DatabaseSchema {
         adminPinHash       TEXT,
         adminPinSalt       TEXT,
         adminPinCreatedAt  TEXT,
-        adminPinUpdatedAt  TEXT
+        adminPinUpdatedAt  TEXT,
+        adminPinView       TEXT
       )
     ''');
     await db.execute('''
@@ -1164,7 +1167,16 @@ class DatabaseSchema {
     try {
       await db.execute("ALTER TABLE waiters ADD COLUMN pinUpdatedAt TEXT");
     } catch (_) {}
-    // v16: clear plaintext from waiters.pin — replace with pinHash (maintains UNIQUE)
+    try {
+      await db.execute("ALTER TABLE waiters ADD COLUMN pinView TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE managers ADD COLUMN pinView TEXT");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE company ADD COLUMN adminPinView TEXT");
+    } catch (_) {}
+    // v16: clear plaintext from waiters.pin
     try {
       await db.rawUpdate(
         "UPDATE waiters SET pin = pinHash WHERE pinHash IS NOT NULL AND pinSalt IS NOT NULL AND pin != pinHash",

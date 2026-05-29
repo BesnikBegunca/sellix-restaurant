@@ -179,6 +179,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
         ManagerList(
           managers: m.managers,
           onRemove: (i) => m.removeManagerAt(i),
+          m: m,
         ),
       ],
     );

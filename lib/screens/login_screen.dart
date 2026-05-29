@@ -244,6 +244,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
         return;
       }
       if (await ManagerData.instance.canAccessManagerDashboard(pin)) {
+        await ManagerData.instance.rememberManagerPinViewAtLogin(pin);
         _pinController.clear();
         AuditLogService.instance.logManagerLogin();
         if (!mounted) return;
@@ -271,6 +272,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
 
     // PINMODE: menaxher/admin, pastaj kamarier.
     if (await ManagerData.instance.canAccessManagerDashboard(pin)) {
+      await ManagerData.instance.rememberManagerPinViewAtLogin(pin);
       _pinController.clear();
       AuditLogService.instance.logManagerLogin();
       if (!mounted) return;
@@ -283,9 +285,10 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     }
 
     final waiter = await ManagerData.instance.findWaiterByPin(pin);
-    _pinController.clear();
 
     if (waiter != null) {
+      await ManagerData.instance.rememberWaiterPinViewAtLogin(waiter.name, pin);
+      _pinController.clear();
       AuditLogService.instance.logWaiterLogin(waiterName: waiter.name);
       if (!mounted) return;
       _pushRoute(
@@ -295,6 +298,8 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
       );
       return;
     }
+
+    _pinController.clear();
 
     // Unknown PIN — offer first-run admin setup if no PIN is stored yet.
     if (!ManagerData.instance.hasAnyManagerLogin) {

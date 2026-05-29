@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../models/pos_models.dart';
+import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
+import '../staff_pin_reveal_dialog.dart';
 import 'manager_grid_card.dart';
 
 class ManagerList extends StatelessWidget {
@@ -9,10 +11,12 @@ class ManagerList extends StatelessWidget {
     super.key,
     required this.managers,
     required this.onRemove,
+    required this.m,
   });
 
   final List<ManagerInfo> managers;
   final void Function(int) onRemove;
+  final ManagerData m;
 
   String _initials(String name) {
     final parts = name.trim().split(' ');
@@ -73,9 +77,30 @@ class ManagerList extends StatelessWidget {
         return ManagerGridCard(
           initials: _initials(mgr.name),
           name: mgr.name,
+          pinView: mgr.pinView,
+          onRevealPin: mgr.pinView == null || mgr.pinView!.isEmpty
+              ? () => _revealManagerPin(context, i)
+              : null,
           onDelete: () => onRemove(i),
         );
       },
     );
+  }
+
+  Future<void> _revealManagerPin(BuildContext context, int index) async {
+    final name = managers[index].name;
+    final pin = await showStaffPinRevealDialog(context, staffName: name);
+    if (pin == null || !context.mounted) return;
+    final ok = await m.revealManagerPinAt(index, pin);
+    if (!context.mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('PIN i gabuar.'),
+          backgroundColor: AppColors.softRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }

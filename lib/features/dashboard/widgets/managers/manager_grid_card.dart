@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_colors.dart';
+import '../staff_pin_display.dart';
 
 class ManagerGridCard extends StatefulWidget {
   const ManagerGridCard({
     super.key,
     required this.initials,
     required this.name,
+    this.pinView,
+    this.onRevealPin,
     required this.onDelete,
   });
 
   final String initials;
   final String name;
+  final String? pinView;
+  final Future<void> Function()? onRevealPin;
   final VoidCallback onDelete;
 
   @override
@@ -84,12 +89,9 @@ class _ManagerGridCardState extends State<ManagerGridCard> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  const Text(
-                    'PIN: ••••',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mediumGreenText,
-                    ),
+                  StaffPinDisplay(
+                    pinView: widget.pinView,
+                    onRevealTap: widget.onRevealPin,
                   ),
                 ],
               ),
