@@ -122,7 +122,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       _pinErrorMsg = null;
     });
 
-    final valid = await widget.m.verifyAdminPin(currentPin);
+    final valid = await widget.m.canAccessManagerDashboard(currentPin);
     if (!mounted) return;
 
     if (!valid) {

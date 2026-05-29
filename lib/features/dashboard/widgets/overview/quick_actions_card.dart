@@ -39,7 +39,7 @@ class QuickActionsCard extends StatelessWidget {
           _BigActionButton(
             icon: Icons.attach_money,
             label: 'Shto Shpenzim',
-            onTap: () => onNavigate(3),
+            onTap: () => onNavigate(4),
           ),
         ],
       ),

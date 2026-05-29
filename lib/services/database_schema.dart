@@ -103,6 +103,7 @@ class DatabaseSchema {
     'waiter_worked_days',
     'waiter_salaries',
     'waiters',
+    'managers',
     'products',
     'categories',
     'shifts',
@@ -113,7 +114,7 @@ class DatabaseSchema {
   /// [audit_logs] is excluded — immutable forensic history is preserved on wipe.
   static const List<String> tenantForeignDataCheckTables = <String>[
     'sales', 'sale_lines', 'sale_adjustments', 'expenses', 'shifts',
-    'products', 'categories', 'waiters', 'waiter_salaries', 'advances',
+    'products', 'categories', 'waiters', 'managers', 'waiter_salaries', 'advances',
     'waiter_worked_days', 'current_orders', 'current_order_lines',
     'kitchen_prints', 'kitchen_print_lines',
   ];
@@ -601,6 +602,16 @@ class DatabaseSchema {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS waiters (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        name         TEXT    NOT NULL,
+        pin          TEXT    NOT NULL DEFAULT '',
+        pinHash      TEXT,
+        pinSalt      TEXT,
+        pinUpdatedAt TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS managers (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         name         TEXT    NOT NULL,
         pin          TEXT    NOT NULL DEFAULT '',

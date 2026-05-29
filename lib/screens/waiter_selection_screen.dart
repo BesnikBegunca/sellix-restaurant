@@ -142,6 +142,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
               // Capture navigator before async gap to satisfy lint.
               final nav = Navigator.of(context);
               Navigator.of(ctx).pop();
+              await ManagerData.instance.addManager('Administrator', pin);
               await ManagerData.instance.setAdminPin(pin);
               if (!mounted) return;
               AuditLogService.instance.logManagerLogin();
@@ -209,14 +210,13 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
 
                       Navigator.of(dialogCtx).pop();
 
-                      if (!ManagerData.instance.hasAdminPin) {
-                        // First run: offer setup from this screen too.
+                      if (!ManagerData.instance.hasAnyManagerLogin) {
                         if (!mounted) return;
                         _showAdminPinSetupDialog(pin);
                         return;
                       }
 
-                      if (await ManagerData.instance.verifyAdminPin(pin)) {
+                      if (await ManagerData.instance.canAccessManagerDashboard(pin)) {
                         PinRateLimiter.instance.reset();
                         AuditLogService.instance.logManagerLogin();
                         if (!mounted) return;

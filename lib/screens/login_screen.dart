@@ -214,12 +214,12 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
 
     if (ManagerData.instance.loginMode == 'NAMEMODE') {
       // NAMEMODE: PIN field is admin-only.
-      if (!ManagerData.instance.hasAdminPin) {
+      if (!ManagerData.instance.hasAnyManagerLogin) {
         _pinController.clear();
         _showAdminPinSetupDialog(pin);
         return;
       }
-      if (await ManagerData.instance.verifyAdminPin(pin)) {
+      if (await ManagerData.instance.canAccessManagerDashboard(pin)) {
         _pinController.clear();
         AuditLogService.instance.logManagerLogin();
         if (!mounted) return;
@@ -245,9 +245,8 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
       return;
     }
 
-    // PINMODE: admin check first, then waiter.
-    if (ManagerData.instance.hasAdminPin &&
-        await ManagerData.instance.verifyAdminPin(pin)) {
+    // PINMODE: menaxher/admin, pastaj kamarier.
+    if (await ManagerData.instance.canAccessManagerDashboard(pin)) {
       _pinController.clear();
       AuditLogService.instance.logManagerLogin();
       if (!mounted) return;
@@ -274,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     }
 
     // Unknown PIN — offer first-run admin setup if no PIN is stored yet.
-    if (!ManagerData.instance.hasAdminPin) {
+    if (!ManagerData.instance.hasAnyManagerLogin) {
       _showAdminPinSetupDialog(pin);
       return;
     }
@@ -297,10 +296,10 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Konfiguro PIN e Administratorit'),
+        title: const Text('Konfiguro Menaxherin e Parë'),
         content: const Text(
-          'Nuk është konfiguruar asnjë PIN i administratorit.\n'
-          'Dëshironi ta vendosni këtë PIN si PIN-in e administratorit?',
+          'Nuk është konfiguruar asnjë menaxher.\n'
+          'Dëshironi ta vendosni këtë PIN për menaxherin "Administrator"?',
         ),
         actions: [
           TextButton(
@@ -312,6 +311,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
               // Capture navigator before async gap to satisfy lint.
               final nav = Navigator.of(context);
               Navigator.of(ctx).pop();
+              await ManagerData.instance.addManager('Administrator', pin);
               await ManagerData.instance.setAdminPin(pin);
               if (!mounted) return;
               AuditLogService.instance.logManagerLogin();

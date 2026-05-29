@@ -14,6 +14,7 @@ import '../services/pin_rate_limiter.dart';
 import '../theme/app_colors.dart';
 import '../features/dashboard/panels/shift_panel.dart';
 import '../features/dashboard/panels/waiters_panel.dart';
+import '../features/dashboard/panels/managers_panel.dart';
 import '../features/dashboard/panels/expenses_panel.dart';
 import '../features/dashboard/panels/profits_panel.dart';
 import '../features/dashboard/panels/top_employee_panel.dart';
@@ -33,6 +34,7 @@ const _kSectionTitles = <String>[
   'Overview',
   'Shift',
   'Staff',
+  'Menaxherët',
   'Expenses',
   'Profits',
   'Shitjet',
@@ -207,7 +209,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     final pin = _lockPinController.text;
     if (pin.length < 4 || !_pinDigits.hasMatch(pin)) return;
 
-    final valid = await ManagerData.instance.verifyAdminPin(pin);
+    final valid = await ManagerData.instance.canAccessManagerDashboard(pin);
     _lockPinController.clear();
 
     if (valid) {
@@ -311,26 +313,28 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       case 2:
         return WaitersPanel(m: _m);
       case 3:
-        return ExpensesPanel(m: _m);
+        return ManagersPanel(m: _m);
       case 4:
-        return ProfitsPanel(m: _m);
+        return ExpensesPanel(m: _m);
       case 5:
-        return SalesDailyPanel(m: _m);
+        return ProfitsPanel(m: _m);
       case 6:
-        return TopEmployeePanel(m: _m);
+        return SalesDailyPanel(m: _m);
       case 7:
-        return MenuPanel(m: _m);
+        return TopEmployeePanel(m: _m);
       case 8:
-        return TablesConfigPanel(m: _m);
+        return MenuPanel(m: _m);
       case 9:
-        return CompanySettingsPanel(m: _m);
+        return TablesConfigPanel(m: _m);
       case 10:
-        return StaffPayrollPanel(m: _m);
+        return CompanySettingsPanel(m: _m);
       case 11:
-        return RefundPanel(m: _m);
+        return StaffPayrollPanel(m: _m);
       case 12:
-        return const SalesHistoryPanel();
+        return RefundPanel(m: _m);
       case 13:
+        return const SalesHistoryPanel();
+      case 14:
         return const AuditLogPanel();
       default:
         return const SizedBox.shrink();

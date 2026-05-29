@@ -21,7 +21,6 @@ export '../models/pos_models.dart';
 part 'manager_data_sales.dart';
 part 'manager_data_menu.dart';
 part 'manager_data_tables.dart';
-
 // ───────────────────────────── ManagerData ────────────────────────────────────
 
 /// Global state singleton backed entirely by SQLite.
@@ -82,6 +81,7 @@ class ManagerData extends ChangeNotifier {
   List<TableInfo> _cashierTables = [];
   List<CategoryData> _categories = [];
   List<WaiterInfo> _waiters = [];
+  List<ManagerInfo> _managers = [];
   List<ExpenseRow> _expenses = [];
   List<SaleRow> _salesHistory = [];
   List<AdvanceRow> _advances = [];
@@ -103,6 +103,7 @@ class ManagerData extends ChangeNotifier {
   List<TableInfo> get cashierTables => List.unmodifiable(_cashierTables);
   List<CategoryData> get categories => List.unmodifiable(_categories);
   List<WaiterInfo> get waiters => List.unmodifiable(_waiters);
+  List<ManagerInfo> get managers => List.unmodifiable(_managers);
   List<ExpenseRow> get expenses => List.unmodifiable(_expenses);
   List<SaleRow> get salesHistory => List.unmodifiable(_salesHistory);
   List<AdvanceRow> get advances => List.unmodifiable(_advances);
@@ -146,6 +147,7 @@ class ManagerData extends ChangeNotifier {
     final waiterRows = await db.fetchWaiters();
     _waiters = waiterRows.map(WaiterInfo.fromMap).toList();
     await _migrateWaiterPins();
+    await _loadManagers();
 
     // Categories + products (parazgjedhjet e paketuara + menu ekzistuese)
     await db.ensureDefaultMenuPresent();
@@ -522,7 +524,7 @@ class ManagerData extends ChangeNotifier {
     final n = name.trim();
     final p = pin.trim();
     if (n.isEmpty || p.length < 4) return;
-    if (await _waiterPinExists(p)) return;
+    if (await staffPinExists(p)) return;
 
     final salt = _generateSalt();
     final hash = _hashPin(p, salt);
@@ -558,14 +560,82 @@ class ManagerData extends ChangeNotifier {
     return false;
   }
 
-  /// Returns true if any existing waiter already uses [pin]. Used by add-waiter UI.
-  Future<bool> waiterPinExists(String pin) => _waiterPinExists(pin);
+  /// Returns true if [pin] is already used by staf (kamarier, menaxher, admin).
+  Future<bool> waiterPinExists(String pin) => staffPinExists(pin);
 
   Future<WaiterInfo?> findWaiterByPin(String pin) async {
     for (final w in _waiters) {
       if (w.isHashed && _hashPin(pin, w.pinSalt!) == w.pinHash) return w;
     }
     return null;
+  }
+
+  // ─────────────────────────── managers ─────────────────────────────────────
+
+  Future<void> _loadManagers() async {
+    final rows = await DatabaseService.instance.fetchManagers();
+    _managers = rows.map(ManagerInfo.fromMap).toList();
+  }
+
+  Future<void> addManager(String name, String pin) async {
+    final n = name.trim();
+    final p = pin.trim();
+    if (n.isEmpty || p.length < 4) return;
+    if (await staffPinExists(p)) return;
+
+    final salt = _generateSalt();
+    final hash = _hashPin(p, salt);
+    final now = DateTime.now().toIso8601String();
+    final newId = await DatabaseService.instance.insertManager(n, hash, salt);
+    _managers.add(ManagerInfo(
+      dbId: newId,
+      name: n,
+      pin: hash,
+      pinHash: hash,
+      pinSalt: salt,
+      pinUpdatedAt: now,
+    ));
+    AuditLogService.instance.logManagerAdded(managerName: n);
+    notifyListeners();
+  }
+
+  Future<void> removeManagerAt(int index) async {
+    if (index < 0 || index >= _managers.length) return;
+    final mgr = _managers[index];
+    if (mgr.dbId != null) {
+      await DatabaseService.instance.deleteManagerById(mgr.dbId!);
+    }
+    AuditLogService.instance.logManagerRemoved(managerName: mgr.name);
+    _managers.removeAt(index);
+    notifyListeners();
+  }
+
+  Future<bool> _managerPinExists(String pin) async {
+    for (final m in _managers) {
+      if (m.isHashed && _hashPin(pin, m.pinSalt!) == m.pinHash) return true;
+    }
+    return false;
+  }
+
+  Future<ManagerInfo?> findManagerByPin(String pin) async {
+    for (final m in _managers) {
+      if (m.isHashed && _hashPin(pin, m.pinSalt!) == m.pinHash) return m;
+    }
+    return null;
+  }
+
+  Future<bool> staffPinExists(String pin) async {
+    if (await _waiterPinExists(pin)) return true;
+    if (await _managerPinExists(pin)) return true;
+    if (hasAdminPin && await verifyAdminPin(pin)) return true;
+    return false;
+  }
+
+  bool get hasAnyManagerLogin => hasAdminPin || _managers.isNotEmpty;
+
+  Future<bool> canAccessManagerDashboard(String pin) async {
+    if (await verifyAdminPin(pin)) return true;
+    return await findManagerByPin(pin) != null;
   }
 
   // ─────────────────────────── expenses ─────────────────────────────────────

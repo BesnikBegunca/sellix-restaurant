@@ -79,7 +79,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 24,
+      version: 25,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
@@ -880,6 +880,30 @@ class DatabaseService {
     if (row != null) {
       await _queueOutboxRow('waiters', row, 'delete');
     }
+  }
+
+  // ─────────────────────────── MANAGERS ───────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchManagers() async {
+    final db = await database;
+    return db.query('managers', orderBy: 'id ASC');
+  }
+
+  Future<int> insertManager(String name, String pinHash, String pinSalt) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    return db.insert('managers', {
+      'name': name,
+      'pin': pinHash,
+      'pinHash': pinHash,
+      'pinSalt': pinSalt,
+      'pinUpdatedAt': now,
+    });
+  }
+
+  Future<void> deleteManagerById(int id) async {
+    final db = await database;
+    await db.delete('managers', where: 'id = ?', whereArgs: [id]);
   }
 
   // ────────────────────────────── SALES ─────────────────────────────────────
