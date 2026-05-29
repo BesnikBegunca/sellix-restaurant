@@ -15,8 +15,7 @@ class DefaultMenuCatalog {
   static Set<String> get builtinCategoryIds =>
       categories.map((c) => c.id).toSet();
 
-  static Set<String> get builtinProductIds =>
-      products.map((p) => p.id).toSet();
+  static Set<String> get builtinProductIds => products.map((p) => p.id).toSet();
 
   static const List<DefaultCategoryDef> categories = [
     DefaultCategoryDef(

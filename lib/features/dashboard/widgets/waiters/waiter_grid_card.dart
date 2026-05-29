@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_colors.dart';
+import '../staff_pin_display.dart';
 
 class WaiterGridCard extends StatefulWidget {
   const WaiterGridCard({
     required this.initials,
     required this.name,
-    required this.pin,
+    this.pinView,
+    this.onRevealPin,
     required this.salary,
     required this.onDelete,
   });
   final String initials;
   final String name;
-  final String pin;
+  final String? pinView;
+  final Future<void> Function()? onRevealPin;
   final double salary;
   final VoidCallback onDelete;
 
@@ -86,12 +89,9 @@ class _WaiterGridCardState extends State<WaiterGridCard> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    'PIN: ${widget.pin}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.mediumGreenText,
-                    ),
+                  StaffPinDisplay(
+                    pinView: widget.pinView,
+                    onRevealTap: widget.onRevealPin,
                   ),
                 ],
               ),

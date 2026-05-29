@@ -148,8 +148,9 @@ class ManagerData extends ChangeNotifier {
     _waiters = waiterRows.map(WaiterInfo.fromMap).toList();
     await _migrateWaiterPins();
     await _loadManagers();
+    await _backfillMissingPinViews();
 
-    // Categories + products (parazgjedhjet e paketuara + menu ekzistuese)
+    // Categories + products
     await db.ensureDefaultMenuPresent();
     await _reloadMenu();
 
@@ -518,7 +519,7 @@ class ManagerData extends ChangeNotifier {
   Future<void> setAdminPin(String pin) async {
     final salt = _generateSalt();
     final hash = _hashPin(pin, salt);
-    await DatabaseService.instance.updateAdminPin(hash, salt);
+    await DatabaseService.instance.updateAdminPin(hash, salt, pinView: pin);
     _adminPinHash = hash;
     _adminPinSalt = salt;
     notifyListeners();
@@ -544,14 +545,21 @@ class ManagerData extends ChangeNotifier {
       if (w.isHashed || w.dbId == null || w.pin.isEmpty) continue;
       final salt = _generateSalt();
       final hash = _hashPin(w.pin, salt);
-      await DatabaseService.instance.updateWaiterPin(w.dbId!, hash, salt);
+      final plainPin = w.pin.trim();
+      await DatabaseService.instance.updateWaiterPin(
+        w.dbId!,
+        hash,
+        salt,
+        pinView: plainPin,
+      );
       _waiters[i] = WaiterInfo(
         dbId: w.dbId,
         name: w.name,
-        pin: hash, // replace plaintext with hash in memory too
+        pin: hash,
         pinHash: hash,
         pinSalt: salt,
         pinUpdatedAt: DateTime.now().toIso8601String(),
+        pinView: plainPin,
       );
       migrated = true;
     }
@@ -567,7 +575,12 @@ class ManagerData extends ChangeNotifier {
     final salt = _generateSalt();
     final hash = _hashPin(p, salt);
     final now = DateTime.now().toIso8601String();
-    final newId = await DatabaseService.instance.insertWaiter(n, hash, salt);
+    final newId = await DatabaseService.instance.insertWaiter(
+      n,
+      hash,
+      salt,
+      pinView: p,
+    );
     _waiters.add(WaiterInfo(
       dbId: newId,
       name: n,
@@ -575,6 +588,7 @@ class ManagerData extends ChangeNotifier {
       pinHash: hash,
       pinSalt: salt,
       pinUpdatedAt: now,
+      pinView: p,
     ));
     AuditLogService.instance.logWaiterAdded(waiterName: n);
     notifyListeners();
@@ -608,6 +622,61 @@ class ManagerData extends ChangeNotifier {
     return null;
   }
 
+  /// Ruaj [pinView] pas hyrjes së suksesshme (staf i vjetër pa pinView).
+  Future<void> rememberWaiterPinViewAtLogin(String waiterName, String pin) async {
+    final i = _waiters.indexWhere((w) => w.name == waiterName);
+    if (i < 0) return;
+    await _saveWaiterPinViewIfMissing(i, pin.trim());
+  }
+
+  /// Verifikon PIN-in dhe ruan [pinView] që syri të funksionojë.
+  Future<bool> revealWaiterPinAt(int index, String pin) =>
+      _saveWaiterPinViewIfMissing(index, pin.trim());
+
+  Future<bool> _saveWaiterPinViewIfMissing(int index, String pin) async {
+    if (index < 0 || index >= _waiters.length) return false;
+    final w = _waiters[index];
+    if (w.pinView != null && w.pinView!.trim().isNotEmpty) return true;
+    if (w.dbId == null || !w.isHashed || pin.length < 4) return false;
+    if (_hashPin(pin, w.pinSalt!) != w.pinHash) return false;
+    await DatabaseService.instance.updateWaiterPinViewOnly(w.dbId!, pin);
+    _waiters[index] = WaiterInfo(
+      dbId: w.dbId,
+      name: w.name,
+      pin: w.pin,
+      pinHash: w.pinHash,
+      pinSalt: w.pinSalt,
+      pinUpdatedAt: w.pinUpdatedAt,
+      pinView: pin,
+    );
+    notifyListeners();
+    return true;
+  }
+
+  Future<void> _backfillMissingPinViews() async {
+    var changed = false;
+    for (int i = 0; i < _waiters.length; i++) {
+      final w = _waiters[i];
+      if (w.dbId == null) continue;
+      if (w.pinView != null && w.pinView!.trim().isNotEmpty) continue;
+      final legacy = w.pin.trim();
+      if (legacy.length < 4 || !RegExp(r'^\d+$').hasMatch(legacy)) continue;
+      if (w.isHashed && legacy == w.pinHash) continue;
+      await DatabaseService.instance.updateWaiterPinViewOnly(w.dbId!, legacy);
+      _waiters[i] = WaiterInfo(
+        dbId: w.dbId,
+        name: w.name,
+        pin: w.pin,
+        pinHash: w.pinHash,
+        pinSalt: w.pinSalt,
+        pinUpdatedAt: w.pinUpdatedAt,
+        pinView: legacy,
+      );
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
+
   // ─────────────────────────── managers ─────────────────────────────────────
 
   Future<void> _loadManagers() async {
@@ -624,7 +693,12 @@ class ManagerData extends ChangeNotifier {
     final salt = _generateSalt();
     final hash = _hashPin(p, salt);
     final now = DateTime.now().toIso8601String();
-    final newId = await DatabaseService.instance.insertManager(n, hash, salt);
+    final newId = await DatabaseService.instance.insertManager(
+      n,
+      hash,
+      salt,
+      pinView: p,
+    );
     _managers.add(ManagerInfo(
       dbId: newId,
       name: n,
@@ -632,6 +706,7 @@ class ManagerData extends ChangeNotifier {
       pinHash: hash,
       pinSalt: salt,
       pinUpdatedAt: now,
+      pinView: p,
     ));
     AuditLogService.instance.logManagerAdded(managerName: n);
     notifyListeners();
@@ -674,6 +749,46 @@ class ManagerData extends ChangeNotifier {
   Future<bool> canAccessManagerDashboard(String pin) async {
     if (await verifyAdminPin(pin)) return true;
     return await findManagerByPin(pin) != null;
+  }
+
+  /// Ruaj pinView për menaxher ose admin legacy pas hyrjes.
+  Future<void> rememberManagerPinViewAtLogin(String pin) async {
+    final p = pin.trim();
+    if (p.length < 4) return;
+    final mgr = await findManagerByPin(p);
+    if (mgr != null && mgr.dbId != null) {
+      final i = _managers.indexWhere((m) => m.dbId == mgr.dbId);
+      if (i >= 0) {
+        await _saveManagerPinViewIfMissing(i, p);
+      }
+      return;
+    }
+    if (await verifyAdminPin(p)) {
+      await DatabaseService.instance.updateAdminPinViewOnly(p);
+    }
+  }
+
+  Future<bool> revealManagerPinAt(int index, String pin) =>
+      _saveManagerPinViewIfMissing(index, pin.trim());
+
+  Future<bool> _saveManagerPinViewIfMissing(int index, String pin) async {
+    if (index < 0 || index >= _managers.length) return false;
+    final mgr = _managers[index];
+    if (mgr.pinView != null && mgr.pinView!.trim().isNotEmpty) return true;
+    if (mgr.dbId == null || !mgr.isHashed || pin.length < 4) return false;
+    if (_hashPin(pin, mgr.pinSalt!) != mgr.pinHash) return false;
+    await DatabaseService.instance.updateManagerPinViewOnly(mgr.dbId!, pin);
+    _managers[index] = ManagerInfo(
+      dbId: mgr.dbId,
+      name: mgr.name,
+      pin: mgr.pin,
+      pinHash: mgr.pinHash,
+      pinSalt: mgr.pinSalt,
+      pinUpdatedAt: mgr.pinUpdatedAt,
+      pinView: pin,
+    );
+    notifyListeners();
+    return true;
   }
 
   // ─────────────────────────── expenses ─────────────────────────────────────

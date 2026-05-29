@@ -308,6 +308,7 @@ class WaiterInfo {
     this.pinHash,
     this.pinSalt,
     this.pinUpdatedAt,
+    this.pinView,
   });
 
   /// Primary key from SQLite — null until after first DB insert.
@@ -322,6 +323,7 @@ class WaiterInfo {
   final String? pinHash;
   final String? pinSalt;
   final String? pinUpdatedAt;
+  final String? pinView;
 
   /// True once a hashed PIN has been stored for this waiter.
   bool get isHashed => pinHash != null && pinSalt != null;
@@ -333,6 +335,7 @@ class WaiterInfo {
     pinHash: m['pinHash'] as String?,
     pinSalt: m['pinSalt'] as String?,
     pinUpdatedAt: m['pinUpdatedAt'] as String?,
+    pinView: m['pinView'] as String?,
   );
 }
 
@@ -345,6 +348,7 @@ class ManagerInfo {
     this.pinHash,
     this.pinSalt,
     this.pinUpdatedAt,
+    this.pinView,
   });
 
   final int? dbId;
@@ -353,6 +357,7 @@ class ManagerInfo {
   final String? pinHash;
   final String? pinSalt;
   final String? pinUpdatedAt;
+  final String? pinView;
 
   bool get isHashed => pinHash != null && pinSalt != null;
 
@@ -363,6 +368,7 @@ class ManagerInfo {
         pinHash: m['pinHash'] as String?,
         pinSalt: m['pinSalt'] as String?,
         pinUpdatedAt: m['pinUpdatedAt'] as String?,
+        pinView: m['pinView'] as String?,
       );
 }
 

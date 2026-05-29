@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
+import '../staff_pin_reveal_dialog.dart';
 import 'waiter_grid_card.dart';
 
 class WaiterList extends StatelessWidget {
@@ -11,7 +12,7 @@ class WaiterList extends StatelessWidget {
     required this.onRemove,
     required this.m,
   });
-  final List<dynamic> waiters;
+  final List<WaiterInfo> waiters;
   final Map<String, double> waiterSales;
   final void Function(int) onRemove;
   final ManagerData m;
@@ -72,19 +73,39 @@ class WaiterList extends StatelessWidget {
       itemCount: waiters.length,
       itemBuilder: (context, i) {
         final w = waiters[i];
-        final name = w.name as String;
-        const pin = '••••'; // PIN is hashed — never display raw value
+        final name = w.name;
+        final pinView = w.pinView;
         final salary = m.getSalary(name);
         final initials = _initials(name);
 
         return WaiterGridCard(
           initials: initials,
           name: name,
-          pin: pin,
+          pinView: pinView,
+          onRevealPin: pinView == null || pinView.isEmpty
+              ? () => _revealWaiterPin(context, i)
+              : null,
           salary: salary,
           onDelete: () => onRemove(i),
         );
       },
     );
+  }
+
+  Future<void> _revealWaiterPin(BuildContext context, int index) async {
+    final name = waiters[index].name;
+    final pin = await showStaffPinRevealDialog(context, staffName: name);
+    if (pin == null || !context.mounted) return;
+    final ok = await m.revealWaiterPinAt(index, pin);
+    if (!context.mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('PIN i gabuar.'),
+          backgroundColor: AppColors.softRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }

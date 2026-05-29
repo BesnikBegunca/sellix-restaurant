@@ -79,7 +79,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 25,
+      version: 26,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
@@ -944,18 +944,23 @@ class DatabaseService {
     return db.query('waiters', orderBy: 'id ASC');
   }
 
-  Future<int> insertWaiter(String name, String pinHash, String pinSalt) async {
+  Future<int> insertWaiter(
+    String name,
+    String pinHash,
+    String pinSalt, {
+    required String pinView,
+  }) async {
     final db = await database;
     final scope = await syncScope();
     final now = DateTime.now().toIso8601String();
     final ts = syncTimestamps(when: DateTime.now());
-    // pin column receives the hash as a unique placeholder (legacy compat).
     final waiterId = await db.insert('waiters', {
       'name': name,
       'pin': pinHash,
       'pinHash': pinHash,
       'pinSalt': pinSalt,
       'pinUpdatedAt': now,
+      'pinView': pinView,
       'uuid': DatabaseSchema.generateUuid(),
       ...scope,
       ...syncStatus(),
@@ -965,15 +970,32 @@ class DatabaseService {
     return waiterId;
   }
 
-  Future<void> updateWaiterPin(int id, String hash, String salt) async {
+  Future<void> updateWaiterPin(
+    int id,
+    String hash,
+    String salt, {
+    String? pinView,
+  }) async {
     final db = await database;
-    // pin column receives the hash to replace any plaintext (maintains UNIQUE).
-    await db.update('waiters', {
+    final map = <String, Object?>{
       'pin': hash,
       'pinHash': hash,
       'pinSalt': salt,
       'pinUpdatedAt': DateTime.now().toIso8601String(),
-    }, where: 'id = ?', whereArgs: [id]);
+    };
+    if (pinView != null) map['pinView'] = pinView;
+    await db.update('waiters', map, where: 'id = ?', whereArgs: [id]);
+    await _queueOutboxById('waiters', 'waiters', id, operation: 'update');
+  }
+
+  Future<void> updateWaiterPinViewOnly(int id, String pinView) async {
+    final db = await database;
+    await db.update(
+      'waiters',
+      {'pinView': pinView},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     await _queueOutboxById('waiters', 'waiters', id, operation: 'update');
   }
 
@@ -997,7 +1019,12 @@ class DatabaseService {
     return db.query('managers', orderBy: 'id ASC');
   }
 
-  Future<int> insertManager(String name, String pinHash, String pinSalt) async {
+  Future<int> insertManager(
+    String name,
+    String pinHash,
+    String pinSalt, {
+    required String pinView,
+  }) async {
     final db = await database;
     final now = DateTime.now().toIso8601String();
     return db.insert('managers', {
@@ -1006,12 +1033,43 @@ class DatabaseService {
       'pinHash': pinHash,
       'pinSalt': pinSalt,
       'pinUpdatedAt': now,
+      'pinView': pinView,
     });
   }
 
   Future<void> deleteManagerById(int id) async {
     final db = await database;
     await db.delete('managers', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> updateManagerPinViewOnly(int id, String pinView) async {
+    final db = await database;
+    await db.update(
+      'managers',
+      {'pinView': pinView},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> updateAdminPinViewOnly(String pinView) async {
+    final db = await database;
+    try {
+      await db.update(
+        'company',
+        {'adminPinView': pinView},
+        where: 'id = 1',
+      );
+    } catch (_) {
+      try {
+        await db.execute('ALTER TABLE company ADD COLUMN adminPinView TEXT');
+      } catch (_) {}
+      await db.update(
+        'company',
+        {'adminPinView': pinView},
+        where: 'id = 1',
+      );
+    }
   }
 
   // ────────────────────────────── SALES ─────────────────────────────────────
@@ -1537,9 +1595,15 @@ class DatabaseService {
     await db.update('company', map, where: 'id = 1');
   }
 
-  Future<void> updateAdminPin(String hash, String salt) async {
+  Future<void> updateAdminPin(String hash, String salt, {String? pinView}) async {
     final db = await database;
     final now = DateTime.now().toIso8601String();
+    final base = <String, Object?>{
+      'adminPinHash': hash,
+      'adminPinSalt': salt,
+      'adminPinUpdatedAt': now,
+    };
+    if (pinView != null) base['adminPinView'] = pinView;
     try {
       final existing = await db.query(
         'company',
@@ -1550,24 +1614,17 @@ class DatabaseService {
           (existing.isNotEmpty && existing.first['adminPinCreatedAt'] != null)
           ? existing.first['adminPinCreatedAt'] as String
           : now;
-      await db.update('company', {
-        'adminPinHash': hash,
-        'adminPinSalt': salt,
-        'adminPinCreatedAt': createdAt,
-        'adminPinUpdatedAt': now,
-      }, where: 'id = 1');
+      base['adminPinCreatedAt'] = createdAt;
+      await db.update('company', base, where: 'id = 1');
     } catch (_) {
       // Columns missing on very old DBs — add them first.
       try { await db.execute("ALTER TABLE company ADD COLUMN adminPinHash TEXT"); } catch (_) {}
       try { await db.execute("ALTER TABLE company ADD COLUMN adminPinSalt TEXT"); } catch (_) {}
       try { await db.execute("ALTER TABLE company ADD COLUMN adminPinCreatedAt TEXT"); } catch (_) {}
       try { await db.execute("ALTER TABLE company ADD COLUMN adminPinUpdatedAt TEXT"); } catch (_) {}
-      await db.update('company', {
-        'adminPinHash': hash,
-        'adminPinSalt': salt,
-        'adminPinCreatedAt': now,
-        'adminPinUpdatedAt': now,
-      }, where: 'id = 1');
+      try { await db.execute("ALTER TABLE company ADD COLUMN adminPinView TEXT"); } catch (_) {}
+      base['adminPinCreatedAt'] = now;
+      await db.update('company', base, where: 'id = 1');
     }
   }
 
