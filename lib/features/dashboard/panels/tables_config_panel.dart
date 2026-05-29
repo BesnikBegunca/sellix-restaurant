@@ -511,16 +511,25 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: FilledButton.icon(
-                  onPressed: () {
-                    m.setTableLayout(
+                  onPressed: () async {
+                    final note = await m.setTableLayout(
                       count: _count.round(),
                       perRow: _perRow.round(),
                     );
+                    if (!context.mounted) return;
+                    setState(() {
+                      _count = m.tableCount.toDouble();
+                    });
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Table layout saved.'),
+                      SnackBar(
+                        content: Text(
+                          note ??
+                              'Planimetria u ruajt (${m.tableCount} tavolina).',
+                        ),
                         behavior: SnackBarBehavior.floating,
-                        backgroundColor: AppColors.primaryGreen,
+                        backgroundColor: note != null
+                            ? AppColors.mediumGreenText
+                            : AppColors.primaryGreen,
                       ),
                     );
                   },
