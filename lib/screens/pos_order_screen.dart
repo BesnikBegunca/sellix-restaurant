@@ -66,6 +66,24 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   double get _total => _lines.fold(0, (s, l) => s + l.product.price * l.qty);
 
+  TableInfo? get _tableInfo {
+    for (final t in ManagerData.instance.cashierTables) {
+      if (t.id == widget.tableNumber) return t;
+    }
+    return null;
+  }
+
+  /// Paguaj: tavolinë e zënë (pas PRINTO) ose artikuj të rinj në listë.
+  bool get _canPay {
+    final table = _tableInfo;
+    return (table?.occupied ?? false) || _lines.isNotEmpty;
+  }
+
+  double get _displayTotal {
+    if (_lines.isNotEmpty) return _total;
+    return _tableInfo?.currentTotal ?? 0;
+  }
+
   Future<void> _loadPersistedOrder() async {
     if (!mounted) return;
     setState(() {
@@ -128,6 +146,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   }
 
   Future<void> _payTable() async {
+    if (!_canPay || _isSendingOrder) return;
     if (_isPaying) {
       AuditLogService.instance.logDuplicatePaymentBlocked(
         tableId: widget.tableNumber,
@@ -606,7 +625,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           tableNumber: widget.tableNumber,
                           orderNumber: _activeOrderNumber,
                           lines: _lines,
-                          total: _total,
+                          total: _displayTotal,
+                          canPay: _canPay,
                           onDelta: _deltaQty,
                           onSend: _sendOrder,
                           onPay: _payTable,
