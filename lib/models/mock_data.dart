@@ -19,11 +19,11 @@ class TableInfo {
   final int? currentOrderNumber;
 
   factory TableInfo.fromMap(Map<String, dynamic> m) => TableInfo(
-        id: m['id'] as int,
-        occupied: (m['occupied'] as int) == 1,
-        currentTotal: m['currentTotal'] as double?,
+        id: (m['id'] as num).toInt(),
+        occupied: ((m['occupied'] as num?) ?? 0).toInt() == 1,
+        currentTotal: (m['currentTotal'] as num?)?.toDouble(),
         assignedWaiterName: m['assignedWaiterName'] as String?,
-        currentOrderNumber: m['currentOrderNumber'] as int?,
+        currentOrderNumber: (m['currentOrderNumber'] as num?)?.toInt(),
       );
 }
 

@@ -54,6 +54,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     _syncLicenseBadgeFromController();
     ActivationLicenseController.instance.addListener(_onLicenseExpiryChanged);
     unawaited(_warmLicenseExpiryCache());
+    _pinFocus.addListener(_onPinFocusChanged);
     _schedulePinFocus();
   }
 
@@ -71,12 +72,32 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     _schedulePinFocus();
   }
 
+  void _onPinFocusChanged() {
+    if (!_pinFocus.hasFocus) return;
+    if (_calcField != null) {
+      setState(() => _calcField = null);
+    }
+    final len = _pinController.text.length;
+    _pinController.selection = TextSelection.collapsed(offset: len);
+  }
+
+  /// Hiq fokusin nga kalkulatori; vetëm fusha PIN mbetet aktive.
+  void _activatePinField() {
+    if (_calcField != null) {
+      setState(() => _calcField = null);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _pinFocus.requestFocus();
+      final len = _pinController.text.length;
+      _pinController.selection = TextSelection.collapsed(offset: len);
+    });
+  }
+
   void _schedulePinFocus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _calcField != null) return;
-      final len = _pinController.text.length;
-      _pinFocus.requestFocus();
-      _pinController.selection = TextSelection.collapsed(offset: len);
+      _activatePinField();
     });
   }
 
@@ -127,6 +148,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     _clockTimer?.cancel();
     ActivationLicenseController.instance
         .removeListener(_onLicenseExpiryChanged);
+    _pinFocus.removeListener(_onPinFocusChanged);
     _pinController.dispose();
     _pinFocus.dispose();
     ManagerData.instance.removeListener(_onDataChanged);
@@ -147,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
   void _setCalcField(int? field) {
     setState(() => _calcField = field);
     if (field == null) {
-      _schedulePinFocus();
+      _activatePinField();
     } else {
       _pinFocus.unfocus();
     }
@@ -162,6 +184,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
         selection: TextSelection.collapsed(offset: t.length),
       );
     });
+    _pinFocus.requestFocus();
   }
 
   void _appendMoney(int field, String d) {
@@ -194,6 +217,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
         _pinController.clear();
       }
     });
+    _pinFocus.requestFocus();
   }
 
   double? _parseMoney(String s) {
@@ -479,10 +503,8 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     final isNameMode = ManagerData.instance.loginMode == 'NAMEMODE';
 
     return GestureDetector(
-      onTap: () {
-        _setCalcField(null);
-        _pinFocus.requestFocus();
-      },
+      onTap: _activatePinField,
+      behavior: HitTestBehavior.translucent,
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
@@ -536,9 +558,12 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
               maxLines: 1,
+              showCursor: true,
               enableInteractiveSelection: false,
               enableSuggestions: false,
               autocorrect: false,
+              onTap: _activatePinField,
+              onTapAlwaysCalled: true,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
@@ -591,25 +616,24 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
   }
 
   void _calcNumpadAppend(String d) {
-    setState(() {
-      if (_calcField == null) _calcField = 0;
-      _appendMoney(_calcField!, d);
-    });
+    if (_calcField == null) return;
+    setState(() => _appendMoney(_calcField!, d));
   }
 
   void _calcEnter() {
-    setState(() {
-      if (_calcField == null || _calcField == 0) {
-        _calcField = 1;
-      } else {
-        _calcField = null;
-      }
-    });
+    final nextField =
+        (_calcField == null || _calcField == 0) ? 1 : null;
+    setState(() => _calcField = nextField);
+    if (nextField == null) {
+      _activatePinField();
+    } else {
+      _pinFocus.unfocus();
+    }
   }
 
   void _calcAc() {
+    if (_calcField == null) return;
     setState(() {
-      if (_calcField == null) _calcField = 0;
       _bill = '';
       _paid = '';
     });

@@ -119,6 +119,111 @@ class DatabaseService {
 
   // ──────────────────────────── TABLES ──────────────────────────────────────
 
+  static const int defaultTableCount = 15;
+
+  /// Porosi aktive (fatura të hapura) për këtë tavolinë — nuk duhet fshirë.
+  Future<bool> tableHasOpenBusiness(int tableId) async {
+    final db = await database;
+    final rows = await db.query(
+      'tables',
+      where: 'id = ?',
+      whereArgs: [tableId],
+      limit: 1,
+    );
+    if (rows.isNotEmpty && ((rows.first['occupied'] as int?) ?? 0) == 1) {
+      return true;
+    }
+    final orders = Sqflite.firstIntValue(
+          await db.rawQuery(
+            'SELECT COUNT(*) FROM current_orders WHERE tableId = ?',
+            [tableId],
+          ),
+        ) ??
+        0;
+    if (orders > 0) return true;
+    final lines = Sqflite.firstIntValue(
+          await db.rawQuery(
+            'SELECT COUNT(*) FROM current_order_lines WHERE tableId = ?',
+            [tableId],
+          ),
+        ) ??
+        0;
+    return lines > 0;
+  }
+
+  /// Rikrijon rreshtat në [tables] për çdo tavolinë që ka porosi në DB.
+  Future<void> reconcileTablesWithActiveOrders() async {
+    final db = await database;
+    final tableIds = <int>{};
+    for (final r in await db.query('current_orders')) {
+      tableIds.add((r['tableId'] as num).toInt());
+    }
+    for (final r in await db.query('current_order_lines')) {
+      tableIds.add((r['tableId'] as num).toInt());
+    }
+    for (final id in tableIds) {
+      final exists = await db.query(
+        'tables',
+        where: 'id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      if (exists.isNotEmpty) continue;
+
+      final metas = await db.query(
+        'current_orders',
+        where: 'tableId = ?',
+        whereArgs: [id],
+        orderBy: 'currentTotal DESC',
+        limit: 1,
+      );
+      double? total;
+      String? waiter;
+      int? orderNo;
+      if (metas.isNotEmpty) {
+        final m = metas.first;
+        total = (m['currentTotal'] as num?)?.toDouble();
+        waiter = m['waiterName'] as String?;
+        orderNo = (m['orderNumber'] as num?)?.toInt();
+      }
+      if (total == null || total == 0) {
+        final lineRows = await db.query(
+          'current_order_lines',
+          where: 'tableId = ?',
+          whereArgs: [id],
+        );
+        total = 0;
+        for (final l in lineRows) {
+          final price = (l['productPrice'] as num).toDouble();
+          final qty = (l['qty'] as num).toInt();
+          total = total! + price * qty;
+        }
+      }
+      await db.insert('tables', {
+        'id': id,
+        'occupied': 1,
+        'currentTotal': total == 0 ? null : total,
+        'assignedWaiterName': waiter,
+        'currentOrderNumber': orderNo,
+      });
+    }
+  }
+
+  /// Siguron që ekzistojnë tavolina në DB — vetëm shtim, asnjëherë fshirje.
+  Future<void> ensureDefaultTables({int count = defaultTableCount}) async {
+    await reconcileTablesWithActiveOrders();
+    final db = await database;
+    final existing = Sqflite.firstIntValue(
+          await db.rawQuery('SELECT COUNT(*) FROM tables'),
+        ) ??
+        0;
+    if (existing > 0) return;
+    final n = count.clamp(1, 48);
+    for (var i = 1; i <= n; i++) {
+      await insertTable(i);
+    }
+  }
+
   Future<List<Map<String, dynamic>>> fetchTables() async {
     final db = await database;
     return db.query('tables', orderBy: 'id ASC');
@@ -156,7 +261,9 @@ class DatabaseService {
     );
   }
 
-  Future<void> deleteTable(int id) async {
+  /// Fshin tavolinën vetëm nëse nuk ka faturë/porosi të hapura.
+  Future<bool> deleteTableIfSafe(int id) async {
+    if (await tableHasOpenBusiness(id)) return false;
     final db = await database;
     await db.delete('current_orders', where: 'tableId = ?', whereArgs: [id]);
     await db.delete(
@@ -165,6 +272,7 @@ class DatabaseService {
       whereArgs: [id],
     );
     await db.delete('tables', where: 'id = ?', whereArgs: [id]);
+    return true;
   }
 
   Future<void> upsertCurrentOrderMeta({
@@ -1825,12 +1933,42 @@ class DatabaseService {
     );
   }
 
+  /// A ka të paktën një tavolinë me faturë/porosi të hapura.
+  Future<bool> hasAnyOpenTableBusiness() async {
+    final db = await database;
+    final occupied = Sqflite.firstIntValue(
+          await db.rawQuery(
+            'SELECT COUNT(*) FROM tables WHERE occupied = 1',
+          ),
+        ) ??
+        0;
+    if (occupied > 0) return true;
+    final orders = Sqflite.firstIntValue(
+          await db.rawQuery('SELECT COUNT(*) FROM current_orders'),
+        ) ??
+        0;
+    if (orders > 0) return true;
+    final lines = Sqflite.firstIntValue(
+          await db.rawQuery('SELECT COUNT(*) FROM current_order_lines'),
+        ) ??
+        0;
+    return lines > 0;
+  }
+
   /// Deletes local business/operational data for a new tenant activation.
   ///
   /// Preserves [company] (printer/admin settings), [shift] singleton row,
   /// [audit_logs] (immutable audit trail), [audit_device_id], and
   /// activation-related [app_meta] keys.
+  ///
+  /// Throws nëse ka tavolina me porosi të hapura (fatura).
   Future<void> clearLocalBusinessData() async {
+    if (await hasAnyOpenTableBusiness()) {
+      throw StateError(
+        'Ka tavolina me porosi të hapura. Paguaj ose mbyll porositë '
+        'para se të pastrosh të dhënat lokale.',
+      );
+    }
     final db = await database;
     await db.transaction((txn) async {
       for (final table in DatabaseSchema.tenantResetTables) {

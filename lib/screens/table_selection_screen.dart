@@ -20,6 +20,8 @@ class TableSelectionScreen extends StatefulWidget {
 class _TableSelectionScreenState extends State<TableSelectionScreen> {
   final ManagerData _m = ManagerData.instance;
   List<TableInfo> _tables = const [];
+  bool _loadingTables = true;
+  Object? _loadError;
 
   @override
   void initState() {
@@ -29,15 +31,36 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
   }
 
   void _onManager() {
+    if (_m.isLoading) return;
     _reloadTables();
   }
 
   Future<void> _reloadTables() async {
-    final tables = await _m.tablesForWaiter(widget.waiterName);
     if (!mounted) return;
     setState(() {
-      _tables = tables;
+      _loadingTables = true;
+      _loadError = null;
     });
+    try {
+      while (_m.isLoading) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        if (!mounted) return;
+      }
+      await _m.ensureTablesLoaded();
+      final tables = await _m.tablesForWaiter(widget.waiterName);
+      if (!mounted) return;
+      setState(() {
+        _tables = tables;
+        _loadingTables = false;
+      });
+    } catch (e, st) {
+      debugPrint('TableSelectionScreen._reloadTables: $e\n$st');
+      if (!mounted) return;
+      setState(() {
+        _loadError = e;
+        _loadingTables = false;
+      });
+    }
   }
 
   @override
@@ -48,6 +71,68 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loadingTables) {
+      return Scaffold(
+        backgroundColor: AppColors.beige,
+        body: Column(
+          children: [
+            GgAppHeader(
+              showBack: true,
+              title: 'Tavolinat',
+              userName: widget.waiterName,
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primaryGreen),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_loadError != null) {
+      return Scaffold(
+        backgroundColor: AppColors.beige,
+        body: Column(
+          children: [
+            GgAppHeader(
+              showBack: true,
+              title: 'Tavolinat',
+              userName: widget.waiterName,
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Tavolinat nuk u ngarkuan.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.darkGreenText,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: _reloadTables,
+                        child: const Text('Provo përsëri'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final tables = _tables;
     final occupied = tables.where((t) => t.occupied).length;
     final total = tables.fold<double>(0, (s, t) => s + (t.currentTotal ?? 0));

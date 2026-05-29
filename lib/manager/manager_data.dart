@@ -153,10 +153,12 @@ class ManagerData extends ChangeNotifier {
     await db.ensureDefaultMenuPresent();
     await _reloadMenu();
 
-    // Tables
-    final tableRows = await db.fetchTables();
-    _cashierTables = tableRows.map(TableInfo.fromMap).toList();
-    tableCount = _cashierTables.length;
+    // Tables — rikthe nga porosi aktive, pastaj parazgjedhja nëse DB bosh.
+    await db.reconcileTablesWithActiveOrders();
+    await db.ensureDefaultTables(
+      count: tableCount.clamp(1, 48),
+    );
+    await _reloadTablesFromDb();
 
     // Expenses
     final expenseRows = await ExpenseRepository.instance.fetchExpenses();
@@ -188,7 +190,42 @@ class ManagerData extends ChangeNotifier {
   /// Call this after a database restore to bring in-memory state in sync with
   /// the newly installed database file.
   Future<void> reload() async {
-    await _init();
+    isLoading = true;
+    notifyListeners();
+    try {
+      await _init();
+    } catch (e, st) {
+      debugPrint('ManagerData.reload failed: $e\n$st');
+      isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Ngarkon tavolinat nga DB; rikthen nga porositë aktive; nuk fshin fatura.
+  Future<void> ensureTablesLoaded() async {
+    final db = DatabaseService.instance;
+    await db.reconcileTablesWithActiveOrders();
+    await db.ensureDefaultTables(
+      count: tableCount.clamp(1, 48),
+    );
+    await _reloadTablesFromDb();
+  }
+
+  Future<void> _reloadTablesFromDb() async {
+    final tableRows = await DatabaseService.instance.fetchTables();
+    _cashierTables = tableRows.map(TableInfo.fromMap).toList();
+    tableCount = _cashierTables.isNotEmpty
+        ? _cashierTables.length
+        : DatabaseService.defaultTableCount;
+    if (_cashierTables.isEmpty) {
+      await DatabaseService.instance.ensureDefaultTables(
+        count: tableCount,
+      );
+      final again = await DatabaseService.instance.fetchTables();
+      _cashierTables = again.map(TableInfo.fromMap).toList();
+      tableCount = _cashierTables.length;
+    }
   }
 
   /// Reloads categories and their products from the DB.
@@ -444,6 +481,7 @@ class ManagerData extends ChangeNotifier {
       await db.clearAllCurrentOrdersAndResetTables();
       await db.resetOrderNumberCountersForNewShift();
       waiterSales = {};
+      await _reloadTablesFromDb();
       _cashierTables = _cashierTables
           .map(
             (t) => TableInfo(

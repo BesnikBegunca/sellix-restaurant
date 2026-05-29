@@ -3,29 +3,55 @@ part of 'manager_data.dart';
 extension TablesMethods on ManagerData {
   // ─────────────────────────── tables ───────────────────────────────────────
 
-  Future<void> setTableLayout({required int count, required int perRow}) async {
-    tableCount = count.clamp(1, 48);
+  /// Ruan planimetrinë. Nuk fshin tavolina me porosi të hapura (fatura).
+  /// Kthen mesazh për UI nëse u bllokua fshirja ose u rrit numri.
+  Future<String?> setTableLayout({required int count, required int perRow}) async {
     tablesPerRow = perRow.clamp(2, 12);
-
-    // Sync DB: insert missing tables, remove extras
-    final existing = {for (final t in _cashierTables) t.id: t};
     final db = DatabaseService.instance;
+    await db.reconcileTablesWithActiveOrders();
 
+    var targetCount = count.clamp(1, 48);
+    final protectedIds = <int>[];
+    for (final t in _cashierTables) {
+      if (await db.tableHasOpenBusiness(t.id)) {
+        protectedIds.add(t.id);
+      }
+    }
+    if (protectedIds.isNotEmpty) {
+      final minRequired = protectedIds.reduce(math.max);
+      if (targetCount < minRequired) {
+        targetCount = minRequired.clamp(1, 48);
+      }
+    }
+    tableCount = targetCount;
+
+    final existing = {for (final t in _cashierTables) t.id: t};
     for (var i = 1; i <= tableCount; i++) {
       if (!existing.containsKey(i)) {
         await db.insertTable(i);
       }
     }
+
+    var blockedDeletes = 0;
     for (final t in _cashierTables) {
       if (t.id > tableCount) {
-        await db.deleteTable(t.id);
+        final removed = await db.deleteTableIfSafe(t.id);
+        if (!removed) blockedDeletes++;
       }
     }
 
-    // Rebuild cache from DB to reflect exact state
-    final rows = await db.fetchTables();
-    _cashierTables = rows.map(TableInfo.fromMap).toList();
+    await _reloadTablesFromDb();
     _notify();
+
+    if (blockedDeletes > 0) {
+      return blockedDeletes == 1
+          ? '1 tavolinë me porosi të hapur nuk u fshi (fatura e ruajtur).'
+          : '$blockedDeletes tavolina me porosi të hapura nuk u fshinë (faturat u ruajtën).';
+    }
+    if (targetCount > count.clamp(1, 48)) {
+      return 'Numri u rrit në $targetCount — ka tavolina të hapura jashtë limitit të ri.';
+    }
+    return null;
   }
 
   Future<void> updateTableTotal(int tableId, double total, String waiterName) async {
@@ -319,6 +345,7 @@ extension TablesMethods on ManagerData {
   }
 
   Future<List<TableInfo>> tablesForWaiter(String waiterName) async {
+    await ensureTablesLoaded();
     final rows = await DatabaseService.instance.fetchCurrentOrderMetasForWaiter(
       waiterName,
     );
