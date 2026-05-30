@@ -204,28 +204,66 @@ class ManagerData extends ChangeNotifier {
   }
 
   /// Ngarkon tavolinat nga DB; rikthen nga porositë aktive; nuk fshin fatura.
+  Future<void>? _ensureTablesInFlight;
+
   Future<void> ensureTablesLoaded() async {
+    if (_ensureTablesInFlight != null) {
+      await _ensureTablesInFlight;
+      return;
+    }
+    final job = _ensureTablesLoadedImpl();
+    _ensureTablesInFlight = job;
+    try {
+      await job;
+    } finally {
+      if (identical(_ensureTablesInFlight, job)) {
+        _ensureTablesInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _ensureTablesLoadedImpl() async {
+    if (_cashierTables.isNotEmpty) return;
     final db = DatabaseService.instance;
-    await db.reconcileTablesWithActiveOrders();
-    await db.ensureDefaultTables(
-      count: tableCount.clamp(1, 48),
+    try {
+      await db.reconcileTablesWithActiveOrders();
+      await db.ensureDefaultTables(
+        count: tableCount.clamp(1, 48),
+      );
+      await _reloadTablesFromDb();
+    } catch (e, st) {
+      debugPrint('ensureTablesLoaded failed, using in-memory defaults: $e\n$st');
+      _ensureInMemoryDefaultTables();
+    }
+  }
+
+  void _ensureInMemoryDefaultTables() {
+    if (_cashierTables.isNotEmpty) return;
+    final n = tableCount.clamp(1, 48);
+    _cashierTables = List.generate(
+      n,
+      (i) => TableInfo(id: i + 1, occupied: false, currentOrderNumber: 0),
     );
-    await _reloadTablesFromDb();
   }
 
   Future<void> _reloadTablesFromDb() async {
-    final tableRows = await DatabaseService.instance.fetchTables();
-    _cashierTables = tableRows.map(TableInfo.fromMap).toList();
-    tableCount = _cashierTables.isNotEmpty
-        ? _cashierTables.length
-        : DatabaseService.defaultTableCount;
-    if (_cashierTables.isEmpty) {
-      await DatabaseService.instance.ensureDefaultTables(
-        count: tableCount,
-      );
-      final again = await DatabaseService.instance.fetchTables();
-      _cashierTables = again.map(TableInfo.fromMap).toList();
-      tableCount = _cashierTables.length;
+    try {
+      final tableRows = await DatabaseService.instance.fetchTables();
+      _cashierTables = tableRows.map(TableInfo.fromMap).toList();
+      tableCount = _cashierTables.isNotEmpty
+          ? _cashierTables.length
+          : DatabaseService.defaultTableCount;
+      if (_cashierTables.isEmpty) {
+        await DatabaseService.instance.ensureDefaultTables(
+          count: tableCount,
+        );
+        final again = await DatabaseService.instance.fetchTables();
+        _cashierTables = again.map(TableInfo.fromMap).toList();
+        tableCount = _cashierTables.length;
+      }
+    } catch (e, st) {
+      debugPrint('_reloadTablesFromDb failed, keeping cache/defaults: $e\n$st');
+      _ensureInMemoryDefaultTables();
     }
   }
 

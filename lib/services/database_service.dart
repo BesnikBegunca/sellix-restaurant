@@ -30,6 +30,33 @@ class DatabaseService {
     return _db!;
   }
 
+  static bool _isTransientDbError(Object error) {
+    final msg = error.toString().toLowerCase();
+    return msg.contains('database is locked') ||
+        msg.contains('database locked') ||
+        msg.contains('sqlite_busy') ||
+        msg.contains('locked') && msg.contains('sqlite');
+  }
+
+  /// Riprovo operacionet e DB kur SQLite është i zënë përkohësisht.
+  Future<T> withDbRetry<T>(
+    Future<T> Function() action, {
+    int maxAttempts = 10,
+    Duration initialDelay = const Duration(milliseconds: 40),
+  }) async {
+    Object? lastError;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        return await action();
+      } catch (e) {
+        lastError = e;
+        if (!_isTransientDbError(e) || attempt >= maxAttempts - 1) rethrow;
+        await Future<void>.delayed(initialDelay * (attempt + 1));
+      }
+    }
+    throw lastError!;
+  }
+
   /// Closes the database connection and clears the cached instance so that the
   /// next access to [database] triggers a fresh [_initDB] call.
   ///
@@ -84,6 +111,11 @@ class DatabaseService {
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
+        // Lejon lexime/ shkrime paralele pa "database is locked" (OneDrive, shumë ekrane).
+        await db.execute('PRAGMA busy_timeout = 10000');
+        try {
+          await db.execute('PRAGMA journal_mode = WAL');
+        } catch (_) {}
         await DatabaseSchema.ensureShiftsSnapshotColumn(db);
         await DatabaseSchema.ensureSalesOrderMetadataColumns(db);
         await DatabaseSchema.ensureDefaultMenuPresent(db);
@@ -153,7 +185,13 @@ class DatabaseService {
 
   /// Rikrijon rreshtat në [tables] për çdo tavolinë që ka porosi në DB.
   Future<void> reconcileTablesWithActiveOrders() async {
-    final db = await database;
+    await withDbRetry(() async {
+      final db = await database;
+      await _reconcileTablesWithActiveOrders(db);
+    });
+  }
+
+  Future<void> _reconcileTablesWithActiveOrders(Database db) async {
     final tableIds = <int>{};
     for (final r in await db.query('current_orders')) {
       tableIds.add((r['tableId'] as num).toInt());
@@ -211,26 +249,35 @@ class DatabaseService {
 
   /// Siguron që ekzistojnë tavolina në DB — vetëm shtim, asnjëherë fshirje.
   Future<void> ensureDefaultTables({int count = defaultTableCount}) async {
-    await reconcileTablesWithActiveOrders();
-    final db = await database;
-    final existing = Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM tables'),
-        ) ??
-        0;
-    if (existing > 0) return;
-    final n = count.clamp(1, 48);
-    for (var i = 1; i <= n; i++) {
-      await insertTable(i);
-    }
+    await withDbRetry(() async {
+      await _reconcileTablesWithActiveOrders(await database);
+      final db = await database;
+      final existing = Sqflite.firstIntValue(
+            await db.rawQuery('SELECT COUNT(*) FROM tables'),
+          ) ??
+          0;
+      if (existing > 0) return;
+      final n = count.clamp(1, 48);
+      for (var i = 1; i <= n; i++) {
+        await _insertTable(db, i);
+      }
+    });
   }
 
   Future<List<Map<String, dynamic>>> fetchTables() async {
-    final db = await database;
-    return db.query('tables', orderBy: 'id ASC');
+    return withDbRetry(() async {
+      final db = await database;
+      return db.query('tables', orderBy: 'id ASC');
+    });
   }
 
   Future<void> insertTable(int id) async {
-    final db = await database;
+    await withDbRetry(() async {
+      await _insertTable(await database, id);
+    });
+  }
+
+  Future<void> _insertTable(Database db, int id) async {
     await db.insert('tables', {
       'id': id,
       'occupied': 0,
@@ -324,12 +371,14 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> fetchCurrentOrderMetasForWaiter(
     String waiterName,
   ) async {
-    final db = await database;
-    return db.query(
-      'current_orders',
-      where: 'waiterName = ?',
-      whereArgs: [waiterName],
-    );
+    return withDbRetry(() async {
+      final db = await database;
+      return db.query(
+        'current_orders',
+        where: 'waiterName = ?',
+        whereArgs: [waiterName],
+      );
+    });
   }
 
   Future<void> replaceCurrentOrderLines(

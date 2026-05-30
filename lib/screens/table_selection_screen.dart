@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
@@ -21,50 +23,117 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
   final ManagerData _m = ManagerData.instance;
   List<TableInfo> _tables = const [];
   bool _loadingTables = true;
-  Object? _loadError;
+  int _reloadGen = 0;
+  Timer? _refreshDebounce;
+  Timer? _backgroundRetry;
 
   @override
   void initState() {
     super.initState();
     _m.addListener(_onManager);
-    _reloadTables();
+    if (!_m.isLoading) {
+      _showCachedTables();
+    } else {
+      _m.addListener(_onInitReady);
+    }
+    _refreshTablesFromDb();
+  }
+
+  void _onInitReady() {
+    if (_m.isLoading) return;
+    _m.removeListener(_onInitReady);
+    _showCachedTables();
+    _refreshTablesFromDb();
+  }
+
+  void _showCachedTables() {
+    if (!mounted) return;
+    setState(() {
+      _tables = _m.cachedTablesForWaiter(widget.waiterName);
+      _loadingTables = _tables.isEmpty;
+    });
   }
 
   void _onManager() {
     if (_m.isLoading) return;
-    _reloadTables();
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) _refreshTablesLight();
+    });
   }
 
-  Future<void> _reloadTables() async {
-    if (!mounted) return;
-    setState(() {
-      _loadingTables = true;
-      _loadError = null;
-    });
+  Future<void> _refreshTablesLight() async {
+    final gen = ++_reloadGen;
     try {
-      while (_m.isLoading) {
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-        if (!mounted) return;
-      }
-      await _m.ensureTablesLoaded();
-      final tables = await _m.tablesForWaiter(widget.waiterName);
-      if (!mounted) return;
+      final tables = await _m.tablesForWaiter(
+        widget.waiterName,
+        ensureLoaded: false,
+      );
+      if (!mounted || gen != _reloadGen) return;
       setState(() {
         _tables = tables;
         _loadingTables = false;
       });
+      _backgroundRetry?.cancel();
+      _backgroundRetry = null;
     } catch (e, st) {
-      debugPrint('TableSelectionScreen._reloadTables: $e\n$st');
-      if (!mounted) return;
+      debugPrint('TableSelectionScreen._refreshTablesLight: $e\n$st');
+      _scheduleBackgroundRetry();
+    }
+  }
+
+  Future<void> _refreshTablesFromDb() async {
+    if (!mounted) return;
+    final gen = ++_reloadGen;
+    if (_tables.isEmpty) {
+      setState(() => _loadingTables = true);
+    }
+
+    while (_m.isLoading) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      if (!mounted || gen != _reloadGen) return;
+    }
+
+    try {
+      if (_m.cashierTables.isEmpty) {
+        await _m.ensureTablesLoaded();
+      }
+      final tables = await _m.tablesForWaiter(
+        widget.waiterName,
+        ensureLoaded: false,
+      );
+      if (!mounted || gen != _reloadGen) return;
       setState(() {
-        _loadError = e;
+        _tables = tables;
         _loadingTables = false;
       });
+      _backgroundRetry?.cancel();
+      _backgroundRetry = null;
+    } catch (e, st) {
+      debugPrint('TableSelectionScreen._refreshTablesFromDb: $e\n$st');
+      if (!mounted || gen != _reloadGen) return;
+      if (_tables.isEmpty) {
+        setState(() {
+          _tables = _m.cachedTablesForWaiter(widget.waiterName);
+          _loadingTables = false;
+        });
+      }
+      _scheduleBackgroundRetry();
     }
+  }
+
+  void _scheduleBackgroundRetry() {
+    _backgroundRetry ??= Timer(const Duration(seconds: 2), () {
+      _backgroundRetry = null;
+      if (mounted) _refreshTablesLight();
+    });
   }
 
   @override
   void dispose() {
+    _refreshDebounce?.cancel();
+    _backgroundRetry?.cancel();
+    _m.removeListener(_onInitReady);
     _m.removeListener(_onManager);
     super.dispose();
   }
@@ -85,47 +154,6 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
             const Expanded(
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.primaryGreen),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_loadError != null) {
-      return Scaffold(
-        backgroundColor: AppColors.beige,
-        body: Column(
-          children: [
-            GgAppHeader(
-              showBack: true,
-              title: 'Tavolinat',
-              userName: widget.waiterName,
-              onBack: () => Navigator.of(context).maybePop(),
-            ),
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Tavolinat nuk u ngarkuan.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.darkGreenText,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                        onPressed: _reloadTables,
-                        child: const Text('Provo përsëri'),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ),
           ],

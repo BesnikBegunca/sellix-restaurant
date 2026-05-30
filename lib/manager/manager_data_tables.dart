@@ -344,15 +344,40 @@ extension TablesMethods on ManagerData {
         .toList();
   }
 
-  Future<List<TableInfo>> tablesForWaiter(String waiterName) async {
-    await ensureTablesLoaded();
-    final rows = await DatabaseService.instance.fetchCurrentOrderMetasForWaiter(
-      waiterName,
-    );
+  Future<List<TableInfo>> tablesForWaiter(
+    String waiterName, {
+    bool ensureLoaded = true,
+  }) async {
+    if (ensureLoaded) await ensureTablesLoaded();
+    if (_cashierTables.isEmpty) _ensureInMemoryDefaultTables();
+
+    List<Map<String, dynamic>> rows;
+    try {
+      rows = await DatabaseService.instance.fetchCurrentOrderMetasForWaiter(
+        waiterName,
+      );
+    } catch (e, st) {
+      debugPrint('tablesForWaiter metas failed, using cache: $e\n$st');
+      rows = const [];
+    }
+
     final byTable = <int, Map<String, dynamic>>{
       for (final r in rows) (r['tableId'] as num).toInt(): r,
     };
-    return _cashierTables.map((t) {
+    return _mergeWaiterTables(_cashierTables, byTable);
+  }
+
+  /// Pamje e menjëhershme nga cache — pa lexim DB (për UI që nuk duhet të bllokohet).
+  List<TableInfo> cachedTablesForWaiter(String waiterName) {
+    if (_cashierTables.isEmpty) _ensureInMemoryDefaultTables();
+    return _mergeWaiterTables(_cashierTables, const {});
+  }
+
+  List<TableInfo> _mergeWaiterTables(
+    List<TableInfo> base,
+    Map<int, Map<String, dynamic>> byTable,
+  ) {
+    return base.map((t) {
       final m = byTable[t.id];
       if (m == null) {
         return TableInfo(
@@ -366,7 +391,7 @@ extension TablesMethods on ManagerData {
         id: t.id,
         occupied: true,
         currentTotal: (m['currentTotal'] as num).toDouble(),
-        assignedWaiterName: waiterName,
+        assignedWaiterName: m['waiterName'] as String?,
         currentOrderNumber: (m['orderNumber'] as num).toInt(),
       );
     }).toList();
