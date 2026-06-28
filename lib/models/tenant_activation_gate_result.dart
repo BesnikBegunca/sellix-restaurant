@@ -1,3 +1,4 @@
+import 'open_tables_summary.dart';
 import 'tenant_data_conflict.dart';
 
 /// User choice from [showTenantDataConflictDialog].
@@ -14,11 +15,13 @@ class TenantActivationGateResult {
     required this.action,
     this.conflict,
     this.error,
+    this.openTablesSummary,
   });
 
   final TenantActivationGateAction action;
   final TenantDataConflict? conflict;
   final Object? error;
+  final OpenTablesSummary? openTablesSummary;
 
   /// Safe to call [ActivationService.activateDesktop] after this result.
   bool get canProceedToActivation =>
@@ -60,6 +63,16 @@ class TenantActivationGateResult {
         conflict: conflict,
         error: error,
       );
+
+  factory TenantActivationGateResult.openTablesBlocked(
+    TenantDataConflict conflict,
+    OpenTablesSummary summary,
+  ) =>
+      TenantActivationGateResult._(
+        action: TenantActivationGateAction.openTablesBlocked,
+        conflict: conflict,
+        openTablesSummary: summary,
+      );
 }
 
 enum TenantActivationGateAction {
@@ -68,4 +81,5 @@ enum TenantActivationGateAction {
   wipeCompleted,
   wipeFailed,
   keepLocalDebugOnly,
+  openTablesBlocked,
 }

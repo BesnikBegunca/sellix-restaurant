@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../models/open_tables_summary.dart';
 import '../models/sale_insert_result.dart';
 import '../models/unsupported_outbox_cleanup_result.dart';
 import 'background_sync_service.dart';
@@ -106,7 +107,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 26,
+      version: 27,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
@@ -118,6 +119,8 @@ class DatabaseService {
         } catch (_) {}
         await DatabaseSchema.ensureShiftsSnapshotColumn(db);
         await DatabaseSchema.ensureSalesOrderMetadataColumns(db);
+        await DatabaseSchema.ensureSalesCloseMetadataColumns(db);
+        await DatabaseSchema.ensureActivationArchiveTables(db);
         await DatabaseSchema.ensureDefaultMenuPresent(db);
       },
     );
@@ -2061,20 +2064,289 @@ class DatabaseService {
     return lines > 0;
   }
 
+  static const String activationResetCloseReason =
+      'Closed during activation reset';
+
+  /// Returns open table/order count and combined total for activation UI.
+  Future<OpenTablesSummary> getOpenTablesSummary() async {
+    await reconcileTablesWithActiveOrders();
+    final db = await database;
+    final orderRows = await db.query('current_orders');
+    var count = orderRows.length;
+    var totalAmount = 0.0;
+
+    for (final row in orderRows) {
+      var lineTotal = (row['currentTotal'] as num?)?.toDouble() ?? 0;
+      if (lineTotal <= 0) {
+        final tableId = (row['tableId'] as num).toInt();
+        final waiterName = row['waiterName'] as String;
+        final lines = await fetchCurrentOrderLines(tableId, waiterName);
+        lineTotal = _sumOrderLineMaps(lines);
+      }
+      totalAmount += lineTotal;
+    }
+
+    if (count == 0) {
+      final occupiedRows = await db.query(
+        'tables',
+        where: 'occupied = 1 OR currentTotal IS NOT NULL',
+      );
+      count = occupiedRows.length;
+      for (final row in occupiedRows) {
+        totalAmount += (row['currentTotal'] as num?)?.toDouble() ?? 0;
+      }
+    }
+
+    return OpenTablesSummary(
+      count: count,
+      totalAmount: double.parse(totalAmount.toStringAsFixed(2)),
+    );
+  }
+
+  double _sumOrderLineMaps(List<Map<String, dynamic>> lines) {
+    var total = 0.0;
+    for (final line in lines) {
+      final price = (line['productPrice'] as num).toDouble();
+      final qty = (line['qty'] as num).toInt();
+      total += double.parse((price * qty).toStringAsFixed(2));
+    }
+    return total;
+  }
+
+  Future<String?> _categoryNameForProduct(
+    DatabaseExecutor db,
+    String productId,
+  ) async {
+    final rows = await db.rawQuery(
+      'SELECT c.name AS categoryName '
+      'FROM products p '
+      'LEFT JOIN categories c ON c.id = p.categoryId '
+      'WHERE p.id = ? '
+      'LIMIT 1',
+      [productId],
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['categoryName'] as String?;
+  }
+
+  /// Closes open tables without deleting financial totals — converts unpaid
+  /// orders to [sales] with status `completed_local` when total > 0.
+  Future<void> closeOpenTablesSafely() async {
+    await reconcileTablesWithActiveOrders();
+    final db = await database;
+    await DatabaseSchema.ensureSalesCloseMetadataColumns(db);
+    final closedAt = DatabaseSchema.toSyncUtcIso();
+    final openShift = await fetchOpenShift();
+    final shiftId = (openShift?['id'] as num?)?.toInt();
+
+    final orderMetas = await db.query('current_orders');
+    for (final meta in orderMetas) {
+      final tableId = (meta['tableId'] as num).toInt();
+      final waiterName = meta['waiterName'] as String;
+      final orderNumber = (meta['orderNumber'] as num?)?.toInt();
+      final lines = await fetchCurrentOrderLines(tableId, waiterName);
+      final lineMaps = <Map<String, dynamic>>[];
+      for (final line in lines) {
+        final lineTotal = double.parse(
+          (((line['productPrice'] as num).toDouble()) *
+                  (line['qty'] as num).toInt())
+              .toStringAsFixed(2),
+        );
+        lineMaps.add({
+          'productId': line['productId'],
+          'productName': line['productName'],
+          'productEmoji': line['productEmoji'] ?? '☕',
+          'productImagePath': line['imagePath'],
+          'productPrice': (line['productPrice'] as num).toDouble(),
+          'quantity': (line['qty'] as num).toInt(),
+          'lineTotal': lineTotal,
+          'categoryName': await _categoryNameForProduct(
+            db,
+            line['productId'] as String,
+          ),
+          'tableName': 'Tavolina $tableId',
+          'waiterName': waiterName,
+        });
+      }
+
+      var total = (meta['currentTotal'] as num?)?.toDouble() ?? 0;
+      if (total <= 0 && lineMaps.isNotEmpty) {
+        total = _sumOrderLineMaps(lines);
+      }
+
+      if (total > 0) {
+        final saleUuid = DatabaseSchema.generateUuid();
+        final result = await insertSaleWithLines(
+          saleUuid: saleUuid,
+          waiterName: waiterName,
+          tableId: tableId,
+          total: total,
+          lines: lineMaps,
+          shiftId: shiftId,
+          orderNumber: orderNumber,
+          tableName: 'Tavolina $tableId',
+        );
+        await db.update(
+          'sales',
+          {
+            'status': 'completed_local',
+            'closeReason': activationResetCloseReason,
+            'closedAt': closedAt,
+          },
+          where: 'id = ?',
+          whereArgs: [result.saleId],
+        );
+      }
+
+      await updateTable(
+        tableId,
+        occupied: false,
+        currentTotal: null,
+        assignedWaiterName: null,
+        currentOrderNumber: orderNumber,
+      );
+      await clearCurrentOrder(
+        tableId,
+        waiterName,
+        clearPrintHistory: false,
+      );
+    }
+
+    await clearAllCurrentOrdersAndResetTables();
+  }
+
+  /// Copies operational order/sale data into local archive tables before wipe.
+  Future<void> archiveClosedOrdersBeforeReset() async {
+    final db = await database;
+    await DatabaseSchema.ensureActivationArchiveTables(db);
+    await DatabaseSchema.ensureSalesCloseMetadataColumns(db);
+
+    final batchId = DatabaseSchema.generateUuid();
+    final archivedAt = DatabaseSchema.toSyncUtcIso();
+
+    await db.transaction((txn) async {
+      final sales = await txn.query('sales');
+      for (final sale in sales) {
+        final total = (sale['total'] as num?)?.toDouble() ?? 0;
+        final archivedOrderId = await txn.insert('local_archived_orders', {
+          'archiveBatchId': batchId,
+          'archivedAt': archivedAt,
+          'sourceEntity': 'sale',
+          'sourceId': sale['id'],
+          'tableId': sale['tableId'],
+          'waiterName': sale['waiterName'],
+          'orderNumber': sale['orderNumber'],
+          'status': sale['status'] ?? 'completed',
+          'totalAmount': total,
+          'subtotal': total,
+          'tax': 0,
+          'discount': 0,
+          'closeReason': sale['closeReason'],
+          'closedAt': sale['closedAt'],
+          'rowJson': jsonEncode(sale),
+        });
+
+        final saleLines = await txn.query(
+          'sale_lines',
+          where: 'saleId = ?',
+          whereArgs: [sale['id']],
+        );
+        for (final line in saleLines) {
+          await txn.insert('local_archived_order_lines', {
+            'archiveBatchId': batchId,
+            'archivedOrderId': archivedOrderId,
+            'sourceEntity': 'sale_line',
+            'sourceId': line['id'],
+            'rowJson': jsonEncode(line),
+          });
+        }
+
+        await txn.insert('local_archived_payments', {
+          'archiveBatchId': batchId,
+          'saleId': sale['id'],
+          'rowJson': jsonEncode({
+            'saleId': sale['id'],
+            'saleUuid': sale['uuid'],
+            'total': total,
+            'timestamp': sale['timestamp'],
+            'waiterName': sale['waiterName'],
+            'tableId': sale['tableId'],
+          }),
+        });
+      }
+
+      final openOrders = await txn.query('current_orders');
+      for (final order in openOrders) {
+        final tableId = (order['tableId'] as num).toInt();
+        final waiterName = order['waiterName'] as String;
+        final total = (order['currentTotal'] as num?)?.toDouble() ?? 0;
+        final archivedOrderId = await txn.insert('local_archived_orders', {
+          'archiveBatchId': batchId,
+          'archivedAt': archivedAt,
+          'sourceEntity': 'current_order',
+          'sourceId': order['uuid'],
+          'tableId': tableId,
+          'waiterName': waiterName,
+          'orderNumber': order['orderNumber'],
+          'status': 'open',
+          'totalAmount': total,
+          'subtotal': total,
+          'tax': 0,
+          'discount': 0,
+          'rowJson': jsonEncode(order),
+        });
+
+        final orderLines = await txn.query(
+          'current_order_lines',
+          where: 'tableId = ? AND waiterName = ?',
+          whereArgs: [tableId, waiterName],
+        );
+        for (final line in orderLines) {
+          await txn.insert('local_archived_order_lines', {
+            'archiveBatchId': batchId,
+            'archivedOrderId': archivedOrderId,
+            'sourceEntity': 'current_order_line',
+            'sourceId': line['id'],
+            'rowJson': jsonEncode(line),
+          });
+        }
+      }
+
+      final sessions = await txn.query(
+        'tables',
+        where: 'occupied = 1 OR currentTotal IS NOT NULL',
+      );
+      for (final session in sessions) {
+        final occupied = ((session['occupied'] as int?) ?? 0) == 1;
+        await txn.insert('local_archived_table_sessions', {
+          'archiveBatchId': batchId,
+          'tableId': session['id'],
+          'status': occupied ? 'open' : 'closed',
+          'totalAmount': session['currentTotal'],
+          'waiterName': session['assignedWaiterName'],
+          'orderNumber': session['currentOrderNumber'],
+          'rowJson': jsonEncode(session),
+        });
+      }
+    });
+  }
+
   /// Deletes local business/operational data for a new tenant activation.
   ///
   /// Preserves [company] (printer/admin settings), [shift] singleton row,
   /// [audit_logs] (immutable audit trail), [audit_device_id], and
   /// activation-related [app_meta] keys.
   ///
-  /// Throws nëse ka tavolina me porosi të hapura (fatura).
-  Future<void> clearLocalBusinessData() async {
-    if (await hasAnyOpenTableBusiness()) {
+  /// When [skipOpenTableCheck] is false, throws if open tables remain.
+  /// Always archives sales/orders locally before deleting tenant data.
+  Future<void> clearLocalBusinessData({bool skipOpenTableCheck = false}) async {
+    if (!skipOpenTableCheck && await hasAnyOpenTableBusiness()) {
       throw StateError(
         'Ka tavolina me porosi të hapura. Paguaj ose mbyll porositë '
         'para se të pastrosh të dhënat lokale.',
       );
     }
+    await archiveClosedOrdersBeforeReset();
     final db = await database;
     await db.transaction((txn) async {
       for (final table in DatabaseSchema.tenantResetTables) {

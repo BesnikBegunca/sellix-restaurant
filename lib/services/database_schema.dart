@@ -550,6 +550,94 @@ class DatabaseSchema {
     } catch (_) {}
   }
 
+  /// Kolonat [status] / [closeReason] / [closedAt] për mbyllje të sigurt gjatë aktivizimit.
+  static Future<void> ensureSalesCloseMetadataColumns(Database db) async {
+    try {
+      final cols = await db.rawQuery('PRAGMA table_info(sales)');
+      if (cols.isEmpty) return;
+      final names = {
+        for (final r in cols)
+          if (r['name'] != null) r['name'] as String,
+      };
+      if (!names.contains('status')) {
+        await db.execute(
+          "ALTER TABLE sales ADD COLUMN status TEXT NOT NULL DEFAULT 'completed'",
+        );
+      }
+      if (!names.contains('closeReason')) {
+        await db.execute('ALTER TABLE sales ADD COLUMN closeReason TEXT');
+      }
+      if (!names.contains('closedAt')) {
+        await db.execute('ALTER TABLE sales ADD COLUMN closedAt TEXT');
+      }
+    } catch (_) {}
+  }
+
+  /// Lokal arkiv para pastrimit të tenant-it — nuk fshihet nga tenant reset.
+  static Future<void> ensureActivationArchiveTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS local_archived_orders (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        archiveBatchId TEXT    NOT NULL,
+        archivedAt     TEXT    NOT NULL,
+        sourceEntity   TEXT    NOT NULL,
+        sourceId       INTEGER,
+        tableId        INTEGER,
+        waiterName     TEXT,
+        orderNumber    INTEGER,
+        status         TEXT,
+        totalAmount    REAL    NOT NULL DEFAULT 0,
+        subtotal       REAL,
+        tax            REAL,
+        discount       REAL,
+        closeReason    TEXT,
+        closedAt       TEXT,
+        rowJson        TEXT    NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS local_archived_order_lines (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        archiveBatchId  TEXT    NOT NULL,
+        archivedOrderId INTEGER NOT NULL,
+        sourceEntity    TEXT    NOT NULL,
+        sourceId        INTEGER,
+        rowJson         TEXT    NOT NULL,
+        FOREIGN KEY (archivedOrderId) REFERENCES local_archived_orders(id)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS local_archived_table_sessions (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        archiveBatchId TEXT    NOT NULL,
+        tableId        INTEGER NOT NULL,
+        status         TEXT    NOT NULL,
+        totalAmount    REAL,
+        waiterName     TEXT,
+        orderNumber    INTEGER,
+        rowJson        TEXT    NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS local_archived_payments (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        archiveBatchId TEXT    NOT NULL,
+        saleId         INTEGER,
+        rowJson        TEXT    NOT NULL
+      )
+    ''');
+    for (final idx in [
+      'CREATE INDEX IF NOT EXISTS idx_local_archived_orders_batch ON local_archived_orders(archiveBatchId)',
+      'CREATE INDEX IF NOT EXISTS idx_local_archived_lines_batch ON local_archived_order_lines(archiveBatchId)',
+      'CREATE INDEX IF NOT EXISTS idx_local_archived_sessions_batch ON local_archived_table_sessions(archiveBatchId)',
+      'CREATE INDEX IF NOT EXISTS idx_local_archived_payments_batch ON local_archived_payments(archiveBatchId)',
+    ]) {
+      try {
+        await db.execute(idx);
+      } catch (_) {}
+    }
+  }
+
   /// Kolona [snapshotJson] në [shifts] u shtua më vonë; bazat në v12 pa këtë
   /// kolonë dështojnë në UPDATE. Sigurohemi në çdo hapje lidhjeje (pa u varur
   /// nga ri-migrimi i versionit).
@@ -947,6 +1035,9 @@ class DatabaseSchema {
 
     // ── v24: sales order metadata (mobile sync) ─────────────────────────────
     await ensureSalesOrderMetadataColumns(db);
+    // v27: activation archive + sale close metadata
+    await ensureSalesCloseMetadataColumns(db);
+    await ensureActivationArchiveTables(db);
   }
 
   /// Creates [inventory_items] and [stock_movements] (idempotent).
@@ -1224,11 +1315,16 @@ class DatabaseSchema {
     if (catCount == 0) {
       await seedDefaultMenu(db);
     }
+
+    await ensureSalesCloseMetadataColumns(db);
+    await ensureActivationArchiveTables(db);
   }
 
   static Future<void> create(Database db, int version) async {
     await ensureTables(db);
     await ensureSalesOrderMetadataColumns(db);
+    await ensureSalesCloseMetadataColumns(db);
+    await ensureActivationArchiveTables(db);
 
     // Seed required singleton rows
     await db.insert('shift', {'id': 1, 'status': 'closed'});

@@ -10,6 +10,7 @@ import '../services/device_transfer_exception.dart';
 import '../services/local_tenant_data_service.dart';
 import '../services/runtime_config_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/open_tables_activation_dialog.dart';
 import '../widgets/gg_header.dart';
 import '../models/tenant_activation_gate_result.dart';
 /// First-run screen shown when the device has not yet been activated.
@@ -99,19 +100,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
       return;
     }
 
-    final gate = await LocalTenantDataService.instance.prepareForActivation(
-      context: context,
-      newBusinessId: newBusinessId,
-    );
-    if (!gate.canProceedToActivation) {
-      if (!mounted) return;
-      if (gate.action == TenantActivationGateAction.wipeFailed) {
-        setState(() {
-          _error =
-              'Pastrimi i të dhënave lokale dështoi. Aktivizimi u ndal.\n'
-              '${gate.error}';
-        });
-      }
+    if (!await _prepareActivationGate(newBusinessId)) {
       return;
     }
 
@@ -144,6 +133,58 @@ class _ActivationScreenState extends State<ActivationScreen> {
         _error = activationErrorMessage(e);
       });
     }
+  }
+
+  Future<bool> _prepareActivationGate(String newBusinessId) async {
+    var gate = await LocalTenantDataService.instance.prepareForActivation(
+      context: context,
+      newBusinessId: newBusinessId,
+    );
+
+    while (gate.action == TenantActivationGateAction.openTablesBlocked) {
+      if (!mounted) return false;
+      final summary = gate.openTablesSummary;
+      if (summary == null) return false;
+
+      final confirmed = await showOpenTablesActivationDialog(context, summary);
+      if (confirmed != true) return false;
+
+      setState(() {
+        _activating = true;
+        _error = null;
+      });
+      try {
+        await LocalTenantDataService.instance.closeOpenTablesSafely();
+      } catch (e) {
+        if (!mounted) return false;
+        setState(() {
+          _activating = false;
+          _error = 'Mbyllja e tavolinave dështoi: $e';
+        });
+        return false;
+      }
+
+      if (!mounted) return false;
+      gate = await LocalTenantDataService.instance.prepareForActivation(
+        context: context,
+        newBusinessId: newBusinessId,
+        forceAfterSafeClose: true,
+      );
+    }
+
+    if (!gate.canProceedToActivation) {
+      if (!mounted) return false;
+      if (gate.action == TenantActivationGateAction.wipeFailed) {
+        setState(() {
+          _error =
+              'Pastrimi i të dhënave lokale dështoi. Aktivizimi u ndal.\n'
+              '${gate.error}';
+        });
+      }
+      return false;
+    }
+
+    return true;
   }
 
   Future<void> _showTransferPendingDialog({required bool isDuplicate}) async {
