@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../manager/manager_data.dart';
+import '../models/open_tables_summary.dart';
 import '../models/tenant_activation_gate_result.dart';
 import '../models/tenant_data_conflict.dart';
 import '../widgets/tenant_data_conflict_dialog.dart';
@@ -71,17 +72,23 @@ class LocalTenantDataService {
   Future<TenantActivationGateResult> prepareForActivation({
     required BuildContext context,
     required String newBusinessId,
+    bool forceAfterSafeClose = false,
   }) async {
     final conflict = await detectConflict(newBusinessId);
     if (conflict == null) {
       return TenantActivationGateResult.noConflict();
     }
 
-    if (!context.mounted) {
-      return TenantActivationGateResult.cancelled(conflict);
+    TenantConflictDialogChoice? choice;
+    if (forceAfterSafeClose) {
+      choice = TenantConflictDialogChoice.wipeAndContinue;
+    } else {
+      if (!context.mounted) {
+        return TenantActivationGateResult.cancelled(conflict);
+      }
+      choice = await showTenantDataConflictDialog(context, conflict);
     }
 
-    final choice = await showTenantDataConflictDialog(context, conflict);
     if (choice == null || choice == TenantConflictDialogChoice.cancelled) {
       return TenantActivationGateResult.cancelled(conflict);
     }
@@ -99,8 +106,14 @@ class LocalTenantDataService {
     }
 
     // wipeAndContinue
+    if (!forceAfterSafeClose &&
+        await DatabaseService.instance.hasAnyOpenTableBusiness()) {
+      final summary = await DatabaseService.instance.getOpenTablesSummary();
+      return TenantActivationGateResult.openTablesBlocked(conflict, summary);
+    }
+
     try {
-      await clearLocalBusinessData();
+      await clearLocalBusinessData(skipOpenTableCheck: forceAfterSafeClose);
       return TenantActivationGateResult.wipeCompleted(conflict);
     } catch (e, st) {
       if (kDebugMode) {
@@ -110,10 +123,22 @@ class LocalTenantDataService {
     }
   }
 
+  /// Closes open tables preserving totals — see [DatabaseService.closeOpenTablesSafely].
+  Future<void> closeOpenTablesSafely() async {
+    await DatabaseService.instance.closeOpenTablesSafely();
+    await ManagerData.instance.reload();
+  }
+
+  /// Summary for the activation open-tables dialog.
+  Future<OpenTablesSummary> getOpenTablesSummary() =>
+      DatabaseService.instance.getOpenTablesSummary();
+
   /// Wipes tenant-owned SQLite tables; preserves printer/company settings and
   /// immutable [audit_logs].
-  Future<void> clearLocalBusinessData() async {
-    await DatabaseService.instance.clearLocalBusinessData();
+  Future<void> clearLocalBusinessData({bool skipOpenTableCheck = false}) async {
+    await DatabaseService.instance.clearLocalBusinessData(
+      skipOpenTableCheck: skipOpenTableCheck,
+    );
     await ManagerData.instance.reload();
   }
 

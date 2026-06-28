@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pos_system/models/open_tables_summary.dart';
 import 'package:pos_system/models/tenant_activation_gate_result.dart';
 import 'package:pos_system/models/tenant_data_conflict.dart';
 import 'package:pos_system/services/database_schema.dart';
@@ -45,6 +46,21 @@ void main() {
       expect(
         TenantActivationGateResult.wipeFailed(conflict, 'err')
             .canProceedToActivation,
+        isFalse,
+      );
+    });
+
+    test('openTablesBlocked blocks activation', () {
+      const conflict = TenantDataConflict(
+        newBusinessId: 'b2',
+        hasMeaningfulLocalData: true,
+        hasForeignScopedData: true,
+      );
+      expect(
+        TenantActivationGateResult.openTablesBlocked(
+          conflict,
+          const OpenTablesSummary(count: 1, totalAmount: 10),
+        ).canProceedToActivation,
         isFalse,
       );
     });
