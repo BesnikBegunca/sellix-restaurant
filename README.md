@@ -1,34 +1,21 @@
 # POS System
 
-Flutter POS client with an external licensing/synchronisation API.
+Flutter POS client that works fully offline. The desktop application does not
+require PostgreSQL, Firebase, `posapi`, `app_config.json`, or an internet
+connection.
 
-## External API
+## Local activation
 
-The desktop app does not connect directly to PostgreSQL or Firebase. The API
-configured in `app_config.json` is the security boundary; it can use PostgreSQL,
-Firebase, or another database on the server side without shipping database
-credentials in the app.
+Open **Developer access / Hyrje developer** from the activation or POS login
+screen. Enter the owner/business name and the number of days, then generate a
+license code. Give that code to the owner.
 
-Copy `release/app_config.example.json` to `app_config.json` beside the
-executable (or set `POS_API_BASE_URL`) and use HTTPS in production.
+The owner enters the code in the activation screen, verifies it, enters a
+branch code, and activates the terminal. License validation, expiry, and
+activation metadata are stored locally in SQLite and secure desktop storage.
 
-## Developer license access
-
-The activation and POS login screens expose **Developer access / Hyrje
-developer**. The developer signs in with an API developer account, enters the
-owner's license key, and submits the number of days to add.
-
-The API must provide:
-
-- `POST /developer/auth/login` with `{ "email": "...", "password": "..." }`
-  returning `{ "accessToken": "...", "developerName": "..." }`.
-- `POST /developer/licenses/extend` with a developer bearer token and
-  `{ "licenseKey": "...", "days": 30 }`, returning
-  `{ "licenseKey": "...", "licenseExpiresAt": "..." }`.
-
-The server must enforce developer role/permissions, validate the day range
-(the client accepts 1–3650), audit the change, and calculate the new expiry on
-the server. Developer tokens are held in memory only by the client.
+The local license code is signed inside the application, so changing the
+expiry or payload invalidates it. The accepted duration is 1–3650 days.
 
 ## Run
 

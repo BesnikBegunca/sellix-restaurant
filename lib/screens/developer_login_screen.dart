@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import '../services/developer_auth_service.dart';
+import '../services/local_license_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 
@@ -14,9 +14,7 @@ class DeveloperLoginScreen extends StatefulWidget {
 }
 
 class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
-  final _email = TextEditingController();
-  final _password = TextEditingController();
-  final _licenseKey = TextEditingController();
+  final _ownerName = TextEditingController();
   final _days = TextEditingController(text: '30');
   bool _english = true;
   bool _busy = false;
@@ -26,23 +24,19 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
 
   @override
   void dispose() {
-    _email.dispose();
-    _password.dispose();
-    _licenseKey.dispose();
+    _ownerName.dispose();
     _days.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    final email = _email.text.trim();
-    final password = _password.text;
-    final key = _licenseKey.text.trim();
+    final owner = _ownerName.text.trim();
     final days = int.tryParse(_days.text.trim());
-    if (email.isEmpty || password.isEmpty || key.isEmpty || days == null) {
+    if (owner.isEmpty || days == null) {
       setState(
         () => _error = t(
-          'Enter email, password, license key and a valid number of days.',
-          'Plotësoni email-in, fjalëkalimin, çelësin dhe ditët.',
+          'Enter the owner name and a valid number of days.',
+          'Plotësoni emrin e pronarit dhe ditët.',
         ),
       );
       return;
@@ -52,23 +46,28 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
       _error = null;
     });
     try {
-      await DeveloperAuthService.instance.login(
-        email: email,
-        password: password,
-      );
-      final result = await DeveloperAuthService.instance.extendLicense(
-        licenseKey: key,
+      final key = LocalLicenseService.instance.generateLicense(
+        ownerName: owner,
         days: days,
       );
       if (!mounted) return;
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(t('License extended', 'Licenca u zgjat')),
-          content: Text(
-            '${t('New expiry', 'Skadimi i ri')}: ${result.licenseExpiresAt}',
+          title: Text(
+            t('Local license generated', 'Licenca lokale u gjenerua'),
+          ),
+          content: SelectableText(
+            '${t('Give this code to the owner', 'Jepjani këtë kod pronarit')}:\n\n$key',
           ),
           actions: [
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: key));
+                if (context.mounted) Navigator.of(context).pop();
+              },
+              child: Text(t('Copy code', 'Kopjo kodin')),
+            ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(t('Close', 'Mbyll')),
@@ -79,31 +78,10 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = _message(error));
-      DeveloperAuthService.instance.logout();
+      setState(() => _error = error.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  String _message(Object error) {
-    if (error is DioException) {
-      final status = error.response?.statusCode;
-      if (status == 401 || status == 403) {
-        return t(
-          'Invalid developer credentials or insufficient permissions.',
-          'Kredenciale të pasakta ose pa leje të mjaftueshme.',
-        );
-      }
-      if (status == 404) {
-        return t('License key was not found.', 'Çelësi i licencës nuk u gjet.');
-      }
-      return t(
-        'The licensing API is unavailable (HTTP ${status ?? '—'}).',
-        'API-ja e licencimit nuk është e disponueshme (HTTP ${status ?? '—'}).',
-      );
-    }
-    return error.toString().replaceFirst('Exception: ', '');
   }
 
   @override
@@ -112,7 +90,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.beige,
       appBar: AppBar(
-        title: Text(t('Developer license access', 'Hyrje për developer')),
+        title: Text(t('Developer mode (offline)', 'Developer mode (offline)')),
         actions: [
           TextButton(
             onPressed: () => setState(() => _english = !_english),
@@ -134,7 +112,10 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                     const Center(child: GgLogoBox(size: 56, radius: 14)),
                     const SizedBox(height: 20),
                     Text(
-                      t('Extend owner license', 'Zgjatni licencën e pronarit'),
+                      t(
+                        'Generate owner license code',
+                        'Gjeneroni kodin e licencës',
+                      ),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 22,
@@ -144,38 +125,20 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                     const SizedBox(height: 8),
                     Text(
                       t(
-                        'Use your developer account to renew a customer license.',
-                        'Përdorni llogarinë e developer-it për të rinovuar licencën.',
+                        'This works fully offline. Generate a code and give it to the owner.',
+                        'Punon komplet offline. Gjeneroni kodin dhe jepjani pronarit.',
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
                     TextField(
-                      controller: _email,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: t('Developer email', 'Email i developer-it'),
-                        prefixIcon: const Icon(Icons.email_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _password,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: t('Password', 'Fjalëkalimi'),
-                        prefixIcon: const Icon(Icons.lock_outline),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _licenseKey,
+                      controller: _ownerName,
                       decoration: InputDecoration(
                         labelText: t(
-                          'Owner license key',
-                          'Çelësi i licencës së pronarit',
+                          'Owner / business name',
+                          'Emri i pronarit / biznesit',
                         ),
-                        prefixIcon: const Icon(Icons.vpn_key_outlined),
+                        prefixIcon: const Icon(Icons.business_outlined),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -183,7 +146,10 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                       controller: _days,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: t('Days to add', 'Ditë për t’u shtuar'),
+                        labelText: t(
+                          'License duration in days',
+                          'Kohëzgjatja në ditë',
+                        ),
                         prefixIcon: const Icon(Icons.calendar_today_outlined),
                       ),
                     ),
@@ -205,8 +171,8 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                             )
                           : Text(
                               t(
-                                'Login and extend license',
-                                'Hyr dhe zgjat licencën',
+                                'Generate license code',
+                                'Gjenero kodin e licencës',
                               ),
                             ),
                     ),

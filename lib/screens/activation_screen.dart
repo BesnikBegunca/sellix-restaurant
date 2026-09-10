@@ -8,7 +8,6 @@ import '../services/activation_service.dart';
 import '../services/background_sync_service.dart';
 import '../services/device_transfer_exception.dart';
 import '../services/local_tenant_data_service.dart';
-import '../services/runtime_config_service.dart';
 import 'developer_login_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/open_tables_activation_dialog.dart';
@@ -117,7 +116,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
         businessName: _validated!.businessName,
       );
       await ManagerData.instance.reload();
-      BackgroundSyncService.instance.start();
       // [ActivationStateController] → [PosSystemApp] home becomes [LoginScreen].
     } on DeviceTransferRequiredException catch (e) {
       if (!mounted) return;
@@ -260,11 +258,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final config = RuntimeConfigService.instance;
-    final configBlocked = config.isBlockedInRelease;
-    final showLocalhostWarning =
-        !configBlocked && (config.isUsingFallback || config.isLocalhost);
-    final inputsEnabled = !_busy && !configBlocked;
+    final inputsEnabled = !_busy;
 
     return Scaffold(
       backgroundColor: AppColors.beige,
@@ -302,12 +296,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _ApiConfigBanner(
-                      baseUrl: config.apiBaseUrl,
-                      sourceLabel: config.sourceLabel,
-                      usingLocalhost: showLocalhostWarning,
-                      configBlocked: configBlocked,
-                    ),
+                    const _LocalModeBanner(),
                     const SizedBox(height: 24),
                     TextField(
                       controller: _keyController,
@@ -439,85 +428,21 @@ class _ActivationScreenState extends State<ActivationScreen> {
   }
 }
 
-class _ApiConfigBanner extends StatelessWidget {
-  const _ApiConfigBanner({
-    required this.baseUrl,
-    required this.sourceLabel,
-    required this.usingLocalhost,
-    required this.configBlocked,
-  });
-
-  final String baseUrl;
-  final String sourceLabel;
-  final bool usingLocalhost;
-  final bool configBlocked;
+class _LocalModeBanner extends StatelessWidget {
+  const _LocalModeBanner();
 
   @override
   Widget build(BuildContext context) {
-    final warn = usingLocalhost || configBlocked;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: warn
-            ? AppColors.mutedOrange.withValues(alpha: 0.12)
-            : AppColors.lightGreenBg,
+        color: AppColors.deepForestGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: warn
-              ? AppColors.mutedOrange.withValues(alpha: 0.4)
-              : AppColors.lightGreenBorder,
-        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'API: $baseUrl',
-            style: const TextStyle(
-              fontSize: 11,
-              fontFamily: 'monospace',
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Burimi: $sourceLabel',
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.mediumGreenText,
-            ),
-          ),
-          if (configBlocked) ...[
-            const SizedBox(height: 8),
-            const Text(
-              RuntimeConfigService.productionConfigErrorTitle,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppColors.softRed,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              RuntimeConfigService.productionConfigErrorBody,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.mutedOrange,
-              ),
-            ),
-          ] else if (usingLocalhost) ...[
-            const SizedBox(height: 8),
-            const Text(
-              'Po përdoret localhost API. Production key nuk do të funksionojë.',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.mutedOrange,
-              ),
-            ),
-          ],
-        ],
+      child: const Text(
+        'Local mode: no external API or internet connection is required.',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 12, color: AppColors.darkGreenText),
       ),
     );
   }
