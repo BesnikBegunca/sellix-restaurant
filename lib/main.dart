@@ -1,4 +1,3 @@
-import 'dart:async' show unawaited;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -7,19 +6,12 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'manager/manager_data.dart';
 import 'screens/activation_screen.dart';
-import 'screens/config_error_screen.dart';
 import 'screens/device_revoked_screen.dart';
 import 'navigation/app_route_observer.dart';
 import 'screens/login_screen.dart';
-import 'services/database_service.dart';
 import 'services/activation_service.dart';
 import 'services/activation_state_controller.dart';
-import 'services/api_client.dart';
-import 'services/background_sync_service.dart';
-import 'services/connectivity_service.dart';
 import 'services/license_gate_service.dart';
-import 'services/runtime_config_service.dart';
-import 'services/sync_status_service.dart';
 import 'theme/app_colors.dart';
 import 'widgets/license_blocked_overlay.dart';
 
@@ -32,47 +24,14 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
 
-  // Resolve API base URL from app_config.json / env var / fallback.
-  await RuntimeConfigService.instance.load();
-  final runtimeConfig = RuntimeConfigService.instance;
-  ApiClient.instance.configureBaseUrl(runtimeConfig.apiBaseUrl);
-
-  LicenseGateService.instance.onBlocked = () {
-    BackgroundSyncService.instance.stop();
-  };
-
-  ApiClient.instance.onUnauthorizedRevoke = (error) async {
-    if (!ActivationService.instance.isActivated) return;
-    if (await LicenseGateService.instance.handleDioException(error)) return;
-    if (!ActivationService.shouldTreatAsDeviceRevocation(error)) return;
-    BackgroundSyncService.instance.stop();
-    SyncStatusService.instance.stop();
-    await ActivationService.instance.handleRevokedByServer(
-      reason: ActivationService.messageForRevocation(error),
-    );
-  };
-
-  if (kDebugMode) {
-    debugPrint(
-      'POS API: baseUrl=${runtimeConfig.apiBaseUrl} | '
-      'source=${runtimeConfig.sourceLabel} | '
-      'blockedInRelease=${runtimeConfig.isBlockedInRelease}',
-    );
-  }
-
   // Ensure ManagerData finishes DB loading before deciding the first screen.
   while (ManagerData.instance.isLoading) {
     await Future<void>.delayed(const Duration(milliseconds: 50));
   }
 
-  final configBlocked = runtimeConfig.isBlockedInRelease;
-
-  await ConnectivityService.instance.initialize();
-  await BackgroundSyncService.instance.initialize();
-
   // Restore activation from SQLite metadata + secure token store (survives hot restart).
-  final activationRestored =
-      await ActivationService.instance.loadPersistedActivation();
+  final activationRestored = await ActivationService.instance
+      .loadPersistedActivation();
   final activationState = ActivationStateController.instance;
   activationState.setActivated(activationRestored);
 
@@ -83,13 +42,7 @@ void main() async {
     );
   }
 
-  if (configBlocked) {
-    BackgroundSyncService.instance.stop();
-    await DatabaseService.instance.setAppMeta(
-      'sync_last_error',
-      RuntimeConfigService.syncConfigErrorMessage,
-    );
-  } else if (ActivationService.instance.isActivated) {
+  if (ActivationService.instance.isActivated) {
     await LicenseGateService.instance.loadPersistedState();
     await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
 
@@ -97,18 +50,12 @@ void main() async {
       await ActivationService.instance.verifyActivation();
     }
 
-    if (ActivationService.instance.isActivated &&
-        !LicenseGateService.instance.isBlocked) {
-      BackgroundSyncService.instance.start();
-    } else if (activationState.serverRevoked) {
-      // verifyActivation → handleRevokedByServer already notified controller.
-    } else if (!activationState.serverRevoked &&
+    if (!ActivationService.instance.isActivated &&
+        !activationState.serverRevoked &&
         !LicenseGateService.instance.isBlocked) {
       activationState.setActivated(false);
     }
   }
-
-  SyncStatusService.instance.start();
 
   runApp(const PosSystemApp());
 }
@@ -122,8 +69,6 @@ class PosSystemApp extends StatefulWidget {
 
 class _PosSystemAppState extends State<PosSystemApp> {
   final _activation = ActivationStateController.instance;
-  late bool _configOk = !RuntimeConfigService.instance.isBlockedInRelease;
-
   @override
   void initState() {
     super.initState();
@@ -142,48 +87,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
 
   void _onActivationChanged() => setState(() {});
 
-  Future<void> _retryRuntimeConfig() async {
-    await RuntimeConfigService.instance.reloadConfig();
-    final config = RuntimeConfigService.instance;
-    ApiClient.instance.configureBaseUrl(config.apiBaseUrl);
-    if (!mounted) return;
-
-    final ok = !config.isBlockedInRelease;
-    setState(() => _configOk = ok);
-
-    if (!ok) {
-      BackgroundSyncService.instance.stop();
-      await DatabaseService.instance.setAppMeta(
-        'sync_last_error',
-        RuntimeConfigService.syncConfigErrorMessage,
-      );
-      return;
-    }
-
-    await DatabaseService.instance.setAppMeta('sync_last_error', '');
-    if (ActivationService.instance.isActivated) {
-      await LicenseGateService.instance.loadPersistedState();
-      await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
-      if (!LicenseGateService.instance.isBlocked) {
-        await ActivationService.instance.verifyActivation();
-      }
-      if (!mounted) return;
-      if (ActivationService.instance.isActivated &&
-          !LicenseGateService.instance.isBlocked) {
-        _activation.setActivated(true);
-        BackgroundSyncService.instance.start();
-      } else if (!_activation.serverRevoked &&
-          !LicenseGateService.instance.isBlocked) {
-        _activation.setActivated(false);
-      }
-    }
-    unawaited(SyncStatusService.instance.refresh());
-  }
-
   Widget _buildHome() {
-    if (!_configOk) {
-      return ConfigErrorScreen(onRetry: _retryRuntimeConfig);
-    }
     if (_activation.isActivated) {
       return const LoginScreen();
     }

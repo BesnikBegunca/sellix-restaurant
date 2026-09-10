@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../services/runtime_config_service.dart';
 import '../theme/app_colors.dart';
+import 'developer_login_screen.dart';
 
 /// Full-screen blocker when release mode has no valid production API URL.
 class ConfigErrorScreen extends StatelessWidget {
-  const ConfigErrorScreen({
-    super.key,
-    required this.onRetry,
-  });
+  const ConfigErrorScreen({super.key, required this.onRetry});
 
   final Future<void> Function() onRetry;
 
@@ -27,18 +25,13 @@ class ConfigErrorScreen extends StatelessWidget {
                 'ku ndodhet ekzekutuesi i aplikacionit (pos_system.exe).',
               ),
               SizedBox(height: 12),
-              Text(
-                '2. Vendosni URL-n e production (pa localhost), p.sh.:',
-              ),
+              Text('2. Vendosni URL-n e production (pa localhost), p.sh.:'),
               SizedBox(height: 8),
               SelectableText(
                 '{\n'
                 '  "apiBaseUrl": "https://your-api.example.com"\n'
                 '}',
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                ),
+                style: TextStyle(fontFamily: 'monospace', fontSize: 12),
               ),
               SizedBox(height: 12),
               Text(
@@ -113,10 +106,7 @@ class ConfigErrorScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _InfoCard(
-                    label: 'Burimi',
-                    value: config.sourceLabel,
-                  ),
+                  _InfoCard(label: 'Burimi', value: config.sourceLabel),
                   const SizedBox(height: 8),
                   _InfoCard(
                     label: 'URL aktuale',
@@ -132,7 +122,9 @@ class ConfigErrorScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   _InfoCard(
                     label: 'Skedari ekziston',
-                    value: config.configFileExists ? 'po' : 'jo — kopjoni app_config.json këtu',
+                    value: config.configFileExists
+                        ? 'po'
+                        : 'jo — kopjoni app_config.json këtu',
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
@@ -151,6 +143,16 @@ class ConfigErrorScreen extends StatelessWidget {
                       onPressed: () => _showInstructions(context),
                       child: const Text('Shiko udhëzimet'),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DeveloperLoginScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.engineering_outlined),
+                    label: const Text('Developer access / Hyrje developer'),
                   ),
                 ],
               ),

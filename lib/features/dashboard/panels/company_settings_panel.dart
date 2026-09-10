@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../manager/manager_data.dart';
 import '../../../services/printer_settings_store.dart';
 import '../../../services/windows_printers_service.dart';
+import '../../../services/activation_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
 import '../widgets/settings/settings_card.dart';
@@ -29,6 +30,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   final _currentPinCtrl = TextEditingController();
   final _newPinCtrl = TextEditingController();
   final _confirmPinCtrl = TextEditingController();
+  final _licenseKeyCtrl = TextEditingController();
   String? _pinErrorMsg;
   bool _pinChanging = false;
 
@@ -49,6 +51,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     _currentPinCtrl.dispose();
     _newPinCtrl.dispose();
     _confirmPinCtrl.dispose();
+    _licenseKeyCtrl.dispose();
     super.dispose();
   }
 
@@ -81,6 +84,34 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       _selectedPrinter = selected;
       _loadingPrinters = false;
     });
+  }
+
+  Future<void> _replaceLicenseKey() async {
+    final key = _licenseKeyCtrl.text.trim();
+    if (key.isEmpty) return;
+    try {
+      final license = await ActivationService.instance.replaceLocalLicenseKey(
+        key,
+      );
+      _licenseKeyCtrl.clear();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.',
+          ),
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.negativeText,
+        ),
+      );
+    }
   }
 
   Future<void> _savePrinter(String printerName) async {
@@ -172,10 +203,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
             SizedBox(height: 4),
             Text(
               'Menaxho informacionin e biznesit dhe preferencat',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.lightGreenText,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
             ),
           ],
         ),
@@ -235,6 +263,34 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        SettingsCard(
+          icon: Icons.vpn_key_rounded,
+          title: 'Licenca',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Keni marrë një key të ri nga Developer Mode? Vendoseni këtu për ta vazhduar licencën.',
+                style: TextStyle(color: AppColors.mediumGreenText),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _licenseKeyCtrl,
+                decoration: inputDeco(
+                  'POS-LOCAL-...',
+                ).copyWith(prefixIcon: const Icon(Icons.key_rounded)),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: _replaceLicenseKey,
+                icon: const Icon(Icons.autorenew_rounded),
+                label: const Text('Vazhdo licencën me key'),
+              ),
             ],
           ),
         ),
@@ -314,9 +370,13 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 ),
               ),
               const SizedBox(height: 16),
-              SettingsCheckTile(label: 'Printo automatikisht faturat pas pagesës'),
+              SettingsCheckTile(
+                label: 'Printo automatikisht faturat pas pagesës',
+              ),
               const SizedBox(height: 8),
-              SettingsCheckTile(label: 'Dërgo porositë automatikisht te printeri i kuzhinës'),
+              SettingsCheckTile(
+                label: 'Dërgo porositë automatikisht te printeri i kuzhinës',
+              ),
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
@@ -356,7 +416,9 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 obscuringCharacter: '•',
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: inputDeco('Shkruaj PIN-in aktual').copyWith(counterText: ''),
+                decoration: inputDeco(
+                  'Shkruaj PIN-in aktual',
+                ).copyWith(counterText: ''),
                 style: const TextStyle(fontSize: 15, letterSpacing: 4),
               ),
               const SizedBox(height: 16),
@@ -375,8 +437,9 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 obscuringCharacter: '•',
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: inputDeco('Minimum 4 shifra, vetëm numra')
-                    .copyWith(counterText: ''),
+                decoration: inputDeco(
+                  'Minimum 4 shifra, vetëm numra',
+                ).copyWith(counterText: ''),
                 style: const TextStyle(fontSize: 15, letterSpacing: 4),
               ),
               const SizedBox(height: 16),
@@ -395,7 +458,9 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 obscuringCharacter: '•',
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: inputDeco('Ripërsërit PIN-in e ri').copyWith(counterText: ''),
+                decoration: inputDeco(
+                  'Ripërsërit PIN-in e ri',
+                ).copyWith(counterText: ''),
                 style: const TextStyle(fontSize: 15, letterSpacing: 4),
                 onSubmitted: (_) => _pinChanging ? null : _changeAdminPin(),
               ),
@@ -440,8 +505,8 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primaryGreen,
                         foregroundColor: AppColors.white,
-                        disabledBackgroundColor:
-                            AppColors.primaryGreen.withValues(alpha: 0.5),
+                        disabledBackgroundColor: AppColors.primaryGreen
+                            .withValues(alpha: 0.5),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

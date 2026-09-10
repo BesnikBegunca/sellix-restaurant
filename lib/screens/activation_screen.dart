@@ -8,11 +8,12 @@ import '../services/activation_service.dart';
 import '../services/background_sync_service.dart';
 import '../services/device_transfer_exception.dart';
 import '../services/local_tenant_data_service.dart';
-import '../services/runtime_config_service.dart';
+import 'developer_login_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/open_tables_activation_dialog.dart';
 import '../widgets/gg_header.dart';
 import '../models/tenant_activation_gate_result.dart';
+
 /// First-run screen shown when the device has not yet been activated.
 ///
 /// Flow: validate activation key → confirm business/branch → activate desktop.
@@ -83,7 +84,8 @@ class _ActivationScreenState extends State<ActivationScreen> {
     }
     if (_validated == null) {
       setState(
-        () => _error = 'Së pari verifikoni çelësin me butonin "Verifiko çelësin".',
+        () => _error =
+            'Së pari verifikoni çelësin me butonin "Verifiko çelësin".',
       );
       return;
     }
@@ -94,9 +96,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
 
     final newBusinessId = _validated!.businessId;
     if (newBusinessId == null || newBusinessId.isEmpty) {
-      setState(
-        () => _error = 'Serveri nuk ktheu businessId. Provoni përsëri.',
-      );
+      setState(() => _error = 'Serveri nuk ktheu businessId. Provoni përsëri.');
       return;
     }
 
@@ -116,7 +116,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
         businessName: _validated!.businessName,
       );
       await ManagerData.instance.reload();
-      BackgroundSyncService.instance.start();
       // [ActivationStateController] → [PosSystemApp] home becomes [LoginScreen].
     } on DeviceTransferRequiredException catch (e) {
       if (!mounted) return;
@@ -198,8 +197,8 @@ class _ActivationScreenState extends State<ActivationScreen> {
           isDuplicate
               ? 'Kërkesa ekziston dhe është në pritje të aprovimit.'
               : 'Kjo licencë është përdorur më parë në një pajisje tjetër. '
-                  'Kërkesa për transferim u dërgua te SuperAdmin. '
-                  'Pas aprovimit, provo aktivizimin përsëri.',
+                    'Kërkesa për transferim u dërgua te SuperAdmin. '
+                    'Pas aprovimit, provo aktivizimin përsëri.',
         ),
         actions: [
           TextButton(
@@ -259,11 +258,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final config = RuntimeConfigService.instance;
-    final configBlocked = config.isBlockedInRelease;
-    final showLocalhostWarning =
-        !configBlocked && (config.isUsingFallback || config.isLocalhost);
-    final inputsEnabled = !_busy && !configBlocked;
+    final inputsEnabled = !_busy;
 
     return Scaffold(
       backgroundColor: AppColors.beige,
@@ -279,9 +274,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Center(
-                      child: GgLogoBox(size: 64, radius: 16),
-                    ),
+                    const Center(child: GgLogoBox(size: 64, radius: 16)),
                     const SizedBox(height: 24),
                     const Text(
                       'Aktivizimi i Sistemit',
@@ -303,13 +296,17 @@ class _ActivationScreenState extends State<ActivationScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _ApiConfigBanner(
-                      baseUrl: config.apiBaseUrl,
-                      sourceLabel: config.sourceLabel,
-                      usingLocalhost: showLocalhostWarning,
-                      configBlocked: configBlocked,
-                    ),
+                    const _LocalModeBanner(),
                     const SizedBox(height: 24),
+                    _DeveloperModeCard(
+                      enabled: !_busy,
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DeveloperLoginScreen(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     TextField(
                       controller: _keyController,
                       enabled: inputsEnabled,
@@ -428,85 +425,86 @@ class _ActivationScreenState extends State<ActivationScreen> {
   }
 }
 
-class _ApiConfigBanner extends StatelessWidget {
-  const _ApiConfigBanner({
-    required this.baseUrl,
-    required this.sourceLabel,
-    required this.usingLocalhost,
-    required this.configBlocked,
-  });
-
-  final String baseUrl;
-  final String sourceLabel;
-  final bool usingLocalhost;
-  final bool configBlocked;
+class _LocalModeBanner extends StatelessWidget {
+  const _LocalModeBanner();
 
   @override
   Widget build(BuildContext context) {
-    final warn = usingLocalhost || configBlocked;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: warn
-            ? AppColors.mutedOrange.withValues(alpha: 0.12)
-            : AppColors.lightGreenBg,
+        color: AppColors.deepForestGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: warn
-              ? AppColors.mutedOrange.withValues(alpha: 0.4)
-              : AppColors.lightGreenBorder,
-        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'API: $baseUrl',
-            style: const TextStyle(
-              fontSize: 11,
-              fontFamily: 'monospace',
-              color: AppColors.darkGreenText,
-            ),
+      child: const Text(
+        'Local mode: no external API or internet connection is required.',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 12, color: AppColors.darkGreenText),
+      ),
+    );
+  }
+}
+
+class _DeveloperModeCard extends StatelessWidget {
+  const _DeveloperModeCard({required this.enabled, required this.onPressed});
+
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.primaryGreen,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: enabled ? onPressed : null,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.engineering_rounded,
+                  color: AppColors.white,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Developer mode',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Gjenero kod licence offline',
+                      style: TextStyle(color: Color(0xFFDCEBE1), fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.white,
+                size: 17,
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Burimi: $sourceLabel',
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.mediumGreenText,
-            ),
-          ),
-          if (configBlocked) ...[
-            const SizedBox(height: 8),
-            const Text(
-              RuntimeConfigService.productionConfigErrorTitle,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppColors.softRed,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              RuntimeConfigService.productionConfigErrorBody,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.mutedOrange,
-              ),
-            ),
-          ] else if (usingLocalhost) ...[
-            const SizedBox(height: 8),
-            const Text(
-              'Po përdoret localhost API. Production key nuk do të funksionojë.',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.mutedOrange,
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

@@ -19,6 +19,7 @@ import '../widgets/num_key_body.dart';
 // (HoverInteraction might not exist in this project version.)
 
 import 'manager_dashboard_screen.dart';
+import 'developer_login_screen.dart';
 import 'table_selection_screen.dart';
 import 'waiter_selection_screen.dart';
 
@@ -146,8 +147,9 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
   void dispose() {
     appRouteObserver.unsubscribe(this);
     _clockTimer?.cancel();
-    ActivationLicenseController.instance
-        .removeListener(_onLicenseExpiryChanged);
+    ActivationLicenseController.instance.removeListener(
+      _onLicenseExpiryChanged,
+    );
     _pinFocus.removeListener(_onPinFocusChanged);
     _pinController.dispose();
     _pinFocus.dispose();
@@ -263,7 +265,9 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
           content: const Text('PIN i gabuar.'),
           backgroundColor: AppColors.negativeText,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       _schedulePinFocus();
@@ -277,9 +281,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
       AuditLogService.instance.logManagerLogin();
       if (!mounted) return;
       _pushRoute(
-        MaterialPageRoute<void>(
-          builder: (_) => const ManagerDashboardScreen(),
-        ),
+        MaterialPageRoute<void>(builder: (_) => const ManagerDashboardScreen()),
       );
       return;
     }
@@ -379,64 +381,79 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
         child: Stack(
           children: [
             LayoutBuilder(
-          builder: (context, constraints) {
-            final narrow = constraints.maxWidth < 960;
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(32),
+              builder: (context, constraints) {
+                final narrow = constraints.maxWidth < 960;
+                return Center(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight - 64,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildHeaderGroup(),
-                        const SizedBox(height: 48),
-                        if (narrow)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _pinCard(context),
-                              const SizedBox(height: 24),
-                              _calcCard(context),
-                            ],
-                          )
-                        else
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(flex: 3, child: _pinCard(context)),
-                                const SizedBox(width: 24),
-                                SizedBox(
-                                  width: 460,
-                                  child:
-                                      ManagerData.instance.loginMode ==
-                                          'NAMEMODE'
-                                      ? _waiterSelectionCard(context)
-                                      : _calcCard(context),
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(32),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight - 64,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildHeaderGroup(),
+                            const SizedBox(height: 48),
+                            if (narrow)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _pinCard(context),
+                                  const SizedBox(height: 24),
+                                  _calcCard(context),
+                                ],
+                              )
+                            else
+                              IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(flex: 3, child: _pinCard(context)),
+                                    const SizedBox(width: 24),
+                                    SizedBox(
+                                      width: 460,
+                                      child:
+                                          ManagerData.instance.loginMode ==
+                                              'NAMEMODE'
+                                          ? _waiterSelectionCard(context)
+                                          : _calcCard(context),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
+                            const SizedBox(height: 28),
+                            _clockDisplay(),
+                            const SizedBox(height: 12),
+                            TextButton.icon(
+                              onPressed: () => _pushRoute(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const DeveloperLoginScreen(),
+                                ),
+                              ),
+                              icon: const Icon(Icons.engineering_outlined),
+                              label: const Text(
+                                'Developer access / Hyrje developer',
+                              ),
                             ),
-                          ),
-                        const SizedBox(height: 28),
-                        _clockDisplay(),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            );
-          },
-        ),
+                );
+              },
+            ),
             if (_licenseDaysRemaining != null)
               Positioned(
                 top: 8,
                 right: 8,
-                child: _LicenseExpiryChip(daysRemaining: _licenseDaysRemaining!),
+                child: _LicenseExpiryChip(
+                  daysRemaining: _licenseDaysRemaining!,
+                ),
               ),
             Positioned(
               bottom: 8,
@@ -569,9 +586,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
               autocorrect: false,
               onTap: _activatePinField,
               onTapAlwaysCalled: true,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w600,
@@ -626,8 +641,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
   }
 
   void _calcEnter() {
-    final nextField =
-        (_calcField == null || _calcField == 0) ? 1 : null;
+    final nextField = (_calcField == null || _calcField == 0) ? 1 : null;
     setState(() => _calcField = nextField);
     if (nextField == null) {
       _activatePinField();
@@ -668,9 +682,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
             style: TextStyle(
               fontSize: label == 'Enter' ? 13 : 18,
               fontWeight: FontWeight.w500,
-              color: accent != null
-                  ? AppColors.white
-                  : AppColors.darkGreenText,
+              color: accent != null ? AppColors.white : AppColors.darkGreenText,
             ),
           ),
         ),
@@ -802,8 +814,8 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                           color: change == null
                               ? AppColors.beige
                               : (negative
-                                  ? AppColors.negativeBg
-                                  : AppColors.lightGreenBg),
+                                    ? AppColors.negativeBg
+                                    : AppColors.lightGreenBg),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -816,8 +828,8 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                             color: change == null
                                 ? AppColors.lightGreenText
                                 : (negative
-                                    ? AppColors.negativeText
-                                    : AppColors.primaryGreen),
+                                      ? AppColors.negativeText
+                                      : AppColors.primaryGreen),
                           ),
                         ),
                       ),

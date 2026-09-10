@@ -19,6 +19,7 @@ import 'api_enforcement_parser.dart';
 import 'license_gate_service.dart';
 import 'local_tenant_data_service.dart';
 import 'runtime_config_service.dart';
+import 'local_license_service.dart';
 import 'secure_activation_token_store.dart';
 
 /// Manages device activation against the NestJS backend.
@@ -99,10 +100,7 @@ class ActivationService {
         'activation may require re-login after restart',
       );
     }
-    await store.saveTokens(
-      accessToken: access,
-      refreshToken: refreshValue,
-    );
+    await store.saveTokens(accessToken: access, refreshToken: refreshValue);
     await _clearLegacyTokenMeta(db);
 
     if (kDebugMode) {
@@ -141,7 +139,9 @@ class ActivationService {
       debugPrint('[Activation]   branchId=${branchOk ? "yes" : "no"}');
       debugPrint('[Activation]   deviceId=${deviceOk ? "yes" : "no"}');
       debugPrint('[Activation]   secureAccessToken=${accessOk ? "yes" : "no"}');
-      debugPrint('[Activation]   secureRefreshToken=${refreshOk ? "yes" : "no"}');
+      debugPrint(
+        '[Activation]   secureRefreshToken=${refreshOk ? "yes" : "no"}',
+      );
     }
 
     if (!completedOk) {
@@ -192,6 +192,19 @@ class ActivationService {
   Future<ActivationValidateResponse> validateActivationKey({
     required String activationKey,
   }) async {
+    final local = LocalLicenseService.instance.validate(activationKey);
+    if (local == null) {
+      throw StateError('Çelësi lokal është i pavlefshëm ose ka skaduar.');
+    }
+    return ActivationValidateResponse(
+      valid: true,
+      businessId: 'local-${local.licenseId}',
+      businessName: local.ownerName,
+      branchCode: null,
+      licenseStatus: 'active',
+      licenseExpiresAt: local.expiresAt.toIso8601String(),
+    );
+    /*
     _assertProductionApiConfig();
     final trimmed = activationKey.trim();
     final body = <String, dynamic>{'activationKey': trimmed};
@@ -224,6 +237,7 @@ class ActivationService {
       logActivationError(e);
       rethrow;
     }
+    */
   }
 
   /// Sends POST /activation/desktop and persists the server response locally.
@@ -238,6 +252,29 @@ class ActivationService {
     required String branchCode,
     String? businessName,
   }) async {
+    final local = LocalLicenseService.instance.validate(activationKey);
+    if (local == null) {
+      throw StateError('Çelësi lokal është i pavlefshëm ose ka skaduar.');
+    }
+    final businessId = 'local-${local.licenseId}';
+    final response = ActivationResponse(
+      businessId: businessId,
+      branchId: 'local-${branchCode.trim().toLowerCase()}',
+      deviceId: await DatabaseService.instance.syncDeviceId(),
+      accessToken: 'local-access-${local.licenseId}',
+      refreshToken: 'local-refresh-${local.licenseId}',
+      licenseExpiresAt: local.expiresAt.toIso8601String(),
+    );
+    await _persistActivation(
+      response,
+      businessName: businessName ?? local.ownerName,
+    );
+    await DatabaseService.instance.setAppMeta(
+      'activation_license_key',
+      activationKey.trim(),
+    );
+    return response;
+    /*
     _assertProductionApiConfig();
     final deviceUuid = await DatabaseService.instance.syncDeviceId();
     final deviceName = _detectHostname();
@@ -298,6 +335,7 @@ class ActivationService {
       logActivationError(e);
       rethrow;
     }
+    */
   }
 
   /// Submits POST /licenses/request-transfer to ask SuperAdmin to move the
@@ -358,10 +396,7 @@ class ActivationService {
         }
         final errorData = e.response?.data;
         if (errorData is Map<String, dynamic>) {
-          return DeviceTransferResponse.fromJson(
-            errorData,
-            isDuplicate: true,
-          );
+          return DeviceTransferResponse.fromJson(errorData, isDuplicate: true);
         }
         return const DeviceTransferResponse(
           id: '',
@@ -479,6 +514,23 @@ class ActivationService {
     if (!_activated) return false;
     if (LicenseGateService.instance.isBlocked) return false;
 
+    final key = await DatabaseService.instance.getAppMeta(
+      'activation_license_key',
+    );
+    final local = key == null
+        ? null
+        : LocalLicenseService.instance.validate(key);
+    if (local == null) {
+      await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
+      return !LicenseGateService.instance.isBlocked;
+    }
+
+    await ActivationLicenseController.instance.setExpiresAt(
+      local.expiresAt.toIso8601String(),
+    );
+    return true;
+
+    /*
     try {
       final response = await _postVerifyActivation();
       return await _processVerifyResponse(response);
@@ -487,6 +539,24 @@ class ActivationService {
     } catch (_) {
       return false;
     }
+    */
+  }
+
+  Future<LocalLicenseData> replaceLocalLicenseKey(String key) async {
+    final license = LocalLicenseService.instance.validate(key);
+    if (license == null) {
+      throw StateError(
+        'Çelësi i licencës është i pavlefshëm ose ka skaduar.',
+      );
+    }
+    await DatabaseService.instance.setAppMeta(
+      'activation_license_key',
+      key.trim(),
+    );
+    await ActivationLicenseController.instance.setExpiresAt(
+      license.expiresAt.toIso8601String(),
+    );
+    return license;
   }
 
   /// Refreshes license expiry from API (verify) for UI badge without reinstall.
@@ -522,8 +592,8 @@ class ActivationService {
       _syncLicenseExpiresFromActivationBody(data, source: 'test');
 
   Future<Response<Map<String, dynamic>>> _postVerifyActivation() async {
-    final accessToken =
-        await SecureActivationTokenStore.instance.readAccessToken();
+    final accessToken = await SecureActivationTokenStore.instance
+        .readAccessToken();
     if (!_nonEmpty(accessToken)) {
       throw StateError('No access token stored for activation verify.');
     }
@@ -616,8 +686,13 @@ class ActivationService {
   /// Throws [DioException] on network error or server rejection (4xx/5xx) —
   /// the caller is responsible for deciding whether to revoke activation.
   Future<void> refreshActivationToken() async {
-    final storedRefreshToken =
-        await SecureActivationTokenStore.instance.readRefreshToken();
+    final localLicenseKey = await DatabaseService.instance.getAppMeta(
+      'activation_license_key',
+    );
+    if (_nonEmpty(localLicenseKey)) return;
+
+    final storedRefreshToken = await SecureActivationTokenStore.instance
+        .readRefreshToken();
     if (storedRefreshToken == null || storedRefreshToken.isEmpty) {
       throw Exception('No refresh token stored — re-activation required.');
     }
@@ -675,6 +750,7 @@ class ActivationService {
     final db = DatabaseService.instance;
 
     await SecureActivationTokenStore.instance.clearTokens();
+    await DatabaseService.instance.setAppMeta('activation_license_key', '');
     await _clearLegacyTokenMeta(db);
 
     await db.setAppMeta(_kCompleted, '');

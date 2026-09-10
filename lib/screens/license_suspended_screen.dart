@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../services/activation_service.dart';
-import '../services/background_sync_service.dart';
 import '../services/api_enforcement_parser.dart';
 import '../services/license_gate_service.dart';
 import '../theme/app_colors.dart';
@@ -33,7 +32,6 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
 
       if (ok && !LicenseGateService.instance.isBlocked) {
         await LicenseGateService.instance.unblock();
-        BackgroundSyncService.instance.start();
         return;
       }
 
