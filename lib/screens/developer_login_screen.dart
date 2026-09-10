@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../services/activation_service.dart';
 import '../services/local_business_service.dart';
 import '../services/local_license_service.dart';
 import '../theme/app_colors.dart';
@@ -131,6 +132,11 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
         expiresAt: license.expiresAt,
       );
       await LocalBusinessService.instance.save(updated);
+      final activeLicenseUpdated = await ActivationService.instance
+          .extendActiveLocalLicenseForBusiness(
+            businessId: business.id,
+            replacementKey: key,
+          );
       await _loadBusinesses();
       if (!mounted) return;
       setState(() => _selected = updated);
@@ -138,8 +144,12 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
         SnackBar(
           content: Text(
             t(
-              'License extended until ${license.expiresAt.toLocal().toString().split('.').first}.',
-              'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.',
+              activeLicenseUpdated
+                  ? 'License extended until ${license.expiresAt.toLocal().toString().split('.').first}.'
+                  : 'License extended locally. The client must enter the new key.',
+              activeLicenseUpdated
+                  ? 'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.'
+                  : 'Licenca u vazhdua lokalisht. Klienti duhet ta vendosë key-n e ri.',
             ),
           ),
         ),

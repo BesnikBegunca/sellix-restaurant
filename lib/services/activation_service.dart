@@ -559,6 +559,23 @@ class ActivationService {
     return license;
   }
 
+  /// Updates the active local POS license when the developer extends the
+  /// matching business on this same installation.
+  Future<bool> extendActiveLocalLicenseForBusiness({
+    required String businessId,
+    required String replacementKey,
+  }) async {
+    final currentKey = await DatabaseService.instance.getAppMeta(
+      'activation_license_key',
+    );
+    final current = currentKey == null
+        ? null
+        : LocalLicenseService.instance.validate(currentKey);
+    if (current == null || current.licenseId != businessId) return false;
+    await replaceLocalLicenseKey(replacementKey);
+    return true;
+  }
+
   /// Refreshes license expiry from API (verify) for UI badge without reinstall.
   Future<void> syncLicenseExpiryFromApiIfActivated() async {
     if (!_activated) return;
