@@ -5,6 +5,7 @@ import '../../../manager/manager_data.dart';
 import '../../../services/printer_settings_store.dart';
 import '../../../services/windows_printers_service.dart';
 import '../../../services/activation_service.dart';
+import '../../../services/app_language_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
 import '../widgets/settings/settings_card.dart';
@@ -20,6 +21,7 @@ class CompanySettingsPanel extends StatefulWidget {
 }
 
 class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
+  final _language = AppLanguageService.instance;
   final _nameCtrl = TextEditingController();
   String? _errorMsg;
   List<String> _printers = const [];
@@ -43,6 +45,11 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   }
 
   void _onM() => setState(() {});
+
+  Future<void> _setLanguage(AppLanguage language) async {
+    await _language.setLanguage(language);
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
@@ -210,6 +217,31 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         const SizedBox(height: 24),
 
         SettingsCard(
+          icon: Icons.language_rounded,
+          title: _language.t('Gjuha e aplikacionit', 'Application language'),
+          child: DropdownButtonFormField<AppLanguage>(
+            initialValue: _language.language,
+            decoration: inputDeco(
+              _language.t('Zgjidh gjuhën', 'Choose language'),
+            ).copyWith(prefixIcon: const Icon(Icons.translate_rounded)),
+            items: [
+              DropdownMenuItem(
+                value: AppLanguage.albanian,
+                child: Text(_language.t('Shqip', 'Albanian')),
+              ),
+              DropdownMenuItem(
+                value: AppLanguage.english,
+                child: Text(_language.t('Anglisht', 'English')),
+              ),
+            ],
+            onChanged: (value) {
+              if (value != null) _setLanguage(value);
+            },
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        SettingsCard(
           icon: Icons.grid_view_rounded,
           title: 'Informacioni i Biznesit',
           child: Column(
@@ -343,7 +375,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                             )
                           else
                             DropdownButtonFormField<String>(
-                              value: _printers.contains(_selectedPrinter)
+                              initialValue: _printers.contains(_selectedPrinter)
                                   ? _selectedPrinter
                                   : null,
                               decoration: inputDeco('Zgjidh printerin'),

@@ -12,6 +12,7 @@ import 'screens/login_screen.dart';
 import 'services/activation_service.dart';
 import 'services/activation_state_controller.dart';
 import 'services/license_gate_service.dart';
+import 'services/app_language_service.dart';
 import 'theme/app_colors.dart';
 import 'widgets/license_blocked_overlay.dart';
 
@@ -28,6 +29,7 @@ void main() async {
   while (ManagerData.instance.isLoading) {
     await Future<void>.delayed(const Duration(milliseconds: 50));
   }
+  await AppLanguageService.instance.load();
 
   // Restore activation from SQLite metadata + secure token store (survives hot restart).
   final activationRestored = await ActivationService.instance
@@ -69,23 +71,27 @@ class PosSystemApp extends StatefulWidget {
 
 class _PosSystemAppState extends State<PosSystemApp> {
   final _activation = ActivationStateController.instance;
+  final _language = AppLanguageService.instance;
   @override
   void initState() {
     super.initState();
     ManagerData.instance.addListener(_onData);
     _activation.addListener(_onActivationChanged);
+    _language.addListener(_onLanguageChanged);
   }
 
   @override
   void dispose() {
     ManagerData.instance.removeListener(_onData);
     _activation.removeListener(_onActivationChanged);
+    _language.removeListener(_onLanguageChanged);
     super.dispose();
   }
 
   void _onData() => setState(() {});
 
   void _onActivationChanged() => setState(() {});
+  void _onLanguageChanged() => setState(() {});
 
   Widget _buildHome() {
     if (_activation.isActivated) {
@@ -103,6 +109,8 @@ class _PosSystemAppState extends State<PosSystemApp> {
       builder: (context, child) =>
           LicenseBlockedOverlay(child: child ?? const SizedBox.shrink()),
       title: 'POS System',
+      locale: _language.locale,
+      supportedLocales: const [Locale('sq'), Locale('en')],
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

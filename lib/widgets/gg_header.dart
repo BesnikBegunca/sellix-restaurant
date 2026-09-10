@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../manager/manager_data.dart';
 import '../theme/app_colors.dart';
 
-/// Logo e përhershme e POS System (zëvendëson ikonën e kafes / logo të kompanisë).
+/// Shared Sellix brand mark used throughout the application.
 class GgLogoBox extends StatelessWidget {
   const GgLogoBox({
     super.key,
@@ -12,7 +13,7 @@ class GgLogoBox extends StatelessWidget {
     this.horizontal = true,
   });
 
-  static const String permanentLogoAsset = 'assets/images/permanentlogo.png';
+  static const String sellixLogoAsset = 'assets/images/sellix_logo.svg';
 
   final double size;
   final double radius;
@@ -23,15 +24,18 @@ class GgLogoBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final height = size;
-    final width = horizontal ? size * 2.25 : size;
+    final width = horizontal ? size * 3.23 : size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: Image.asset(
-        permanentLogoAsset,
+      child: SvgPicture.asset(
+        sellixLogoAsset,
         width: width,
         height: height,
         fit: BoxFit.contain,
-        filterQuality: FilterQuality.medium,
+        colorFilter: isDark
+            ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
+            : null,
       ),
     );
   }

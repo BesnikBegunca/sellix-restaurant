@@ -9,6 +9,7 @@ const _kImageExtensions = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'};
 /// Skedarë që nuk janë foto produktesh.
 const _kExcludedAssetNames = {
   'permanentlogo.png',
+  'sellix_logo.svg',
   'iconpos.ico',
 };
 
@@ -26,8 +27,7 @@ Future<List<String>> loadImageAssets() async {
     if (_kExcludedAssetNames.contains(fileName)) return false;
     final lower = a.toLowerCase();
     return _kImageExtensions.any((ext) => lower.endsWith(ext));
-  }).toList()
-    ..sort();
+  }).toList()..sort();
 }
 
 double _assetDialogWidth(BuildContext context) {
@@ -201,26 +201,24 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
                         padding: const EdgeInsets.all(16),
                         gridDelegate:
                             const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 112,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.82,
-                        ),
+                              maxCrossAxisExtent: 112,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 0.82,
+                            ),
                         itemCount: items.length,
                         itemBuilder: (context, index) {
                           final item = items[index];
                           final currentPath = current?.trim();
-                          final noPhoto = currentPath == null || currentPath.isEmpty;
+                          final noPhoto =
+                              currentPath == null || currentPath.isEmpty;
                           return _AssetPickerThumb(
                             path: item.path,
                             label: item.label,
                             selected: item.path == null
                                 ? noPhoto
                                 : currentPath == item.path,
-                            onTap: () => Navigator.pop(
-                              ctx,
-                              item.path ?? '',
-                            ),
+                            onTap: () => Navigator.pop(ctx, item.path ?? ''),
                           );
                         },
                       ),
@@ -271,8 +269,8 @@ class _AssetPickerThumbState extends State<_AssetPickerThumb> {
     final borderColor = widget.selected
         ? AppColors.primaryGreen
         : _hover
-            ? AppColors.primaryGreen.withValues(alpha: 0.45)
-            : AppColors.lightGreenBorder;
+        ? AppColors.primaryGreen.withValues(alpha: 0.45)
+        : AppColors.lightGreenBorder;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
@@ -341,8 +339,9 @@ class _AssetPickerThumbState extends State<_AssetPickerThumb> {
                   style: TextStyle(
                     fontSize: 10,
                     height: 1.15,
-                    fontWeight:
-                        widget.selected ? FontWeight.w600 : FontWeight.w500,
+                    fontWeight: widget.selected
+                        ? FontWeight.w600
+                        : FontWeight.w500,
                     color: widget.selected
                         ? AppColors.primaryGreen
                         : AppColors.mediumGreenText,
