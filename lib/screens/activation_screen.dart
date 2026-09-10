@@ -298,17 +298,12 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     const SizedBox(height: 16),
                     const _LocalModeBanner(),
                     const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: _busy
-                          ? null
-                          : () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const DeveloperLoginScreen(),
-                              ),
-                            ),
-                      icon: const Icon(Icons.engineering_outlined),
-                      label: const Text(
-                        'OPEN DEVELOPER MODE / HAP DEVELOPER MODE',
+                    _DeveloperModeCard(
+                      enabled: !_busy,
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DeveloperLoginScreen(),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -419,18 +414,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
                         child: const Text('Rivendos aktivizimin lokal'),
                       ),
                     ],
-                    const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: _busy
-                          ? null
-                          : () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const DeveloperLoginScreen(),
-                              ),
-                            ),
-                      icon: const Icon(Icons.engineering_outlined),
-                      label: const Text('Developer access / Hyrje developer'),
-                    ),
                   ],
                 ),
               ),
@@ -457,6 +440,71 @@ class _LocalModeBanner extends StatelessWidget {
         'Local mode: no external API or internet connection is required.',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 12, color: AppColors.darkGreenText),
+      ),
+    );
+  }
+}
+
+class _DeveloperModeCard extends StatelessWidget {
+  const _DeveloperModeCard({required this.enabled, required this.onPressed});
+
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.primaryGreen,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: enabled ? onPressed : null,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.engineering_rounded,
+                  color: AppColors.white,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Developer mode',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Gjenero kod licence offline',
+                      style: TextStyle(color: Color(0xFFDCEBE1), fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.white,
+                size: 17,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -169,11 +169,18 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : Text(
-                              t(
-                                'Generate license code',
-                                'Gjenero kodin e licencës',
-                              ),
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.vpn_key_rounded, size: 19),
+                                const SizedBox(width: 8),
+                                Text(
+                                  t(
+                                    'Generate license code',
+                                    'Gjenero kodin e licencës',
+                                  ),
+                                ),
+                              ],
                             ),
                     ),
                     TextButton(
