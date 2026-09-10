@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../services/local_business_service.dart';
 import '../services/local_license_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 
-/// Developer-only portal for extending an owner's license through the API.
 class DeveloperLoginScreen extends StatefulWidget {
   const DeveloperLoginScreen({super.key});
 
@@ -14,8 +14,14 @@ class DeveloperLoginScreen extends StatefulWidget {
 }
 
 class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
-  final _ownerName = TextEditingController();
+  final _name = TextEditingController();
+  final _phone = TextEditingController();
+  final _address = TextEditingController();
+  final _branch = TextEditingController(text: 'MAIN');
   final _days = TextEditingController(text: '30');
+  final _key = TextEditingController();
+  List<LocalBusiness> _businesses = [];
+  LocalBusiness? _selected;
   bool _english = true;
   bool _busy = false;
   String? _error;
@@ -23,20 +29,33 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
   String t(String en, String sq) => _english ? en : sq;
 
   @override
+  void initState() {
+    super.initState();
+    _loadBusinesses();
+  }
+
+  Future<void> _loadBusinesses() async {
+    final businesses = await LocalBusinessService.instance.list();
+    if (!mounted) return;
+    setState(() => _businesses = businesses);
+  }
+
+  @override
   void dispose() {
-    _ownerName.dispose();
-    _days.dispose();
+    for (final controller in [_name, _phone, _address, _branch, _days, _key]) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    final owner = _ownerName.text.trim();
+  Future<void> _createBusiness() async {
+    final name = _name.text.trim();
     final days = int.tryParse(_days.text.trim());
-    if (owner.isEmpty || days == null) {
+    if (name.isEmpty || days == null) {
       setState(
         () => _error = t(
-          'Enter the owner name and a valid number of days.',
-          'Plotësoni emrin e pronarit dhe ditët.',
+          'Business name and valid license days are required.',
+          'Emri i biznesit dhe ditët e licencës janë të detyrueshme.',
         ),
       );
       return;
@@ -47,155 +66,304 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
     });
     try {
       final key = LocalLicenseService.instance.generateLicense(
-        ownerName: owner,
+        ownerName: name,
         days: days,
       );
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(
-            t('Local license generated', 'Licenca lokale u gjenerua'),
-          ),
-          content: SelectableText(
-            '${t('Give this code to the owner', 'Jepjani këtë kod pronarit')}:\n\n$key',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: key));
-                if (context.mounted) Navigator.of(context).pop();
-              },
-              child: Text(t('Copy code', 'Kopjo kodin')),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(t('Close', 'Mbyll')),
-            ),
-          ],
-        ),
+      final license = LocalLicenseService.instance.validate(key)!;
+      final business = LocalBusiness(
+        id: license.licenseId,
+        name: name,
+        phone: _phone.text.trim(),
+        address: _address.text.trim(),
+        branch: _branch.text.trim().isEmpty ? 'MAIN' : _branch.text.trim(),
+        licenseKey: key,
+        expiresAt: license.expiresAt,
       );
-      if (mounted) Navigator.of(context).pop();
-    } catch (error) {
+      await LocalBusinessService.instance.save(business);
+      await _loadBusinesses();
       if (!mounted) return;
-      setState(() => _error = error.toString().replaceFirst('Exception: ', ''));
+      setState(() => _selected = business);
+      await _showCode(key);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error.toString().replaceFirst('Exception: ', ''),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final label = _english ? 'SQ' : 'EN';
-    return Scaffold(
-      backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: Text(t('Developer mode (offline)', 'Developer mode (offline)')),
+  Future<void> _extendSelected() async {
+    final business = _selected;
+    final days = int.tryParse(_days.text.trim());
+    if (business == null || days == null) {
+      setState(
+        () => _error = t(
+          'Select a business and enter valid days.',
+          'Zgjidhni biznesin dhe vendosni ditë të vlefshme.',
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final current = LocalLicenseService.instance.validate(
+        business.licenseKey,
+      );
+      if (current == null) throw StateError('Licenca aktuale ka skaduar.');
+      final key = LocalLicenseService.instance.generateLicense(
+        ownerName: business.name,
+        days: days,
+        startsAt: current.expiresAt,
+      );
+      final license = LocalLicenseService.instance.validate(key)!;
+      final updated = LocalBusiness(
+        id: business.id,
+        name: business.name,
+        phone: business.phone,
+        address: business.address,
+        branch: business.branch,
+        licenseKey: key,
+        expiresAt: license.expiresAt,
+      );
+      await LocalBusinessService.instance.save(updated);
+      await _loadBusinesses();
+      if (!mounted) return;
+      setState(() => _selected = updated);
+      await _showCode(key);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _showCode(String key) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t('License key ready', 'Çelësi është gati')),
+        content: SelectableText(key),
         actions: [
           TextButton(
-            onPressed: () => setState(() => _english = !_english),
-            child: Text(label),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: key));
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: Text(t('Copy', 'Kopjo')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(t('Close', 'Mbyll')),
           ),
         ],
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = _selected;
+    return Scaffold(
+      backgroundColor: AppColors.beige,
+      appBar: AppBar(
+        title: Text(t('Developer dashboard', 'Dashboard i developer-it')),
+        actions: [
+          TextButton(
+            onPressed: () => setState(() => _english = !_english),
+            child: Text(_english ? 'SQ' : 'EN'),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Center(child: GgLogoBox(size: 56, radius: 14)),
-                    const SizedBox(height: 20),
-                    Text(
-                      t(
-                        'Generate owner license code',
-                        'Gjeneroni kodin e licencës',
-                      ),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
+            constraints: const BoxConstraints(maxWidth: 980),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _header(),
+                const SizedBox(height: 20),
+                if (_businesses.isNotEmpty)
+                  DropdownButtonFormField<LocalBusiness>(
+                    value: selected,
+                    decoration: InputDecoration(
+                      labelText: t('Select business', 'Zgjidh biznesin'),
+                      prefixIcon: const Icon(Icons.storefront_rounded),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      t(
-                        'This works fully offline. Generate a code and give it to the owner.',
-                        'Punon komplet offline. Gjeneroni kodin dhe jepjani pronarit.',
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    TextField(
-                      controller: _ownerName,
-                      decoration: InputDecoration(
-                        labelText: t(
-                          'Owner / business name',
-                          'Emri i pronarit / biznesit',
+                    items: _businesses
+                        .map(
+                          (business) => DropdownMenuItem(
+                            value: business,
+                            child: Text(business.name),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) => setState(() => _selected = value),
+                  ),
+                const SizedBox(height: 16),
+                if (selected != null) _businessCard(selected),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          selected == null
+                              ? t('Create business', 'Krijo biznes')
+                              : t(
+                                  'Create another business',
+                                  'Krijo biznes tjetër',
+                                ),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        prefixIcon: const Icon(Icons.business_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _days,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: t(
-                          'License duration in days',
-                          'Kohëzgjatja në ditë',
+                        const SizedBox(height: 16),
+                        _field(
+                          _name,
+                          t('Business name', 'Emri i biznesit'),
+                          Icons.business_rounded,
                         ),
-                        prefixIcon: const Icon(Icons.calendar_today_outlined),
-                      ),
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        _error!,
-                        style: const TextStyle(color: AppColors.softRed),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _busy ? null : _submit,
-                      child: _busy
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.vpn_key_rounded, size: 19),
-                                const SizedBox(width: 8),
-                                Text(
+                        const SizedBox(height: 12),
+                        _field(
+                          _phone,
+                          t('Phone', 'Telefoni'),
+                          Icons.phone_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _field(
+                          _address,
+                          t('Address', 'Adresa'),
+                          Icons.location_on_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _field(
+                          _branch,
+                          t('Branch code', 'Kodi i degës'),
+                          Icons.account_tree_rounded,
+                        ),
+                        const SizedBox(height: 12),
+                        _field(
+                          _days,
+                          t('Days to add', 'Ditë për t’u shtuar'),
+                          Icons.calendar_month_rounded,
+                          numeric: true,
+                        ),
+                        if (_error != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _error!,
+                            style: const TextStyle(color: AppColors.softRed),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: _busy ? null : _createBusiness,
+                                icon: const Icon(Icons.add_business_rounded),
+                                label: Text(
                                   t(
-                                    'Generate license code',
-                                    'Gjenero kodin e licencës',
+                                    'Create and issue key',
+                                    'Krijo dhe gjenero key',
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
+                            if (selected != null) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _busy ? null : _extendSelected,
+                                  icon: const Icon(Icons.autorenew_rounded),
+                                  label: Text(
+                                    t('Extend license', 'Vazhdo licencën'),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => Navigator.of(context).pop(),
-                      child: Text(t('Cancel', 'Anulo')),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                TextButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  label: Text(t('Back', 'Kthehu')),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+
+  Widget _header() => Card(
+    color: AppColors.primaryGreen,
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        children: [
+          const GgLogoBox(size: 58, radius: 16),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              t(
+                'Manage local businesses and licenses',
+                'Menaxho bizneset dhe licencat lokale',
+              ),
+              style: const TextStyle(
+                color: AppColors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _businessCard(LocalBusiness business) => Card(
+    child: ListTile(
+      leading: const CircleAvatar(child: Icon(Icons.storefront_rounded)),
+      title: Text(business.name),
+      subtitle: Text(
+        '${business.branch}  •  Skadon: ${business.expiresAt.toLocal().toString().split('.').first}',
+      ),
+      trailing: const Icon(
+        Icons.verified_rounded,
+        color: AppColors.successGreen,
+      ),
+    ),
+  );
+
+  Widget _field(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    bool numeric = false,
+  }) => TextField(
+    controller: controller,
+    keyboardType: numeric ? TextInputType.number : TextInputType.text,
+    decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
+  );
 }

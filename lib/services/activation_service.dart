@@ -524,6 +524,7 @@ class ActivationService {
       await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
       return !LicenseGateService.instance.isBlocked;
     }
+
     await ActivationLicenseController.instance.setExpiresAt(
       local.expiresAt.toIso8601String(),
     );
@@ -539,6 +540,23 @@ class ActivationService {
       return false;
     }
     */
+  }
+
+  Future<LocalLicenseData> replaceLocalLicenseKey(String key) async {
+    final license = LocalLicenseService.instance.validate(key);
+    if (license == null) {
+      throw StateError(
+        'Çelësi i licencës është i pavlefshëm ose ka skaduar.',
+      );
+    }
+    await DatabaseService.instance.setAppMeta(
+      'activation_license_key',
+      key.trim(),
+    );
+    await ActivationLicenseController.instance.setExpiresAt(
+      license.expiresAt.toIso8601String(),
+    );
+    return license;
   }
 
   /// Refreshes license expiry from API (verify) for UI badge without reinstall.
@@ -668,8 +686,9 @@ class ActivationService {
   /// Throws [DioException] on network error or server rejection (4xx/5xx) —
   /// the caller is responsible for deciding whether to revoke activation.
   Future<void> refreshActivationToken() async {
-    final localLicenseKey =
-        await DatabaseService.instance.getAppMeta('activation_license_key');
+    final localLicenseKey = await DatabaseService.instance.getAppMeta(
+      'activation_license_key',
+    );
     if (_nonEmpty(localLicenseKey)) return;
 
     final storedRefreshToken = await SecureActivationTokenStore.instance

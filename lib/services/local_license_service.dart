@@ -11,11 +11,17 @@ class LocalLicenseService {
   static const String _secret = 'pos-system-local-license-v1';
   static const String _prefix = 'POS-LOCAL-';
 
-  String generateLicense({required String ownerName, required int days}) {
+  String generateLicense({
+    required String ownerName,
+    required int days,
+    DateTime? startsAt,
+  }) {
     if (days < 1 || days > 3650) {
       throw ArgumentError.value(days, 'days', 'must be between 1 and 3650');
     }
-    final expiry = DateTime.now().toUtc().add(Duration(days: days));
+    final expiry = (startsAt ?? DateTime.now().toUtc()).toUtc().add(
+      Duration(days: days),
+    );
     final payload = jsonEncode({
       'id': _randomId(),
       'owner': ownerName.trim().isEmpty ? 'Owner' : ownerName.trim(),
