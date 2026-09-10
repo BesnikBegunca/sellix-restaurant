@@ -21,6 +21,16 @@ class LocalBusiness {
   final String licenseKey;
   final DateTime expiresAt;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LocalBusiness &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,

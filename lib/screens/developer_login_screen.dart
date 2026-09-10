@@ -19,7 +19,6 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
   final _address = TextEditingController();
   final _branch = TextEditingController(text: 'MAIN');
   final _days = TextEditingController(text: '30');
-  final _key = TextEditingController();
   List<LocalBusiness> _businesses = [];
   LocalBusiness? _selected;
   bool _english = true;
@@ -42,7 +41,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
 
   @override
   void dispose() {
-    for (final controller in [_name, _phone, _address, _branch, _days, _key]) {
+    for (final controller in [_name, _phone, _address, _branch, _days]) {
       controller.dispose();
     }
     super.dispose();
@@ -135,7 +134,16 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
       await _loadBusinesses();
       if (!mounted) return;
       setState(() => _selected = updated);
-      await _showCode(key);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              'License extended until ${license.expiresAt.toLocal().toString().split('.').first}.',
+              'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.',
+            ),
+          ),
+        ),
+      );
     } catch (error) {
       if (mounted) {
         setState(
@@ -173,143 +181,166 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
   @override
   Widget build(BuildContext context) {
     final selected = _selected;
-    return Scaffold(
-      backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: Text(t('Developer dashboard', 'Dashboard i developer-it')),
-        actions: [
-          TextButton(
-            onPressed: () => setState(() => _english = !_english),
-            child: Text(_english ? 'SQ' : 'EN'),
+    return Theme(
+      data: ThemeData.dark(useMaterial3: true).copyWith(
+        scaffoldBackgroundColor: const Color(0xFF111817),
+        colorScheme: ColorScheme.dark(
+          primary: const Color(0xFF6FCF97),
+          secondary: const Color(0xFF9ADBB4),
+          surface: const Color(0xFF1B2925),
+          error: AppColors.softRed,
+        ),
+        cardTheme: const CardThemeData(
+          color: Color(0xFF1B2925),
+          surfaceTintColor: Colors.transparent,
+          margin: EdgeInsets.zero,
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFF23332E),
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF3B5149)),
           ),
-        ],
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF3B5149)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF6FCF97), width: 2),
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _header(),
-                const SizedBox(height: 20),
-                if (_businesses.isNotEmpty)
-                  DropdownButtonFormField<LocalBusiness>(
-                    value: selected,
-                    decoration: InputDecoration(
-                      labelText: t('Select business', 'Zgjidh biznesin'),
-                      prefixIcon: const Icon(Icons.storefront_rounded),
-                    ),
-                    items: _businesses
-                        .map(
-                          (business) => DropdownMenuItem(
-                            value: business,
-                            child: Text(business.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) => setState(() => _selected = value),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(t('Developer dashboard', 'Dashboard i developer-it')),
+          actions: [
+            TextButton(
+              onPressed: () => setState(() => _english = !_english),
+              child: Text(_english ? 'SQ' : 'EN'),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(),
+              const SizedBox(height: 20),
+              if (_businesses.isNotEmpty)
+                DropdownButtonFormField<LocalBusiness>(
+                  initialValue: selected,
+                  decoration: InputDecoration(
+                    labelText: t('Select business', 'Zgjidh biznesin'),
+                    prefixIcon: const Icon(Icons.storefront_rounded),
                   ),
-                const SizedBox(height: 16),
-                if (selected != null) _businessCard(selected),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                  items: _businesses
+                      .map(
+                        (business) => DropdownMenuItem(
+                          value: business,
+                          child: Text(business.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => setState(() => _selected = value),
+                ),
+              const SizedBox(height: 16),
+              if (selected != null) _businessCard(selected),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        selected == null
+                            ? t('Create business', 'Krijo biznes')
+                            : t(
+                                'Create another business',
+                                'Krijo biznes tjetër',
+                              ),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _field(
+                        _name,
+                        t('Business name', 'Emri i biznesit'),
+                        Icons.business_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _field(
+                        _phone,
+                        t('Phone', 'Telefoni'),
+                        Icons.phone_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _field(
+                        _address,
+                        t('Address', 'Adresa'),
+                        Icons.location_on_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _field(
+                        _branch,
+                        t('Branch code', 'Kodi i degës'),
+                        Icons.account_tree_rounded,
+                      ),
+                      const SizedBox(height: 12),
+                      _field(
+                        _days,
+                        t('Days to add', 'Ditë për t’u shtuar'),
+                        Icons.calendar_month_rounded,
+                        numeric: true,
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 12),
                         Text(
-                          selected == null
-                              ? t('Create business', 'Krijo biznes')
-                              : t(
-                                  'Create another business',
-                                  'Krijo biznes tjetër',
-                                ),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          _error!,
+                          style: const TextStyle(color: AppColors.softRed),
                         ),
-                        const SizedBox(height: 16),
-                        _field(
-                          _name,
-                          t('Business name', 'Emri i biznesit'),
-                          Icons.business_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _field(
-                          _phone,
-                          t('Phone', 'Telefoni'),
-                          Icons.phone_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _field(
-                          _address,
-                          t('Address', 'Adresa'),
-                          Icons.location_on_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _field(
-                          _branch,
-                          t('Branch code', 'Kodi i degës'),
-                          Icons.account_tree_rounded,
-                        ),
-                        const SizedBox(height: 12),
-                        _field(
-                          _days,
-                          t('Days to add', 'Ditë për t’u shtuar'),
-                          Icons.calendar_month_rounded,
-                          numeric: true,
-                        ),
-                        if (_error != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            _error!,
-                            style: const TextStyle(color: AppColors.softRed),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: FilledButton.icon(
-                                onPressed: _busy ? null : _createBusiness,
-                                icon: const Icon(Icons.add_business_rounded),
-                                label: Text(
-                                  t(
-                                    'Create and issue key',
-                                    'Krijo dhe gjenero key',
-                                  ),
+                      ],
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _busy ? null : _createBusiness,
+                              icon: const Icon(Icons.add_business_rounded),
+                              label: Text(
+                                t(
+                                  'Create and issue key',
+                                  'Krijo dhe gjenero key',
                                 ),
                               ),
                             ),
-                            if (selected != null) ...[
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: _busy ? null : _extendSelected,
-                                  icon: const Icon(Icons.autorenew_rounded),
-                                  label: Text(
-                                    t('Extend license', 'Vazhdo licencën'),
-                                  ),
+                          ),
+                          if (selected != null) ...[
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _busy ? null : _extendSelected,
+                                icon: const Icon(Icons.autorenew_rounded),
+                                label: Text(
+                                  t('Extend license', 'Vazhdo licencën'),
                                 ),
                               ),
-                            ],
+                            ),
                           ],
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  label: Text(t('Back', 'Kthehu')),
-                ),
-              ],
-            ),
+              ),
+              TextButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back_rounded),
+                label: Text(t('Back', 'Kthehu')),
+              ),
+            ],
           ),
         ),
       ),
