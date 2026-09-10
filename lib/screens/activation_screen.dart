@@ -298,6 +298,20 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     const SizedBox(height: 16),
                     const _LocalModeBanner(),
                     const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const DeveloperLoginScreen(),
+                              ),
+                            ),
+                      icon: const Icon(Icons.engineering_outlined),
+                      label: const Text(
+                        'OPEN DEVELOPER MODE / HAP DEVELOPER MODE',
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     TextField(
                       controller: _keyController,
                       enabled: inputsEnabled,
