@@ -192,453 +192,494 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 960),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Cilësimet e Kompanisë',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: AppColors.darkGreenText,
-                height: 1.1,
-              ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Menaxho informacionin e biznesit dhe preferencat',
-              style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
-        SettingsCard(
-          icon: Icons.language_rounded,
-          title: _language.t('Gjuha e aplikacionit', 'Application language'),
-          child: DropdownButtonFormField<AppLanguage>(
-            initialValue: _language.language,
-            decoration: inputDeco(
-              _language.t('Zgjidh gjuhën', 'Choose language'),
-            ).copyWith(prefixIcon: const Icon(Icons.translate_rounded)),
-            items: [
-              DropdownMenuItem(
-                value: AppLanguage.albanian,
-                child: Text(_language.t('Shqip', 'Albanian')),
-              ),
-              DropdownMenuItem(
-                value: AppLanguage.english,
-                child: Text(_language.t('Anglisht', 'English')),
-              ),
-            ],
-            onChanged: (value) {
-              if (value != null) _setLanguage(value);
-            },
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        SettingsCard(
-          icon: Icons.grid_view_rounded,
-          title: 'Informacioni i Biznesit',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Emri i Biznesit',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.mediumGreenText,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _nameCtrl,
-                decoration: inputDeco('Shkruaj emrin e biznesit'),
-                style: const TextStyle(fontSize: 15),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _save(),
-              ),
-              if (_errorMsg != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.negativeText.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.negativeText.withValues(alpha: 0.2),
-                    ),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cilësimet e Kompanisë',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.darkGreenText,
+                    height: 1.1,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: AppColors.negativeText,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _errorMsg!,
-                          style: const TextStyle(
-                            color: AppColors.negativeText,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Menaxho informacionin e biznesit dhe preferencat',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.lightGreenText,
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 24),
 
-        SettingsCard(
-          icon: Icons.vpn_key_rounded,
-          title: 'Licenca',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Keni marrë një key të ri nga Developer Mode? Vendoseni këtu për ta vazhduar licencën.',
-                style: TextStyle(color: AppColors.mediumGreenText),
+            SettingsCard(
+              icon: Icons.language_rounded,
+              title: _language.t(
+                'Gjuha e aplikacionit',
+                'Application language',
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _licenseKeyCtrl,
-                decoration: inputDeco(
-                  'POS-LOCAL-...',
-                ).copyWith(prefixIcon: const Icon(Icons.key_rounded)),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SizedBox(
+                  width: 420,
+                  child: DropdownButtonFormField<AppLanguage>(
+                    initialValue: _language.language,
+                    decoration: inputDeco(
+                      _language.t('Zgjidh gjuhën', 'Choose language'),
+                    ).copyWith(prefixIcon: const Icon(Icons.translate_rounded)),
+                    items: [
+                      DropdownMenuItem(
+                        value: AppLanguage.albanian,
+                        child: Text(_language.t('Shqip', 'Albanian')),
+                      ),
+                      DropdownMenuItem(
+                        value: AppLanguage.english,
+                        child: Text(_language.t('Anglisht', 'English')),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) _setLanguage(value);
+                    },
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: _replaceLicenseKey,
-                icon: const Icon(Icons.autorenew_rounded),
-                label: const Text('Vazhdo licencën me key'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
 
-        SettingsCard(
-          icon: Icons.print_outlined,
-          title: 'Cilësimet e Printerit',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            SettingsCard(
+              icon: Icons.grid_view_rounded,
+              title: 'Informacioni i Biznesit',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Emri i Biznesit',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 560,
+                      child: TextField(
+                        controller: _nameCtrl,
+                        decoration: inputDeco('Shkruaj emrin e biznesit'),
+                        style: const TextStyle(fontSize: 15),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _save(),
+                      ),
+                    ),
+                  ),
+                  if (_errorMsg != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.negativeText.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.negativeText.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
                         children: [
-                          const Text(
-                            'Printer i Faturave',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.mediumGreenText,
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.negativeText,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMsg!,
+                              style: const TextStyle(
+                                color: AppColors.negativeText,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          if (_loadingPrinters)
-                            const SizedBox(
-                              height: 48,
-                              child: Center(
-                                child: SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primaryGreen,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else if (_printers.isEmpty)
-                            const Text(
-                              'No printers found.',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.lightGreenText,
-                              ),
-                            )
-                          else
-                            DropdownButtonFormField<String>(
-                              initialValue: _printers.contains(_selectedPrinter)
-                                  ? _selectedPrinter
-                                  : null,
-                              decoration: inputDeco('Zgjidh printerin'),
-                              isExpanded: true,
-                              items: _printers
-                                  .map(
-                                    (p) => DropdownMenuItem(
-                                      value: p,
-                                      child: Text(
-                                        p,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) {
-                                if (v != null) _savePrinter(v);
-                              },
-                            ),
                         ],
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-              const SizedBox(height: 16),
-              SettingsCheckTile(
-                label: 'Printo automatikisht faturat pas pagesës',
-              ),
-              const SizedBox(height: 8),
-              SettingsCheckTile(
-                label: 'Dërgo porositë automatikisht te printeri i kuzhinës',
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _loadPrinters,
-                  icon: const Icon(Icons.refresh_outlined, size: 16),
-                  label: const Text('Rifresko Printerët'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryGreen,
-                    textStyle: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
 
-        SettingsCard(
-          icon: Icons.lock_outline,
-          title: 'Ndrysho PIN-in e Administratorit',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'PIN Aktual',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.mediumGreenText,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _currentPinCtrl,
-                obscureText: true,
-                obscuringCharacter: '•',
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: inputDeco(
-                  'Shkruaj PIN-in aktual',
-                ).copyWith(counterText: ''),
-                style: const TextStyle(fontSize: 15, letterSpacing: 4),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'PIN-i i Ri',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.mediumGreenText,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _newPinCtrl,
-                obscureText: true,
-                obscuringCharacter: '•',
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: inputDeco(
-                  'Minimum 4 shifra, vetëm numra',
-                ).copyWith(counterText: ''),
-                style: const TextStyle(fontSize: 15, letterSpacing: 4),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Konfirmo PIN-in e Ri',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.mediumGreenText,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _confirmPinCtrl,
-                obscureText: true,
-                obscuringCharacter: '•',
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: inputDeco(
-                  'Ripërsërit PIN-in e ri',
-                ).copyWith(counterText: ''),
-                style: const TextStyle(fontSize: 15, letterSpacing: 4),
-                onSubmitted: (_) => _pinChanging ? null : _changeAdminPin(),
-              ),
-              if (_pinErrorMsg != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.negativeText.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.negativeText.withValues(alpha: 0.2),
+            SettingsCard(
+              icon: Icons.vpn_key_rounded,
+              title: 'Licenca',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Keni marrë një key të ri nga Developer Mode? Vendoseni këtu për ta vazhduar licencën.',
+                    style: TextStyle(color: AppColors.mediumGreenText),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 620,
+                      child: TextField(
+                        controller: _licenseKeyCtrl,
+                        decoration: inputDeco(
+                          'POS-LOCAL-...',
+                        ).copyWith(prefixIcon: const Icon(Icons.key_rounded)),
+                      ),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: AppColors.negativeText,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _pinErrorMsg!,
-                          style: const TextStyle(
-                            color: AppColors.negativeText,
-                            fontSize: 13,
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.icon(
+                      onPressed: _replaceLicenseKey,
+                      icon: const Icon(Icons.autorenew_rounded),
+                      label: const Text('Vazhdo licencën me key'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            SettingsCard(
+              icon: Icons.print_outlined,
+              title: 'Cilësimet e Printerit',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Printer i Faturave',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.mediumGreenText,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (_loadingPrinters)
+                                const SizedBox(
+                                  height: 48,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else if (_printers.isEmpty)
+                                const Text(
+                                  'No printers found.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.lightGreenText,
+                                  ),
+                                )
+                              else
+                                SizedBox(
+                                  width: 560,
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue:
+                                        _printers.contains(_selectedPrinter)
+                                        ? _selectedPrinter
+                                        : null,
+                                    decoration: inputDeco('Zgjidh printerin'),
+                                    isExpanded: true,
+                                    items: _printers
+                                        .map(
+                                          (p) => DropdownMenuItem(
+                                            value: p,
+                                            child: Text(
+                                              p,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) {
+                                      if (v != null) _savePrinter(v);
+                                    },
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SettingsCheckTile(
+                    label: 'Printo automatikisht faturat pas pagesës',
+                  ),
+                  const SizedBox(height: 8),
+                  SettingsCheckTile(
+                    label:
+                        'Dërgo porositë automatikisht te printeri i kuzhinës',
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _loadPrinters,
+                      icon: const Icon(Icons.refresh_outlined, size: 16),
+                      label: const Text('Rifresko Printerët'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryGreen,
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            SettingsCard(
+              icon: Icons.lock_outline,
+              title: 'Ndrysho PIN-in e Administratorit',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'PIN Aktual',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _pinField(
+                    _currentPinCtrl,
+                    'PIN Aktual',
+                    'Shkruaj PIN-in aktual',
+                  ),
+                  const SizedBox(height: 16),
+                  _pinField(
+                    _newPinCtrl,
+                    'PIN-i i Ri',
+                    'Minimum 4 shifra, vetëm numra',
+                  ),
+                  const SizedBox(height: 16),
+                  _pinField(
+                    _confirmPinCtrl,
+                    'Konfirmo PIN-in e Ri',
+                    'Ripërsërit PIN-in e ri',
+                    onSubmitted: (_) => _pinChanging ? null : _changeAdminPin(),
+                  ),
+                  if (_pinErrorMsg != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.negativeText.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.negativeText.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.negativeText,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _pinErrorMsg!,
+                              style: const TextStyle(
+                                color: AppColors.negativeText,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _pinChanging ? null : _changeAdminPin,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.primaryGreen,
+                            foregroundColor: AppColors.white,
+                            disabledBackgroundColor: AppColors.primaryGreen
+                                .withValues(alpha: 0.5),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          child: _pinChanging
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.white,
+                                  ),
+                                )
+                              : const Text('Ndrysho PIN-in'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton(
+                        onPressed: () {
+                          _currentPinCtrl.clear();
+                          _newPinCtrl.clear();
+                          _confirmPinCtrl.clear();
+                          setState(() => _pinErrorMsg = null);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.darkGreenText,
+                          side: const BorderSide(
+                            color: AppColors.lightGreenBorder,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        child: const Text('Anulo'),
                       ),
                     ],
                   ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: _pinChanging ? null : _changeAdminPin,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        foregroundColor: AppColors.white,
-                        disabledBackgroundColor: AppColors.primaryGreen
-                            .withValues(alpha: 0.5),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      child: _pinChanging
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.white,
-                              ),
-                            )
-                          : const Text('Ndrysho PIN-in'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  OutlinedButton(
-                    onPressed: () {
-                      _currentPinCtrl.clear();
-                      _newPinCtrl.clear();
-                      _confirmPinCtrl.clear();
-                      setState(() => _pinErrorMsg = null);
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.darkGreenText,
-                      side: const BorderSide(color: AppColors.lightGreenBorder),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _save,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       textStyle: const TextStyle(
                         fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    child: const Text('Anulo'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton(
-                onPressed: _save,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    child: const Text('Ruaj Ndryshimet'),
                   ),
                 ),
-                child: const Text('Ruaj Ndryshimet'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            OutlinedButton(
-              onPressed: () {
-                _nameCtrl.text = widget.m.companyName ?? '';
-                setState(() => _errorMsg = null);
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.darkGreenText,
-                side: const BorderSide(color: AppColors.lightGreenBorder),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 18,
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: () {
+                    _nameCtrl.text = widget.m.companyName ?? '';
+                    setState(() => _errorMsg = null);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.darkGreenText,
+                    side: const BorderSide(color: AppColors.lightGreenBorder),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 18,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  child: const Text('Anulo'),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              child: const Text('Anulo'),
+              ],
             ),
           ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _pinField(
+    TextEditingController controller,
+    String label,
+    String hint, {
+    ValueChanged<String>? onSubmitted,
+  }) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SizedBox(
+        width: 420,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.mediumGreenText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              obscuringCharacter: '•',
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: inputDeco(hint).copyWith(counterText: ''),
+              style: const TextStyle(fontSize: 15, letterSpacing: 4),
+              onSubmitted: onSubmitted,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
