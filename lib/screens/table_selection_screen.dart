@@ -9,6 +9,7 @@ import '../theme/pos_grid.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_interaction.dart';
 import 'pos_order_screen.dart';
+import '../services/app_language_service.dart';
 
 class TableSelectionScreen extends StatefulWidget {
   const TableSelectionScreen({super.key, required this.waiterName});
@@ -21,6 +22,7 @@ class TableSelectionScreen extends StatefulWidget {
 
 class _TableSelectionScreenState extends State<TableSelectionScreen> {
   final ManagerData _m = ManagerData.instance;
+  final _language = AppLanguageService.instance;
   List<TableInfo> _tables = const [];
   bool _loadingTables = true;
   int _reloadGen = 0;
@@ -31,6 +33,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
   void initState() {
     super.initState();
     _m.addListener(_onManager);
+    _language.addListener(_onLanguageChanged);
     if (!_m.isLoading) {
       _showCachedTables();
     } else {
@@ -60,6 +63,10 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
     _refreshDebounce = Timer(const Duration(milliseconds: 300), () {
       if (mounted) _refreshTablesLight();
     });
+  }
+
+  void _onLanguageChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _refreshTablesLight() async {
@@ -133,6 +140,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
   void dispose() {
     _refreshDebounce?.cancel();
     _backgroundRetry?.cancel();
+    _language.removeListener(_onLanguageChanged);
     _m.removeListener(_onInitReady);
     _m.removeListener(_onManager);
     super.dispose();
@@ -140,9 +148,10 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     if (_loadingTables) {
       return Scaffold(
-        backgroundColor: AppColors.beige,
+        backgroundColor: scheme.surface,
         body: Column(
           children: [
             GgAppHeader(
@@ -166,7 +175,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
     final total = tables.fold<double>(0, (s, t) => s + (t.currentTotal ?? 0));
 
     return Scaffold(
-      backgroundColor: AppColors.beige,
+      backgroundColor: scheme.surface,
       body: Column(
         children: [
           GgAppHeader(
@@ -315,8 +324,8 @@ class _OccupiedCountBadge extends StatelessWidget {
         occupied == 0
             ? 'Të gjitha të lira'
             : occupied == 1
-                ? '1 e zënë'
-                : '$occupied të zëna',
+            ? '1 e zënë'
+            : '$occupied të zëna',
         style: const TextStyle(fontSize: 14, color: AppColors.primaryGreen),
       ),
     );

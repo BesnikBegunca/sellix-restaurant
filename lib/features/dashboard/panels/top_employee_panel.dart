@@ -11,6 +11,7 @@ class TopEmployeePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final sorted = m.employeeSalesSorted;
 
     if (sorted.isEmpty) {
@@ -52,7 +53,10 @@ class TopEmployeePanel extends StatelessWidget {
                 const SizedBox(height: 4),
                 const Text(
                   'Shitjet do të shfaqen këtu pasi të regjistroni shitjet e para.',
-                  style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.lightGreenText,
+                  ),
                 ),
               ],
             ),
@@ -162,7 +166,7 @@ class TopEmployeePanel extends StatelessWidget {
 
         Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
             boxShadow: const [

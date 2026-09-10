@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../widgets/dashboard/app_card.dart';
 
 class TodaySummaryCard extends StatelessWidget {
   const TodaySummaryCard({super.key, required this.m});
   final ManagerData m;
 
   static String _fmtHour(int h) {
-    final amPm = h >= 12 ? 'PM' : 'AM';
-    final display = h == 0 ? 12 : h > 12 ? h - 12 : h;
-    return '$display:00 $amPm';
+    return '${h.toString().padLeft(2, '0')}:00';
   }
 
   @override
@@ -39,44 +38,27 @@ class TodaySummaryCard extends StatelessWidget {
         ? null
         : hourCounts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightGreenBorder),
-        boxShadow: const [
-          BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
-      ),
+    return AppCard(
+      title: 'Përmbledhja e sotme',
+      subtitle: 'Porositë dhe të ardhurat e ditës.',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Today's Summary",
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _SummaryRow(label: 'Porosi Gjithsej', value: '$totalOrders'),
-          const SizedBox(height: 10),
+          _SummaryRow(label: 'Porosi', value: '$totalOrders'),
+          const SizedBox(height: 12),
           _SummaryRow(
-            label: 'Porosia Mesatare',
+            label: 'Porosia mesatare',
             value: '${avgOrder.toStringAsFixed(2)}€',
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _SummaryRow(
-            label: 'Ora Kulmore',
+            label: 'Ora më e ngarkuar',
             value: peakHour != null ? _fmtHour(peakHour) : '—',
           ),
-          const SizedBox(height: 12),
-          const Divider(color: AppColors.lightGreenBorder),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          const Divider(color: AppColors.lightGreenBorder, height: 1),
+          const SizedBox(height: 14),
           _SummaryRow(
-            label: 'Të Ardhura Gjithsej',
+            label: 'Të ardhura',
             value: '${totalRevenue.toStringAsFixed(2)}€',
             bold: true,
             valueColor: AppColors.primaryGreen,
@@ -116,7 +98,7 @@ class _SummaryRow extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
             color: valueColor ?? AppColors.darkGreenText,
           ),

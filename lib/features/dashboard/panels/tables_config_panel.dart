@@ -92,6 +92,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final m = widget.m;
     final n = _count.round();
     final pr = _perRow.round();
@@ -151,7 +152,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
           ),
@@ -183,7 +184,8 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                       )
                     : DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
-                          value: _tableViewWaiter != null &&
+                          value:
+                              _tableViewWaiter != null &&
                                   waiters.any((w) => w.name == _tableViewWaiter)
                               ? _tableViewWaiter
                               : null,
@@ -210,7 +212,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
             boxShadow: const [
@@ -237,15 +239,9 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                     ),
                   ),
                   const Spacer(),
-                  TableLegendDot(
-                    color: AppColors.primaryGreen,
-                    label: 'Lirë',
-                  ),
+                  TableLegendDot(color: AppColors.primaryGreen, label: 'Lirë'),
                   const SizedBox(width: 16),
-                  TableLegendDot(
-                    color: AppColors.softRed,
-                    label: 'Zënë',
-                  ),
+                  TableLegendDot(color: AppColors.softRed, label: 'Zënë'),
                 ],
               ),
               const SizedBox(height: 20),
@@ -268,123 +264,123 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: pr.clamp(2, 12),
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.55,
-                ),
-                itemCount: n,
-                itemBuilder: (context, i) {
-                  final id = i + 1;
-                  TableInfo? info;
-                  try {
-                    info = viewTables.firstWhere((t) => t.id == id);
-                  } catch (_) {}
-                  final occ = info?.occupied ?? false;
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: pr.clamp(2, 12),
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.55,
+                  ),
+                  itemCount: n,
+                  itemBuilder: (context, i) {
+                    final id = i + 1;
+                    TableInfo? info;
+                    try {
+                      info = viewTables.firstWhere((t) => t.id == id);
+                    } catch (_) {}
+                    final occ = info?.occupied ?? false;
 
-                  const freeBg = Color(0xFFECF5EC);
-                  const freeBorder = Color(0xFFB8DEB8);
-                  const occBg = Color(0xFFFFF0F0);
-                  const occBorder = Color(0xFFFFCDD2);
-                  const freeGreen = Color(0xFF4CAF50);
-                  const occRed = Color(0xFFEF5350);
+                    const freeBg = Color(0xFFECF5EC);
+                    const freeBorder = Color(0xFFB8DEB8);
+                    const occBg = Color(0xFFFFF0F0);
+                    const occBorder = Color(0xFFFFCDD2);
+                    const freeGreen = Color(0xFF4CAF50);
+                    const occRed = Color(0xFFEF5350);
 
-                  final bg = occ ? occBg : freeBg;
-                  final border = occ ? occBorder : freeBorder;
-                  final dot = occ ? occRed : freeGreen;
+                    final bg = occ ? occBg : freeBg;
+                    final border = occ ? occBorder : freeBorder;
+                    final dot = occ ? occRed : freeGreen;
 
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: bg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: border, width: 1.5),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          top: 0,
-                          left: 0,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AppColors.white,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '$id',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.darkGreenText,
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: bg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: border, width: 1.5),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: scheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$id',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.darkGreenText,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          top: 10,
-                          right: 2,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: dot,
-                              shape: BoxShape.circle,
+                          Positioned(
+                            top: 10,
+                            right: 2,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: dot,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: occ
-                              ? Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (info?.assignedWaiterName != null)
-                                      Text(
-                                        info!.assignedWaiterName!,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.darkGreenText,
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: occ
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (info?.assignedWaiterName != null)
+                                        Text(
+                                          info!.assignedWaiterName!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.darkGreenText,
+                                          ),
                                         ),
-                                      ),
-                                    if ((info?.currentTotal ?? 0) > 0)
-                                      Text(
-                                        '${info!.currentTotal!.toStringAsFixed(0)}€',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.mediumGreenText,
+                                      if ((info?.currentTotal ?? 0) > 0)
+                                        Text(
+                                          '${info!.currentTotal!.toStringAsFixed(0)}€',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.mediumGreenText,
+                                          ),
                                         ),
-                                      ),
-                                  ],
-                                )
-                              : const Text(
-                                  'Lirë',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: freeGreen,
+                                    ],
+                                  )
+                                : const Text(
+                                    'Lirë',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: freeGreen,
+                                    ),
                                   ),
-                                ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
             ],
           ),
         ),
@@ -393,7 +389,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
             boxShadow: const [

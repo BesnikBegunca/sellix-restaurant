@@ -17,6 +17,7 @@ class _QtyButtonState extends State<QtyButton> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -28,17 +29,15 @@ class _QtyButtonState extends State<QtyButton> {
           height: 28,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _hover ? AppColors.lightGreenBg : AppColors.white,
+            color: _hover
+                ? scheme.primaryContainer
+                : scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.borderVisible(0.2)),
           ),
           child: Text(
             widget.label,
-            style: const TextStyle(
-              fontSize: 20,
-              color: AppColors.primaryGreen,
-              height: 1,
-            ),
+            style: TextStyle(fontSize: 20, color: scheme.primary, height: 1),
           ),
         ),
       ),

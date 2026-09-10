@@ -196,6 +196,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final m = widget.m;
     final w = widget.waiter;
     final month = widget.viewMonth;
@@ -265,7 +266,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.borderSubtle()),
             boxShadow: [
@@ -301,15 +302,13 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                   ),
                   Builder(
                     builder: (_) {
-                      final allWorked = Iterable.generate(
-                        daysInMonth,
-                        (i) => i + 1,
-                      ).every(
-                        (day) => m.isDayWorked(
-                          w.name,
-                          DateTime(month.year, month.month, day),
-                        ),
-                      );
+                      final allWorked =
+                          Iterable.generate(daysInMonth, (i) => i + 1).every(
+                            (day) => m.isDayWorked(
+                              w.name,
+                              DateTime(month.year, month.month, day),
+                            ),
+                          );
                       return TextButton(
                         onPressed: _selectAllDays,
                         style: TextButton.styleFrom(
@@ -432,7 +431,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.borderSubtle()),
           ),

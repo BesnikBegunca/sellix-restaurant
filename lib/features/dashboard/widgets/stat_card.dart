@@ -22,12 +22,13 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = accentColor ?? AppColors.primaryGreen;
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGreenBorder),
+        border: Border.all(color: scheme.outlineVariant),
         boxShadow: const [
           BoxShadow(
             color: Color(0x08000000),

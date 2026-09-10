@@ -28,6 +28,7 @@ class _WaiterGridCardState extends State<WaiterGridCard> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -35,12 +36,12 @@ class _WaiterGridCardState extends State<WaiterGridCard> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _hovered
                 ? AppColors.primaryGreen.withValues(alpha: 0.4)
-                : AppColors.lightGreenBorder,
+                : scheme.outlineVariant,
           ),
           boxShadow: [
             BoxShadow(
@@ -57,15 +58,15 @@ class _WaiterGridCardState extends State<WaiterGridCard> {
             Container(
               width: 44,
               height: 44,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryGreen,
+              decoration: BoxDecoration(
+                color: scheme.primary,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   widget.initials,
-                  style: const TextStyle(
-                    color: AppColors.white,
+                  style: TextStyle(
+                    color: scheme.onPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -80,10 +81,10 @@ class _WaiterGridCardState extends State<WaiterGridCard> {
                 children: [
                   Text(
                     widget.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.darkGreenText,
+                      color: scheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -103,15 +104,15 @@ class _WaiterGridCardState extends State<WaiterGridCard> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.lightGreenBg,
+                  color: scheme.primaryContainer,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${widget.salary.toStringAsFixed(0)}€/d',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primaryGreen,
+                    color: scheme.primary,
                   ),
                 ),
               ),

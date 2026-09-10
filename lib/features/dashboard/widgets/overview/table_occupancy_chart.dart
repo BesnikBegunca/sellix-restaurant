@@ -1,184 +1,229 @@
-import 'dart:math' as math;
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../widgets/dashboard/app_card.dart';
 
 class TableOccupancyChart extends StatelessWidget {
-  const TableOccupancyChart({super.key, required this.m, required this.occupied});
+  const TableOccupancyChart({
+    super.key,
+    required this.m,
+    required this.occupied,
+  });
   final ManagerData m;
   final int occupied;
 
   @override
   Widget build(BuildContext context) {
-    final total = math.max(m.cashierTables.length, 1);
-    final now = DateTime.now();
-    final currentHour = now.hour.clamp(8, 22);
+    final total = m.cashierTables.length;
+    final free = total - occupied;
+    final occupiedTables = m.cashierTables.where((t) => t.occupied).toList();
 
-    double occupancyAt(int hour) {
-      const lunchPeak = 13.0;
-      const dinnerPeak = 19.0;
-      final lunchWeight = math.exp(-math.pow(hour - lunchPeak, 2) / 8.0);
-      final dinnerWeight = math.exp(-math.pow(hour - dinnerPeak, 2) / 8.0);
-      final base = math.max(lunchWeight, dinnerWeight);
-      final scale = occupied > 0 ? occupied.toDouble() : total * 0.4;
-      return (base * scale).clamp(0.0, total.toDouble());
-    }
-
-    final endHour = math.max(currentHour, 12);
-    final spots = <FlSpot>[];
-    for (var h = 12; h <= endHour; h++) {
-      spots.add(FlSpot((h - 12).toDouble(), occupancyAt(h)));
-    }
-
-    final maxY = (total * 1.1).ceilToDouble();
-    final yInterval = total > 0 ? (total / 4).ceilToDouble() : 5.0;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.lightGreenBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
+    return AppCard(
+      title: 'Tavolinat tani',
+      subtitle: total == 0
+          ? 'Nuk ka tavolina të konfiguruara.'
+          : '$occupied të zëna · $free të lira',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Zënia e Tavolinave Sot',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkGreenText,
-            ),
-          ),
-          const SizedBox(height: 24),
           SizedBox(
-            height: 240,
-            child: spots.length < 2
-                ? Center(
+            height: 180,
+            child: total == 0
+                ? const Center(
                     child: Text(
-                      'No occupancy data yet.',
+                      'Shto tavolina te seksioni Tavolinat.',
                       style: TextStyle(color: AppColors.lightGreenText),
                     ),
                   )
-                : LineChart(
-                    LineChartData(
-                      minX: 0,
-                      maxX: (endHour - 12).toDouble(),
-                      minY: 0,
-                      maxY: maxY,
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: spots,
-                          isCurved: true,
-                          curveSmoothness: 0.35,
-                          color: AppColors.primaryGreen,
-                          barWidth: 2.5,
-                          dotData: FlDotData(
-                            show: true,
-                            getDotPainter: (_, __, ___, ____) =>
-                                FlDotCirclePainter(
-                              radius: 4,
-                              color: AppColors.primaryGreen,
-                              strokeWidth: 2,
-                              strokeColor: AppColors.white,
-                            ),
-                          ),
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: AppColors.primaryGreen.withValues(
-                              alpha: 0.06,
-                            ),
-                          ),
-                        ),
-                      ],
-                      gridData: FlGridData(
-                        show: true,
-                        drawVerticalLine: false,
-                        horizontalInterval: yInterval,
-                        getDrawingHorizontalLine: (_) => FlLine(
-                          color: AppColors.lightGreenBorder,
-                          strokeWidth: 1,
-                          dashArray: [4, 4],
-                        ),
-                      ),
-                      titlesData: FlTitlesData(
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 28,
-                            interval: 2,
-                            getTitlesWidget: (v, _) {
-                              final h = v.toInt() + 12;
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  '$h:00',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.mediumGreenText,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 32,
-                            interval: yInterval,
-                            getTitlesWidget: (v, _) => Text(
-                              v.toStringAsFixed(0),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.lightGreenText,
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            PieChart(
+                              PieChartData(
+                                sectionsSpace: 3,
+                                centerSpaceRadius: 48,
+                                startDegreeOffset: -90,
+                                sections: [
+                                  if (occupied > 0)
+                                    PieChartSectionData(
+                                      value: occupied.toDouble(),
+                                      color: AppColors.mutedOrange,
+                                      radius: 18,
+                                      showTitle: false,
+                                    ),
+                                  if (free > 0)
+                                    PieChartSectionData(
+                                      value: free.toDouble(),
+                                      color: AppColors.primaryGreen,
+                                      radius: 18,
+                                      showTitle: false,
+                                    ),
+                                  if (occupied == 0 && free == 0)
+                                    PieChartSectionData(
+                                      value: 1,
+                                      color: AppColors.lightGreenBg,
+                                      radius: 18,
+                                      showTitle: false,
+                                    ),
+                                ],
                               ),
                             ),
-                          ),
-                        ),
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                      ),
-                      borderData: FlBorderData(show: false),
-                      lineTouchData: LineTouchData(
-                        touchTooltipData: LineTouchTooltipData(
-                          getTooltipColor: (_) => AppColors.primaryGreen,
-                          tooltipRoundedRadius: 8,
-                          getTooltipItems: (spots) => spots
-                              .map(
-                                (s) => LineTooltipItem(
-                                  '${s.y.toStringAsFixed(0)} tables',
-                                  const TextStyle(
-                                    color: AppColors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '$occupied',
+                                  style: const TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.darkGreenText,
+                                    height: 1,
                                   ),
                                 ),
-                              )
-                              .toList(),
+                                const Text(
+                                  'të zëna',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.lightGreenText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _Legend(
+                            color: AppColors.mutedOrange,
+                            label: 'Të zëna',
+                            value: '$occupied',
+                          ),
+                          const SizedBox(height: 10),
+                          _Legend(
+                            color: AppColors.primaryGreen,
+                            label: 'Të lira',
+                            value: '$free',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+          ),
+          const SizedBox(height: 12),
+          if (occupiedTables.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.lightGreenBg.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Asnjë tavolinë e zënë për momentin.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.mediumGreenText,
+                ),
+              ),
+            )
+          else
+            ...occupiedTables.take(5).map((t) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.mutedOrange,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Tavolina ${t.id}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.darkGreenText,
                         ),
                       ),
                     ),
-                  ),
-          ),
+                    Text(
+                      t.assignedWaiterName ?? '—',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.mediumGreenText,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '${(t.currentTotal ?? 0).toStringAsFixed(0)}€',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.darkGreenText,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  const _Legend({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.mediumGreenText,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkGreenText,
+          ),
+        ),
+      ],
     );
   }
 }

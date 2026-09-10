@@ -24,9 +24,7 @@ class LoginModeTile extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: selected
-              ? AppColors.lightGreenBg
-              : const Color(0xFFF7FAF7),
+          color: selected ? AppColors.lightGreenBg : const Color(0xFFF7FAF7),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected

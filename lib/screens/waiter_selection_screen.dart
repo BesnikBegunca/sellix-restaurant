@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../manager/manager_data.dart';
 import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
+import '../services/app_language_service.dart';
 import '../theme/app_colors.dart';
 
 import 'manager_dashboard_screen.dart';
@@ -48,9 +49,7 @@ class _PinInputDialogState extends State<_PinInputDialog> {
               controller: _controller,
               keyboardType: TextInputType.number,
               obscureText: true,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               decoration: InputDecoration(
                 hintText: widget.hint,
                 counterText: '',
@@ -92,21 +91,28 @@ class WaiterSelectionScreen extends StatefulWidget {
 
 class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
   final ManagerData _m = ManagerData.instance;
+  final _language = AppLanguageService.instance;
 
   @override
   void initState() {
     super.initState();
     _m.addListener(_onDataChanged);
+    _language.addListener(_onLanguageChanged);
   }
 
   @override
   void dispose() {
     _m.removeListener(_onDataChanged);
+    _language.removeListener(_onLanguageChanged);
     super.dispose();
   }
 
   void _onDataChanged() {
     setState(() {});
+  }
+
+  void _onLanguageChanged() {
+    if (mounted) setState(() {});
   }
 
   void _selectWaiter(String waiterName) {
@@ -127,15 +133,24 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Konfiguro PIN e Administratorit'),
-        content: const Text(
-          'Nuk është konfiguruar asnjë PIN i administratorit.\n'
-          'Dëshironi ta vendosni këtë PIN si PIN-in e administratorit?',
+        title: Text(
+          _language.t(
+            'Konfiguro PIN e Administratorit',
+            'Configure administrator PIN',
+          ),
+        ),
+        content: Text(
+          _language.t(
+            'Nuk është konfiguruar asnjë PIN i administratorit.\n'
+                'Dëshironi ta vendosni këtë PIN si PIN-in e administratorit?',
+            'No administrator PIN is configured.\n'
+                'Would you like to use this PIN as the administrator PIN?',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Anulo'),
+            child: Text(_language.t('Anulo', 'Cancel')),
           ),
           TextButton(
             onPressed: () async {
@@ -152,7 +167,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                 ),
               );
             },
-            child: const Text('Konfirmo'),
+            child: Text(_language.t('Konfirmo', 'Confirm')),
           ),
         ],
       ),
@@ -162,13 +177,14 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final waiters = _m.waiters;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: AppColors.beige,
+      backgroundColor: scheme.surface,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryGreen,
-        foregroundColor: AppColors.white,
-        title: const Text('Select Waiter'),
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        title: Text(_language.t('Zgjidh kamarierin', 'Select waiter')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: _backToLogin,
@@ -196,7 +212,10 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                         messenger.showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                              _language.t(
+                                'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                                'Too many failed attempts. Try again in ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                              ),
                             ),
                             backgroundColor: AppColors.negativeText,
                             behavior: SnackBarBehavior.floating,
@@ -216,7 +235,9 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                         return;
                       }
 
-                      if (await ManagerData.instance.canAccessManagerDashboard(pin)) {
+                      if (await ManagerData.instance.canAccessManagerDashboard(
+                        pin,
+                      )) {
                         PinRateLimiter.instance.reset();
                         AuditLogService.instance.logManagerLogin();
                         if (!mounted) return;
@@ -226,13 +247,20 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                           ),
                         );
                       } else {
-                        final lockedOut = PinRateLimiter.instance.recordFailure();
+                        final lockedOut = PinRateLimiter.instance
+                            .recordFailure();
                         if (lockedOut) AuditLogService.instance.logPinLockout();
                         AuditLogService.instance.logFailedPin();
                         if (!mounted) return;
                         final msg = PinRateLimiter.instance.isLocked
-                            ? 'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.'
-                            : 'Admin PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.';
+                            ? _language.t(
+                                'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                                'Too many failed attempts. Try again in ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                              )
+                            : _language.t(
+                                'Admin PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.',
+                                'Incorrect admin PIN. ${PinRateLimiter.instance.remainingAttempts} attempts remaining.',
+                              );
                         messenger.showSnackBar(
                           SnackBar(
                             content: Text(msg),
@@ -259,13 +287,16 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
           children: [
             const SizedBox(height: 10),
 
-            const Text(
-              'Welcome! Please select your name',
+            Text(
+              _language.t(
+                'Welcome! Please select your name',
+                'Welcome! Please select your name',
+              ),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: AppColors.darkGreenText,
+                color: scheme.onSurface,
               ),
             ),
 
@@ -276,18 +307,21 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(
+                        children: [
+                          const Icon(
                             Icons.person_outline,
                             size: 70,
                             color: AppColors.primaryGreen,
                           ),
                           SizedBox(height: 16),
                           Text(
-                            'No waiters found',
+                            _language.t(
+                              'Nuk u gjet asnjë kamarier',
+                              'No waiters found',
+                            ),
                             style: TextStyle(
                               fontSize: 16,
-                              color: AppColors.darkGreenText,
+                              color: scheme.onSurface,
                             ),
                           ),
                         ],
@@ -319,12 +353,13 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
     required String name,
     required VoidCallback onTap,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: 230,
       height: 200,
       child: Card(
         elevation: 5,
-        color: AppColors.white,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
@@ -332,7 +367,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppColors.primaryGreen, width: 1.5),
+              border: Border.all(color: scheme.primary, width: 1.5),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -343,11 +378,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                     color: AppColors.primaryGreen.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 42,
-                    color: AppColors.primaryGreen,
-                  ),
+                  child: Icon(Icons.person, size: 42, color: scheme.primary),
                 ),
 
                 const SizedBox(height: 18),
@@ -359,10 +390,10 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.darkGreenText,
+                      color: scheme.onSurface,
                     ),
                   ),
                 ),

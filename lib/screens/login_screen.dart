@@ -8,6 +8,7 @@ import '../manager/manager_data.dart';
 import '../services/activation_license_controller.dart';
 import '../services/activation_service.dart';
 import '../services/audit_log_service.dart';
+import '../services/app_language_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/hover_card_button.dart';
@@ -33,6 +34,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> with RouteAware {
   final TextEditingController _pinController = TextEditingController();
+  final _language = AppLanguageService.instance;
   final FocusNode _pinFocus = FocusNode();
   String _bill = '';
   String _paid = '';
@@ -48,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
   void initState() {
     super.initState();
     ManagerData.instance.addListener(_onDataChanged);
+    _language.addListener(_onLanguageChanged);
     _pinController.addListener(_onPinControllerChanged);
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _now = DateTime.now());
@@ -154,11 +157,16 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     _pinController.dispose();
     _pinFocus.dispose();
     ManagerData.instance.removeListener(_onDataChanged);
+    _language.removeListener(_onLanguageChanged);
     super.dispose();
   }
 
   void _onDataChanged() {
     setState(() {});
+  }
+
+  void _onLanguageChanged() {
+    if (mounted) setState(() {});
   }
 
   static final RegExp _pinDigitsOnly = RegExp(r'^\d+$');
@@ -375,8 +383,9 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppColors.beige,
+      backgroundColor: scheme.surface,
       body: SafeArea(
         child: Stack(
           children: [
@@ -435,8 +444,11 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                                 ),
                               ),
                               icon: const Icon(Icons.engineering_outlined),
-                              label: const Text(
-                                'Developer access / Hyrje developer',
+                              label: Text(
+                                _language.t(
+                                  'Developer access / Hyrje developer',
+                                  'Developer access',
+                                ),
                               ),
                             ),
                           ],
@@ -467,21 +479,23 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
   }
 
   Widget _clockDisplay() {
+    final scheme = Theme.of(context).colorScheme;
     final h = _now.hour.toString().padLeft(2, '0');
     final m = _now.minute.toString().padLeft(2, '0');
     final s = _now.second.toString().padLeft(2, '0');
     return Text(
       '$h:$m:$s',
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 36,
         fontWeight: FontWeight.w300,
-        color: AppColors.lightGreenText,
+        color: scheme.onSurfaceVariant,
         letterSpacing: 4,
       ),
     );
   }
 
   Widget _buildHeaderGroup() {
+    final scheme = Theme.of(context).colorScheme;
     final companyName = ManagerData.instance.companyName;
     final title = companyName != null && companyName.isNotEmpty
         ? companyName
@@ -504,15 +518,18 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                   style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.darkGreenText,
+                    color: scheme.onSurface,
                     height: 1.1,
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
-                'Sistem i shpejtë dhe i thjeshtë për menaxhim restoranti',
-                style: TextStyle(fontSize: 16, color: AppColors.lightGreenText),
+                _language.t(
+                  'Sistem i shpejtë dhe i thjeshtë për menaxhim restoranti',
+                  'A fast and simple restaurant management system',
+                ),
+                style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -523,6 +540,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
 
   Widget _pinCard(BuildContext context) {
     final isNameMode = ManagerData.instance.loginMode == 'NAMEMODE';
+    final scheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: _activatePinField,
@@ -530,7 +548,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.borderSubtle(0.1)),
           boxShadow: [
@@ -545,11 +563,16 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              isNameMode ? 'Hyrja e Administratorit' : 'Shkruaj PIN',
-              style: const TextStyle(
+              isNameMode
+                  ? _language.t(
+                      'Hyrja e Administratorit',
+                      'Administrator login',
+                    )
+                  : _language.t('Shkruaj PIN', 'Enter PIN'),
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w500,
-                color: AppColors.darkGreenText,
+                color: scheme.onSurface,
               ),
             ),
             const SizedBox(height: 24),
@@ -557,16 +580,16 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.lightGreenBg,
+                  color: scheme.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  '👤 Kamarierë: Klikoni butonin poshtë për të zgjedhur emrin tuaj',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.darkGreenText,
+                child: Text(
+                  _language.t(
+                    '👤 Kamarierë: Klikoni butonin poshtë për të zgjedhur emrin tuaj',
+                    '👤 Waiters: Click the button below to choose your name',
                   ),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: scheme.onSurface),
                 ),
               ),
               const SizedBox(height: 24),
@@ -587,11 +610,11 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
               onTap: _activatePinField,
               onTapAlwaysCalled: true,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 6,
-                color: AppColors.darkGreenText,
+                color: scheme.onSurface,
               ),
               decoration: InputDecoration(
                 hintText: 'PIN',
@@ -600,7 +623,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                   color: AppColors.lightGreenText.withValues(alpha: 0.7),
                 ),
                 filled: true,
-                fillColor: AppColors.beige,
+                fillColor: scheme.surface,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 18,
@@ -742,11 +765,12 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
   Widget _calcCard(BuildContext context) {
     final change = _changeValue;
     final negative = change != null && change < 0;
+    final scheme = Theme.of(context).colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderSubtle(0.1)),
         boxShadow: [
@@ -769,12 +793,12 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
+                      Text(
                         'Llogaritësi i Kusurit',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.darkGreenText,
+                          color: scheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -798,11 +822,11 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                           color: AppColors.borderSubtle(0.1),
                         ),
                       ),
-                      const Text(
+                      Text(
                         'Kusuri',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.lightGreenText,
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 15),
@@ -812,10 +836,10 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                         alignment: Alignment.centerLeft,
                         decoration: BoxDecoration(
                           color: change == null
-                              ? AppColors.beige
+                              ? scheme.surface
                               : (negative
                                     ? AppColors.negativeBg
-                                    : AppColors.lightGreenBg),
+                                    : scheme.primaryContainer),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -826,10 +850,10 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                             fontSize: 26,
                             fontWeight: FontWeight.w600,
                             color: change == null
-                                ? AppColors.lightGreenText
+                                ? scheme.onSurfaceVariant
                                 : (negative
                                       ? AppColors.negativeText
-                                      : AppColors.primaryGreen),
+                                      : scheme.primary),
                           ),
                         ),
                       ),
@@ -847,10 +871,11 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
   }
 
   Widget _waiterSelectionCard(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderSubtle(0.1)),
         boxShadow: [
@@ -865,22 +890,22 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.person, size: 48, color: AppColors.primaryGreen),
+          Icon(Icons.person, size: 48, color: scheme.primary),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Jeni kamarier?',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: AppColors.darkGreenText,
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Klikoni poshtë për të zgjedhur emrin tuaj',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
+            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
           HoverCardButton(
@@ -892,7 +917,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                 decoration: BoxDecoration(
                   color: isHovered
                       ? AppColors.primaryGreen
-                      : AppColors.lightGreenBg,
+                      : scheme.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: AppColors.primaryGreen,
@@ -905,9 +930,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isHovered
-                        ? AppColors.white
-                        : AppColors.darkGreenText,
+                    color: isHovered ? scheme.onPrimary : scheme.onSurface,
                   ),
                 ),
               );
@@ -952,7 +975,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                 ),
               ),
               child: Text(
-                value.isEmpty ? '0.00€' : '${value}€',
+                value.isEmpty ? '0.00€' : '$value€',
                 style: const TextStyle(
                   fontSize: 16,
                   color: AppColors.darkGreenText,

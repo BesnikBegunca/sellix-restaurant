@@ -44,17 +44,12 @@ class ExpensesDataTable extends StatelessWidget {
             decoration: const BoxDecoration(color: AppColors.lightGreenBg),
             child: const Row(
               children: [
-                SizedBox(
-                  width: 130,
-                  child: Text('DATA', style: headerStyle),
-                ),
+                SizedBox(width: 130, child: Text('DATA', style: headerStyle)),
                 SizedBox(
                   width: 130,
                   child: Text('KATEGORIA', style: headerStyle),
                 ),
-                Expanded(
-                  child: Text('PËRSHKRIMI', style: headerStyle),
-                ),
+                Expanded(child: Text('PËRSHKRIMI', style: headerStyle)),
                 SizedBox(
                   width: 140,
                   child: Text('MËNYRA E PAGESËS', style: headerStyle),
@@ -172,7 +167,9 @@ class ExpensesDataTable extends StatelessWidget {
                           icon: Icon(
                             Icons.delete_outline,
                             size: 18,
-                            color: AppColors.negativeText.withValues(alpha: 0.7),
+                            color: AppColors.negativeText.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                           onPressed: () => onDelete(e),
                         ),

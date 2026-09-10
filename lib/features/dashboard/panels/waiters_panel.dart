@@ -37,8 +37,8 @@ class _WaitersPanelState extends State<WaitersPanel> {
     }
     if (pin.length < 4 || !RegExp(r'^\d+$').hasMatch(pin)) {
       setState(
-        () => _errorMsg =
-            'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
+        () =>
+            _errorMsg = 'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
       );
       return;
     }
@@ -48,10 +48,8 @@ class _WaitersPanelState extends State<WaitersPanel> {
     }
     await widget.m.addWaiter(name, pin);
     if (!mounted) return;
-    final salary = double.tryParse(
-          _salaryCtrl.text.trim().replaceAll(',', '.'),
-        ) ??
-        0.0;
+    final salary =
+        double.tryParse(_salaryCtrl.text.trim().replaceAll(',', '.')) ?? 0.0;
     if (salary > 0) {
       widget.m.setSalary(name, salary);
     }
@@ -64,6 +62,7 @@ class _WaitersPanelState extends State<WaitersPanel> {
   @override
   Widget build(BuildContext context) {
     final m = widget.m;
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -78,7 +77,7 @@ class _WaitersPanelState extends State<WaitersPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
             boxShadow: const [
@@ -92,12 +91,12 @@ class _WaitersPanelState extends State<WaitersPanel> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Shto Kamarier të Ri',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreenText,
+                  color: scheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
@@ -129,20 +128,28 @@ class _WaitersPanelState extends State<WaitersPanel> {
                     child: TextField(
                       controller: _salaryCtrl,
                       decoration: inputDeco('Rroga (€/ditë)'),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       textInputAction: TextInputAction.done,
-                      onSubmitted: (_) { _add(); },
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                      onSubmitted: (_) {
+                        _add();
+                      },
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
                   FilledButton.icon(
-                    onPressed: () { _add(); },
+                    onPressed: () {
+                      _add();
+                    },
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Shto Kamarier'),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: AppColors.white,
+                      foregroundColor: scheme.onPrimary,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 16,

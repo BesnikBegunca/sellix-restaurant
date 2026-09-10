@@ -28,6 +28,7 @@ class _ManagerGridCardState extends State<ManagerGridCard> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -35,12 +36,12 @@ class _ManagerGridCardState extends State<ManagerGridCard> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _hovered
                 ? AppColors.primaryGreen.withValues(alpha: 0.4)
-                : AppColors.lightGreenBorder,
+                : scheme.outlineVariant,
           ),
           boxShadow: [
             BoxShadow(
@@ -58,14 +59,14 @@ class _ManagerGridCardState extends State<ManagerGridCard> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                color: scheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   widget.initials,
-                  style: const TextStyle(
-                    color: AppColors.primaryGreen,
+                  style: TextStyle(
+                    color: scheme.primary,
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -80,10 +81,10 @@ class _ManagerGridCardState extends State<ManagerGridCard> {
                 children: [
                   Text(
                     widget.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.darkGreenText,
+                      color: scheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

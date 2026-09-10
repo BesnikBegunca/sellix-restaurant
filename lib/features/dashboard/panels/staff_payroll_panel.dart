@@ -60,6 +60,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final m = widget.m;
 
     if (_selectedWaiter != null) {
@@ -110,7 +111,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
             Expanded(child: sectionTitle('Pagat & Avans')),
             Container(
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.lightGreenBorder),
               ),
@@ -224,7 +225,9 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                   child: Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: AppColors.lightGreenBorder),
                       boxShadow: const [
@@ -272,7 +275,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                   child: Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: scheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: AppColors.lightGreenBorder),
                       boxShadow: const [
@@ -369,10 +372,11 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
   }
 
   Widget _buildEmptyState() {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(48),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.lightGreenBorder),
       ),
@@ -404,10 +408,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
             const SizedBox(height: 4),
             const Text(
               'Shko te "Kamarierët" për të shtuar punonjës.',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.lightGreenText,
-              ),
+              style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
             ),
           ],
         ),
@@ -415,4 +416,3 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
     );
   }
 }
-

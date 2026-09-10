@@ -25,11 +25,11 @@ class AppLanguageService extends ChangeNotifier {
   Future<void> setLanguage(AppLanguage language) async {
     if (_language == language) return;
     _language = language;
+    notifyListeners();
     await DatabaseService.instance.setAppMeta(
       _metaKey,
       language == AppLanguage.english ? 'en' : 'sq',
     );
-    notifyListeners();
   }
 
   String t(String sq, String en) => isEnglish ? en : sq;

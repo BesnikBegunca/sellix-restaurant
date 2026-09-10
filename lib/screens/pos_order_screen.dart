@@ -17,6 +17,7 @@ import '../services/escpos/escpos_printer_service.dart';
 import '../services/printer_settings_store.dart';
 import '../services/receipt_printer.dart';
 import '../services/receipt_text.dart';
+import '../services/app_language_service.dart';
 
 class PosOrderScreen extends StatefulWidget {
   const PosOrderScreen({
@@ -33,7 +34,9 @@ class PosOrderScreen extends StatefulWidget {
   @override
   State<PosOrderScreen> createState() => _PosOrderScreenState();
 }
+
 class _PosOrderScreenState extends State<PosOrderScreen> {
+  final _language = AppLanguageService.instance;
   int _categoryIndex = 0;
   late int _activeOrderNumber;
   final List<CartLine> _lines = [];
@@ -46,6 +49,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     super.initState();
     _activeOrderNumber = widget.orderNumber;
     ManagerData.instance.addListener(_onMenuChanged);
+    _language.addListener(_onLanguageChanged);
     _loadPersistedOrder();
   }
 
@@ -58,9 +62,14 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     }
   }
 
+  void _onLanguageChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     ManagerData.instance.removeListener(_onMenuChanged);
+    _language.removeListener(_onLanguageChanged);
     super.dispose();
   }
 
@@ -163,8 +172,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       );
       final combined = _mergeLines(persisted, _toCurrentLines(_lines));
       final tableTotal = _sumCurrentLines(combined);
-      final shouldRecordSale =
-          tableTotal > 0 && widget.waiterName.isNotEmpty;
+      final shouldRecordSale = tableTotal > 0 && widget.waiterName.isNotEmpty;
 
       // TEMP [SyncDiag] — log payment totals to verify total vs lineTotal sum.
       // ignore: avoid_print
@@ -203,8 +211,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           tableId: widget.tableNumber,
           tableName: 'Tavolina ${widget.tableNumber}',
           lines: combined,
-          orderNumber:
-              _activeOrderNumber > 0 ? _activeOrderNumber : null,
+          orderNumber: _activeOrderNumber > 0 ? _activeOrderNumber : null,
         );
         // ignore: avoid_print
         print(
@@ -244,8 +251,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       await showGeneralDialog<void>(
         context: context,
         barrierDismissible: true,
-        barrierLabel:
-            MaterialLocalizations.of(context).modalBarrierDismissLabel,
+        barrierLabel: MaterialLocalizations.of(
+          context,
+        ).modalBarrierDismissLabel,
         barrierColor: Colors.black.withValues(alpha: 0.2),
         transitionDuration: const Duration(milliseconds: 200),
         pageBuilder: (ctx, anim, sec) {
@@ -377,8 +385,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   Future<void> _sendOrderImpl() async {
     // Çdo PRINTO: numër i ri për këtë kamarier (riniset nga 1 pas mbylljes së gjendjes).
-    final printOrderNumber =
-        await ManagerData.instance.nextWaiterOrderNumber(widget.waiterName);
+    final printOrderNumber = await ManagerData.instance.nextWaiterOrderNumber(
+      widget.waiterName,
+    );
     setState(() => _activeOrderNumber = printOrderNumber);
     final persisted = await ManagerData.instance.loadCurrentOrderLines(
       widget.tableNumber,
@@ -510,13 +519,14 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: ManagerData.instance,
       builder: (context, _) {
         final cats = ManagerData.instance.categories;
         if (cats.isEmpty) {
           return Scaffold(
-            backgroundColor: AppColors.beige,
+            backgroundColor: scheme.surface,
             body: Column(
               children: [
                 GgAppHeader(
@@ -542,7 +552,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         final products = cats[ix].products;
 
         return Scaffold(
-          backgroundColor: AppColors.beige,
+          backgroundColor: scheme.surface,
           body: Column(
             children: [
               GgAppHeader(
@@ -589,18 +599,19 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                     builder: (context, gridConstraints) {
                                       final columns =
                                           PosGrid.resolveCrossAxisCount(
-                                        itemCount: products.length,
-                                        width: gridConstraints.maxWidth,
-                                        height: gridConstraints.maxHeight,
-                                      );
+                                            itemCount: products.length,
+                                            width: gridConstraints.maxWidth,
+                                            height: gridConstraints.maxHeight,
+                                          );
                                       return GridView.builder(
                                         physics:
                                             const NeverScrollableScrollPhysics(),
                                         padding: const EdgeInsets.only(
                                           bottom: 16,
                                         ),
-                                        gridDelegate:
-                                            PosGrid.delegateFor(columns),
+                                        gridDelegate: PosGrid.delegateFor(
+                                          columns,
+                                        ),
                                         itemCount: products.length,
                                         itemBuilder: (context, i) {
                                           return ProductTile(

@@ -16,6 +16,7 @@ class _NumKeyBodyState extends State<NumKeyBody> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -24,13 +25,15 @@ class _NumKeyBodyState extends State<NumKeyBody> {
         height: 56,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: _hover ? AppColors.lightGreenBg : AppColors.beige,
+          color: _hover
+              ? scheme.primaryContainer
+              : scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.borderSubtle(0.1)),
         ),
         child: Text(
           widget.label,
-          style: const TextStyle(fontSize: 32, color: AppColors.darkGreenText),
+          style: TextStyle(fontSize: 32, color: scheme.onSurface),
         ),
       ),
     );

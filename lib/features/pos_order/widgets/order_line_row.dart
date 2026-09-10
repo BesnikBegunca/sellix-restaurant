@@ -20,10 +20,11 @@ class OrderLineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.beige,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -33,7 +34,7 @@ class OrderLineRow extends StatelessWidget {
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.white,
+              color: scheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: line.product.imagePath != null
@@ -58,17 +59,17 @@ class OrderLineRow extends StatelessWidget {
                   line.product.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.darkGreenText,
+                    color: scheme.onSurface,
                   ),
                 ),
                 Text(
                   '${line.product.price.toStringAsFixed(2)}€',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.lightGreenText,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -82,10 +83,10 @@ class OrderLineRow extends StatelessWidget {
                 child: Text(
                   '${line.qty}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.darkGreenText,
+                    color: scheme.onSurface,
                   ),
                 ),
               ),

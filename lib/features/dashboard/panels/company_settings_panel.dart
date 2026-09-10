@@ -7,9 +7,12 @@ import '../../../services/windows_printers_service.dart';
 import '../../../services/activation_service.dart';
 import '../../../services/app_language_service.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/theme_mode_controller.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../widgets/dashboard/app_button.dart';
 import '../widgets/settings/settings_card.dart';
 import '../widgets/settings/settings_check_tile.dart';
+import '../widgets/settings/login_mode_tile.dart';
 
 class CompanySettingsPanel extends StatefulWidget {
   const CompanySettingsPanel({super.key, required this.m});
@@ -28,20 +31,29 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   String _selectedPrinter = '';
   bool _loadingPrinters = true;
 
-  // ── admin PIN change ───────────────────────────────────────────────────────
   final _currentPinCtrl = TextEditingController();
   final _newPinCtrl = TextEditingController();
   final _confirmPinCtrl = TextEditingController();
   final _licenseKeyCtrl = TextEditingController();
+  final _footerCtrl = TextEditingController();
+  final _addressCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   String? _pinErrorMsg;
   bool _pinChanging = false;
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl.text = widget.m.companyName ?? '';
+    _syncFromManager();
     widget.m.addListener(_onM);
     _loadPrinters();
+  }
+
+  void _syncFromManager() {
+    _nameCtrl.text = widget.m.companyName ?? '';
+    _footerCtrl.text = widget.m.receiptFooter;
+    _addressCtrl.text = widget.m.businessAddress ?? '';
+    _phoneCtrl.text = widget.m.businessPhone ?? '';
   }
 
   void _onM() => setState(() {});
@@ -59,10 +71,26 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     _newPinCtrl.dispose();
     _confirmPinCtrl.dispose();
     _licenseKeyCtrl.dispose();
+    _footerCtrl.dispose();
+    _addressCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
+  void _toast(String message, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: error
+            ? AppColors.negativeText
+            : AppColors.primaryGreen,
+      ),
+    );
+  }
+
+  Future<void> _saveCompany() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       setState(() => _errorMsg = 'Emri i kompanisë është i detyrueshëm.');
@@ -70,15 +98,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     }
     await widget.m.saveCompanyName(name);
     setState(() => _errorMsg = null);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cilësimet e kompanisë u ruajtën.'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.primaryGreen,
-        ),
-      );
-    }
+    _toast('Emri i biznesit u ruajt.');
   }
 
   Future<void> _loadPrinters() async {
@@ -102,22 +122,12 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       );
       _licenseKeyCtrl.clear();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.',
-          ),
-          backgroundColor: AppColors.primaryGreen,
-        ),
+      _toast(
+        'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.',
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.negativeText,
-        ),
-      );
+      _toast(error.toString().replaceFirst('Exception: ', ''), error: true);
     }
   }
 
@@ -125,13 +135,22 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     await PrinterSettingsStore.saveSelectedPrinterName(printerName);
     if (!mounted) return;
     setState(() => _selectedPrinter = printerName);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Printeri u zgjodh: $printerName'),
-        backgroundColor: AppColors.primaryGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
+    _toast('Printeri u zgjodh: $printerName');
+  }
+
+  Future<void> _saveReceipt() async {
+    await widget.m.saveEscPosSettings(
+      receiptFooter: _footerCtrl.text.trim().isEmpty
+          ? 'Ju Faleminderit!'
+          : _footerCtrl.text.trim(),
+      businessAddress: _addressCtrl.text.trim().isEmpty
+          ? null
+          : _addressCtrl.text.trim(),
+      businessPhone: _phoneCtrl.text.trim().isEmpty
+          ? null
+          : _phoneCtrl.text.trim(),
     );
+    _toast('Cilësimet e faturës u ruajtën.');
   }
 
   Future<void> _changeAdminPin() async {
@@ -145,8 +164,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     }
     if (newPin.length < 4 || !RegExp(r'^\d+$').hasMatch(newPin)) {
       setState(
-        () => _pinErrorMsg =
-            'PIN-i i ri: minimum 4 shifra, vetëm numra (pa kufi maksimal).',
+        () => _pinErrorMsg = 'PIN-i i ri: minimum 4 shifra, vetëm numra.',
       );
       return;
     }
@@ -181,466 +199,428 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       _pinChanging = false;
       _pinErrorMsg = null;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('PIN-i i administratorit u ndryshua me sukses.'),
-        backgroundColor: AppColors.primaryGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    _toast('PIN-i i administratorit u ndryshua.');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 960),
-        child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 900;
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Cilësimet e Kompanisë',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.darkGreenText,
-                    height: 1.1,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Menaxho informacionin e biznesit dhe preferencat',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            SettingsCard(
-              icon: Icons.language_rounded,
-              title: _language.t(
-                'Gjuha e aplikacionit',
-                'Application language',
+            const Text(
+              'Cilësimet e kompanisë',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.lightGreenText,
+                letterSpacing: 0.3,
               ),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SizedBox(
-                  width: 420,
-                  child: DropdownButtonFormField<AppLanguage>(
-                    initialValue: _language.language,
-                    decoration: inputDeco(
-                      _language.t('Zgjidh gjuhën', 'Choose language'),
-                    ).copyWith(prefixIcon: const Icon(Icons.translate_rounded)),
-                    items: [
-                      DropdownMenuItem(
-                        value: AppLanguage.albanian,
-                        child: Text(_language.t('Shqip', 'Albanian')),
-                      ),
-                      DropdownMenuItem(
-                        value: AppLanguage.english,
-                        child: Text(_language.t('Anglisht', 'English')),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) _setLanguage(value);
-                    },
-                  ),
-                ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Gjithçka që ndikon te stafi, printeri dhe faturat — e ndarë sipas kartave.',
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.mediumGreenText,
+                height: 1.35,
               ),
             ),
             const SizedBox(height: 20),
-
-            SettingsCard(
-              icon: Icons.grid_view_rounded,
-              title: 'Informacioni i Biznesit',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Emri i Biznesit',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 560,
-                      child: TextField(
-                        controller: _nameCtrl,
-                        decoration: inputDeco('Shkruaj emrin e biznesit'),
-                        style: const TextStyle(fontSize: 15),
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _save(),
-                      ),
-                    ),
-                  ),
-                  if (_errorMsg != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.negativeText.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.negativeText.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: AppColors.negativeText,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMsg!,
-                              style: const TextStyle(
-                                color: AppColors.negativeText,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            SettingsCard(
-              icon: Icons.vpn_key_rounded,
-              title: 'Licenca',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Keni marrë një key të ri nga Developer Mode? Vendoseni këtu për ta vazhduar licencën.',
-                    style: TextStyle(color: AppColors.mediumGreenText),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 620,
-                      child: TextField(
-                        controller: _licenseKeyCtrl,
-                        decoration: inputDeco(
-                          'POS-LOCAL-...',
-                        ).copyWith(prefixIcon: const Icon(Icons.key_rounded)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: FilledButton.icon(
-                      onPressed: _replaceLicenseKey,
-                      icon: const Icon(Icons.autorenew_rounded),
-                      label: const Text('Vazhdo licencën me key'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            SettingsCard(
-              icon: Icons.print_outlined,
-              title: 'Cilësimet e Printerit',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Printer i Faturave',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.mediumGreenText,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              if (_loadingPrinters)
-                                const SizedBox(
-                                  height: 48,
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: AppColors.primaryGreen,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              else if (_printers.isEmpty)
-                                const Text(
-                                  'No printers found.',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.lightGreenText,
-                                  ),
-                                )
-                              else
-                                SizedBox(
-                                  width: 560,
-                                  child: DropdownButtonFormField<String>(
-                                    initialValue:
-                                        _printers.contains(_selectedPrinter)
-                                        ? _selectedPrinter
-                                        : null,
-                                    decoration: inputDeco('Zgjidh printerin'),
-                                    isExpanded: true,
-                                    items: _printers
-                                        .map(
-                                          (p) => DropdownMenuItem(
-                                            value: p,
-                                            child: Text(
-                                              p,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (v) {
-                                      if (v != null) _savePrinter(v);
-                                    },
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SettingsCheckTile(
-                    label: 'Printo automatikisht faturat pas pagesës',
-                  ),
-                  const SizedBox(height: 8),
-                  SettingsCheckTile(
-                    label:
-                        'Dërgo porositë automatikisht te printeri i kuzhinës',
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: _loadPrinters,
-                      icon: const Icon(Icons.refresh_outlined, size: 16),
-                      label: const Text('Rifresko Printerët'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryGreen,
-                        textStyle: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            SettingsCard(
-              icon: Icons.lock_outline,
-              title: 'Ndrysho PIN-in e Administratorit',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'PIN Aktual',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.mediumGreenText,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _pinField(
-                    _currentPinCtrl,
-                    'PIN Aktual',
-                    'Shkruaj PIN-in aktual',
-                  ),
-                  const SizedBox(height: 16),
-                  _pinField(
-                    _newPinCtrl,
-                    'PIN-i i Ri',
-                    'Minimum 4 shifra, vetëm numra',
-                  ),
-                  const SizedBox(height: 16),
-                  _pinField(
-                    _confirmPinCtrl,
-                    'Konfirmo PIN-in e Ri',
-                    'Ripërsërit PIN-in e ri',
-                    onSubmitted: (_) => _pinChanging ? null : _changeAdminPin(),
-                  ),
-                  if (_pinErrorMsg != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.negativeText.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.negativeText.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: AppColors.negativeText,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _pinErrorMsg!,
-                              style: const TextStyle(
-                                color: AppColors.negativeText,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: _pinChanging ? null : _changeAdminPin,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.primaryGreen,
-                            foregroundColor: AppColors.white,
-                            disabledBackgroundColor: AppColors.primaryGreen
-                                .withValues(alpha: 0.5),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            textStyle: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          child: _pinChanging
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.white,
-                                  ),
-                                )
-                              : const Text('Ndrysho PIN-in'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      OutlinedButton(
-                        onPressed: () {
-                          _currentPinCtrl.clear();
-                          _newPinCtrl.clear();
-                          _confirmPinCtrl.clear();
-                          setState(() => _pinErrorMsg = null);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.darkGreenText,
-                          side: const BorderSide(
-                            color: AppColors.lightGreenBorder,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 16,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        child: const Text('Anulo'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _save,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: AppColors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    child: const Text('Ruaj Ndryshimet'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton(
-                  onPressed: () {
-                    _nameCtrl.text = widget.m.companyName ?? '';
-                    setState(() => _errorMsg = null);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.darkGreenText,
-                    side: const BorderSide(color: AppColors.lightGreenBorder),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 18,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  child: const Text('Anulo'),
-                ),
-              ],
-            ),
+            _pair(wide: wide, left: _businessCard(), right: _languageCard()),
+            const SizedBox(height: 16),
+            _themeCard(),
+            const SizedBox(height: 16),
+            _pair(wide: wide, left: _printerCard(), right: _receiptCard()),
+            const SizedBox(height: 16),
+            _licenseCard(),
+            const SizedBox(height: 16),
+            _pinCard(),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _pair({
+    required bool wide,
+    required Widget left,
+    required Widget right,
+  }) {
+    if (!wide) {
+      return Column(children: [left, const SizedBox(height: 16), right]);
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 16),
+        Expanded(child: right),
+      ],
+    );
+  }
+
+  Widget _businessCard() {
+    return SettingsCard(
+      icon: Icons.storefront_outlined,
+      title: 'Biznesi',
+      subtitle: 'Emri që shfaqet në faturë dhe në dashboard.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _fieldLabel('Emri i biznesit'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _nameCtrl,
+            decoration: inputDeco('p.sh. Restorant Guri'),
+            style: const TextStyle(fontSize: 15),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _saveCompany(),
+          ),
+          if (_errorMsg != null) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: _errorMsg!),
+          ],
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton(
+              label: 'Ruaj emrin',
+              icon: Icons.save_outlined,
+              onPressed: _saveCompany,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _languageCard() {
+    return SettingsCard(
+      icon: Icons.language_rounded,
+      title: _language.t('Gjuha', 'Language'),
+      subtitle: _language.t(
+        'Gjuha e ekraneve të menaxherit dhe stafit.',
+        'Language used across manager and staff screens.',
+      ),
+      child: Column(
+        children: [
+          LoginModeTile(
+            title: _language.t('Shqip', 'Albanian'),
+            subtitle: 'SQ',
+            selected: _language.language == AppLanguage.albanian,
+            onTap: () => _setLanguage(AppLanguage.albanian),
+          ),
+          const SizedBox(height: 8),
+          LoginModeTile(
+            title: _language.t('Anglisht', 'English'),
+            subtitle: 'EN',
+            selected: _language.language == AppLanguage.english,
+            onTap: () => _setLanguage(AppLanguage.english),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _themeCard() {
+    return ListenableBuilder(
+      listenable: ThemeModeController.instance,
+      builder: (context, _) {
+        final isDark = ThemeModeController.instance.isDark;
+        return SettingsCard(
+          icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+          title: _language.t('Pamja e aplikacionit', 'Application appearance'),
+          subtitle: isDark
+              ? _language.t(
+                  'Pamja e errët është aktive.',
+                  'Dark appearance is active.',
+                )
+              : _language.t(
+                  'Zgjidh pamjen e errët për përdorim më të rehatshëm.',
+                  'Choose dark appearance for more comfortable use.',
+                ),
+          child: SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            title: Text(
+              _language.t('Modaliteti i errët', 'Dark mode'),
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            value: isDark,
+            onChanged: ThemeModeController.instance.setDark,
+            secondary: Icon(
+              isDark ? Icons.nightlight_round : Icons.wb_sunny_outlined,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _printerCard() {
+    return SettingsCard(
+      icon: Icons.print_outlined,
+      title: 'Printeri',
+      subtitle: 'Printeri i Windows për faturat POS.',
+      trailing: IconButton(
+        tooltip: 'Rifresko printerët',
+        onPressed: _loadPrinters,
+        icon: const Icon(Icons.refresh_outlined, size: 20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _fieldLabel('Printer i zgjedhur'),
+          const SizedBox(height: 8),
+          if (_loadingPrinters)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              ),
+            )
+          else if (_printers.isEmpty)
+            const Text(
+              'Nuk u gjet asnjë printer Windows.',
+              style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+            )
+          else
+            DropdownButtonFormField<String>(
+              initialValue: _printers.contains(_selectedPrinter)
+                  ? _selectedPrinter
+                  : null,
+              decoration: inputDeco('Zgjidh printerin'),
+              isExpanded: true,
+              items: _printers
+                  .map(
+                    (p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(p, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) _savePrinter(v);
+              },
+            ),
+          const SizedBox(height: 14),
+          SettingsCheckTile(
+            label: 'ESC/POS',
+            description: 'Printim i drejtpërdrejtë (i rekomanduar).',
+            value: widget.m.useEscPos,
+            onChanged: (v) => widget.m.saveEscPosSettings(useEscPos: v),
+          ),
+          const SizedBox(height: 8),
+          SettingsCheckTile(
+            label: 'Hap sirtarin e parave',
+            description: 'Pas pagesës së suksesshme.',
+            value: widget.m.cashDrawerEnabled,
+            onChanged: (v) => widget.m.saveEscPosSettings(cashDrawerEnabled: v),
+          ),
+          const SizedBox(height: 14),
+          _fieldLabel('Gjerësia e letrës'),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: _paperChip(80)),
+              const SizedBox(width: 8),
+              Expanded(child: _paperChip(58)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _paperChip(int mm) {
+    final selected = widget.m.paperWidthMm == mm;
+    return GestureDetector(
+      onTap: () => widget.m.saveEscPosSettings(paperWidthMm: mm),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.lightGreenBg : AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected
+                ? AppColors.primaryGreen
+                : AppColors.lightGreenBorder,
+            width: selected ? 1.6 : 1,
+          ),
         ),
+        alignment: Alignment.center,
+        child: Text(
+          '${mm}mm',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: selected ? AppColors.primaryGreen : AppColors.darkGreenText,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _receiptCard() {
+    return SettingsCard(
+      icon: Icons.receipt_long_outlined,
+      title: 'Fatura',
+      subtitle: 'Teksti që printohet në fund të faturës.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _fieldLabel('Adresa e biznesit'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _addressCtrl,
+            decoration: inputDeco('Rruga, qyteti'),
+          ),
+          const SizedBox(height: 12),
+          _fieldLabel('Telefoni'),
+          const SizedBox(height: 8),
+          TextField(controller: _phoneCtrl, decoration: inputDeco('+355 …')),
+          const SizedBox(height: 12),
+          _fieldLabel('Mesazhi në fund'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _footerCtrl,
+            decoration: inputDeco('Ju Faleminderit!'),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton(
+              label: 'Ruaj faturën',
+              icon: Icons.save_outlined,
+              onPressed: _saveReceipt,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _licenseCard() {
+    return SettingsCard(
+      icon: Icons.vpn_key_rounded,
+      title: 'Licenca',
+      subtitle:
+          'Nëse ke marrë një key të ri, vendose këtu për ta vazhduar licencën.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _licenseKeyCtrl,
+            decoration: inputDeco(
+              'POS-LOCAL-...',
+            ).copyWith(prefixIcon: const Icon(Icons.key_rounded)),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton(
+              label: 'Vazhdo licencën',
+              icon: Icons.autorenew_rounded,
+              onPressed: _replaceLicenseKey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pinCard() {
+    return SettingsCard(
+      icon: Icons.lock_outline,
+      title: 'Siguria e menaxherit',
+      subtitle: 'Ndrysho PIN-in që hap dashboard-in e menaxherit.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LayoutBuilder(
+            builder: (context, c) {
+              final three = c.maxWidth >= 720;
+              final fields = [
+                _pinField(
+                  _currentPinCtrl,
+                  'PIN aktual',
+                  'PIN-i që përdor tani',
+                ),
+                _pinField(_newPinCtrl, 'PIN i ri', 'Minimum 4 shifra'),
+                _pinField(
+                  _confirmPinCtrl,
+                  'Konfirmo PIN-in',
+                  'Ripërsërit PIN-in e ri',
+                  onSubmitted: (_) => _pinChanging ? null : _changeAdminPin(),
+                ),
+              ];
+              if (!three) {
+                return Column(
+                  children: [
+                    for (var i = 0; i < fields.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 12),
+                      fields[i],
+                    ],
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < fields.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 12),
+                    Expanded(child: fields[i]),
+                  ],
+                ],
+              );
+            },
+          ),
+          if (_pinErrorMsg != null) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: _pinErrorMsg!),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              AppButton(
+                label: 'Ndrysho PIN-in',
+                icon: Icons.lock_reset_outlined,
+                onPressed: _pinChanging ? null : _changeAdminPin,
+              ),
+              const SizedBox(width: 10),
+              AppButton(
+                label: 'Anulo',
+                variant: AppButtonVariant.secondary,
+                onPressed: () {
+                  _currentPinCtrl.clear();
+                  _newPinCtrl.clear();
+                  _confirmPinCtrl.clear();
+                  setState(() => _pinErrorMsg = null);
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _fieldLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppColors.mediumGreenText,
       ),
     );
   }
@@ -651,34 +631,59 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     String hint, {
     ValueChanged<String>? onSubmitted,
   }) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: SizedBox(
-        width: 420,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _fieldLabel(label),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: true,
+          obscuringCharacter: '•',
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: inputDeco(hint).copyWith(counterText: ''),
+          style: const TextStyle(fontSize: 15, letterSpacing: 4),
+          onSubmitted: onSubmitted,
+        ),
+      ],
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.negativeText.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppColors.negativeText.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: AppColors.negativeText,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
               style: const TextStyle(
+                color: AppColors.negativeText,
                 fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.mediumGreenText,
               ),
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: controller,
-              obscureText: true,
-              obscuringCharacter: '•',
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: inputDeco(hint).copyWith(counterText: ''),
-              style: const TextStyle(fontSize: 15, letterSpacing: 4),
-              onSubmitted: onSubmitted,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

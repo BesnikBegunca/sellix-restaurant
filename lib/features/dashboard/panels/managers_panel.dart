@@ -36,8 +36,8 @@ class _ManagersPanelState extends State<ManagersPanel> {
     }
     if (pin.length < 4 || !RegExp(r'^\d+$').hasMatch(pin)) {
       setState(
-        () => _errorMsg =
-            'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
+        () =>
+            _errorMsg = 'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
       );
       return;
     }
@@ -54,6 +54,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final m = widget.m;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -68,7 +69,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
             boxShadow: const [
@@ -111,9 +112,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
                       obscureText: true,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _add(),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                   ),
                   const SizedBox(width: 12),

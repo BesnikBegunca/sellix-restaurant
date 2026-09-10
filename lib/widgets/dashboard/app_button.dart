@@ -44,6 +44,12 @@ class _AppButtonState extends State<AppButton> {
             borderRadius: BorderRadius.circular(AppTokens.controlRadius),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          textStyle: const TextStyle(
+            inherit: false,
+            fontFamily: 'DMSans',
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
         );
         if (widget.icon != null) {
           return FilledButton.icon(
@@ -69,10 +75,7 @@ class _AppButtonState extends State<AppButton> {
             style: OutlinedButton.styleFrom(
               minimumSize: widget.minimumSize,
               backgroundColor: _secBg(enabled),
-              side: BorderSide(
-                color: AppColors.lightGreenBorder,
-                width: 1,
-              ),
+              side: BorderSide(color: AppColors.lightGreenBorder, width: 1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTokens.controlRadius),
               ),
@@ -87,7 +90,10 @@ class _AppButtonState extends State<AppButton> {
             icon: widget.icon != null
                 ? Icon(widget.icon, size: 20, color: _destFg(enabled))
                 : const SizedBox.shrink(),
-            label: Text(widget.label, style: TextStyle(color: _destFg(enabled))),
+            label: Text(
+              widget.label,
+              style: TextStyle(color: _destFg(enabled)),
+            ),
             style: OutlinedButton.styleFrom(
               minimumSize: widget.minimumSize,
               backgroundColor: _destBg(enabled),

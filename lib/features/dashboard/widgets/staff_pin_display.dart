@@ -4,11 +4,7 @@ import '../../../theme/app_colors.dart';
 
 /// Shfaq PIN të fshehur; menaxheri e zbulon me ikonën e syrit.
 class StaffPinDisplay extends StatefulWidget {
-  const StaffPinDisplay({
-    super.key,
-    this.pinView,
-    this.onRevealTap,
-  });
+  const StaffPinDisplay({super.key, this.pinView, this.onRevealTap});
 
   /// PIN në plaintext (vetëm për panel menaxheri, ruhet lokalisht në DB).
   final String? pinView;
@@ -70,7 +66,9 @@ class _StaffPinDisplayState extends State<StaffPinDisplay> {
           constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
           visualDensity: VisualDensity.compact,
           icon: Icon(
-            _visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            _visible
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
             size: 16,
             color: _canUseEye
                 ? AppColors.primaryGreen

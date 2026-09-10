@@ -88,8 +88,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
       (byDay[key] ??= []).add(s);
     }
 
-    final dayKeys = byDay.keys.toList()
-      ..sort((a, b) => b.compareTo(a));
+    final dayKeys = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
 
     final out = <_TableRowKind>[];
     for (final key in dayKeys) {
@@ -121,8 +120,10 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
   Widget build(BuildContext context) {
     final tableRows = _buildTableRows();
     final closeCount = _closedShifts.length;
-    final grandTotal =
-        _closedShifts.fold<double>(0, (sum, s) => sum + s.totalSales);
+    final grandTotal = _closedShifts.fold<double>(
+      0,
+      (sum, s) => sum + s.totalSales,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,11 +165,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
               );
             }
             return Column(
-              children: [
-                cards[0],
-                const SizedBox(height: 12),
-                cards[1],
-              ],
+              children: [cards[0], const SizedBox(height: 12), cards[1]],
             );
           },
         ),
@@ -200,8 +197,9 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
                 table: SizedBox(
                   width: tableWidth > 0 ? tableWidth : constraints.maxWidth,
                   child: DataTable(
-                    headingRowColor:
-                        WidgetStateProperty.all(AppColors.lightGreenBg),
+                    headingRowColor: WidgetStateProperty.all(
+                      AppColors.lightGreenBg,
+                    ),
                     columnSpacing: 24,
                     horizontalMargin: 18,
                     columns: const [

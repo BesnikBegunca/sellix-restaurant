@@ -81,10 +81,11 @@ class _RefundPanelState extends State<RefundPanel> {
         final total = (meta['total'] as num).toDouble();
         final printedAt =
             DateTime.tryParse(meta['printedAt'] as String? ?? '') ??
-                DateTime.now();
+            DateTime.now();
 
-        final rawLines =
-            await DatabaseService.instance.fetchKitchenPrintLines(printId);
+        final rawLines = await DatabaseService.instance.fetchKitchenPrintLines(
+          printId,
+        );
         if (rawLines.isEmpty) continue;
 
         final lineRows = rawLines.map((r) {
@@ -201,6 +202,7 @@ class _RefundPanelState extends State<RefundPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final waiters = widget.m.waiters;
 
     return Column(
@@ -241,7 +243,7 @@ class _RefundPanelState extends State<RefundPanel> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
           ),
@@ -273,7 +275,8 @@ class _RefundPanelState extends State<RefundPanel> {
                       )
                     : DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
-                          value: _selectedWaiter != null &&
+                          value:
+                              _selectedWaiter != null &&
                                   waiters.any((w) => w.name == _selectedWaiter)
                               ? _selectedWaiter
                               : null,
@@ -304,7 +307,7 @@ class _RefundPanelState extends State<RefundPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
           ),

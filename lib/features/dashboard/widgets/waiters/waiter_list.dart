@@ -27,11 +27,12 @@ class WaiterList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     if (waiters.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(48),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.lightGreenBorder),
         ),

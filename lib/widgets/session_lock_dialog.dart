@@ -53,13 +53,15 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
       vsync: this,
       duration: const Duration(milliseconds: 420),
     );
-    _shakeAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: -10.0), weight: 1),
-      TweenSequenceItem(tween: Tween(begin: -10.0, end: 10.0), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: 10.0, end: -8.0), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: -8.0, end: 8.0), weight: 2),
-      TweenSequenceItem(tween: Tween(begin: 8.0, end: 0.0), weight: 1),
-    ]).animate(CurvedAnimation(parent: _shakeController, curve: Curves.easeOut));
+    _shakeAnimation = TweenSequence<double>(
+      [
+        TweenSequenceItem(tween: Tween(begin: 0.0, end: -10.0), weight: 1),
+        TweenSequenceItem(tween: Tween(begin: -10.0, end: 10.0), weight: 2),
+        TweenSequenceItem(tween: Tween(begin: 10.0, end: -8.0), weight: 2),
+        TweenSequenceItem(tween: Tween(begin: -8.0, end: 8.0), weight: 2),
+        TweenSequenceItem(tween: Tween(begin: 8.0, end: 0.0), weight: 1),
+      ],
+    ).animate(CurvedAnimation(parent: _shakeController, curve: Curves.easeOut));
 
     widget.pinController.addListener(_syncFromParentController);
 
@@ -115,8 +117,7 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
   }
 
   void _syncToParent() {
-    widget.pinController.text =
-        _boxControllers.map((c) => c.text).join();
+    widget.pinController.text = _boxControllers.map((c) => c.text).join();
   }
 
   void _triggerShake() {
@@ -166,6 +167,7 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
   Widget build(BuildContext context) {
     final rateLimited = widget.rateLimited;
     final errorText = widget.errorMessage;
+    final scheme = Theme.of(context).colorScheme;
 
     return AnimatedBuilder(
       animation: _shakeAnimation,
@@ -180,7 +182,7 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
           constraints: const BoxConstraints(maxWidth: 420),
           child: SingleChildScrollView(
             child: Material(
-              color: AppColors.white,
+              color: scheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(28),
               elevation: 24,
               shadowColor: Colors.black.withValues(alpha: 0.22),
@@ -192,35 +194,35 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
                     Container(
                       width: 72,
                       height: 72,
-                      decoration: const BoxDecoration(
-                        color: AppColors.lightGreenBg,
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.lock_outline_rounded,
                         size: 36,
-                        color: AppColors.primaryGreen,
+                        color: scheme.primary,
                       ),
                     ),
                     const SizedBox(height: 22),
-                    const Text(
+                    Text(
                       'Sesioni u Bllokua',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.darkGreenText,
+                        color: scheme.onSurface,
                         letterSpacing: -0.5,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Vendos PIN-in e administratorit për të vazhduar.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
                         height: 1.4,
-                        color: AppColors.mediumGreenText,
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -283,14 +285,13 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
                                   ],
                                 )
                               : null,
-                          color: _canSubmit
-                              ? null
-                              : AppColors.lightGreenBg,
+                          color: _canSubmit ? null : AppColors.lightGreenBg,
                           boxShadow: _canSubmit
                               ? [
                                   BoxShadow(
-                                    color: AppColors.primaryGreen
-                                        .withValues(alpha: 0.28),
+                                    color: AppColors.primaryGreen.withValues(
+                                      alpha: 0.28,
+                                    ),
                                     blurRadius: 14,
                                     offset: const Offset(0, 6),
                                   ),
@@ -403,11 +404,15 @@ class _PinBoxField extends StatelessWidget {
               fillColor: AppColors.beige,
               contentPadding: EdgeInsets.zero,
               border: _border(
-                hasError ? AppColors.softRed : AppColors.lightGreenBorderEmpty(),
+                hasError
+                    ? AppColors.softRed
+                    : AppColors.lightGreenBorderEmpty(),
                 width: hasError ? 2 : 1,
               ),
               enabledBorder: _border(
-                hasError ? AppColors.softRed : AppColors.lightGreenBorderEmpty(),
+                hasError
+                    ? AppColors.softRed
+                    : AppColors.lightGreenBorderEmpty(),
                 width: hasError ? 2 : 1,
               ),
               focusedBorder: _border(

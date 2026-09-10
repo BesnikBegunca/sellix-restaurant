@@ -22,18 +22,21 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.pureWhite,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(AppTokens.cardRadius),
-        border: Border.all(color: AppColors.lightGreenBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.charcoalText.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? null
+            : [
+                BoxShadow(
+                  color: AppColors.charcoalText.withValues(alpha: 0.04),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
       ),
       child: Padding(
         padding: padding,
@@ -52,20 +55,20 @@ class AppCard extends StatelessWidget {
                         children: [
                           Text(
                             title!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: AppTokens.sectionTitleSize,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.charcoalText,
+                              color: scheme.onSurface,
                             ),
                           ),
                           if (subtitle != null) ...[
                             const SizedBox(height: 6),
                             Text(
                               subtitle!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: AppTokens.metaTextSize,
                                 height: 1.35,
-                                color: AppColors.mutedGray,
+                                color: scheme.onSurfaceVariant,
                               ),
                             ),
                           ],

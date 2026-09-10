@@ -11,6 +11,7 @@ import '../screens/sales_history_screen.dart';
 import '../services/admin_session_service.dart';
 import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
+import '../services/app_language_service.dart';
 import '../theme/app_colors.dart';
 import '../features/dashboard/panels/shift_panel.dart';
 import '../features/dashboard/panels/waiters_panel.dart';
@@ -29,33 +30,29 @@ import '../features/dashboard/widgets/manager_side_nav.dart';
 import '../features/dashboard/widgets/manager_top_bar.dart';
 import '../widgets/session_lock_dialog.dart';
 
-
-const _kSectionTitles = <String>[
-  'Overview',
-  'Shift',
-  'Staff',
-  'Menaxherët',
-  'Expenses',
-  'Profits',
-  'Shitjet',
-  'Leaderboard',
-  'Menu',
-  'Tavolinat',
-  'Cilësimet e Kompanisë',
-  'Pagat & Avans',
-  'Refund — Porositë e Printuara',
-  'Historiku i Shitjeve',
-  'Regjistri i Auditit',
+const _kSectionTitles = <({String sq, String en})>[
+  (sq: 'Përmbledhje', en: 'Overview'),
+  (sq: 'Gjendja e turnit', en: 'Shift status'),
+  (sq: 'Kamarierët', en: 'Waiters'),
+  (sq: 'Menaxherët', en: 'Managers'),
+  (sq: 'Shpenzime', en: 'Expenses'),
+  (sq: 'Fitime', en: 'Profits'),
+  (sq: 'Shitjet', en: 'Sales'),
+  (sq: 'Top puntor', en: 'Top employee'),
+  (sq: 'Menu', en: 'Menu'),
+  (sq: 'Tavolinat', en: 'Tables'),
+  (sq: 'Cilësimet', en: 'Settings'),
+  (sq: 'Pagat & avans', en: 'Payroll & advances'),
+  (sq: 'Refund', en: 'Refunds'),
+  (sq: 'Historiku i shitjeve', en: 'Sales history'),
+  (sq: 'Regjistri i auditit', en: 'Audit log'),
 ];
 
 final RegExp _pinDigits = RegExp(r'^\d+$');
 
 /// Dashboard menaxheri.
 class ManagerDashboardScreen extends StatefulWidget {
-  const ManagerDashboardScreen({
-    super.key,
-    this.initialIndex = 0,
-  });
+  const ManagerDashboardScreen({super.key, this.initialIndex = 0});
 
   final int initialIndex;
 
@@ -65,6 +62,7 @@ class ManagerDashboardScreen extends StatefulWidget {
 
 class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   final ManagerData _m = ManagerData.instance;
+  final AppLanguageService _language = AppLanguageService.instance;
   final TextEditingController _headerSearchController = TextEditingController();
   late int _railIndex;
   bool _sidebarExpanded = true;
@@ -83,6 +81,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     super.initState();
     _railIndex = widget.initialIndex.clamp(0, _kSectionTitles.length - 1);
     _m.addListener(_onData);
+    _language.addListener(_onLanguageChanged);
 
     AdminSessionService.instance.reset();
     HardwareKeyboard.instance.addHandler(_onKeyEvent);
@@ -97,6 +96,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   }
 
   void _onData() => setState(() {});
+  void _onLanguageChanged() => setState(() {});
 
   @override
   void dispose() {
@@ -105,6 +105,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     _headerSearchController.dispose();
     _lockPinController.dispose();
     _m.removeListener(_onData);
+    _language.removeListener(_onLanguageChanged);
     super.dispose();
   }
 
@@ -248,6 +249,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Listener(
       onPointerDown: (_) => _onPointerActivity(),
       onPointerMove: (_) => _onPointerActivity(),
@@ -255,7 +257,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       child: Stack(
         children: [
           Scaffold(
-            backgroundColor: AppColors.beige,
+            backgroundColor: scheme.surface,
             body: Row(
               children: [
                 ClipRect(
@@ -274,7 +276,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ManagerTopBar(
-                        sectionTitle: _kSectionTitles[_railIndex],
+                        sectionTitle: AppLanguageService.instance.t(
+                          _kSectionTitles[_railIndex].sq,
+                          _kSectionTitles[_railIndex].en,
+                        ),
                         m: _m,
                       ),
                       Expanded(
@@ -283,8 +288,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: ConstrainedBox(
-                              constraints:
-                                  const BoxConstraints(maxWidth: 1440),
+                              constraints: const BoxConstraints(maxWidth: 1440),
                               child: _buildSection(),
                             ),
                           ),
@@ -340,5 +344,4 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         return const SizedBox.shrink();
     }
   }
-
 }

@@ -84,7 +84,9 @@ class _MenuPanelState extends State<MenuPanel> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.negativeText),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.negativeText,
+            ),
             child: const Text('Fshi'),
           ),
         ],
@@ -111,11 +113,19 @@ class _MenuPanelState extends State<MenuPanel> {
   ) async {
     await showDialog<void>(
       context: context,
-      builder: (ctx) => _EditProductDialog(
-        catId: catId,
-        product: p,
-        manager: widget.m,
-      ),
+      builder: (ctx) =>
+          _EditProductDialog(catId: catId, product: p, manager: widget.m),
+    );
+  }
+
+  Widget _priceField(String catId) {
+    return TextField(
+      controller: _prodPrice,
+      decoration: inputDeco('0.00', prefix: '€ '),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => _addProduct(catId),
     );
   }
 
@@ -206,126 +216,223 @@ class _MenuPanelState extends State<MenuPanel> {
         ),
         const SizedBox(height: 28),
 
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.borderSubtle(0.12)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Shto produkt',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreenText,
+        DashboardSectionCard(
+          padding: EdgeInsets.zero,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 720;
+              final scheme = Theme.of(context).colorScheme;
+              final image = GestureDetector(
+                onTap: _pickNewImage,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Container(
+                    width: compact ? double.infinity : 148,
+                    height: compact ? 148 : 188,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          scheme.primary.withValues(alpha: 0.14),
+                          scheme.primary.withValues(alpha: 0.04),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: scheme.primary.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: _newProductImage != null
+                          ? productImage(
+                              _newProductImage,
+                              width: compact ? double.infinity : 148,
+                              height: compact ? 148 : 188,
+                              fit: BoxFit.cover,
+                              placeholder: () => const _ImagePlaceholder(),
+                            )
+                          : const _ImagePlaceholder(),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              InputDecorator(
-                decoration: inputDeco('Kategoria'),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: catValue,
+              );
+
+              final form = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Detajet e pijes',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Krijo një artikull të ri për menunë e POS-it.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _MenuFieldLabel(
+                    icon: Icons.category_outlined,
+                    text: 'Kategoria',
+                  ),
+                  const SizedBox(height: 7),
+                  DropdownButtonFormField<String>(
+                    initialValue: catValue,
                     isExpanded: true,
+                    decoration: inputDeco('Zgjidh kategorinë'),
                     items: [
                       for (final c in cats)
                         DropdownMenuItem(value: c.id, child: Text(c.name)),
                     ],
                     onChanged: (v) => setState(() => _selectedCatId = v),
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: _pickNewImage,
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: Tooltip(
-                        message: 'Zgjidh foton',
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: AppColors.lightGreenBg,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.primaryGreen.withValues(
-                                alpha: 0.3,
-                              ),
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(9),
-                            child: _newProductImage != null
-                                ? productImage(
-                                    _newProductImage,
-                                    width: 52,
-                                    height: 52,
-                                    fit: BoxFit.cover,
-                                    placeholder: () => const Icon(
-                                      Icons.add_photo_alternate_outlined,
-                                      size: 22,
-                                      color: AppColors.primaryGreen,
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.add_photo_alternate_outlined,
-                                    size: 22,
-                                    color: AppColors.primaryGreen,
-                                  ),
-                          ),
-                        ),
-                      ),
+                  const SizedBox(height: 14),
+                  if (compact) ...[
+                    _MenuFieldLabel(
+                      icon: Icons.local_bar_outlined,
+                      text: 'Emri i pijes',
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
+                    const SizedBox(height: 7),
+                    TextField(
                       controller: _prodName,
-                      decoration: inputDeco('Emri i produktit'),
+                      decoration: inputDeco('p.sh. Espresso, Cola, Mojito'),
                       textInputAction: TextInputAction.next,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    width: 110,
-                    child: TextField(
-                      controller: _prodPrice,
-                      decoration: inputDeco('Çmimi'),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                    const SizedBox(height: 14),
+                    _MenuFieldLabel(icon: Icons.euro_outlined, text: 'Çmimi'),
+                    const SizedBox(height: 7),
+                    _priceField(catValue),
+                  ] else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _MenuFieldLabel(
+                                icon: Icons.local_bar_outlined,
+                                text: 'Emri i pijes',
+                              ),
+                              const SizedBox(height: 7),
+                              TextField(
+                                controller: _prodName,
+                                decoration: inputDeco(
+                                  'p.sh. Espresso, Cola, Mojito',
+                                ),
+                                textInputAction: TextInputAction.next,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        SizedBox(
+                          width: 142,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _MenuFieldLabel(
+                                icon: Icons.euro_outlined,
+                                text: 'Çmimi',
+                              ),
+                              const SizedBox(height: 7),
+                              _priceField(catValue),
+                            ],
+                          ),
+                        ),
                       ],
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _addProduct(catValue),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
+                  const SizedBox(height: 18),
+                  FilledButton.icon(
                     onPressed: () => _addProduct(catValue),
+                    icon: const Icon(Icons.add_rounded, size: 20),
+                    label: const Text('Shto pijen në menu'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: AppColors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
+                      minimumSize: const Size.fromHeight(50),
+                      backgroundColor: scheme.primary,
+                      foregroundColor: scheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: const Text('Shto'),
                   ),
                 ],
-              ),
-            ],
+              );
+
+              return Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: scheme.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.local_bar_rounded,
+                            color: scheme.primary,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Shto pije të re',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                              Text(
+                                'Plotëso informacionin dhe personalizo foton.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    if (compact) ...[
+                      image,
+                      const SizedBox(height: 22),
+                      form,
+                    ] else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          image,
+                          const SizedBox(width: 24),
+                          Expanded(child: form),
+                        ],
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(height: 32),
@@ -341,6 +448,64 @@ class _MenuPanelState extends State<MenuPanel> {
           ),
           const SizedBox(height: 20),
         ],
+      ],
+    );
+  }
+}
+
+class _MenuFieldLabel extends StatelessWidget {
+  const _MenuFieldLabel({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_photo_alternate_outlined,
+          size: 34,
+          color: scheme.primary,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Shto foto',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: scheme.primary,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'Opsionale',
+          style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant),
+        ),
       ],
     );
   }
@@ -406,18 +571,18 @@ class _EditProductDialogState extends State<_EditProductDialog> {
   }
 
   Widget _noImageBox() => Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: AppColors.lightGreenBg,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Icon(
-          Icons.hide_image_outlined,
-          size: 28,
-          color: AppColors.lightGreenText,
-        ),
-      );
+    width: 64,
+    height: 64,
+    decoration: BoxDecoration(
+      color: AppColors.lightGreenBg,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: const Icon(
+      Icons.hide_image_outlined,
+      size: 28,
+      color: AppColors.lightGreenText,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -525,4 +690,3 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     );
   }
 }
-

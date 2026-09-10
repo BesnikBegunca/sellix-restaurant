@@ -83,6 +83,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final m = widget.m;
 
     final profDay = m.profitToday;
@@ -91,7 +92,11 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
     final totalSales = m.revenueThisMonth;
 
     final selRevenues = [m.revenueToday, m.revenueThisWeek, m.revenueThisMonth];
-    final selExpenses = [m.expensesToday, m.expensesThisWeek, m.expensesThisMonth];
+    final selExpenses = [
+      m.expensesToday,
+      m.expensesThisWeek,
+      m.expensesThisMonth,
+    ];
     final selProfits = [profDay, profWeek, profMonth];
     final selRev = selRevenues[_tab];
     final selExp = selExpenses[_tab];
@@ -102,8 +107,8 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
     final avgDaily = _tab == 0
         ? profDay
         : _tab == 1
-            ? profWeek / 7
-            : profMonth / daysInMonth;
+        ? profWeek / 7
+        : profMonth / daysInMonth;
     final margin = selRev > 0 ? (selProfit / selRev * 100) : 0.0;
 
     final spots = _buildSpots(m);
@@ -171,7 +176,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
             boxShadow: const [
@@ -214,11 +219,9 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                 (2, 'Mujore'),
                               ])
                                 GestureDetector(
-                                  onTap: () =>
-                                      setState(() => _tab = entry.$1),
+                                  onTap: () => setState(() => _tab = entry.$1),
                                   child: AnimatedContainer(
-                                    duration:
-                                        const Duration(milliseconds: 150),
+                                    duration: const Duration(milliseconds: 150),
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 8,
@@ -227,8 +230,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                       color: _tab == entry.$1
                                           ? AppColors.primaryGreen
                                           : Colors.transparent,
-                                      borderRadius:
-                                          BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       entry.$2,
@@ -267,11 +269,11 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                 show: true,
                                 getDotPainter: (_, __, ___, ____) =>
                                     FlDotCirclePainter(
-                                  radius: 4,
-                                  color: AppColors.primaryGreen,
-                                  strokeWidth: 2,
-                                  strokeColor: AppColors.white,
-                                ),
+                                      radius: 4,
+                                      color: AppColors.primaryGreen,
+                                      strokeWidth: 2,
+                                      strokeColor: AppColors.white,
+                                    ),
                               ),
                               belowBarData: BarAreaData(
                                 show: true,
@@ -341,8 +343,8 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                   .map(
                                     (s) => LineTooltipItem(
                                       '${s.y.toStringAsFixed(0)}€',
-                                      const TextStyle(
-                                        color: AppColors.white,
+                                      TextStyle(
+                                        color: scheme.surfaceContainerHighest,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -398,7 +400,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: scheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: AppColors.lightGreenBorder),
                       ),
@@ -435,8 +437,9 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  AppColors.lightGreenBg.withValues(alpha: 0.8),
+                              color: AppColors.lightGreenBg.withValues(
+                                alpha: 0.8,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: ProfitBreakdownRow(
@@ -484,7 +487,9 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                selRev > 0 ? '+${margin.toStringAsFixed(1)}%' : '—',
+                                selRev > 0
+                                    ? '+${margin.toStringAsFixed(1)}%'
+                                    : '—',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.primaryGreen,

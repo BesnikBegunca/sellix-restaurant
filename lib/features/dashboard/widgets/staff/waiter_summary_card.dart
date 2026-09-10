@@ -19,6 +19,7 @@ class WaiterSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final worked = m.workedDaysInMonth(
       waiter.name,
       viewMonth.year,
@@ -38,8 +39,7 @@ class WaiterSummaryCard extends StatelessWidget {
     );
     final totalAdv = m.totalAdvancesFor(waiter.name, periodStart, periodEnd);
     final net = gross - totalAdv;
-    final initial =
-        waiter.name.isNotEmpty ? waiter.name[0].toUpperCase() : '?';
+    final initial = waiter.name.isNotEmpty ? waiter.name[0].toUpperCase() : '?';
 
     return InkWell(
       onTap: onTap,
@@ -58,8 +58,8 @@ class WaiterSummaryCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   initial,
-                  style: const TextStyle(
-                    color: AppColors.white,
+                  style: TextStyle(
+                    color: scheme.surfaceContainerHighest,
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
                   ),
@@ -95,12 +95,18 @@ class WaiterSummaryCard extends StatelessWidget {
             const SizedBox(width: 16),
             Row(
               children: [
-                _statCell('Bruto', '${gross.toStringAsFixed(0)}€',
-                    AppColors.darkGreenText),
+                _statCell(
+                  'Bruto',
+                  '${gross.toStringAsFixed(0)}€',
+                  AppColors.darkGreenText,
+                ),
                 const SizedBox(width: 20),
                 if (totalAdv > 0)
-                  _statCell('Avans', '-${totalAdv.toStringAsFixed(0)}€',
-                      AppColors.softRed),
+                  _statCell(
+                    'Avans',
+                    '-${totalAdv.toStringAsFixed(0)}€',
+                    AppColors.softRed,
+                  ),
                 if (totalAdv > 0) const SizedBox(width: 20),
                 _statCell(
                   'Neto',

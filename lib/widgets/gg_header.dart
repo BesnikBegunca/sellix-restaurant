@@ -89,12 +89,13 @@ class GgAppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       height: 88,
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        border: Border(bottom: BorderSide(color: AppColors.borderSubtle(0.1))),
+        color: scheme.surface,
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Row(
         children: [
@@ -108,10 +109,10 @@ class GgAppHeader extends StatelessWidget {
           ],
           Text(
             title ?? ManagerData.instance.companyName ?? 'POS System',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w500,
-              color: AppColors.darkGreenText,
+              color: scheme.onSurface,
             ),
           ),
           const Expanded(child: Center(child: _DateLabel())),
@@ -127,9 +128,10 @@ class _DateLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Text(
       GgAppHeader.formattedDate(DateTime.now()),
-      style: const TextStyle(fontSize: 16, color: AppColors.mediumGreenText),
+      style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
     );
   }
 }
@@ -141,25 +143,22 @@ class _UserSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Container(
           width: 36,
           height: 36,
-          decoration: const BoxDecoration(
-            color: AppColors.lightGreenBg,
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest,
             shape: BoxShape.circle,
           ),
-          child: const Icon(
-            Icons.person_outline,
-            color: AppColors.primaryGreen,
-            size: 22,
-          ),
+          child: Icon(Icons.person_outline, color: scheme.primary, size: 22),
         ),
         const SizedBox(width: 12),
         Text(
           userName ?? 'Cashier',
-          style: const TextStyle(fontSize: 16, color: AppColors.darkGreenText),
+          style: TextStyle(fontSize: 16, color: scheme.onSurface),
         ),
       ],
     );

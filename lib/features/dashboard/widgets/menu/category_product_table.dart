@@ -35,6 +35,7 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
   @override
   Widget build(BuildContext context) {
     final c = widget.category;
+    final scheme = Theme.of(context).colorScheme;
     return DragTarget<ProductDrag>(
       onWillAcceptWithDetails: (d) => d.data.fromCatId != widget.category.id,
       onAcceptWithDetails: (d) =>
@@ -45,7 +46,7 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
           decoration: BoxDecoration(
             color: isOver
                 ? AppColors.lightGreenBg.withValues(alpha: 0.6)
-                : AppColors.white,
+                : scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isOver
@@ -80,10 +81,10 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                       Expanded(
                         child: Text(
                           c.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.darkGreenText,
+                            color: scheme.onSurface,
                           ),
                         ),
                       ),
@@ -93,14 +94,14 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.lightGreenBg,
+                          color: scheme.primaryContainer,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           '${c.products.length} produkte',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.primaryGreen,
+                            color: scheme.primary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -117,9 +118,9 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                       AnimatedRotation(
                         turns: _expanded ? 0.5 : 0,
                         duration: const Duration(milliseconds: 200),
-                        child: const Icon(
+                        child: Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: AppColors.mediumGreenText,
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -135,13 +136,13 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.beige,
+                            color: scheme.surface,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Nuk ka produkte në këtë kategori.',
                             style: TextStyle(
-                              color: AppColors.lightGreenText,
+                              color: scheme.onSurfaceVariant,
                               fontSize: 13,
                             ),
                           ),
@@ -150,7 +151,7 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                     : Column(
                         children: [
                           Container(
-                            color: AppColors.lightGreenBg,
+                            color: scheme.primaryContainer,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,
                               vertical: 10,
@@ -202,14 +203,10 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                               canDelete: !DefaultMenuCatalog.isBuiltinProductId(
                                 c.products[i].id,
                               ),
-                              onMoveUp: () => widget.onReorderProduct(
-                                c.products[i].id,
-                                -1,
-                              ),
-                              onMoveDown: () => widget.onReorderProduct(
-                                c.products[i].id,
-                                1,
-                              ),
+                              onMoveUp: () =>
+                                  widget.onReorderProduct(c.products[i].id, -1),
+                              onMoveDown: () =>
+                                  widget.onReorderProduct(c.products[i].id, 1),
                               onEdit: () => widget.onEditProduct(c.products[i]),
                               onDelete: () =>
                                   widget.onDeleteProduct(c.products[i].id),

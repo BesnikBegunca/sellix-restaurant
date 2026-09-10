@@ -48,7 +48,9 @@ class ShiftPanel extends StatelessWidget {
                 : 'Nuk u printua. Zgjidh printerin te Company Settings > Printers.',
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: ok ? AppColors.primaryGreen : AppColors.darkGreenText,
+          backgroundColor: ok
+              ? AppColors.primaryGreen
+              : AppColors.darkGreenText,
         ),
       );
     }
@@ -56,7 +58,8 @@ class ShiftPanel extends StatelessWidget {
     if (context.mounted) {
       showDialog(
         context: context,
-        builder: (_) => GjendjaDialog(m: m, isClose: false, initialReport: report),
+        builder: (_) =>
+            GjendjaDialog(m: m, isClose: false, initialReport: report),
       );
     }
   }
@@ -70,6 +73,7 @@ class ShiftPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final isOpen = m.shiftOpen;
     final openedAt = m.shiftOpenedAt;
     final closedAt = m.shiftClosedAt;
@@ -91,7 +95,7 @@ class ShiftPanel extends StatelessWidget {
             final statusCard = Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: scheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isOpen
@@ -100,7 +104,11 @@ class ShiftPanel extends StatelessWidget {
                   width: isOpen ? 1.5 : 1,
                 ),
                 boxShadow: const [
-                  BoxShadow(color: Color(0x0A000000), blurRadius: 18, offset: Offset(0, 8)),
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 8),
+                  ),
                 ],
               ),
               child: Row(
@@ -115,9 +123,13 @@ class ShiftPanel extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
-                      isOpen ? Icons.play_circle_outline : Icons.stop_circle_outlined,
+                      isOpen
+                          ? Icons.play_circle_outline
+                          : Icons.stop_circle_outlined,
                       size: 32,
-                      color: isOpen ? AppColors.primaryGreen : AppColors.lightGreenText,
+                      color: isOpen
+                          ? AppColors.primaryGreen
+                          : AppColors.lightGreenText,
                     ),
                   ),
                   const SizedBox(width: 20),
@@ -128,10 +140,15 @@ class ShiftPanel extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: isOpen
-                                    ? AppColors.primaryGreen.withValues(alpha: 0.12)
+                                    ? AppColors.primaryGreen.withValues(
+                                        alpha: 0.12,
+                                      )
                                     : AppColors.lightGreenBg,
                                 borderRadius: BorderRadius.circular(100),
                               ),
@@ -142,7 +159,9 @@ class ShiftPanel extends StatelessWidget {
                                     width: 6,
                                     height: 6,
                                     decoration: BoxDecoration(
-                                      color: isOpen ? AppColors.primaryGreen : AppColors.lightGreenText,
+                                      color: isOpen
+                                          ? AppColors.primaryGreen
+                                          : AppColors.lightGreenText,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -152,7 +171,9 @@ class ShiftPanel extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: isOpen ? AppColors.primaryGreen : AppColors.lightGreenText,
+                                      color: isOpen
+                                          ? AppColors.primaryGreen
+                                          : AppColors.lightGreenText,
                                       letterSpacing: 0.8,
                                     ),
                                   ),
@@ -176,9 +197,12 @@ class ShiftPanel extends StatelessWidget {
                           isOpen && openedAt != null
                               ? 'Hapur: ${_fmtDateTime(openedAt)}'
                               : closedAt != null
-                                  ? 'Mbyllur: ${_fmtDateTime(closedAt)}'
-                                  : 'Nuk ka informacion shift.',
-                          style: const TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+                              ? 'Mbyllur: ${_fmtDateTime(closedAt)}'
+                              : 'Nuk ka informacion shift.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.lightGreenText,
+                          ),
                         ),
                       ],
                     ),
@@ -197,9 +221,17 @@ class ShiftPanel extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -209,10 +241,20 @@ class ShiftPanel extends StatelessWidget {
                   label: const Text('Mbyll gjendjen'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.softRed,
-                    side: BorderSide(color: AppColors.softRed.withValues(alpha: 0.4)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    side: BorderSide(
+                      color: AppColors.softRed.withValues(alpha: 0.4),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -242,7 +284,8 @@ class ShiftPanel extends StatelessWidget {
           children: [
             StatCard(
               title: 'Shitje',
-              value: '${m.waiterSales.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)}€',
+              value:
+                  '${m.waiterSales.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)}€',
               icon: Icons.point_of_sale_outlined,
               accentColor: AppColors.warmGold,
             ),
@@ -270,8 +313,10 @@ class ShiftPanel extends StatelessWidget {
   }
 
   static String _fmtDateTime(DateTime dt) {
-    final d = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
-    final t = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    final d =
+        '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+    final t =
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     return '$d  $t';
   }
 }

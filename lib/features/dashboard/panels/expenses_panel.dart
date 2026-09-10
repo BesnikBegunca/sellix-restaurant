@@ -109,8 +109,18 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
   }
 
   static const _monthsEn = [
-    'Jan', 'Feb', 'Mars', 'Apr', 'Maj', 'Qer',
-    'Kor', 'Gus', 'Sht', 'Tet', 'Nën', 'Dhj',
+    'Jan',
+    'Feb',
+    'Mars',
+    'Apr',
+    'Maj',
+    'Qer',
+    'Kor',
+    'Gus',
+    'Sht',
+    'Tet',
+    'Nën',
+    'Dhj',
   ];
 
   String _fmtDateLong(DateTime d) =>
@@ -118,6 +128,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final m = widget.m;
     final filtered = _filtered(m.expenses);
     final totalAll = m.expenses.fold<double>(0, (s, e) => s + e.amount);
@@ -179,7 +190,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
 
         Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: AppColors.lightGreenBorder),
             boxShadow: const [
@@ -293,13 +304,15 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                     fillColor: AppColors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.lightGreenBorder),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightGreenBorder,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.lightGreenBorder),
+                      borderSide: const BorderSide(
+                        color: AppColors.lightGreenBorder,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -491,12 +504,8 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Anulo'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Ruaj'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Ruaj')),
       ],
     );
   }
 }
-

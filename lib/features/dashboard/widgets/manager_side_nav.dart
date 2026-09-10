@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../services/app_language_service.dart';
 import '../../../widgets/gg_header.dart';
 
 class ManagerSideNav extends StatelessWidget {
@@ -19,155 +20,232 @@ class ManagerSideNav extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onLogout;
 
-  static const _items = <({IconData icon, IconData sel, String label})>[
-    (icon: Icons.dashboard_outlined, sel: Icons.dashboard,       label: 'Përmbledhje'),
-    (icon: Icons.schedule_outlined,  sel: Icons.schedule,        label: 'Gjendja'),
-    (icon: Icons.badge_outlined,     sel: Icons.badge,           label: 'Kamarierët'),
-    (icon: Icons.supervisor_account_outlined, sel: Icons.supervisor_account, label: 'Menaxherët'),
-    (icon: Icons.table_rows_outlined,sel: Icons.table_rows,      label: 'Shpenzime'),
-    (icon: Icons.trending_up_outlined,sel: Icons.trending_up,    label: 'Fitime'),
-    (icon: Icons.receipt_long_outlined, sel: Icons.receipt_long, label: 'Shitjet'),
-    (icon: Icons.emoji_events_outlined,sel: Icons.emoji_events,  label: 'Top puntor'),
-    (icon: Icons.menu_book_outlined, sel: Icons.menu_book,       label: 'Menu'),
-    (icon: Icons.grid_view_outlined, sel: Icons.grid_view,       label: 'Tavolinat'),
-    (icon: Icons.settings_outlined,  sel: Icons.settings,        label: 'Cilësimet'),
-    (icon: Icons.payments_outlined,  sel: Icons.payments,        label: 'Pagat'),
-    (icon: Icons.undo_outlined,      sel: Icons.undo,            label: 'Refund'),
-    (icon: Icons.history_outlined,   sel: Icons.history,         label: 'Historiku'),
-    (icon: Icons.security_outlined,  sel: Icons.security,        label: 'Audit'),
+  static const _items = <({IconData icon, IconData sel, String sq, String en})>[
+    (
+      icon: Icons.dashboard_outlined,
+      sel: Icons.dashboard,
+      sq: 'Përmbledhje',
+      en: 'Overview',
+    ),
+    (
+      icon: Icons.schedule_outlined,
+      sel: Icons.schedule,
+      sq: 'Gjendja',
+      en: 'Shift',
+    ),
+    (
+      icon: Icons.badge_outlined,
+      sel: Icons.badge,
+      sq: 'Kamarierët',
+      en: 'Waiters',
+    ),
+    (
+      icon: Icons.supervisor_account_outlined,
+      sel: Icons.supervisor_account,
+      sq: 'Menaxherët',
+      en: 'Managers',
+    ),
+    (
+      icon: Icons.table_rows_outlined,
+      sel: Icons.table_rows,
+      sq: 'Shpenzime',
+      en: 'Expenses',
+    ),
+    (
+      icon: Icons.trending_up_outlined,
+      sel: Icons.trending_up,
+      sq: 'Fitime',
+      en: 'Profits',
+    ),
+    (
+      icon: Icons.receipt_long_outlined,
+      sel: Icons.receipt_long,
+      sq: 'Shitjet',
+      en: 'Sales',
+    ),
+    (
+      icon: Icons.emoji_events_outlined,
+      sel: Icons.emoji_events,
+      sq: 'Top puntor',
+      en: 'Top employee',
+    ),
+    (
+      icon: Icons.menu_book_outlined,
+      sel: Icons.menu_book,
+      sq: 'Menu',
+      en: 'Menu',
+    ),
+    (
+      icon: Icons.grid_view_outlined,
+      sel: Icons.grid_view,
+      sq: 'Tavolinat',
+      en: 'Tables',
+    ),
+    (
+      icon: Icons.settings_outlined,
+      sel: Icons.settings,
+      sq: 'Cilësimet',
+      en: 'Settings',
+    ),
+    (
+      icon: Icons.payments_outlined,
+      sel: Icons.payments,
+      sq: 'Pagat',
+      en: 'Payroll',
+    ),
+    (icon: Icons.undo_outlined, sel: Icons.undo, sq: 'Refund', en: 'Refunds'),
+    (
+      icon: Icons.history_outlined,
+      sel: Icons.history,
+      sq: 'Historiku',
+      en: 'History',
+    ),
+    (
+      icon: Icons.security_outlined,
+      sel: Icons.security,
+      sq: 'Audit',
+      en: 'Audit log',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 240),
-      curve: Curves.easeOutCubic,
-      width: expanded ? 256 : 80,
-      clipBehavior: Clip.hardEdge,
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        border: Border(
-          right: BorderSide(color: AppColors.lightGreenBorder),
+    final scheme = Theme.of(context).colorScheme;
+    return ListenableBuilder(
+      listenable: AppLanguageService.instance,
+      builder: (context, _) => AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        width: expanded ? 256 : 80,
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          border: Border(right: BorderSide(color: scheme.outlineVariant)),
         ),
-      ),
-      child: ClipRect(
-        child: Column(
-          children: [
-            SizedBox(
-              height: 80,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: expanded ? 16 : 8),
-                child: expanded
-                    ? Row(
-                        children: [
-                          const GgLogoBox(size: 32, radius: 8),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Text(
-                              'Menaxher POS',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.darkGreenText,
+        child: ClipRect(
+          child: Column(
+            children: [
+              SizedBox(
+                height: 80,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: expanded ? 16 : 8),
+                  child: expanded
+                      ? Row(
+                          children: [
+                            const GgLogoBox(size: 32, radius: 8),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Menaxher POS',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: scheme.onSurface,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          _ToggleButton(
-                            expanded: expanded,
-                            onPressed: onToggle,
-                          ),
-                        ],
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const GgLogoBox(size: 28, radius: 6),
-                          const SizedBox(height: 6),
-                          _ToggleButton(
-                            expanded: expanded,
-                            onPressed: onToggle,
-                          ),
-                        ],
-                      ),
+                            _ToggleButton(
+                              expanded: expanded,
+                              onPressed: onToggle,
+                            ),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const GgLogoBox(size: 28, radius: 6),
+                            const SizedBox(height: 6),
+                            _ToggleButton(
+                              expanded: expanded,
+                              onPressed: onToggle,
+                            ),
+                          ],
+                        ),
+                ),
               ),
-            ),
 
-            const Divider(height: 1, thickness: 1, color: AppColors.lightGreenBorder),
+              Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
 
-            Expanded(
-              child: ListView.builder(
+              Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.fromLTRB(
+                    expanded ? 12 : 8,
+                    12,
+                    expanded ? 12 : 8,
+                    0,
+                  ),
+                  itemCount: _items.length,
+                  itemBuilder: (context, i) {
+                    final it = _items[i];
+                    final sel = i == selectedIndex;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: _SideNavItem(
+                        icon: sel ? it.sel : it.icon,
+                        label: AppLanguageService.instance.t(it.sq, it.en),
+                        selected: sel,
+                        expanded: expanded,
+                        onTap: () => onDestinationSelected(i),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
+              Padding(
                 padding: EdgeInsets.fromLTRB(
                   expanded ? 12 : 8,
-                  12,
+                  10,
                   expanded ? 12 : 8,
-                  0,
+                  16,
                 ),
-                itemCount: _items.length,
-                itemBuilder: (context, i) {
-                  final it = _items[i];
-                  final sel = i == selectedIndex;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: _SideNavItem(
-                      icon: sel ? it.sel : it.icon,
-                      label: it.label,
-                      selected: sel,
-                      expanded: expanded,
-                      onTap: () => onDestinationSelected(i),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const Divider(height: 1, thickness: 1, color: AppColors.lightGreenBorder),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                expanded ? 12 : 8,
-                10,
-                expanded ? 12 : 8,
-                16,
-              ),
-              child: expanded
-                  ? SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: onLogout,
-                        icon: const Icon(Icons.logout, size: 18),
-                        label: const Text('Dil'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.mediumGreenText,
-                          side: const BorderSide(color: AppColors.lightGreenBorder),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                child: expanded
+                    ? SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: onLogout,
+                          icon: const Icon(Icons.logout, size: 18),
+                          label: Text(
+                            AppLanguageService.instance.t('Dil', 'Log out'),
                           ),
-                          textStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: scheme.onSurfaceVariant,
+                            side: BorderSide(color: scheme.outlineVariant),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Tooltip(
+                        message: AppLanguageService.instance.t(
+                          'Dil',
+                          'Log out',
+                        ),
+                        child: InkWell(
+                          onTap: onLogout,
+                          borderRadius: BorderRadius.circular(12),
+                          child: const SizedBox(
+                            height: 48,
+                            width: double.infinity,
+                            child: Icon(
+                              Icons.logout,
+                              size: 20,
+                              color: AppColors.mediumGreenText,
+                            ),
                           ),
                         ),
                       ),
-                    )
-                  : Tooltip(
-                      message: 'Dil',
-                      child: InkWell(
-                        onTap: onLogout,
-                        borderRadius: BorderRadius.circular(12),
-                        child: const SizedBox(
-                          height: 48,
-                          width: double.infinity,
-                          child: Icon(
-                            Icons.logout,
-                            size: 20,
-                            color: AppColors.mediumGreenText,
-                          ),
-                        ),
-                      ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -194,10 +272,7 @@ class _SideNavItem extends StatefulWidget {
 }
 
 class _ToggleButton extends StatelessWidget {
-  const _ToggleButton({
-    required this.expanded,
-    required this.onPressed,
-  });
+  const _ToggleButton({required this.expanded, required this.onPressed});
 
   final bool expanded;
   final VoidCallback onPressed;
@@ -226,9 +301,8 @@ class _SideNavItemState extends State<_SideNavItem> {
   Widget build(BuildContext context) {
     final active = widget.selected;
     final showBg = active || _hovered;
-    final iconColor = active
-        ? AppColors.primaryGreen
-        : AppColors.mediumGreenText;
+    final scheme = Theme.of(context).colorScheme;
+    final iconColor = active ? scheme.primary : scheme.onSurfaceVariant;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -239,7 +313,9 @@ class _SideNavItemState extends State<_SideNavItem> {
           Container(
             height: 44,
             decoration: BoxDecoration(
-              color: showBg ? AppColors.lightGreenBg : Colors.transparent,
+              color: showBg
+                  ? scheme.primary.withValues(alpha: 0.12)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             clipBehavior: Clip.hardEdge,
@@ -253,7 +329,7 @@ class _SideNavItemState extends State<_SideNavItem> {
                           height: 28,
                           margin: const EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGreen,
+                            color: scheme.primary,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         )
@@ -262,11 +338,7 @@ class _SideNavItemState extends State<_SideNavItem> {
                       SizedBox(
                         width: 28,
                         child: Center(
-                          child: Icon(
-                            widget.icon,
-                            size: 20,
-                            color: iconColor,
-                          ),
+                          child: Icon(widget.icon, size: 20, color: iconColor),
                         ),
                       ),
                       Expanded(
@@ -297,7 +369,7 @@ class _SideNavItemState extends State<_SideNavItem> {
                           child: Container(
                             width: 3,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryGreen,
+                              color: scheme.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),

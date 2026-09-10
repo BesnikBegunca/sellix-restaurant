@@ -40,10 +40,17 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
     try {
       final r = await widget.m.computeShiftStatusReport();
       if (!mounted) return;
-      setState(() { _report = r; _loadError = null; _loading = false; });
+      setState(() {
+        _report = r;
+        _loadError = null;
+        _loading = false;
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(() { _loadError = e; _loading = false; });
+      setState(() {
+        _loadError = e;
+        _loading = false;
+      });
     }
   }
 
@@ -70,7 +77,10 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
           child: Center(child: CircularProgressIndicator()),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Anulo')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Anulo'),
+          ),
         ],
       );
     }
@@ -80,10 +90,16 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
         title: const Text('Gabim'),
         content: Text('$_loadError'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Mbyll')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Mbyll'),
+          ),
           FilledButton(
             onPressed: () {
-              setState(() { _loading = true; _loadError = null; });
+              setState(() {
+                _loading = true;
+                _loadError = null;
+              });
               _load();
             },
             child: const Text('Riprovo'),
@@ -113,9 +129,20 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(shiftLine, style: TextStyle(fontSize: 12, color: AppColors.mediumGreenText)),
-              Text('Përditësuar: ${_fmtTime(report.generatedAt)}',
-                  style: TextStyle(fontSize: 12, color: AppColors.mediumGreenText)),
+              Text(
+                shiftLine,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mediumGreenText,
+                ),
+              ),
+              Text(
+                'Përditësuar: ${_fmtTime(report.generatedAt)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.mediumGreenText,
+                ),
+              ),
               const SizedBox(height: 12),
               if (names.isEmpty)
                 Padding(
@@ -136,38 +163,62 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                       'Paguar: ${w.paidTotal.toStringAsFixed(2)}€ · '
                       'Hapur: ${w.openTotal.toStringAsFixed(2)}€ · '
                       'Porosi: ${w.paidOrderCount} paguar, ${w.openOrderCount} hapur',
-                      style: TextStyle(fontSize: 11, color: AppColors.mediumGreenText),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.mediumGreenText,
+                      ),
                     ),
-                    trailing: Text('${w.grandTotal.toStringAsFixed(2)}€',
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    trailing: Text(
+                      '${w.grandTotal.toStringAsFixed(2)}€',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   );
                 }),
               const Divider(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Paguar (gjithsej)',
-                      style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.mediumGreenText)),
-                  Text('${grandPaid.toStringAsFixed(2)}€',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text(
+                    'Paguar (gjithsej)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                  Text(
+                    '${grandPaid.toStringAsFixed(2)}€',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Hapur / pa paguar',
-                      style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.mediumGreenText)),
-                  Text('${grandOpen.toStringAsFixed(2)}€',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text(
+                    'Hapur / pa paguar',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.mediumGreenText,
+                    ),
+                  ),
+                  Text(
+                    '${grandOpen.toStringAsFixed(2)}€',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Totali', style: TextStyle(fontWeight: FontWeight.w700)),
-                  Text('${grandTotal.toStringAsFixed(2)}€',
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const Text(
+                    'Totali',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(
+                    '${grandTotal.toStringAsFixed(2)}€',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ],
               ),
               if (widget.isClose)
@@ -205,7 +256,8 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                       await widget.m.closeShift();
                       if (!context.mounted) return;
 
-                      final waiterTotals = closureReport.waiterGrandTotalsForPrint();
+                      final waiterTotals = closureReport
+                          .waiterGrandTotalsForPrint();
                       final printed = await ReceiptPrinter.printShiftStatus(
                         header: ShiftReceiptHeader.closed,
                         companyName: widget.m.companyName ?? 'POS System',
@@ -223,17 +275,21 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                             printed
                                 ? 'Shift-i u mbyll. Përmbledhja e të gjithë punonjësve u printua.'
                                 : 'Shift-i u mbyll, por përmbledhja nuk u printua. '
-                                    'Kontrollo printerin te Company Settings > Printers.',
+                                      'Kontrollo printerin te Company Settings > Printers.',
                           ),
                           behavior: SnackBarBehavior.floating,
-                          backgroundColor: printed ? AppColors.primaryGreen : AppColors.darkGreenText,
+                          backgroundColor: printed
+                              ? AppColors.primaryGreen
+                              : AppColors.darkGreenText,
                         ),
                       );
                     } catch (e) {
                       if (!context.mounted) return;
                       messenger.showSnackBar(
                         SnackBar(
-                          content: Text('Mbyllja dështoi (shift-i mbeti aktiv): $e'),
+                          content: Text(
+                            'Mbyllja dështoi (shift-i mbeti aktiv): $e',
+                          ),
                           behavior: SnackBarBehavior.floating,
                           backgroundColor: AppColors.darkGreenText,
                         ),
@@ -250,7 +306,10 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                 ? const SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Text('Konfirmo mbylljen'),
           ),

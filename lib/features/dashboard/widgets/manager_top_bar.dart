@@ -5,15 +5,12 @@ import 'package:flutter/material.dart';
 import '../../../manager/manager_data.dart';
 import '../../../screens/sync_diagnostics_screen.dart';
 import '../../../services/sync_status_service.dart';
+import '../../../services/app_language_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_tokens.dart';
 
 class ManagerTopBar extends StatefulWidget {
-  const ManagerTopBar({
-    super.key,
-    required this.sectionTitle,
-    required this.m,
-  });
+  const ManagerTopBar({super.key, required this.sectionTitle, required this.m});
 
   final String sectionTitle;
   final ManagerData m;
@@ -42,6 +39,7 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final now = DateTime.now();
     final timeStr =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
@@ -51,11 +49,9 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
     return Container(
       height: 80,
       padding: const EdgeInsets.symmetric(horizontal: 32),
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        border: Border(
-          bottom: BorderSide(color: AppColors.lightGreenBorder),
-        ),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Row(
         children: [
@@ -66,21 +62,24 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
               children: [
                 Text(
                   widget.sectionTitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.darkGreenText,
+                    color: scheme.onSurface,
                     height: 1.2,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'Manager Dashboard · POS System',
+                Text(
+                  AppLanguageService.instance.t(
+                    'Manager Dashboard · POS System',
+                    'Manager Dashboard · POS System',
+                  ),
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.lightGreenText,
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -182,11 +181,7 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
 }
 
 class _TopBarChip extends StatelessWidget {
-  const _TopBarChip({
-    required this.icon,
-    required this.label,
-    this.sublabel,
-  });
+  const _TopBarChip({required this.icon, required this.label, this.sublabel});
 
   final IconData icon;
   final String label;

@@ -26,6 +26,7 @@ class OrderPanel extends StatelessWidget {
   final int orderNumber;
   final List<CartLine> lines;
   final double total;
+
   /// Pagesë e lejuar: tavolinë e zënë (e hapur) ose artikuj në listë.
   final bool canPay;
   final void Function(ProductItem p, int delta) onDelta;
@@ -36,23 +37,24 @@ class OrderPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final empty = lines.isEmpty;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderSubtle(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Porosia aktuale',
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w500,
-              color: AppColors.darkGreenText,
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -60,10 +62,7 @@ class OrderPanel extends StatelessWidget {
             children: [
               Text(
                 '#${orderNumber.toString().padLeft(2, '0')}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.lightGreenText,
-                ),
+                style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
               ),
               const Spacer(),
               Container(
@@ -72,23 +71,20 @@ class OrderPanel extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.lightGreenBg,
+                  color: scheme.primaryContainer,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.table_restaurant_outlined,
                       size: 16,
-                      color: AppColors.primaryGreen,
+                      color: scheme.primary,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Tavolina $tableNumber',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.primaryGreen,
-                      ),
+                      style: TextStyle(fontSize: 14, color: scheme.primary),
                     ),
                   ],
                 ),
@@ -98,12 +94,12 @@ class OrderPanel extends StatelessWidget {
           const SizedBox(height: 24),
           Expanded(
             child: empty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'Ende pa artikuj',
                       style: TextStyle(
                         fontSize: 16,
-                        color: AppColors.lightGreenText,
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
                   )
@@ -163,4 +159,3 @@ class OrderPanel extends StatelessWidget {
     );
   }
 }
-

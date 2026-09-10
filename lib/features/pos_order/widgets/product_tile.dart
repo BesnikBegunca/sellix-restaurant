@@ -20,6 +20,7 @@ class _ProductTileState extends State<ProductTile> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -31,7 +32,7 @@ class _ProductTileState extends State<ProductTile> {
           transform: Matrix4.translationValues(0, _hover ? -4 : 0, 0),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: AppColors.borderSubtle(_hover ? 0.3 : 0.1),
@@ -91,18 +92,18 @@ class _ProductTileState extends State<ProductTile> {
                                 widget.product.name,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.darkGreenText,
+                                  color: scheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 '${widget.product.price.toStringAsFixed(2)}€',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: AppColors.lightGreenText,
+                                  color: scheme.onSurfaceVariant,
                                 ),
                               ),
                             ],

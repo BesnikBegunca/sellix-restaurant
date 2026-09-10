@@ -15,6 +15,7 @@ import 'services/activation_state_controller.dart';
 import 'services/license_gate_service.dart';
 import 'services/app_language_service.dart';
 import 'theme/app_colors.dart';
+import 'theme/theme_mode_controller.dart';
 import 'widgets/license_blocked_overlay.dart';
 
 void main() async {
@@ -31,6 +32,7 @@ void main() async {
     await Future<void>.delayed(const Duration(milliseconds: 50));
   }
   await AppLanguageService.instance.load();
+  await ThemeModeController.instance.load();
 
   // Restore activation from SQLite metadata + secure token store (survives hot restart).
   final activationRestored = await ActivationService.instance
@@ -73,12 +75,14 @@ class PosSystemApp extends StatefulWidget {
 class _PosSystemAppState extends State<PosSystemApp> {
   final _activation = ActivationStateController.instance;
   final _language = AppLanguageService.instance;
+  final _themeMode = ThemeModeController.instance;
   @override
   void initState() {
     super.initState();
     ManagerData.instance.addListener(_onData);
     _activation.addListener(_onActivationChanged);
     _language.addListener(_onLanguageChanged);
+    _themeMode.addListener(_onThemeChanged);
   }
 
   @override
@@ -86,6 +90,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
     ManagerData.instance.removeListener(_onData);
     _activation.removeListener(_onActivationChanged);
     _language.removeListener(_onLanguageChanged);
+    _themeMode.removeListener(_onThemeChanged);
     super.dispose();
   }
 
@@ -93,6 +98,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
 
   void _onActivationChanged() => setState(() {});
   void _onLanguageChanged() => setState(() {});
+  void _onThemeChanged() => setState(() {});
 
   Widget _buildHome() {
     if (_activation.isActivated) {
@@ -107,6 +113,9 @@ class _PosSystemAppState extends State<PosSystemApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      key: ValueKey<String>(
+        'pos-system-${_themeMode.isDark ? 'dark' : 'light'}',
+      ),
       builder: (context, child) =>
           LicenseBlockedOverlay(child: child ?? const SizedBox.shrink()),
       title: 'POS System',
@@ -118,6 +127,8 @@ class _PosSystemAppState extends State<PosSystemApp> {
         GlobalWidgetsLocalizations.delegate,
       ],
       debugShowCheckedModeBanner: false,
+      themeMode: _themeMode.isDark ? ThemeMode.dark : ThemeMode.light,
+      themeAnimationDuration: Duration.zero,
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AppColors.beige,
@@ -171,6 +182,8 @@ class _PosSystemAppState extends State<PosSystemApp> {
               borderRadius: BorderRadius.circular(12),
             ),
             textStyle: const TextStyle(
+              inherit: false,
+              fontFamily: 'DMSans',
               fontSize: 15,
               fontWeight: FontWeight.w500,
             ),
@@ -185,6 +198,8 @@ class _PosSystemAppState extends State<PosSystemApp> {
               borderRadius: BorderRadius.circular(12),
             ),
             textStyle: const TextStyle(
+              inherit: false,
+              fontFamily: 'DMSans',
               fontSize: 15,
               fontWeight: FontWeight.w500,
             ),
@@ -199,6 +214,8 @@ class _PosSystemAppState extends State<PosSystemApp> {
               borderRadius: BorderRadius.circular(12),
             ),
             textStyle: const TextStyle(
+              inherit: false,
+              fontFamily: 'DMSans',
               fontSize: 15,
               fontWeight: FontWeight.w500,
             ),
@@ -221,7 +238,11 @@ class _PosSystemAppState extends State<PosSystemApp> {
         snackBarTheme: const SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.primaryGreen,
-          contentTextStyle: TextStyle(color: AppColors.white),
+          contentTextStyle: TextStyle(
+            inherit: false,
+            fontFamily: 'DMSans',
+            color: AppColors.white,
+          ),
         ),
         dialogTheme: DialogThemeData(
           backgroundColor: AppColors.lightGreenBg,
@@ -232,15 +253,139 @@ class _PosSystemAppState extends State<PosSystemApp> {
             borderRadius: BorderRadius.circular(20),
           ),
           titleTextStyle: const TextStyle(
+            inherit: false,
+            fontFamily: 'DMSans',
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.darkGreenText,
-            fontFamily: 'DMSans',
           ),
           contentTextStyle: const TextStyle(
+            inherit: false,
+            fontFamily: 'DMSans',
             fontSize: 14,
             color: AppColors.darkGreenText,
+          ),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0B1220),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF4F83CC),
+          brightness: Brightness.dark,
+          primary: const Color(0xFF7EA6E0),
+          onPrimary: Colors.white,
+          secondary: const Color(0xFF91A9D2),
+          surface: const Color(0xFF111C2E),
+          onSurface: const Color(0xFFE7EEF9),
+          surfaceContainerHighest: const Color(0xFF1A2940),
+          outline: const Color(0xFF3A5275),
+        ),
+        fontFamily: 'DMSans',
+        textTheme: const TextTheme().apply(
+          fontFamily: 'DMSans',
+          bodyColor: Color(0xFFE7EEF9),
+          displayColor: Color(0xFFE7EEF9),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF7EA6E0),
+            foregroundColor: Colors.white,
+            minimumSize: const Size(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              inherit: false,
+              fontFamily: 'DMSans',
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF7EA6E0),
+            foregroundColor: Colors.white,
+            minimumSize: const Size(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              inherit: false,
+              fontFamily: 'DMSans',
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFFB7CCF0),
+            minimumSize: const Size(0, 48),
+            side: const BorderSide(color: Color(0xFF3A5275)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              inherit: false,
+              fontFamily: 'DMSans',
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF16243A),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF3A5275)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF3A5275)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF7EA6E0), width: 2),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          color: const Color(0xFF111C2E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: Color(0xFF3A5275)),
+          ),
+          margin: EdgeInsets.zero,
+        ),
+        dividerTheme: const DividerThemeData(color: Color(0xFF3A5275)),
+        snackBarTheme: const SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Color(0xFF7EA6E0),
+          contentTextStyle: TextStyle(
+            inherit: false,
+            color: Colors.white,
             fontFamily: 'DMSans',
+          ),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: const Color(0xFF111C2E),
+          surfaceTintColor: Colors.transparent,
+          titleTextStyle: const TextStyle(
+            inherit: false,
+            fontFamily: 'DMSans',
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFFE7EEF9),
+          ),
+          contentTextStyle: const TextStyle(
+            inherit: false,
+            fontFamily: 'DMSans',
+            fontSize: 14,
+            color: Color(0xFFC6D5EC),
           ),
         ),
       ),
