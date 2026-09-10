@@ -35,6 +35,13 @@ const String kEndpointSyncPull = '/sync/pull';
 /// A 409 response means a pending request already exists — treat as success.
 const String kEndpointRequestTransfer = '/licenses/request-transfer';
 
+/// POST {email, password} → {accessToken, developer}
+const String kEndpointDeveloperLogin = '/developer/auth/login';
+
+/// POST {licenseKey, days} with developer bearer token
+/// → {licenseExpiresAt, licenseKey}
+const String kEndpointDeveloperExtendLicense = '/developer/licenses/extend';
+
 /// PATCH — revoke a device record (pos_api: **SuperAdmin only** today).
 ///
 /// Desktop activation tokens cannot call this until the API allows device

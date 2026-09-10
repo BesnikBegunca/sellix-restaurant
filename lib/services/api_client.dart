@@ -76,9 +76,12 @@ class ApiClient {
     client.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token =
-              await SecureActivationTokenStore.instance.readAccessToken();
-          if (token != null && token.isNotEmpty) {
+          final token = await SecureActivationTokenStore.instance
+              .readAccessToken();
+          if (token != null &&
+              token.isNotEmpty &&
+              !options.headers.containsKey('Authorization')) {
+            options.headers['authorization'] = 'Bearer $token';
             options.headers['Authorization'] = 'Bearer $token';
             _accessToken = token;
           }

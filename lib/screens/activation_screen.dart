@@ -9,10 +9,12 @@ import '../services/background_sync_service.dart';
 import '../services/device_transfer_exception.dart';
 import '../services/local_tenant_data_service.dart';
 import '../services/runtime_config_service.dart';
+import 'developer_login_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/open_tables_activation_dialog.dart';
 import '../widgets/gg_header.dart';
 import '../models/tenant_activation_gate_result.dart';
+
 /// First-run screen shown when the device has not yet been activated.
 ///
 /// Flow: validate activation key → confirm business/branch → activate desktop.
@@ -83,7 +85,8 @@ class _ActivationScreenState extends State<ActivationScreen> {
     }
     if (_validated == null) {
       setState(
-        () => _error = 'Së pari verifikoni çelësin me butonin "Verifiko çelësin".',
+        () => _error =
+            'Së pari verifikoni çelësin me butonin "Verifiko çelësin".',
       );
       return;
     }
@@ -94,9 +97,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
 
     final newBusinessId = _validated!.businessId;
     if (newBusinessId == null || newBusinessId.isEmpty) {
-      setState(
-        () => _error = 'Serveri nuk ktheu businessId. Provoni përsëri.',
-      );
+      setState(() => _error = 'Serveri nuk ktheu businessId. Provoni përsëri.');
       return;
     }
 
@@ -198,8 +199,8 @@ class _ActivationScreenState extends State<ActivationScreen> {
           isDuplicate
               ? 'Kërkesa ekziston dhe është në pritje të aprovimit.'
               : 'Kjo licencë është përdorur më parë në një pajisje tjetër. '
-                  'Kërkesa për transferim u dërgua te SuperAdmin. '
-                  'Pas aprovimit, provo aktivizimin përsëri.',
+                    'Kërkesa për transferim u dërgua te SuperAdmin. '
+                    'Pas aprovimit, provo aktivizimin përsëri.',
         ),
         actions: [
           TextButton(
@@ -279,9 +280,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Center(
-                      child: GgLogoBox(size: 64, radius: 16),
-                    ),
+                    const Center(child: GgLogoBox(size: 64, radius: 16)),
                     const SizedBox(height: 24),
                     const Text(
                       'Aktivizimi i Sistemit',
@@ -417,6 +416,18 @@ class _ActivationScreenState extends State<ActivationScreen> {
                         child: const Text('Rivendos aktivizimin lokal'),
                       ),
                     ],
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const DeveloperLoginScreen(),
+                              ),
+                            ),
+                      icon: const Icon(Icons.engineering_outlined),
+                      label: const Text('Developer access / Hyrje developer'),
+                    ),
                   ],
                 ),
               ),
