@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../services/audit_log_service.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/theme_mode_controller.dart';
 
 // ── date filter enum ──────────────────────────────────────────────────────────
 
@@ -46,17 +47,49 @@ String auditCategoryLabel(AuditCategoryFilter cat) => switch (cat) {
   AuditCategoryFilter.security => 'Siguri',
   AuditCategoryFilter.payments => 'Pagesë',
   AuditCategoryFilter.settings => 'Cilësime',
-  AuditCategoryFilter.users    => 'Përdorues',
-  AuditCategoryFilter.all      => '',
+  AuditCategoryFilter.users => 'Përdorues',
+  AuditCategoryFilter.all => '',
 };
 
-({Color bg, Color fg}) auditCategoryBadgeStyle(AuditCategoryFilter cat) => switch (cat) {
-  AuditCategoryFilter.security => (bg: const Color(0xFFFFEBEE), fg: const Color(0xFFE53935)),
-  AuditCategoryFilter.payments => (bg: const Color(0xFFE8F5E9), fg: const Color(0xFF2E7D32)),
-  AuditCategoryFilter.settings => (bg: const Color(0xFFFFF3E0), fg: const Color(0xFFE65100)),
-  AuditCategoryFilter.users    => (bg: const Color(0xFFF5F5F5), fg: const Color(0xFF616161)),
-  AuditCategoryFilter.all      => (bg: AppColors.beige,         fg: AppColors.mediumGreenText),
-};
+/// Badge colours per audit category.
+///
+/// Light mode uses pastel fills; dark mode tints the same hue over the dark
+/// surface instead, so the badges stay readable rather than glowing.
+({Color bg, Color fg}) auditCategoryBadgeStyle(AuditCategoryFilter cat) {
+  final dark = ThemeModeController.instance.isDark;
+
+  ({Color bg, Color fg}) pair(Color lightBg, Color lightFg, Color darkFg) =>
+      dark
+      ? (bg: darkFg.withValues(alpha: 0.16), fg: darkFg)
+      : (bg: lightBg, fg: lightFg);
+
+  return switch (cat) {
+    AuditCategoryFilter.security => pair(
+      const Color(0xFFFFEBEE),
+      const Color(0xFFE53935),
+      const Color(0xFFFF7B85),
+    ),
+    AuditCategoryFilter.payments => pair(
+      const Color(0xFFE8F5E9),
+      const Color(0xFF2E7D32),
+      const Color(0xFF5FD08D),
+    ),
+    AuditCategoryFilter.settings => pair(
+      const Color(0xFFFFF3E0),
+      const Color(0xFFE65100),
+      const Color(0xFFFFA95C),
+    ),
+    AuditCategoryFilter.users => pair(
+      const Color(0xFFF5F5F5),
+      const Color(0xFF616161),
+      const Color(0xFFAFBFB5),
+    ),
+    AuditCategoryFilter.all => (
+      bg: AppColors.beige,
+      fg: AppColors.mediumGreenText,
+    ),
+  };
+}
 
 String auditLogDescription(AuditLogRow log) {
   final d = log.details;
@@ -131,48 +164,89 @@ Color auditActionColor(String action) {
 
 IconData auditActionIcon(String action) {
   switch (action) {
-    case AuditAction.saleCreated:         return Icons.receipt_outlined;
-    case AuditAction.refundCreated:       return Icons.undo_outlined;
-    case AuditAction.voidCreated:         return Icons.cancel_outlined;
-    case AuditAction.discountApplied:     return Icons.local_offer_outlined;
-    case AuditAction.manualDiscount:      return Icons.discount_outlined;
-    case AuditAction.priceOverride:       return Icons.edit_note_outlined;
-    case AuditAction.splitPayment:        return Icons.call_split_outlined;
-    case AuditAction.paymentMethodOverride: return Icons.swap_horiz_outlined;
-    case AuditAction.receiptReprinted:    return Icons.print_outlined;
-    case AuditAction.shiftOpened:         return Icons.play_circle_outline;
-    case AuditAction.shiftClosed:         return Icons.stop_circle_outlined;
-    case AuditAction.shiftReopened:       return Icons.replay_outlined;
-    case AuditAction.tableOpened:         return Icons.table_restaurant_outlined;
-    case AuditAction.tableCleared:        return Icons.table_bar_outlined;
-    case AuditAction.tableTransfer:       return Icons.move_down_outlined;
-    case AuditAction.tableMerge:          return Icons.merge_outlined;
-    case AuditAction.tableSplit:          return Icons.call_split;
-    case AuditAction.orderReopened:       return Icons.lock_open_outlined;
-    case AuditAction.itemRemoved:         return Icons.remove_circle_outline;
-    case AuditAction.cashDrawerOpened:    return Icons.point_of_sale_outlined;
-    case AuditAction.productCreated:      return Icons.add_circle_outline;
-    case AuditAction.productEdited:       return Icons.edit_outlined;
-    case AuditAction.productDeleted:      return Icons.delete_outline;
-    case AuditAction.categoryCreated:     return Icons.create_new_folder_outlined;
-    case AuditAction.categoryDeleted:     return Icons.folder_delete_outlined;
-    case AuditAction.expenseAdded:        return Icons.attach_money;
-    case AuditAction.expenseDeleted:      return Icons.money_off_outlined;
-    case AuditAction.managerLogin:        return Icons.admin_panel_settings_outlined;
-    case AuditAction.waiterLogin:         return Icons.badge_outlined;
-    case AuditAction.failedPin:           return Icons.lock_outlined;
-    case AuditAction.unauthorizedAction:  return Icons.gpp_bad_outlined;
-    case AuditAction.backupExported:      return Icons.upload_outlined;
-    case AuditAction.backupRestored:      return Icons.download_outlined;
-    case AuditAction.restoreUndone:       return Icons.history_outlined;
-    case AuditAction.failedRestore:       return Icons.error_outline;
-    case AuditAction.printerChanged:      return Icons.print_outlined;
+    case AuditAction.saleCreated:
+      return Icons.receipt_outlined;
+    case AuditAction.refundCreated:
+      return Icons.undo_outlined;
+    case AuditAction.voidCreated:
+      return Icons.cancel_outlined;
+    case AuditAction.discountApplied:
+      return Icons.local_offer_outlined;
+    case AuditAction.manualDiscount:
+      return Icons.discount_outlined;
+    case AuditAction.priceOverride:
+      return Icons.edit_note_outlined;
+    case AuditAction.splitPayment:
+      return Icons.call_split_outlined;
+    case AuditAction.paymentMethodOverride:
+      return Icons.swap_horiz_outlined;
+    case AuditAction.receiptReprinted:
+      return Icons.print_outlined;
+    case AuditAction.shiftOpened:
+      return Icons.play_circle_outline;
+    case AuditAction.shiftClosed:
+      return Icons.stop_circle_outlined;
+    case AuditAction.shiftReopened:
+      return Icons.replay_outlined;
+    case AuditAction.tableOpened:
+      return Icons.table_restaurant_outlined;
+    case AuditAction.tableCleared:
+      return Icons.table_bar_outlined;
+    case AuditAction.tableTransfer:
+      return Icons.move_down_outlined;
+    case AuditAction.tableMerge:
+      return Icons.merge_outlined;
+    case AuditAction.tableSplit:
+      return Icons.call_split;
+    case AuditAction.orderReopened:
+      return Icons.lock_open_outlined;
+    case AuditAction.itemRemoved:
+      return Icons.remove_circle_outline;
+    case AuditAction.cashDrawerOpened:
+      return Icons.point_of_sale_outlined;
+    case AuditAction.productCreated:
+      return Icons.add_circle_outline;
+    case AuditAction.productEdited:
+      return Icons.edit_outlined;
+    case AuditAction.productDeleted:
+      return Icons.delete_outline;
+    case AuditAction.categoryCreated:
+      return Icons.create_new_folder_outlined;
+    case AuditAction.categoryDeleted:
+      return Icons.folder_delete_outlined;
+    case AuditAction.expenseAdded:
+      return Icons.attach_money;
+    case AuditAction.expenseDeleted:
+      return Icons.money_off_outlined;
+    case AuditAction.managerLogin:
+      return Icons.admin_panel_settings_outlined;
+    case AuditAction.waiterLogin:
+      return Icons.badge_outlined;
+    case AuditAction.failedPin:
+      return Icons.lock_outlined;
+    case AuditAction.unauthorizedAction:
+      return Icons.gpp_bad_outlined;
+    case AuditAction.backupExported:
+      return Icons.upload_outlined;
+    case AuditAction.backupRestored:
+      return Icons.download_outlined;
+    case AuditAction.restoreUndone:
+      return Icons.history_outlined;
+    case AuditAction.failedRestore:
+      return Icons.error_outline;
+    case AuditAction.printerChanged:
+      return Icons.print_outlined;
     case AuditAction.settingChanged:
-    case AuditAction.companyNameChanged:  return Icons.settings_outlined;
-    case AuditAction.waiterAdded:         return Icons.person_add_outlined;
-    case AuditAction.waiterRemoved:       return Icons.person_remove_outlined;
-    case AuditAction.salaryChanged:       return Icons.payments_outlined;
-    default:                              return Icons.info_outline;
+    case AuditAction.companyNameChanged:
+      return Icons.settings_outlined;
+    case AuditAction.waiterAdded:
+      return Icons.person_add_outlined;
+    case AuditAction.waiterRemoved:
+      return Icons.person_remove_outlined;
+    case AuditAction.salaryChanged:
+      return Icons.payments_outlined;
+    default:
+      return Icons.info_outline;
   }
 }
 
@@ -414,8 +488,7 @@ class AuditLogCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.beige,
-        borderRadius:
-            const BorderRadius.vertical(bottom: Radius.circular(12)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
         border: Border(top: BorderSide(color: AppColors.borderSubtle(0.1))),
       ),
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -427,15 +500,17 @@ class AuditLogCard extends StatelessWidget {
             spacing: 16,
             runSpacing: 6,
             children: [
-              if (log.shiftId  != null) _chip('Shift',   '#${log.shiftId}'),
-              if (log.saleId   != null) _chip('Sale',    '#${log.saleId}'),
-              if (log.tableId  != null) _chip('Table',   '${log.tableId}'),
+              if (log.shiftId != null) _chip('Shift', '#${log.shiftId}'),
+              if (log.saleId != null) _chip('Sale', '#${log.saleId}'),
+              if (log.tableId != null) _chip('Table', '${log.tableId}'),
               _chip('Log ID', '#${log.id}'),
             ],
           ),
 
           // ── device forensics ───────────────────────────────────────────
-          if (log.deviceId != null || log.terminalName != null || log.platform != null) ...[
+          if (log.deviceId != null ||
+              log.terminalName != null ||
+              log.platform != null) ...[
             const SizedBox(height: 8),
             Text(
               'Terminal',
@@ -450,14 +525,14 @@ class AuditLogCard extends StatelessWidget {
               spacing: 16,
               runSpacing: 4,
               children: [
-                if (log.terminalName != null)
-                  _chip('Host', log.terminalName!),
-                if (log.platform != null)
-                  _chip('Platform', log.platform!),
-                if (log.appVersion != null)
-                  _chip('App', log.appVersion!),
+                if (log.terminalName != null) _chip('Host', log.terminalName!),
+                if (log.platform != null) _chip('Platform', log.platform!),
+                if (log.appVersion != null) _chip('App', log.appVersion!),
                 if (log.deviceId != null)
-                  _chip('Device', '…${log.deviceId!.substring(log.deviceId!.length > 8 ? log.deviceId!.length - 8 : 0)}'),
+                  _chip(
+                    'Device',
+                    '…${log.deviceId!.substring(log.deviceId!.length > 8 ? log.deviceId!.length - 8 : 0)}',
+                  ),
                 if (log.rowHash != null)
                   _chip('Hash', log.rowHash!.substring(0, 8)),
               ],
@@ -544,10 +619,7 @@ class AuditLogCard extends StatelessWidget {
       children: [
         Text(
           '$label: ',
-          style: TextStyle(
-            fontSize: 11,
-            color: AppColors.lightGreenText,
-          ),
+          style: TextStyle(fontSize: 11, color: AppColors.lightGreenText),
         ),
         Text(
           value,
