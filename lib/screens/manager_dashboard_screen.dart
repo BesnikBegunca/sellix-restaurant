@@ -233,8 +233,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       if (!mounted) return;
       setState(() {
         _lockErrorMsg = PinRateLimiter.instance.isLocked
-            ? 'Shumë tentativa. Provo pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.'
-            : 'PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.';
+            ? trf.tooManyAttemptsRetryIn(PinRateLimiter.instance.lockoutSecondsRemaining)
+            : trf.wrongPinAttemptsLeft(PinRateLimiter.instance.remainingAttempts);
       });
       _rebuildLockDialog?.call();
     }

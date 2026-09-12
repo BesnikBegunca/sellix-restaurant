@@ -175,7 +175,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Eksporti i support bundle dështoi: $e'),
+          content: Text(trf.supportBundleExportFailed(e)),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -196,7 +196,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'U kopjua JSON (${_failedEvents.length} ngjarje të dështuara) në clipboard.',
+            trf.copiedJsonEvents(_failedEvents.length),
           ),
           behavior: SnackBarBehavior.floating,
         ),
@@ -213,12 +213,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Rivendos aktivizimin lokal?'),
-        content: const Text(
-          'Kjo e çaktivizon vetëm këtë instalim lokal. '
-          'Të dhënat lokale të shitjeve mbeten të paprekura.\n\n'
-          'Për ta bllokuar pajisjen në server, përdorni SuperAdmin '
-          '(PATCH /devices/:id/revoke).',
-        ),
+        content: Text(tr.localDeactivateExplainer),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -266,11 +261,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(tr.pastroOutboxPambeshtetur),
-        content: const Text(
-          'Fshin nga outbox vetëm ngjarjet me entityType që pos_api '
-          'nuk i proceson (waiters, porosi, kuzhinë, etj.). '
-          'Shitjet dhe entitetet e sync-uara nuk preken.',
-        ),
+        content: Text(tr.clearUnsupportedOutboxExplainer),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -294,7 +285,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       if (!mounted) return;
       final msg = result.totalRemoved == 0
           ? tr.nukUGjetenRreshtaOutboxPambeshtetur
-          : 'U fshinë ${result.totalRemoved} rreshta outbox të pambështetur.';
+          : trf.outboxRowsRemoved(result.totalRemoved);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );

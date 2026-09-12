@@ -126,7 +126,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       _licenseKeyCtrl.clear();
       if (!mounted) return;
       _toast(
-        'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.',
+        trf.licenceExtendedUntil(license.expiresAt.toLocal().toString().split('.').first),
       );
     } catch (error) {
       if (!mounted) return;

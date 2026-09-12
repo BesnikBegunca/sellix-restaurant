@@ -151,9 +151,9 @@ class _RefundPanelState extends State<RefundPanel> {
           child: Text(
             'Order #${orderNo.toString().padLeft(3, '0')} · '
             'Tavolina ${order.sale.tableId} · '
-            '${order.sale.total.toStringAsFixed(2)}€\n\n'
-            'Fshihet vetëm ky PRINTO (${order.sale.total.toStringAsFixed(2)}€), '
-            'jo printimet e tjera të së njëjtës tavolinë.',
+            '${order.sale.total.toStringAsFixed(2)}€\n\n' +
+            trf.deleteOnlyThisPrint(order.sale.total.toStringAsFixed(2)) +
+                tr.deleteOnlyThisPrintExplainer,
           ),
         ),
         actions: [
@@ -192,7 +192,7 @@ class _RefundPanelState extends State<RefundPanel> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Fshirja dështoi: $e'),
+            content: Text(trf.deleteFailed(e)),
             backgroundColor: AppColors.negativeText,
             behavior: SnackBarBehavior.floating,
           ),
@@ -336,8 +336,8 @@ class _RefundPanelState extends State<RefundPanel> {
                   padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: Text(
-                      'Nuk ka printime për $_selectedWaiter në këtë turn.\n'
-                      'Çdo shtypje PRINTO krijon një rresht të ri këtu.',
+                      trf.noPrintsForWaiter(_selectedWaiter ?? '') +
+                          tr.cdoShtypjePrintoKrijonRreshtRi,
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.lightGreenText),
                     ),

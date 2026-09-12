@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../l10n/tr.dart';
 
 class AuditErrorCard extends StatelessWidget {
   const AuditErrorCard({
@@ -29,7 +30,7 @@ class AuditErrorCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Gabim gjatë ngarkimit: $error',
+              trf.loadFailed(error),
               style: TextStyle(color: AppColors.negativeText),
             ),
           ),

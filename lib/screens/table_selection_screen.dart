@@ -326,7 +326,7 @@ class _OccupiedCountBadge extends StatelessWidget {
             ? tr.gjithaLira
             : occupied == 1
             ? tr.k1Zene
-            : '$occupied të zëna',
+            : trf.occupiedShort(occupied),
         style: TextStyle(fontSize: 14, color: AppColors.primaryGreen),
       ),
     );

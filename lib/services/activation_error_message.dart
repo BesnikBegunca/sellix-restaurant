@@ -45,7 +45,9 @@ String _fromTransferDio(DioException e) {
     case 409:
       return tr.kerkesaEkzistonEshtePritjeAprovimit;
     default:
-      return 'Kërkesa për transferim dështoi (HTTP ${e.response?.statusCode ?? '—'}).';
+      return trf.transferRequestFailedHttp(
+        '${e.response?.statusCode ?? '—'}',
+      );
   }
 }
 
@@ -87,7 +89,7 @@ String _fromDio(DioException e) {
     case 503:
       return tr.gabimServerProvoniPerseriVone;
     default:
-      return 'Aktivizimi dështoi (HTTP ${status ?? '—'}).';
+      return trf.activationFailedHttp('${status ?? '—'}');
   }
 }
 

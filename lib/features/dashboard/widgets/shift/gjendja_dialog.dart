@@ -138,7 +138,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                 ),
               ),
               Text(
-                'Përditësuar: ${_fmtTime(report.generatedAt)}',
+                trf.updatedAt(_fmtTime(report.generatedAt)),
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.mediumGreenText,
@@ -273,7 +273,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                           content: Text(
                             printed
                                 ? tr.shiftUMbyllPermbledhjaGjithePunonjesve
-                                : 'Shift-i u mbyll, por përmbledhja nuk u printua. '
+                                : tr.shiftClosedSummaryNotPrinted +
                                       'Kontrollo printerin te Company Settings > Printers.',
                           ),
                           behavior: SnackBarBehavior.floating,
@@ -287,7 +287,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                       messenger.showSnackBar(
                         SnackBar(
                           content: Text(
-                            'Mbyllja dështoi (shift-i mbeti aktiv): $e',
+                            trf.shiftCloseFailed(e),
                           ),
                           behavior: SnackBarBehavior.floating,
                           backgroundColor: AppColors.darkGreenText,

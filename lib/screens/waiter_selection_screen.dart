@@ -213,7 +213,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                           SnackBar(
                             content: Text(
                               _language.t(
-                                'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                                trf.tooManyFailedAttemptsRetryIn(PinRateLimiter.instance.lockoutSecondsRemaining),
                                 'Too many failed attempts. Try again in ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
                               ),
                             ),
@@ -254,11 +254,11 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                         if (!mounted) return;
                         final msg = PinRateLimiter.instance.isLocked
                             ? _language.t(
-                                'Shumë tentativa të gabuara. Provo përsëri pas ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
+                                trf.tooManyFailedAttemptsRetryIn(PinRateLimiter.instance.lockoutSecondsRemaining),
                                 'Too many failed attempts. Try again in ${PinRateLimiter.instance.lockoutSecondsRemaining}s.',
                               )
                             : _language.t(
-                                'Admin PIN i gabuar. ${PinRateLimiter.instance.remainingAttempts} tentativa të mbetur.',
+                                trf.wrongAdminPinAttemptsLeft(PinRateLimiter.instance.remainingAttempts),
                                 'Incorrect admin PIN. ${PinRateLimiter.instance.remainingAttempts} attempts remaining.',
                               );
                         messenger.showSnackBar(

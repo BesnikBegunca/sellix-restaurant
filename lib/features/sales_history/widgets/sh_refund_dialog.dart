@@ -116,7 +116,7 @@ Future<void> showSHRefundDialog(
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Rimbursimi dështoi: $e'),
+          content: Text(trf.refundFailed(e)),
           backgroundColor: AppColors.negativeText,
           behavior: SnackBarBehavior.floating,
         ),

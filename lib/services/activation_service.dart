@@ -37,9 +37,9 @@ class ActivationService {
   static final ActivationService instance = ActivationService._();
 
   /// Shown on [DeviceRevokedScreen] after server-side device revoke (401).
-  static const String kDefaultServerRevokeMessage =
-      'Kjo pajisje është çaktivizuar nga administratori. '
-      'Aktivizojeni përsëri me një çelës të ri.';
+  /// Resolved per language, so it cannot be a const.
+  static String get kDefaultServerRevokeMessage =>
+      tr.deviceDeactivatedByAdmin;
 
   /// pos_api `PATCH /devices/:id/revoke` is SuperAdmin-only today.
   /// When the API allows device self-revoke, set this to `true`.

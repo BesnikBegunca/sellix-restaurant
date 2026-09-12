@@ -7,14 +7,17 @@ const Map<String, String> kDeChOverrides = {
   'anulo': 'Abbräche',
   'cilesimetFaturesURuajten': 'Quittig-Iistellige gspicheret.',
   'close': 'Schlüsse',
-  'deshironiTaVendosniKetePinPin': 'Wottsch die PIN as Administrator-PIN bruuche?',
+  'deshironiTaVendosniKetePinPin':
+      'Wottsch die PIN as Administrator-PIN bruuche?',
   'enterAdminPin': 'Admin-PIN iigäh',
   'fatura': 'Quittig',
   'faturaRimbursime': 'Quittige und Rückerstattige',
   'fshi': 'Lösche',
-  'gjuhaEkraneveMenaxheritStafit': 'Sprach für Manager- und Personal-Bildschirm.',
+  'gjuhaEkraneveMenaxheritStafit':
+      'Sprach für Manager- und Personal-Bildschirm.',
   'juFaleminderit': 'Merci vielmal!',
-  'kamariereKlikoniButoninPoshteZgjedhurEmrin': '👤 Kellner: Klick unde druf, zum din Name z wähle',
+  'kamariereKlikoniButoninPoshteZgjedhurEmrin':
+      '👤 Kellner: Klick unde druf, zum din Name z wähle',
   'klikoniPoshteZgjedhurEmrinTuaj': 'Klick unde druf, zum din Name z wähle',
   'kodiPin': 'PIN-Code',
   'kthehu': 'Zrugg',
@@ -24,7 +27,8 @@ const Map<String, String> kDeChOverrides = {
   'modalitetiNdritshem': 'Hellmodus',
   'ndrysho': 'Bearbeite',
   'ndryshoPagenDitore': 'Taglohn ändere',
-  'nukEshteKonfiguruarAsnjePinAdministratorit': 'Es isch kei Administrator-PIN iigrichtet.\\n',
+  'nukEshteKonfiguruarAsnjePinAdministratorit':
+      'Es isch kei Administrator-PIN iigrichtet.\\n',
   'nukKaKamariereEnde': 'No kei Kellner',
   'nukKaMenaxhereEnde': 'No kei Manager',
   'nukUGjetAsnjeKamarier': 'Kei Kellner gfunde',
@@ -40,11 +44,14 @@ const Map<String, String> kDeChOverrides = {
   'ruajFaturen': 'Quittig spichere',
   'shumaDuhetJete0': 'De Betrag mues > 0 sii',
   'shumaFatures': 'Quittigsbetrag',
-  'sistemShpejteThjeshteMenaxhimRestoranti': 'Es schnells und eifachs Restaurant-Managementsystem',
+  'sistemShpejteThjeshteMenaxhimRestoranti':
+      'Es schnells und eifachs Restaurant-Managementsystem',
   'tekstiPrintohetFundFatures': 'De Text, wo unde uf de Quittig druckt wird.',
-  'vendosPinAdministratoritVazhduar': 'Gib d Administrator-PIN ii, zum wiiterzfahre.',
+  'vendosPinAdministratoritVazhduar':
+      'Gib d Administrator-PIN ii, zum wiiterzfahre.',
   'zgjidhEmrinTend': '👤 Wähl din Name',
   'zgjidhKamarier': 'Wähl en Kellner.',
   'zgjidhKamarierPareTavolinatTij': 'Wähl en Kellner, zum sini Tisch z gseh.',
-  'zgjidhPamjenErretPerdorimRehatshem': 'Wähl s dunkle Design für aagnehmers Schaffe.',
+  'zgjidhPamjenErretPerdorimRehatshem':
+      'Wähl s dunkle Design für aagnehmers Schaffe.',
 };

@@ -75,8 +75,8 @@ class _MenuPanelState extends State<MenuPanel> {
         title: Text(tr.fshiKategorine2),
         content: Text(
           count > 0
-              ? 'Kategoria «${category.name}» dhe $count produkte do të fshihen përgjithmonë.'
-              : 'Kategoria «${category.name}» do të fshihet.',
+              ? trf.deleteCategoryWithProducts(category.name, count)
+              : trf.deleteCategory(category.name),
         ),
         actions: [
           TextButton(

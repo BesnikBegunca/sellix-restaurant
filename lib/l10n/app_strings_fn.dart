@@ -49,37 +49,40 @@ class AppStringsFn {
   };
 
   String openTablesOrders(int n) => switch (_l) {
-    AppLanguage.albanian => n == 1
-        ? '1 tavolinë/porosi të hapur'
-        : '$n tavolina/porosi të hapura',
-    AppLanguage.french => n == 1
-        ? '1 table/commande ouverte'
-        : '$n tables/commandes ouvertes',
-    AppLanguage.italian => n == 1
-        ? '1 tavolo/comanda aperta'
-        : '$n tavoli/comande aperte',
-    AppLanguage.german || AppLanguage.swissGerman => n == 1
-        ? '1 offener Tisch / offene Bestellung'
-        : '$n offene Tische / Bestellungen',
+    AppLanguage.albanian =>
+      n == 1 ? '1 tavolinë/porosi të hapur' : '$n tavolina/porosi të hapura',
+    AppLanguage.french =>
+      n == 1 ? '1 table/commande ouverte' : '$n tables/commandes ouvertes',
+    AppLanguage.italian =>
+      n == 1 ? '1 tavolo/comanda aperta' : '$n tavoli/comande aperte',
+    AppLanguage.german || AppLanguage.swissGerman =>
+      n == 1
+          ? '1 offener Tisch / offene Bestellung'
+          : '$n offene Tische / Bestellungen',
     _ => n == 1 ? '1 open table/order' : '$n open tables/orders',
   };
 
   String blockedDeletes(int n) => switch (_l) {
-    AppLanguage.albanian => n == 1
-        ? '1 tavolinë me porosi të hapur nuk u fshi (fatura e ruajtur).'
-        : '$n tavolina me porosi të hapura nuk u fshinë (faturat u ruajtën).',
-    AppLanguage.french => n == 1
-        ? "1 table avec une commande ouverte n'a pas été supprimée (reçu conservé)."
-        : "$n tables avec des commandes ouvertes n'ont pas été supprimées (reçus conservés).",
-    AppLanguage.italian => n == 1
-        ? '1 tavolo con una comanda aperta non è stato eliminato (ricevuta conservata).'
-        : '$n tavoli con comande aperte non sono stati eliminati (ricevute conservate).',
-    AppLanguage.german || AppLanguage.swissGerman => n == 1
-        ? '1 Tisch mit offener Bestellung wurde nicht gelöscht (Beleg behalten).'
-        : '$n Tische mit offenen Bestellungen wurden nicht gelöscht (Belege behalten).',
-    _ => n == 1
-        ? '1 table with an open order was not deleted (receipt kept).'
-        : '$n tables with open orders were not deleted (receipts kept).',
+    AppLanguage.albanian =>
+      n == 1
+          ? '1 tavolinë me porosi të hapur nuk u fshi (fatura e ruajtur).'
+          : '$n tavolina me porosi të hapura nuk u fshinë (faturat u ruajtën).',
+    AppLanguage.french =>
+      n == 1
+          ? "1 table avec une commande ouverte n'a pas été supprimée (reçu conservé)."
+          : "$n tables avec des commandes ouvertes n'ont pas été supprimées (reçus conservés).",
+    AppLanguage.italian =>
+      n == 1
+          ? '1 tavolo con una comanda aperta non è stato eliminato (ricevuta conservata).'
+          : '$n tavoli con comande aperte non sono stati eliminati (ricevute conservate).',
+    AppLanguage.german || AppLanguage.swissGerman =>
+      n == 1
+          ? '1 Tisch mit offener Bestellung wurde nicht gelöscht (Beleg behalten).'
+          : '$n Tische mit offenen Bestellungen wurden nicht gelöscht (Belege behalten).',
+    _ =>
+      n == 1
+          ? '1 table with an open order was not deleted (receipt kept).'
+          : '$n tables with open orders were not deleted (receipts kept).',
   };
 
   String tableCountRaised(int target) => switch (_l) {
@@ -91,13 +94,11 @@ class AppStringsFn {
       'Il numero è stato portato a $target — ci sono tavoli aperti che non possono essere rimossi.',
     AppLanguage.german || AppLanguage.swissGerman =>
       'Die Anzahl wurde auf $target erhöht — offene Tische können nicht entfernt werden.',
-    _ =>
-      'The count was raised to $target — open tables cannot be removed.',
+    _ => 'The count was raised to $target — open tables cannot be removed.',
   };
 
   String openTablesFound(String countLabel, String totalLabel) => switch (_l) {
-    AppLanguage.albanian =>
-      'Janë gjetur $countLabel me total $totalLabel €. ',
+    AppLanguage.albanian => 'Janë gjetur $countLabel me total $totalLabel €. ',
     AppLanguage.french =>
       'Trouvé : $countLabel pour un total de $totalLabel €. ',
     AppLanguage.italian =>
@@ -128,14 +129,15 @@ class AppStringsFn {
 
   String deleteCategoryWithProducts(String name, int count) => switch (_l) {
     AppLanguage.albanian =>
-      'Kategoria «$name» dhe $count produkte do të fshihen.',
+      'Kategoria «$name» dhe $count produkte do të fshihen përgjithmonë.',
     AppLanguage.french =>
-      'La catégorie « $name » et $count produits seront supprimés.',
+      'La catégorie « $name » et $count produits seront définitivement supprimés.',
     AppLanguage.italian =>
-      'La categoria «$name» e $count prodotti verranno eliminati.',
+      'La categoria «$name» e $count prodotti verranno eliminati definitivamente.',
     AppLanguage.german || AppLanguage.swissGerman =>
-      'Die Kategorie „$name“ und $count Produkte werden gelöscht.',
-    _ => 'The category "$name" and $count products will be deleted.',
+      'Die Kategorie „$name“ und $count Produkte werden endgültig gelöscht.',
+    _ =>
+      'The category "$name" and $count products will be permanently deleted.',
   };
 
   String deleteCategory(String name) => switch (_l) {
@@ -217,8 +219,8 @@ class AppStringsFn {
     AppLanguage.albanian => 'Aktivizimi dështoi (HTTP $status).',
     AppLanguage.french => "L'activation a échoué (HTTP $status).",
     AppLanguage.italian => "L'attivazione è fallita (HTTP $status).",
-    AppLanguage.german ||
-    AppLanguage.swissGerman => 'Die Aktivierung ist fehlgeschlagen (HTTP $status).',
+    AppLanguage.german || AppLanguage.swissGerman =>
+      'Die Aktivierung ist fehlgeschlagen (HTTP $status).',
     _ => 'Activation failed (HTTP $status).',
   };
 
@@ -262,8 +264,8 @@ class AppStringsFn {
       'PIN administrateur incorrect. $attempts tentatives restantes.',
     AppLanguage.italian =>
       'PIN amministratore errato. $attempts tentativi rimasti.',
-    AppLanguage.german || AppLanguage.swissGerman =>
-      'Falsche Admin-PIN. Noch $attempts Versuche.',
+    AppLanguage.german ||
+    AppLanguage.swissGerman => 'Falsche Admin-PIN. Noch $attempts Versuche.',
     _ => 'Incorrect admin PIN. $attempts attempts remaining.',
   };
 
@@ -281,8 +283,7 @@ class AppStringsFn {
       'Shumë tentativa të gabuara. Provo përsëri pas ${seconds}s.',
     AppLanguage.french =>
       'Trop de tentatives échouées. Réessayez dans ${seconds}s.',
-    AppLanguage.italian =>
-      'Troppi tentativi falliti. Riprova tra ${seconds}s.',
+    AppLanguage.italian => 'Troppi tentativi falliti. Riprova tra ${seconds}s.',
     AppLanguage.german || AppLanguage.swissGerman =>
       'Zu viele Fehlversuche. Erneut versuchen in ${seconds}s.',
     _ => 'Too many failed attempts. Try again in ${seconds}s.',
@@ -324,7 +325,7 @@ class AppStringsFn {
 
   // ── Failures with a raw error tail ────────────────────────────────────────
 
-  String _failed(String what, Object e) => '$what: $e';
+  String _failed(String what, Object? e) => '$what: $e';
 
   String paymentFailed(Object e) => _failed(switch (_l) {
     AppLanguage.albanian => 'Pagesa dështoi',
@@ -351,7 +352,7 @@ class AppStringsFn {
     _ => 'Delete failed',
   }, e);
 
-  String loadFailed(Object e) => _failed(switch (_l) {
+  String loadFailed(Object? e) => _failed(switch (_l) {
     AppLanguage.albanian => 'Gabim gjatë ngarkimit',
     AppLanguage.french => 'Erreur lors du chargement',
     AppLanguage.italian => 'Errore durante il caricamento',
@@ -431,8 +432,8 @@ class AppStringsFn {
     AppLanguage.albanian => 'Fshihet vetëm ky PRINTO ($total€), ',
     AppLanguage.french => 'Seule cette IMPRESSION ($total €) sera supprimée, ',
     AppLanguage.italian => 'Verrà eliminata solo questa STAMPA ($total €), ',
-    AppLanguage.german || AppLanguage.swissGerman =>
-      'Nur dieser DRUCK ($total €) wird gelöscht, ',
+    AppLanguage.german ||
+    AppLanguage.swissGerman => 'Nur dieser DRUCK ($total €) wird gelöscht, ',
     _ => 'Only this PRINT ($total€) will be deleted, ',
   };
 

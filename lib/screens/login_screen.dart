@@ -1103,7 +1103,7 @@ class _LicenseExpiryChip extends StatelessWidget {
     if (daysRemaining < 0) return 'Licenca juaj ka skaduar';
     if (daysRemaining == 0) return 'Licenca juaj skadon: sot';
     if (daysRemaining == 1) return tr.licencaJuajSkadon1Dite;
-    return 'Licenca juaj skadon: $daysRemaining ditë';
+    return trf.licenceExpiresInDays(daysRemaining);
   }
 
   @override

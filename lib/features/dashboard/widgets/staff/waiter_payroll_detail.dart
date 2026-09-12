@@ -416,7 +416,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Ditë të punuara: $worked / $daysInMonth  •  ${_monthNames[month.month - 1]} ${month.year}',
+                  trf.daysWorkedOf(worked, daysInMonth, '${_monthNames[month.month - 1]} ${month.year}'),
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.primaryGreen,
@@ -491,7 +491,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                   else
                     Text(
                       rate > 0
-                          ? '${rate.toStringAsFixed(2)}€/ditë'
+                          ? trf.ratePerDay(rate.toStringAsFixed(2))
                           : 'E pacaktuar',
                       style: TextStyle(
                         fontSize: 14,

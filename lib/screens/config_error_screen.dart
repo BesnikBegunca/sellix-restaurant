@@ -22,8 +22,7 @@ class ConfigErrorScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '1. Krijoni skedarin app_config.json në të njëjtin folder '
-                'ku ndodhet ekzekutuesi i aplikacionit (pos_system.exe).',
+                tr.configStep1,
               ),
               SizedBox(height: 12),
               Text('2. Vendosni URL-n e production (pa localhost), p.sh.:'),
@@ -35,10 +34,7 @@ class ConfigErrorScreen extends StatelessWidget {
                 style: TextStyle(fontFamily: 'monospace', fontSize: 12),
               ),
               SizedBox(height: 12),
-              Text(
-                'Ose vendosni variablin e mjedisit POS_API_BASE_URL me të njëjtin URL, '
-                'pastaj rinisni aplikacionin.',
-              ),
+              Text(tr.configStep2),
               SizedBox(height: 12),
               Text(
                 tr.instaluesiWindowsMundKopjojeAppConfig + tr.folderinInstalimitMosVendosniSekreteKete,

@@ -159,7 +159,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
         if (!mounted) return false;
         setState(() {
           _activating = false;
-          _error = 'Mbyllja e tavolinave dështoi: $e';
+          _error = trf.closeTablesFailed(e);
         });
         return false;
       }
@@ -177,8 +177,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
       if (gate.action == TenantActivationGateAction.wipeFailed) {
         setState(() {
           _error =
-              'Pastrimi i të dhënave lokale dështoi. Aktivizimi u ndal.\n'
-              '${gate.error}';
+              '${tr.pastrimiDhenaveLokaleDeshtoiAktivizimiU}${gate.error}';
         });
       }
       return false;
@@ -221,9 +220,9 @@ class _ActivationScreenState extends State<ActivationScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Rivendos aktivizimin lokal?'),
-        content: const Text(
-          'Fshin token-at dhe metadata e sinkronizimit. '
-          'Të dhënat lokale të shitjeve nuk preken.',
+        content: Text(
+          '${tr.fshinTokenatMetadataSinkronizimit} '
+          '${tr.dhenatLokaleShitjeveNukPreken}',
         ),
         actions: [
           TextButton(

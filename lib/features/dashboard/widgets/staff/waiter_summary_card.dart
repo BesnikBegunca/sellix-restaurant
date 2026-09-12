@@ -83,7 +83,7 @@ class WaiterSummaryCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     rate > 0
-                        ? '${rate.toStringAsFixed(2)}€/ditë · $worked ditë'
+                        ? trf.ratePerDayWorked(rate.toStringAsFixed(2), worked)
                         : tr.paPageCaktuar,
                     style: TextStyle(
                       fontSize: 12,

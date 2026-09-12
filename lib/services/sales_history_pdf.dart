@@ -142,7 +142,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
         // ── top products ───────────────────────────────────────────────────
         if (a.topProducts.isNotEmpty) ...[
           pw.Text(
-            'Produktet më të shitura (top ${a.topProducts.length})',
+            trf.topProducts(a.topProducts.length),
             style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 6),

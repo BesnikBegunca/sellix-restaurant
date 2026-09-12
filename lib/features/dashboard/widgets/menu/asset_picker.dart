@@ -177,7 +177,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  '${items.length - 1} foto në asetat e aplikacionit',
+                  trf.photosInAssets(items.length - 1),
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.lightGreenText,

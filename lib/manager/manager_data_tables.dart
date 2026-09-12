@@ -46,10 +46,10 @@ extension TablesMethods on ManagerData {
     if (blockedDeletes > 0) {
       return blockedDeletes == 1
           ? tr.k1TavolinePorosiHapurNukU
-          : '$blockedDeletes tavolina me porosi të hapura nuk u fshinë (faturat u ruajtën).';
+          : trf.blockedDeletes(blockedDeletes);
     }
     if (targetCount > count.clamp(1, 48)) {
-      return 'Numri u rrit në $targetCount — ka tavolina të hapura jashtë limitit të ri.';
+      return trf.tableCountRaised(targetCount);
     }
     return null;
   }

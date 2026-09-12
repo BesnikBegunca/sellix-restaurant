@@ -250,7 +250,7 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
                     const SizedBox(height: 14),
                     if (rateLimited) ...[
                       Text(
-                        'Shumë tentativa. Provo pas ${widget.lockoutSeconds}s.',
+                        trf.tooManyAttemptsRetryIn(widget.lockoutSeconds),
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,

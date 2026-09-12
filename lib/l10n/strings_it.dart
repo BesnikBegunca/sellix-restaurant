@@ -16,7 +16,8 @@ const Map<String, String> kIt = {
   'ardhuraNeto': 'Ricavi netti',
   'ardhuraSipasKategorise': 'Ricavi per categoria',
   'ardhuraSot': 'Ricavi di oggi',
-  'ardhuratDitoreJoPorositeHapura': 'Ricavi giornalieri, escluse le comande aperte.',
+  'ardhuratDitoreJoPorositeHapura':
+      'Ricavi giornalieri, escluse le comande aperte.',
   'ardhuratSipasKategorise': 'Ricavi per categoria',
   'ardhuratTotale': 'Ricavi totali',
   'arsyejaOpsionale': 'Motivo (facoltativo)',
@@ -31,48 +32,66 @@ const Map<String, String> kIt = {
   'bilanciHapur': 'Saldo aperto',
   'biznesTjeterUZbulua': 'È stata rilevata un\'altra attività',
   'biznesi': 'Attività',
-  'biznesiEshtePezulluarKontaktoniAdministratorin': 'L\'attività è sospesa. Contatta l\'amministratore.',
+  'biznesiEshtePezulluarKontaktoniAdministratorin':
+      'L\'attività è sospesa. Contatta l\'amministratore.',
   'biznesiMeparshem': 'attività precedente',
-  'biznesitTjeterLeximetNukFiltrohenEnde': 'un\'altra attività (le letture non sono ancora filtrate per tenant).',
+  'biznesitTjeterLeximetNukFiltrohenEnde':
+      'un\'altra attività (le letture non sono ancora filtrate per tenant).',
   'brutoLarte': 'Lordo più alto',
   'burimi': 'Origine',
   'businessAddressOptional': 'Indirizzo dell\'attività (facoltativo)',
   'businessPhoneOptional': 'Telefono dell\'attività (facoltativo)',
-  'cdoRreshtMbylljeGjendjeTotaliEshte': 'Ogni riga = una chiusura turno. Il totale è il venduto di quell\'intervallo ',
-  'cdoShtypjePrintoKrijonRreshtRi': 'Ogni pressione di STAMPA crea una nuova riga qui.',
-  'cdoShtypjePrintoShfaqetVecmasP': 'Ogni pressione di STAMPA appare separatamente (es. 3 €, poi 4 €, poi 5 €). ',
+  'cdoRreshtMbylljeGjendjeTotaliEshte':
+      'Ogni riga = una chiusura turno. Il totale è il venduto di quell\'intervallo ',
+  'cdoShtypjePrintoKrijonRreshtRi':
+      'Ogni pressione di STAMPA crea una nuova riga qui.',
+  'cdoShtypjePrintoShfaqetVecmasP':
+      'Ogni pressione di STAMPA appare separatamente (es. 3 €, poi 4 €, poi 5 €). ',
   'celesiAktivizimit': 'Chiave di attivazione',
-  'celesiAktivizimitOseKodiDegesEshte': 'La chiave di attivazione o il codice filiale non è corretto.',
-  'celesiAktivizimitOseKodiDegesNuk': 'La chiave di attivazione o il codice filiale non è stato trovato.',
+  'celesiAktivizimitOseKodiDegesEshte':
+      'La chiave di attivazione o il codice filiale non è corretto.',
+  'celesiAktivizimitOseKodiDegesNuk':
+      'La chiave di attivazione o il codice filiale non è stato trovato.',
   'celesiEshteGati': 'Chiave pronta',
-  'celesiLicencesEshtePavlefshemOseKa': 'La chiave di licenza non è valida o è scaduta.',
+  'celesiLicencesEshtePavlefshemOseKa':
+      'La chiave di licenza non è valida o è scaduta.',
   'celesiUVerifikua': 'Chiave verificata',
   'cilesime': 'Impostazioni',
   'cilesimet': 'Impostazioni',
   'cilesimetFaturesURuajten': 'Impostazioni della ricevuta salvate.',
   'cilesimetKompanise': 'Impostazioni aziendali',
   'close': 'Chiudi',
-  'cmimetJaneSnapshotKohenPagesesNuk': 'I prezzi sono istantanee al momento del pagamento e non sono influenzati da modifiche successive del catalogo.',
+  'cmimetJaneSnapshotKohenPagesesNuk':
+      'I prezzi sono istantanee al momento del pagamento e non sono influenzati da modifiche successive del catalogo.',
   'cmimi': 'Prezzo',
   'confirmPassword': 'Conferma password',
   'czgjidhGjitha': 'Deseleziona tutto',
-  'dataOraMbylljesIntervaliTotaliAte': 'Data · ora di chiusura · intervallo · totale di quel turno',
-  'deshironiTaVendosniKetePinMenaxherin': 'Vuoi impostare questo PIN per il manager "Administrator"?',
-  'deshironiTaVendosniKetePinPin': 'Vuoi usare questo PIN come PIN amministratore?',
+  'dataOraMbylljesIntervaliTotaliAte':
+      'Data · ora di chiusura · intervallo · totale di quel turno',
+  'deshironiTaVendosniKetePinMenaxherin':
+      'Vuoi impostare questo PIN per il manager "Administrator"?',
+  'deshironiTaVendosniKetePinPin':
+      'Vuoi usare questo PIN come PIN amministratore?',
   'dhenaBiznesTjeterSqlite': 'Dati di un\'altra attività in SQLite',
   'dhenatAktivizimitNukJaneVlefshme': 'I dati di attivazione non sono validi.',
-  'dhenatLokaleShitjeveMbetenPaprekuraN': 'I dati di vendita locali restano intatti.\\n\\n',
-  'dhenatLokaleShitjeveNukPreken': 'I dati di vendita locali non vengono toccati.',
-  'dhenatOperativeLokaleMundJeneBiznes': 'I dati operativi locali potrebbero appartenere a un\'altra attività. ',
+  'dhenatLokaleShitjeveMbetenPaprekuraN':
+      'I dati di vendita locali restano intatti.\\n\\n',
+  'dhenatLokaleShitjeveNukPreken':
+      'I dati di vendita locali non vengono toccati.',
+  'dhenatOperativeLokaleMundJeneBiznes':
+      'I dati operativi locali potrebbero appartenere a un\'altra attività. ',
   'dite': 'Giorni',
   'ditePunuara': 'Giorni lavorati',
   'diteTUShtuar': 'Giorni da aggiungere',
-  'emriBiznesitDitetLicencesJaneDetyrueshme': 'Il nome dell\'attività e i giorni di licenza sono obbligatori.',
+  'emriBiznesitDitetLicencesJaneDetyrueshme':
+      'Il nome dell\'attività e i giorni di licenza sono obbligatori.',
   'emriKategoriseRe': 'Nome della nuova categoria',
   'emriKompaniseEshteDetyrueshem': 'Il nome dell\'azienda è obbligatorio.',
-  'emriPinJaneDetyrueshemRrogaEshte': 'Nome e PIN sono obbligatori; lo stipendio è facoltativo.',
+  'emriPinJaneDetyrueshemRrogaEshte':
+      'Nome e PIN sono obbligatori; lo stipendio è facoltativo.',
   'emriPlote': 'Nome completo',
-  'emriShfaqetFatureDashboard': 'Il nome mostrato sulle ricevute e nella dashboard.',
+  'emriShfaqetFatureDashboard':
+      'Il nome mostrato sulle ricevute e nella dashboard.',
   'encryptedCompressedEncZip': 'Cifrato + compresso (.enc.zip)',
   'encryptedEncDb': 'Cifrato (.enc.db)',
   'enterAdminPin': 'Inserisci il PIN amministratore',
@@ -91,9 +110,12 @@ const Map<String, String> kIt = {
   'fitimSot': 'Profitto oggi',
   'fitime': 'Profitti',
   'fitimi': 'Profitto',
-  'fitimiShitjeShpenzimeSipasPeriudhes': 'Profitto = vendite – spese, per periodo.',
-  'fitimiShitjetRegjistruaraKamarieretMinusShpenzimet': 'Profitto = vendite registrate dai camerieri meno le spese del periodo.',
-  'folderinInstalimitMosVendosniSekreteKete': 'nella cartella di installazione. Non inserire segreti in questo file.',
+  'fitimiShitjeShpenzimeSipasPeriudhes':
+      'Profitto = vendite – spese, per periodo.',
+  'fitimiShitjetRegjistruaraKamarieretMinusShpenzimet':
+      'Profitto = vendite registrate dai camerieri meno le spese del periodo.',
+  'folderinInstalimitMosVendosniSekreteKete':
+      'nella cartella di installazione. Non inserire segreti in questo file.',
   'fotoParakonfighuruara': 'Foto predefinite',
   'fshi': 'Elimina',
   'fshiAvancin': 'Elimina l\'anticipo',
@@ -102,13 +124,17 @@ const Map<String, String> kIt = {
   'fshiKetePrintim': 'Eliminare questa stampa?',
   'fshiPorosine': 'Elimina comanda',
   'fshiRreshtin': 'Elimina riga',
-  'fshinOutboxVetemNgjarjetEntitytypePos': 'Rimuove dall\'outbox solo gli eventi il cui entityType pos_api ',
-  'fshirjaHeqVetemAtePrintimTavolina': 'L\'eliminazione rimuove solo quella stampa dal tavolo, non tutte insieme.',
+  'fshinOutboxVetemNgjarjetEntitytypePos':
+      'Rimuove dall\'outbox solo gli eventi il cui entityType pos_api ',
+  'fshirjaHeqVetemAtePrintimTavolina':
+      'L\'eliminazione rimuove solo quella stampa dal tavolo, non tutte insieme.',
   'gabimServerProvoniPerseriVone': 'Errore del server. Riprova più tardi.',
   'gjendja': 'Turno',
-  'gjendjaStafitTavolinaveMenuseKlikoHapur': 'Stato di personale, tavoli e menu — clicca per aprire la sezione.',
+  'gjendjaStafitTavolinaveMenuseKlikoHapur':
+      'Stato di personale, tavoli e menu — clicca per aprire la sezione.',
   'gjendjaTurnit': 'Stato del turno',
-  'gjendjaUDerguaPrinter': 'Il report del turno è stato inviato alla stampante.',
+  'gjendjaUDerguaPrinter':
+      'Il report del turno è stato inviato alla stampante.',
   'gjeneruar': 'Generato il',
   'gjeresiaLetres': 'Larghezza della carta',
   'gjitha': 'Tutti',
@@ -117,10 +143,12 @@ const Map<String, String> kIt = {
   'gjithaTavolinat': 'Tutti i tavoli',
   'gjithaTransaksionet': 'Tutte le transazioni',
   'gjithaVeprimet': 'Tutte le azioni',
-  'gjithckaNdikonStafiPrinteriFaturatNdare': 'Tutto ciò che riguarda personale, stampa e ricevute — raggruppato in schede.',
+  'gjithckaNdikonStafiPrinteriFaturatNdare':
+      'Tutto ciò che riguarda personale, stampa e ricevute — raggruppato in schede.',
   'gjitheAktoret': 'Tutti gli attori',
   'gjitheKamarieret': 'Tutti i camerieri',
-  'gjuhaEkraneveMenaxheritStafit': 'Lingua usata nelle schermate manager e personale.',
+  'gjuhaEkraneveMenaxheritStafit':
+      'Lingua usata nelle schermate manager e personale.',
   'gjurmoGjithaAktivitetetSistemit': 'Traccia tutta l\'attività del sistema',
   'hapGjitha': 'Espandi tutto',
   'hapOseMbyllTurnin': 'Apri o chiudi il turno',
@@ -130,43 +158,57 @@ const Map<String, String> kIt = {
   'hapjaDeriMbylljenGjendjes': '(dall\'apertura alla chiusura del turno).',
   'hen': 'Lun',
   'hene': 'Lunedì',
-  'historikuAuditAuditLogsRuhetGjithmone': 'Lo storico di audit (audit_logs) viene sempre conservato. ',
+  'historikuAuditAuditLogsRuhetGjithmone':
+      'Lo storico di audit (audit_logs) viene sempre conservato. ',
   'historikuShitjeve': 'Cronologia vendite',
-  'instaluesiWindowsMundKopjojeAppConfig': 'L\'installer Windows può copiare app_config.json da release\\\\ ',
+  'instaluesiWindowsMundKopjojeAppConfig':
+      'L\'installer Windows può copiare app_config.json da release\\\\ ',
   'jave': 'Settimana',
   'joKopjoniAppConfigJsonKetu': 'no — copia qui app_config.json',
   'joPrintimetTjeraNjejtesTavoline': 'non le altre stampe dello stesso tavolo.',
   'juFaleminderit': 'Grazie!',
   'juLutemVendosniCelesinAktivizimit': 'Inserisci la chiave di attivazione.',
   'juLutemVendosniKodinDeges': 'Inserisci il codice filiale.',
-  'k1KrijoniSkedarinAppConfigJson': '1. Crea il file app_config.json nella stessa cartella ',
+  'k1KrijoniSkedarinAppConfigJson':
+      '1. Crea il file app_config.json nella stessa cartella ',
   'k1TavolinePorosiHapur': '1 tavolo/comanda aperta',
-  'k1TavolinePorosiHapurNukU': '1 tavolo con una comanda aperta non è stato eliminato (ricevuta conservata).',
+  'k1TavolinePorosiHapurNukU':
+      '1 tavolo con una comanda aperta non è stato eliminato (ricevuta conservata).',
   'k1Zene': '1 occupato',
   'k355691234567': '+355 69 123 4567',
   'k7DitetFundit': 'Ultimi 7 giorni',
-  'kaTavolinaPorosiHapuraPaguajOse': 'Ci sono tavoli con comande aperte. Paga o chiudi le comande ',
+  'kaTavolinaPorosiHapuraPaguajOse':
+      'Ci sono tavoli con comande aperte. Paga o chiudi le comande ',
   'kamariere': 'Camerieri',
-  'kamariereKlikoniButoninPoshteZgjedhurEmrin': '👤 Camerieri: clicca il pulsante qui sotto per scegliere il tuo nome',
+  'kamariereKlikoniButoninPoshteZgjedhurEmrin':
+      '👤 Camerieri: clicca il pulsante qui sotto per scegliere il tuo nome',
   'kamariereRegjistruar': 'Camerieri registrati',
   'kamarieret': 'Camerieri',
   'kamarieriShitjetLarta': 'Il cameriere con le vendite più alte.',
   'keniTavolinaHapura': 'Hai tavoli aperti',
-  'kerkesaEkzistonEshtePritjeAprovimit': 'La richiesta esiste ed è in attesa di approvazione.',
-  'kerkesaNukULejuaKontaktoniAdministratorin': 'La richiesta è stata rifiutata. Contatta l\'amministratore.',
-  'kerkesaTransferimUDerguaSuperadmin': 'La richiesta di trasferimento è stata inviata al SuperAdmin. ',
+  'kerkesaEkzistonEshtePritjeAprovimit':
+      'La richiesta esiste ed è in attesa di approvazione.',
+  'kerkesaNukULejuaKontaktoniAdministratorin':
+      'La richiesta è stata rifiutata. Contatta l\'amministratore.',
+  'kerkesaTransferimUDerguaSuperadmin':
+      'La richiesta di trasferimento è stata inviata al SuperAdmin. ',
   'kerkesaUAnulua': 'La richiesta è stata annullata.',
   'kerkoIdShitjeje': 'Cerca per ID vendita',
   'kerkoPorosiArtikujOseKamariere': 'Cerca comande, articoli o camerieri...',
   'kerkohetAprovimSuperadmin': 'Richiesta approvazione SuperAdmin',
   'kerkohetFjalekalim': 'Password richiesta',
   'keteMuaj': 'Questo mese',
-  'kjoCaktivizonVetemKeteInstalimLokal': 'Questo disattiva solo questa installazione locale. ',
+  'kjoCaktivizonVetemKeteInstalimLokal':
+      'Questo disattiva solo questa installazione locale. ',
   'kjoJave': 'Questa settimana',
-  'kjoLicenceEshtePerdorurParePajisje': 'Questa licenza è già stata usata su un altro dispositivo. ',
-  'kjoPajisjeEshteCaktivizuarAdministratori': 'Questo dispositivo è stato disattivato dall\'amministratore. ',
-  'kjoPajisjeEshteTashmeAktivizuarDege': 'Questo dispositivo è già attivato in un\'altra filiale.',
-  'klikoniPoshteZgjedhurEmrinTuaj': 'Clicca qui sotto per scegliere il tuo nome',
+  'kjoLicenceEshtePerdorurParePajisje':
+      'Questa licenza è già stata usata su un altro dispositivo. ',
+  'kjoPajisjeEshteCaktivizuarAdministratori':
+      'Questo dispositivo è stato disattivato dall\'amministratore. ',
+  'kjoPajisjeEshteTashmeAktivizuarDege':
+      'Questo dispositivo è già attivato in un\'altra filiale.',
+  'klikoniPoshteZgjedhurEmrinTuaj':
+      'Clicca qui sotto per scegliere il tuo nome',
   'kodiDeges': 'Codice filiale',
   'kodiDeges2': 'Codice filiale',
   'kodiPin': 'Codice PIN',
@@ -178,25 +220,36 @@ const Map<String, String> kIt = {
   'krijoBiznesTjeter': 'Crea un\'altra attività',
   'kthehu': 'Indietro',
   'kuponiUDerguaPrinter': 'La ricevuta è stata inviata alla stampante.',
-  'kurMbyllniGjendjenPaneliGjendjaShitjet': 'Quando chiudi il turno dal pannello Turno, le vendite di quell\'intervallo ',
-  'kyEshteVeprimPerfundimtarRuhetSnapshot': 'Questa è un\'azione definitiva: viene salvato lo snapshot del turno, ',
+  'kurMbyllniGjendjenPaneliGjendjaShitjet':
+      'Quando chiudi il turno dal pannello Turno, le vendite di quell\'intervallo ',
+  'kyEshteVeprimPerfundimtarRuhetSnapshot':
+      'Questa è un\'azione definitiva: viene salvato lo snapshot del turno, ',
   'kyPinEkzistonTashme': 'Questo PIN esiste già.',
-  'kyRaportEshteVetemLeximRegjistri': 'Questo report è di sola lettura. Il registro di audit non può essere modificato dall\'app.',
-  'kyVersionNukMundPerdoreLocalhost': 'Questa build non può usare localhost. Posiziona app_config.json accanto a ',
+  'kyRaportEshteVetemLeximRegjistri':
+      'Questo report è di sola lettura. Il registro di audit non può essere modificato dall\'app.',
+  'kyVersionNukMundPerdoreLocalhost':
+      'Questa build non può usare localhost. Posiziona app_config.json accanto a ',
   'lart': 'Alto',
   'licenca': 'Licenza',
-  'licencaEshteEndePezulluarKontaktoniAdministratorin': 'La licenza è ancora sospesa. Contatta l\'amministratore.',
-  'licencaEshtePezulluarKontaktoniAdministratorin': 'La licenza è sospesa. Contatta l\'amministratore.',
+  'licencaEshteEndePezulluarKontaktoniAdministratorin':
+      'La licenza è ancora sospesa. Contatta l\'amministratore.',
+  'licencaEshtePezulluarKontaktoniAdministratorin':
+      'La licenza è sospesa. Contatta l\'amministratore.',
   'licencaEshtePezulluarOseKaSkaduar': 'La licenza è sospesa o è scaduta.',
   'licencaJuajSkadon1Dite': 'La tua licenza scade: 1 giorno',
-  'licencaKaSkaduarKontaktoniAdministratorinRinovim': 'La licenza è scaduta. Contatta l\'amministratore per il rinnovo.',
-  'licencaNukUGjetKontrolloniCelesin': 'Licenza non trovata. Controlla la chiave di attivazione.',
-  'licencaUVazhduaLokalishtKlientiDuhet': 'La licenza è stata prolungata localmente. Il cliente deve inserire la nuova chiave.',
-  'lidhjaServerinDeshtoiCertifikatePavlefshme': 'Connessione al server fallita (certificato non valido).',
+  'licencaKaSkaduarKontaktoniAdministratorinRinovim':
+      'La licenza è scaduta. Contatta l\'amministratore per il rinnovo.',
+  'licencaNukUGjetKontrolloniCelesin':
+      'Licenza non trovata. Controlla la chiave di attivazione.',
+  'licencaUVazhduaLokalishtKlientiDuhet':
+      'La licenza è stata prolungata localmente. Il cliente deve inserire la nuova chiave.',
+  'lidhjaServerinDeshtoiCertifikatePavlefshme':
+      'Connessione al server fallita (certificato non valido).',
   'lira': 'Liberi',
   'lire': 'Libero',
   'lire2': 'Libero',
-  'llogariDrejtaMenaxheriDashboardGjendjeMenu': 'Account con diritti di manager: dashboard, turno, menu e altro.',
+  'llogariDrejtaMenaxheriDashboardGjendjeMenu':
+      'Account con diritti di manager: dashboard, turno, menu e altro.',
   'llogaritesiKusurit': 'Calcolatore del resto',
   'lloji': 'Tipo',
   'marte': 'Martedì',
@@ -204,12 +257,14 @@ const Map<String, String> kIt = {
   'mbyll': 'Chiudi',
   'mbyllAplikacionin': 'Chiudi l\'applicazione',
   'mbyllGjitha': 'Comprimi tutto',
-  'mbyllenPorositeHapuraTavolinaNisShift': 'le comande aperte vengono chiuse e inizia un nuovo turno. ',
+  'mbyllenPorositeHapuraTavolinaNisShift':
+      'le comande aperte vengono chiuse e inizia un nuovo turno. ',
   'mbylljeGjendje': 'Chiusura turno',
   'menaxheret': 'Manager',
   'menaxhimiKamariereve': 'Gestione camerieri',
   'menaxhimiTavolinave': 'Gestione tavoli',
-  'menaxhoAnetaretStafitKodetHyrjes': 'Gestisci i membri del personale e i codici di accesso.',
+  'menaxhoAnetaretStafitKodetHyrjes':
+      'Gestisci i membri del personale e i codici di accesso.',
   'menjehereHerenTjeter': 'subito la prossima volta.',
   'menu': 'Menu',
   'menyraPageses': 'METODO DI PAGAMENTO',
@@ -219,52 +274,70 @@ const Map<String, String> kIt = {
   'mesazhiFund': 'Messaggio a piè di pagina',
   'modalitetiErret': 'Modalità scura',
   'modalitetiNdritshem': 'Modalità chiara',
-  'monitoroMenaxhoTavolinatRestorantit': 'Monitora e gestisci i tavoli del ristorante',
-  'ndjekFiltroEksportoTransaksionetOperative': 'Traccia, filtra ed esporta le transazioni operative.',
+  'monitoroMenaxhoTavolinatRestorantit':
+      'Monitora e gestisci i tavoli del ristorante',
+  'ndjekFiltroEksportoTransaksionetOperative':
+      'Traccia, filtra ed esporta le transazioni operative.',
   'ndrysho': 'Modifica',
   'ndryshoFiltratOsePeriudhen': 'Modifica i filtri o il periodo.',
   'ndryshoKategorineOsePeriudhen': 'Modifica la categoria o il periodo.',
   'ndryshoMenune': 'Modifica il menu',
   'ndryshoPagenDitore': 'Modifica la paga giornaliera',
   'ndryshoPin': 'Modifica PIN',
-  'ndryshoPinHapDashboardMenaxherit': 'Modifica il PIN che apre la dashboard manager.',
+  'ndryshoPinHapDashboardMenaxherit':
+      'Modifica il PIN che apre la dashboard manager.',
   'nen': 'Nov',
   'nentor': 'Novembre',
   'nentotali': 'Subtotale  ',
-  'neseKeMarreKeyRiVendose': 'Se hai ricevuto una nuova chiave, inseriscila qui per prolungare la licenza.',
+  'neseKeMarreKeyRiVendose':
+      'Se hai ricevuto una nuova chiave, inseriscila qui per prolungare la licenza.',
   'ngarkoShume': 'Carica altro',
   'nukEshteKonfiguruarAsnjeMenaxherN': 'Nessun manager è configurato.\\n',
-  'nukEshteKonfiguruarAsnjePinAdministratorit': 'Nessun PIN amministratore è configurato.\\n',
+  'nukEshteKonfiguruarAsnjePinAdministratorit':
+      'Nessun PIN amministratore è configurato.\\n',
   'nukKaKamariereEnde': 'Ancora nessun cameriere',
   'nukKaKamariereRegjistruar': 'Non ci sono camerieri registrati.',
-  'nukKaKategoriMenuNmenaxheriDuhet': 'Non ci sono categorie nel menu.\\nIl manager deve aggiungere delle categorie.',
-  'nukKaKategoriShtoKategoriVazhduar': 'Non ci sono categorie. Aggiungine una per continuare.',
-  'nukKaLidhjeServerinKontrolloniInternetin': 'Nessuna connessione al server. Controlla Internet e riprova.',
+  'nukKaKategoriMenuNmenaxheriDuhet':
+      'Non ci sono categorie nel menu.\\nIl manager deve aggiungere delle categorie.',
+  'nukKaKategoriShtoKategoriVazhduar':
+      'Non ci sono categorie. Aggiungine una per continuare.',
+  'nukKaLidhjeServerinKontrolloniInternetin':
+      'Nessuna connessione al server. Controlla Internet e riprova.',
   'nukKaLidhjeServerinProvoniSerish': 'Nessuna connessione al server. Riprova.',
   'nukKaLinjaProdukteshRegjistruara': 'Non ci sono righe prodotto registrate.',
   'nukKaMbylljeGjendje': 'Nessuna chiusura turno',
   'nukKaMenaxhereEnde': 'Ancora nessun manager',
   'nukKaProdukteKeteKategori': 'Non ci sono prodotti in questa categoria.',
-  'nukKaRreshtaEksportShtoOse': 'Nessuna riga da esportare — aggiungine una o cambia i filtri.',
+  'nukKaRreshtaEksportShtoOse':
+      'Nessuna riga da esportare — aggiungine una o cambia i filtri.',
   'nukKaRreshtaPerputhenFiltrat': 'Nessuna riga corrisponde ai filtri',
-  'nukKaShitjeEndeKrahasuarStafin': 'Non ci sono ancora vendite per confrontare il personale.',
+  'nukKaShitjeEndeKrahasuarStafin':
+      'Non ci sono ancora vendite per confrontare il personale.',
   'nukKaShitjeKetePeriudhe': 'Nessuna vendita in questo periodo.',
-  'nukKaShitjeRegjistruaraSesion': 'Nessuna vendita registrata in questa sessione.',
-  'nukKaShitjeRegjistruaraShiftAs': 'Nessuna vendita registrata per il turno e nessuna comanda aperta sui tavoli.',
+  'nukKaShitjeRegjistruaraSesion':
+      'Nessuna vendita registrata in questa sessione.',
+  'nukKaShitjeRegjistruaraShiftAs':
+      'Nessuna vendita registrata per il turno e nessuna comanda aperta sui tavoli.',
   'nukKaShpenzimeRegjistruara': 'Nessuna spesa registrata.',
   'nukKaTavolinaKonfiguruara': 'Non ci sono tavoli configurati.',
   'nukKaVeprimeKetePeriudhe': 'Nessuna azione in questo periodo.',
   'nukMundKthehetMbrapsht': 'Questa azione non può essere annullata.',
-  'nukMundLidhemiServerinKontrolloniLidhjen': 'Impossibile raggiungere il server. Controlla la connessione Internet ',
-  'nukProcesonWaitersPorosiKuzhineEtj': 'non elabora (camerieri, comande, cucina, ecc.). ',
+  'nukMundLidhemiServerinKontrolloniLidhjen':
+      'Impossibile raggiungere il server. Controlla la connessione Internet ',
+  'nukProcesonWaitersPorosiKuzhineEtj':
+      'non elabora (camerieri, comande, cucina, ecc.). ',
   'nukUGjetAsnjeKamarier': 'Nessun cameriere trovato',
-  'nukUGjetAsnjePrinterWindows': 'Non è stata trovata alcuna stampante Windows.',
-  'nukUGjetenFotoAssetsImages': 'Non sono state trovate foto in assets/images/.',
-  'nukUGjetenRreshtaOutboxPambeshtetur': 'Non sono state trovate righe outbox non supportate.',
+  'nukUGjetAsnjePrinterWindows':
+      'Non è stata trovata alcuna stampante Windows.',
+  'nukUGjetenFotoAssetsImages':
+      'Non sono state trovate foto in assets/images/.',
+  'nukUGjetenRreshtaOutboxPambeshtetur':
+      'Non sono state trovate righe outbox non supportate.',
   'numriStafit': 'Numero di dipendenti',
   'operacioniEshteAktiv': 'L\'operazione è attiva',
   'oraNgarkuar': 'Ora di punta',
-  'oseVendosniVariablinMjedisitPosApi': 'Oppure imposta la variabile d\'ambiente POS_API_BASE_URL sullo stesso URL, ',
+  'oseVendosniVariablinMjedisitPosApi':
+      'Oppure imposta la variabile d\'ambiente POS_API_BASE_URL sullo stesso URL, ',
   'pShMainPaneliAdmin': 'es. MAIN (dal pannello admin)',
   'pShPosXxxxXxxxXxxx': 'es. POS-XXXX-XXXX-XXXX',
   'paFoto': 'Nessuna foto',
@@ -275,22 +348,28 @@ const Map<String, String> kIt = {
   'pagesaNeto': 'Pagamenti netti',
   'pagese': 'Pagamento',
   'pagoiKlienti': 'Pagato dal cliente',
-  'pajisjaEshtePezulluarKontaktoniAdministratorin': 'Il dispositivo è sospeso. Contatta l\'amministratore.',
+  'pajisjaEshtePezulluarKontaktoniAdministratorin':
+      'Il dispositivo è sospeso. Contatta l\'amministratore.',
   'pajisjaUCaktivizua': 'Il dispositivo è stato disattivato',
   'pamjaErretEshteAktive': 'L\'aspetto scuro è attivo.',
   'pamjaOperative': 'Vista operativa',
   'paraPastroshDhenatLokale': 'prima di cancellare i dati locali.',
-  'pariVerifikoniCelesinButoninVerifikoCelesin': 'Prima verifica la chiave con il pulsante "Verifica chiave".',
-  'pasAprovimitProvoAktiviziminPerseri': 'Dopo l\'approvazione, riprova l\'attivazione.',
+  'pariVerifikoniCelesinButoninVerifikoCelesin':
+      'Prima verifica la chiave con il pulsante "Verifica chiave".',
+  'pasAprovimitProvoAktiviziminPerseri':
+      'Dopo l\'approvazione, riprova l\'attivazione.',
   'pasPagesesSuksesshme': 'Dopo un pagamento riuscito.',
   'pasShpenzimeve': 'Al netto delle spese',
   'password': 'Password',
   'passwordMin8Characters': 'Password (min 8 caratteri)',
   'passwordPasakte': 'Password errata.',
-  'pastrimDetyrueshemNdryshimBiznesiRelease': 'Pulizia obbligatoria al cambio attività (release)',
-  'pastrimLokalDetyrueshemParaVazhdimit': 'una pulizia locale obbligatoria prima di continuare.',
+  'pastrimDetyrueshemNdryshimBiznesiRelease':
+      'Pulizia obbligatoria al cambio attività (release)',
+  'pastrimLokalDetyrueshemParaVazhdimit':
+      'una pulizia locale obbligatoria prima di continuare.',
   'pastrimOpsionalDebug': 'Pulizia facoltativa in debug',
-  'pastrimiDhenaveLokaleDeshtoiAktivizimiU': 'La pulizia dei dati locali è fallita. Attivazione interrotta.\\n',
+  'pastrimiDhenaveLokaleDeshtoiAktivizimiU':
+      'La pulizia dei dati locali è fallita. Attivazione interrotta.\\n',
   'pastroOutboxPambeshtetur': 'Svuota outbox non supportato',
   'perdorniSuperadmin': 'usa SuperAdmin.',
   'perdorues': 'Utenti',
@@ -305,12 +384,14 @@ const Map<String, String> kIt = {
   'pershkrimi2': 'Descrizione',
   'pinAktualEshteGabuar': 'Il PIN attuale è errato.',
   'pinDuhetJeteUnikMinimum4': 'Il PIN deve essere unico e di almeno 4 cifre.',
-  'pinMinimum4ShifraVetemNumra': 'PIN: almeno 4 cifre, solo numeri (lunghezza libera).',
+  'pinMinimum4ShifraVetemNumra':
+      'PIN: almeno 4 cifre, solo numeri (lunghezza libera).',
   'pinMode': 'Modalità PIN',
   'pinPerdorTani': 'Il PIN che usi ora',
   'pinRiKonfirmimiNukPerputhen': 'Il nuovo PIN e la conferma non coincidono.',
   'pinRiMinimum4ShifraVetem': 'Nuovo PIN: almeno 4 cifre, solo numeri.',
-  'plotesoInformacioninPersonalizoFoton': 'Compila le informazioni e personalizza la foto.',
+  'plotesoInformacioninPersonalizoFoton':
+      'Compila le informazioni e personalizza la foto.',
   'porosi': 'Comande',
   'porosiFshireMenaxheri': 'Comanda eliminata dal manager',
   'porosiGjithsej': 'Comande totali',
@@ -323,8 +404,10 @@ const Map<String, String> kIt = {
   'printeriWindowsFaturatPos': 'La stampante Windows per le ricevute POS.',
   'printimDrejtperdrejteRekomanduar': 'Stampa diretta (consigliata).',
   'printimeTurniAktual': 'Stampe (turno corrente)',
-  'printimiDeshtoiKontrolloniPrinterin': 'Stampa fallita. Controlla la stampante.',
-  'printoVetemUFshiMenaxheri': 'Una singola STAMPA è stata eliminata dal manager',
+  'printimiDeshtoiKontrolloniPrinterin':
+      'Stampa fallita. Controlla la stampante.',
+  'printoVetemUFshiMenaxheri':
+      'Una singola STAMPA è stata eliminata dal manager',
   'produkteCmime': 'Prodotti e prezzi',
   'provoPerseri': 'Riprova',
   'punetori': 'DIPENDENTE',
@@ -339,9 +422,11 @@ const Map<String, String> kIt = {
   'rifreskoPrinteret': 'Aggiorna stampanti',
   'riperseritPinRi': 'Ripeti il nuovo PIN',
   'riprovoGjitha': 'Riprova tutto',
-  'rivendosVetemAktiviziminLokalCaktivizimServer': 'Reimposta solo l\'attivazione locale. Per la disattivazione lato server, ',
+  'rivendosVetemAktiviziminLokalCaktivizimServer':
+      'Reimposta solo l\'attivazione locale. Per la disattivazione lato server, ',
   'rregull': 'OK',
-  'rrezikRuajVetemTestimMundShfaqen': 'Rischio: "Conserva solo per test" potrebbe mostrare dati di ',
+  'rrezikRuajVetemTestimMundShfaqen':
+      'Rischio: "Conserva solo per test" potrebbe mostrare dati di ',
   'rrogaDite': 'Stipendio (€/giorno)',
   'rroge': 'Stipendio',
   'rrugaShembullNr1Tirane': 'Via Esempio n. 1, Tirana',
@@ -350,25 +435,34 @@ const Map<String, String> kIt = {
   'ruajPlanimetrine': 'Salva la pianta',
   'ruajVetemTestim': 'Conserva solo per test',
   'searchTransactions': 'Cerca transazioni...',
-  'serveriKtheuPergjigjeBoshProvoniPerseri': 'Il server ha restituito una risposta vuota. Riprova.',
-  'serveriNukKtheuBusinessidProvoniPerseri': 'Il server non ha restituito un businessId. Riprova.',
-  'serveriNukKtheuRefreshTokenAktivizimi': 'Il server non ha restituito un refresh token — l\'attivazione non può essere salvata.',
+  'serveriKtheuPergjigjeBoshProvoniPerseri':
+      'Il server ha restituito una risposta vuota. Riprova.',
+  'serveriNukKtheuBusinessidProvoniPerseri':
+      'Il server non ha restituito un businessId. Riprova.',
+  'serveriNukKtheuRefreshTokenAktivizimi':
+      'Il server non ha restituito un refresh token — l\'attivazione non può essere salvata.',
   'shenimOpsional': 'Nota (facoltativa)',
   'shfaqenKetuDatenOren': 'compaiono qui con data e ora.',
-  'shiftUMbyllPermbledhjaGjithePunonjesve': 'Il turno è stato chiuso. Il riepilogo di tutti i dipendenti è stato stampato.',
-  'shiftUMbyllPorPermbledhjaNuk': 'Il turno è stato chiuso, ma il riepilogo non è stato stampato. ',
+  'shiftUMbyllPermbledhjaGjithePunonjesve':
+      'Il turno è stato chiuso. Il riepilogo di tutti i dipendenti è stato stampato.',
+  'shiftUMbyllPorPermbledhjaNuk':
+      'Il turno è stato chiuso, ma il riepilogo non è stato stampato. ',
   'shikoUdhezimet': 'Vedi le istruzioni',
-  'shitjaURuajtPorPrintimiDeshtoi': 'La vendita è stata salvata, ma la stampa è fallita. ',
+  'shitjaURuajtPorPrintimiDeshtoi':
+      'La vendita è stata salvata, ma la stampa è fallita. ',
   'shitje': 'Vendite',
   'shitjeGjithsej': 'Vendite totali',
   'shitjet': 'Vendite',
   'shitjet7Diteve': 'Vendite a 7 giorni',
   'shitjetDitesAktuale': 'Le vendite della giornata',
-  'shitjetDoShfaqenKetuPasiRegjistroni': 'Le vendite appariranno qui dopo aver registrato le prime.',
+  'shitjetDoShfaqenKetuPasiRegjistroni':
+      'Le vendite appariranno qui dopo aver registrato le prime.',
   'shitjetSipasMbylljesGjendjes': 'Vendite per chiusura turno',
-  'shkoKamarieretShtuarPunonjes': 'Vai su "Camerieri" per aggiungere dipendenti.',
+  'shkoKamarieretShtuarPunonjes':
+      'Vai su "Camerieri" per aggiungere dipendenti.',
   'shkoPunaDuhetTani': 'Vai al compito che ti serve adesso.',
-  'shkruajPinSakteStafitDoRuhet': 'Inserisci il PIN corretto del personale. Verrà salvato così potrai vederlo ',
+  'shkruajPinSakteStafitDoRuhet':
+      'Inserisci il PIN corretto del personale. Verrà salvato così potrai vederlo ',
   'shpenzime': 'Spese',
   'shpenzimeGjithsej': 'Spese totali',
   'shpenzimeRrogaDeri25Rreshta': 'Spese / stipendi (fino a 25 righe)',
@@ -376,27 +470,32 @@ const Map<String, String> kIt = {
   'shpenzimetSotme': 'Spese di oggi',
   'shtoKamarierRi': 'Aggiungi un nuovo cameriere',
   'shtoMenaxherRi': 'Aggiungi un nuovo manager',
-  'shtoMenaxherinPareFormularinSiper': 'Aggiungi il primo manager con il modulo qui sopra.',
+  'shtoMenaxherinPareFormularinSiper':
+      'Aggiungi il primo manager con il modulo qui sopra.',
   'shtoPijeRe': 'Aggiungi una nuova bevanda',
   'shtoPijenMenu': 'Aggiungi la bevanda al menu',
   'shtoShpenzim': 'Aggiungi spesa',
   'shtoShpenzimRroge': 'Aggiungi spesa / stipendio',
-  'shtuarProdukteDuhetEkzistojePaktenKategori': 'Per aggiungere prodotti deve esistere almeno una categoria.',
+  'shtuarProdukteDuhetEkzistojePaktenKategori':
+      'Per aggiungere prodotti deve esistere almeno una categoria.',
   'shtune': 'Sabato',
   'shuma': 'Importo (€)',
   'shumaDuhetJete0': 'L\'importo deve essere > 0',
   'shumaFatures': 'Importo della ricevuta',
   'shumaPrintimeve': 'Importo delle stampe',
   'shumePerpjekjeProvoniPerseriPasPak': 'Troppi tentativi. Riprova tra poco.',
-  'siguriDuhetPastrohenDhenatLokalePara': 'Per sicurezza, i dati locali devono essere cancellati prima ',
+  'siguriDuhetPastrohenDhenatLokalePara':
+      'Per sicurezza, i dati locali devono essere cancellati prima ',
   'siguriaMenaxherit': 'Sicurezza del manager',
-  'sistemShpejteThjeshteMenaxhimRestoranti': 'Un sistema di gestione ristorante semplice e veloce',
+  'sistemShpejteThjeshteMenaxhimRestoranti':
+      'Un sistema di gestione ristorante semplice e veloce',
   'skedariEkziston': 'Il file esiste',
   'skedariPritur': 'File atteso',
   'stafAktiv': 'Personale attivo',
   'stafRegjistruar': 'Personale registrato',
   'statistikatShitjeveSipasPunonjesve': 'Statistiche di vendita per dipendente',
-  'taBllokuarPajisjenServerPerdorniSuperadmin': 'Per bloccare il dispositivo sul server, usa SuperAdmin ',
+  'taBllokuarPajisjenServerPerdorniSuperadmin':
+      'Per bloccare il dispositivo sul server, usa SuperAdmin ',
   'tavolina': 'Tavoli',
   'tavolinaGjithsej': 'Tavoli totali',
   'tavolinaLira': 'Tavoli liberi',
@@ -414,18 +513,26 @@ const Map<String, String> kIt = {
   'urlAktuale': 'URL attuale',
   'urlApi': 'e l\'URL dell\'API.',
   'vazhdoLicencen': 'Prolunga la licenza',
-  'vazhduarAktiviziminDuhetTMbyllni': 'Per continuare l\'attivazione devi chiuderle.',
-  'vendosPasswordHapurDiagnostikenSinkronizimit': 'Inserisci la password per aprire la diagnostica di sincronizzazione.',
-  'vendosPinAdministratoritVazhduar': 'Inserisci il PIN amministratore per continuare.',
+  'vazhduarAktiviziminDuhetTMbyllni':
+      'Per continuare l\'attivazione devi chiuderle.',
+  'vendosPasswordHapurDiagnostikenSinkronizimit':
+      'Inserisci la password per aprire la diagnostica di sincronizzazione.',
+  'vendosPinAdministratoritVazhduar':
+      'Inserisci il PIN amministratore per continuare.',
   'veprimeShpejta': 'Azioni rapide',
   'verifikoCelesin': 'Verifica chiave',
-  'verifikoniCelesinKonfirmoniBiznesinPastajAktivizoni': 'Verifica la chiave, conferma l\'attività, poi attiva il terminale.',
-  'versioninPublikuarAktivizimiBiznesiRiKerkon': 'Nella build pubblicata, attivare una nuova attività richiede ',
-  'versioninPublikuarPastrimiLokalEshteDetyrueshem': 'Nella build pubblicata, la pulizia locale è obbligatoria.',
+  'verifikoniCelesinKonfirmoniBiznesinPastajAktivizoni':
+      'Verifica la chiave, conferma l\'attività, poi attiva il terminale.',
+  'versioninPublikuarAktivizimiBiznesiRiKerkon':
+      'Nella build pubblicata, attivare una nuova attività richiede ',
+  'versioninPublikuarPastrimiLokalEshteDetyrueshem':
+      'Nella build pubblicata, la pulizia locale è obbligatoria.',
   'vleraMesatare': 'Valore medio',
-  'waitersEnterTheirPinAccessTheir': 'I camerieri inseriscono il PIN per accedere ai loro tavoli',
+  'waitersEnterTheirPinAccessTheir':
+      'I camerieri inseriscono il PIN per accedere ai loro tavoli',
   'windowsPrinter': 'Stampante Windows',
-  'zbrazKerkiminZgjidhGjithaLlojiOse': 'Svuota la ricerca, scegli "Tutti" come tipo, oppure aggiungi una nuova transazione.',
+  'zbrazKerkiminZgjidhGjithaLlojiOse':
+      'Svuota la ricerca, scegli "Tutti" come tipo, oppure aggiungi una nuova transazione.',
   'zena': 'Occupati',
   'zena2': 'Occupati',
   'zena3': 'occupati',
@@ -434,11 +541,38 @@ const Map<String, String> kIt = {
   'zgjidhEmrinTend': '👤 Scegli il tuo nome',
   'zgjidhGjitha': 'Seleziona tutto',
   'zgjidhKamarier': 'Scegli un cameriere.',
-  'zgjidhKamarierPareTavolinatTij': 'Scegli un cameriere per vedere i suoi tavoli.',
+  'zgjidhKamarierPareTavolinatTij':
+      'Scegli un cameriere per vedere i suoi tavoli.',
   'zgjidhKategorine': 'Scegli la categoria',
-  'zgjidhPamjenErretPerdorimRehatshem': 'Scegli l\'aspetto scuro per un uso più confortevole.',
-  'zgjidhniBiznesinVendosniDiteVlefshme': 'Scegli l\'attività e inserisci un numero di giorni valido.',
+  'zgjidhPamjenErretPerdorimRehatshem':
+      'Scegli l\'aspetto scuro per un uso più confortevole.',
+  'zgjidhniBiznesinVendosniDiteVlefshme':
+      'Scegli l\'attività e inserisci un numero di giorni valido.',
   'pagatAvans': 'Stipendi e anticipi',
   'refund': 'Rimborsi',
   'regjistriAuditit': 'Registro di controllo',
+  'deviceDeactivatedByAdmin':
+      'Questo dispositivo è stato disattivato dall\'amministratore. Riattivalo con una nuova chiave.',
+  'localhostNotAllowed':
+      'Questa build non può usare localhost. Posiziona app_config.json accanto all\'applicazione oppure configura POS_API_BASE_URL.',
+  'clearUnsupportedOutboxExplainer':
+      'Rimuove dall\'outbox solo gli eventi il cui entityType non è elaborato da pos_api (camerieri, comande, cucina, ecc.). Le vendite e le entità sincronizzate non vengono toccate.',
+  'configStep1':
+      '1. Crea il file app_config.json nella stessa cartella dell\'eseguibile dell\'applicazione (pos_system.exe).',
+  'configStep2':
+      'Oppure imposta la variabile d\'ambiente POS_API_BASE_URL sullo stesso URL, e l\'URL dell\'API.',
+  'localDeactivateExplainer':
+      'Questo disattiva solo questa installazione locale. I dati di vendita locali restano intatti.\n\nPer bloccare il dispositivo sul server, usa SuperAdmin (PATCH /devices/:id/revoke).',
+  'tenantCleanupRequired':
+      'Per sicurezza, i dati locali devono essere cancellati prima di attivare la nuova attività.',
+  'releaseCleanupMandatory':
+      'Nella build pubblicata, la pulizia locale è obbligatoria.',
+  'shiftClosedSummaryNotPrinted':
+      'Il turno è stato chiuso, ma il riepilogo non è stato stampato. Invialo di nuovo dalla Cronologia vendite.',
+  'deleteOnlyThisPrintExplainer': 'non le altre stampe dello stesso tavolo.',
+  'fshinTokenatMetadataSinkronizimit':
+      'Cancella i token e i metadati di sincronizzazione.',
+  'data': 'DATA',
+  'kategoria': 'CATEGORIA',
+  'shumaHeader': 'IMPORTO',
 };

@@ -360,7 +360,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Pagesa dështoi: $e'),
+            content: Text(trf.paymentFailed(e)),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),

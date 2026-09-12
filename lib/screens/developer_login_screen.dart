@@ -149,7 +149,9 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                   ? 'License extended until ${license.expiresAt.toLocal().toString().split('.').first}.'
                   : 'License extended locally. The client must enter the new key.',
               activeLicenseUpdated
-                  ? 'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.'
+                  ? trf.licenceExtendedUntil(
+                      license.expiresAt.toLocal().toString().split('.').first,
+                    )
                   : tr.licencaUVazhduaLokalishtKlientiDuhet,
             ),
           ),

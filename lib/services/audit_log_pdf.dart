@@ -97,7 +97,7 @@ Future<Uint8List> buildAuditLogPdfBytes({
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
-            'Export ID: $resolvedExportId  ·  Vetëm-lexim',
+            trf.exportIdReadOnly(resolvedExportId),
             style: const pw.TextStyle(fontSize: 6, color: PdfColors.grey500),
           ),
           pw.Text(

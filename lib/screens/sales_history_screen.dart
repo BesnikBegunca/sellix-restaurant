@@ -287,7 +287,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('PDF export dështoi: $e'),
+            content: Text(trf.pdfExportFailed(e)),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -572,7 +572,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Gabim gjatë ngarkimit: $_error',
+              trf.loadFailed(_error),
               style: TextStyle(color: AppColors.negativeText),
             ),
           ),

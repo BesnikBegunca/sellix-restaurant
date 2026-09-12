@@ -190,7 +190,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('PDF export dështoi: $e'),
+            content: Text(trf.pdfExportFailed(e)),
             backgroundColor: AppColors.negativeText,
             behavior: SnackBarBehavior.floating,
           ),

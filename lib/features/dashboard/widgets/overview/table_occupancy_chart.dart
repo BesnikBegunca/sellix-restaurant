@@ -25,7 +25,7 @@ class TableOccupancyChart extends StatelessWidget {
       title: tr.tavolinatTani,
       subtitle: total == 0
           ? tr.nukKaTavolinaKonfiguruara
-          : '$occupied të zëna · $free të lira',
+          : trf.occupiedAndFree(occupied, free),
       child: Column(
         children: [
           SizedBox(

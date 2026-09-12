@@ -92,7 +92,7 @@ class OverviewPanel extends StatelessWidget {
                     value: _euro(openCheck),
                     subtitle: occupied == 0
                         ? tr.asnjeTavolineZene
-                        : '$occupied tavolina të zëna',
+                        : trf.occupiedTables(occupied),
                     icon: Icons.account_balance_wallet_outlined,
                     accentColor: AppColors.infoBlue,
                     onTap: () => onNavigate(9),
@@ -304,7 +304,7 @@ class _OpsSnapshotCard extends StatelessWidget {
                 icon: Icons.table_restaurant_outlined,
                 label: tr.tavolina,
                 value: '$freeTables lira',
-                hint: '$occupied të zëna · $occPct%',
+                hint: trf.occupiedWithPct(occupied, int.parse(occPct)),
                 onTap: () => onNavigate(9),
               ),
               _MiniMetric(
@@ -312,7 +312,7 @@ class _OpsSnapshotCard extends StatelessWidget {
                 icon: Icons.restaurant_menu_outlined,
                 label: tr.menu,
                 value: '$products produkte',
-                hint: '$categories kategori',
+                hint: trf.categoriesCount(categories),
                 onTap: () => onNavigate(8),
               ),
               _MiniMetric(

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import '../l10n/tr.dart';
 
 const String _kFallbackUrl = 'http://127.0.0.1:3000';
 const String _kEnvVar = 'POS_API_BASE_URL';
@@ -31,13 +32,11 @@ class RuntimeConfigService {
   RuntimeConfigService._();
   static final RuntimeConfigService instance = RuntimeConfigService._();
 
-  static const String productionConfigErrorTitle = 'API nuk është konfiguruar';
+  static String get productionConfigErrorTitle => tr.apiNukEshteKonfiguruar;
 
-  static const String productionConfigErrorBody =
-      'Ky version nuk mund të përdorë localhost. Vendosni app_config.json pranë '
-      'aplikacionit ose konfiguroni POS_API_BASE_URL.';
+  static String get productionConfigErrorBody => tr.localhostNotAllowed;
 
-  static const String syncConfigErrorMessage = productionConfigErrorTitle;
+  static String get syncConfigErrorMessage => productionConfigErrorTitle;
 
   String _apiBaseUrl = _kFallbackUrl;
   bool _usingFallback = true;

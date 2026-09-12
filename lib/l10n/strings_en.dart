@@ -31,46 +31,61 @@ const Map<String, String> kEn = {
   'bilanciHapur': 'Open balance',
   'biznesTjeterUZbulua': 'A different business was detected',
   'biznesi': 'Business',
-  'biznesiEshtePezulluarKontaktoniAdministratorin': 'The business is suspended. Contact your administrator.',
+  'biznesiEshtePezulluarKontaktoniAdministratorin':
+      'The business is suspended. Contact your administrator.',
   'biznesiMeparshem': 'previous business',
-  'biznesitTjeterLeximetNukFiltrohenEnde': 'another business (reads are not yet filtered by tenant).',
+  'biznesitTjeterLeximetNukFiltrohenEnde':
+      'another business (reads are not yet filtered by tenant).',
   'brutoLarte': 'Highest Gross',
   'burimi': 'Source',
   'businessAddressOptional': 'Business address (optional)',
   'businessPhoneOptional': 'Business phone (optional)',
-  'cdoRreshtMbylljeGjendjeTotaliEshte': 'Each row = one shift close. The total is that interval’s sales ',
+  'cdoRreshtMbylljeGjendjeTotaliEshte':
+      'Each row = one shift close. The total is that interval’s sales ',
   'cdoShtypjePrintoKrijonRreshtRi': 'Every PRINT press creates a new row here.',
-  'cdoShtypjePrintoShfaqetVecmasP': 'Every PRINT press appears separately (e.g. €3, then €4, then €5). ',
+  'cdoShtypjePrintoShfaqetVecmasP':
+      'Every PRINT press appears separately (e.g. €3, then €4, then €5). ',
   'celesiAktivizimit': 'Activation Key',
-  'celesiAktivizimitOseKodiDegesEshte': 'The activation key or branch code is incorrect.',
-  'celesiAktivizimitOseKodiDegesNuk': 'The activation key or branch code was not found.',
+  'celesiAktivizimitOseKodiDegesEshte':
+      'The activation key or branch code is incorrect.',
+  'celesiAktivizimitOseKodiDegesNuk':
+      'The activation key or branch code was not found.',
   'celesiEshteGati': 'Key is ready',
-  'celesiLicencesEshtePavlefshemOseKa': 'The licence key is invalid or has expired.',
+  'celesiLicencesEshtePavlefshemOseKa':
+      'The licence key is invalid or has expired.',
   'celesiUVerifikua': 'Key verified',
   'cilesime': 'Settings',
   'cilesimet': 'Settings',
   'cilesimetFaturesURuajten': 'Receipt settings saved.',
   'cilesimetKompanise': 'Company settings',
   'close': 'Close',
-  'cmimetJaneSnapshotKohenPagesesNuk': 'Prices are snapshots taken at payment time and are unaffected by later catalogue changes.',
+  'cmimetJaneSnapshotKohenPagesesNuk':
+      'Prices are snapshots taken at payment time and are unaffected by later catalogue changes.',
   'cmimi': 'Price',
   'confirmPassword': 'Confirm password',
   'czgjidhGjitha': 'Deselect All',
-  'dataOraMbylljesIntervaliTotaliAte': 'Date · close time · interval · total for that shift',
-  'deshironiTaVendosniKetePinMenaxherin': 'Do you want to set this PIN for the "Administrator" manager?',
-  'deshironiTaVendosniKetePinPin': 'Do you want to use this PIN as the administrator PIN?',
+  'dataOraMbylljesIntervaliTotaliAte':
+      'Date · close time · interval · total for that shift',
+  'deshironiTaVendosniKetePinMenaxherin':
+      'Do you want to set this PIN for the "Administrator" manager?',
+  'deshironiTaVendosniKetePinPin':
+      'Do you want to use this PIN as the administrator PIN?',
   'dhenaBiznesTjeterSqlite': 'Data from another business in SQLite',
   'dhenatAktivizimitNukJaneVlefshme': 'The activation data is not valid.',
-  'dhenatLokaleShitjeveMbetenPaprekuraN': 'Local sales data remains untouched.\\n\\n',
+  'dhenatLokaleShitjeveMbetenPaprekuraN':
+      'Local sales data remains untouched.\\n\\n',
   'dhenatLokaleShitjeveNukPreken': 'Local sales data is not affected.',
-  'dhenatOperativeLokaleMundJeneBiznes': 'Local operating data may belong to a different business. ',
+  'dhenatOperativeLokaleMundJeneBiznes':
+      'Local operating data may belong to a different business. ',
   'dite': 'Days',
   'ditePunuara': 'Days worked',
   'diteTUShtuar': 'Days to add',
-  'emriBiznesitDitetLicencesJaneDetyrueshme': 'Business name and licence days are required.',
+  'emriBiznesitDitetLicencesJaneDetyrueshme':
+      'Business name and licence days are required.',
   'emriKategoriseRe': 'New category name',
   'emriKompaniseEshteDetyrueshem': 'Company name is required.',
-  'emriPinJaneDetyrueshemRrogaEshte': 'Name and PIN are required; salary is optional.',
+  'emriPinJaneDetyrueshemRrogaEshte':
+      'Name and PIN are required; salary is optional.',
   'emriPlote': 'Full name',
   'emriShfaqetFatureDashboard': 'The name shown on receipts and the dashboard.',
   'encryptedCompressedEncZip': 'Encrypted + Compressed (.enc.zip)',
@@ -91,9 +106,12 @@ const Map<String, String> kEn = {
   'fitimSot': 'Profit today',
   'fitime': 'Profits',
   'fitimi': 'Profit',
-  'fitimiShitjeShpenzimeSipasPeriudhes': 'Profit = sales – expenses, by period.',
-  'fitimiShitjetRegjistruaraKamarieretMinusShpenzimet': 'Profit = sales recorded by waiters minus expenses for the period.',
-  'folderinInstalimitMosVendosniSekreteKete': 'in the installation folder. Do not put secrets in this file.',
+  'fitimiShitjeShpenzimeSipasPeriudhes':
+      'Profit = sales – expenses, by period.',
+  'fitimiShitjetRegjistruaraKamarieretMinusShpenzimet':
+      'Profit = sales recorded by waiters minus expenses for the period.',
+  'folderinInstalimitMosVendosniSekreteKete':
+      'in the installation folder. Do not put secrets in this file.',
   'fotoParakonfighuruara': 'Preset photos',
   'fshi': 'Delete',
   'fshiAvancin': 'Delete advance',
@@ -102,11 +120,14 @@ const Map<String, String> kEn = {
   'fshiKetePrintim': 'Delete this print?',
   'fshiPorosine': 'Delete order',
   'fshiRreshtin': 'Delete row',
-  'fshinOutboxVetemNgjarjetEntitytypePos': 'Removes from the outbox only events whose entityType pos_api ',
-  'fshirjaHeqVetemAtePrintimTavolina': 'Deleting removes only that print from the table, not all of them together.',
+  'fshinOutboxVetemNgjarjetEntitytypePos':
+      'Removes from the outbox only events whose entityType pos_api ',
+  'fshirjaHeqVetemAtePrintimTavolina':
+      'Deleting removes only that print from the table, not all of them together.',
   'gabimServerProvoniPerseriVone': 'Server error. Please try again later.',
   'gjendja': 'Shift',
-  'gjendjaStafitTavolinaveMenuseKlikoHapur': 'Status of staff, tables and menu — click to open the section.',
+  'gjendjaStafitTavolinaveMenuseKlikoHapur':
+      'Status of staff, tables and menu — click to open the section.',
   'gjendjaTurnit': 'Shift status',
   'gjendjaUDerguaPrinter': 'The shift report was sent to the printer.',
   'gjeneruar': 'Generated on',
@@ -117,10 +138,12 @@ const Map<String, String> kEn = {
   'gjithaTavolinat': 'All tables',
   'gjithaTransaksionet': 'All transactions',
   'gjithaVeprimet': 'All actions',
-  'gjithckaNdikonStafiPrinteriFaturatNdare': 'Everything affecting staff, printing and receipts — grouped into cards.',
+  'gjithckaNdikonStafiPrinteriFaturatNdare':
+      'Everything affecting staff, printing and receipts — grouped into cards.',
   'gjitheAktoret': 'All actors',
   'gjitheKamarieret': 'All waiters',
-  'gjuhaEkraneveMenaxheritStafit': 'Language used across manager and staff screens.',
+  'gjuhaEkraneveMenaxheritStafit':
+      'Language used across manager and staff screens.',
   'gjurmoGjithaAktivitetetSistemit': 'Track all system activity',
   'hapGjitha': 'Expand all',
   'hapOseMbyllTurnin': 'Open or close the shift',
@@ -130,42 +153,55 @@ const Map<String, String> kEn = {
   'hapjaDeriMbylljenGjendjes': '(from opening to closing the shift).',
   'hen': 'Mon',
   'hene': 'Monday',
-  'historikuAuditAuditLogsRuhetGjithmone': 'The audit history (audit_logs) is always kept. ',
+  'historikuAuditAuditLogsRuhetGjithmone':
+      'The audit history (audit_logs) is always kept. ',
   'historikuShitjeve': 'Sales history',
-  'instaluesiWindowsMundKopjojeAppConfig': 'The Windows installer can copy app_config.json from release\\\\ ',
+  'instaluesiWindowsMundKopjojeAppConfig':
+      'The Windows installer can copy app_config.json from release\\\\ ',
   'jave': 'Week',
   'joKopjoniAppConfigJsonKetu': 'no — copy app_config.json here',
   'joPrintimetTjeraNjejtesTavoline': 'not the other prints of the same table.',
   'juFaleminderit': 'Thank you!',
   'juLutemVendosniCelesinAktivizimit': 'Please enter the activation key.',
   'juLutemVendosniKodinDeges': 'Please enter the branch code.',
-  'k1KrijoniSkedarinAppConfigJson': '1. Create the app_config.json file in the same folder ',
+  'k1KrijoniSkedarinAppConfigJson':
+      '1. Create the app_config.json file in the same folder ',
   'k1TavolinePorosiHapur': '1 open table/order',
-  'k1TavolinePorosiHapurNukU': '1 table with an open order was not deleted (receipt kept).',
+  'k1TavolinePorosiHapurNukU':
+      '1 table with an open order was not deleted (receipt kept).',
   'k1Zene': '1 occupied',
   'k355691234567': '+355 69 123 4567',
   'k7DitetFundit': 'Last 7 days',
-  'kaTavolinaPorosiHapuraPaguajOse': 'There are tables with open orders. Pay or close the orders ',
+  'kaTavolinaPorosiHapuraPaguajOse':
+      'There are tables with open orders. Pay or close the orders ',
   'kamariere': 'Waiters',
-  'kamariereKlikoniButoninPoshteZgjedhurEmrin': '👤 Waiters: Click the button below to choose your name',
+  'kamariereKlikoniButoninPoshteZgjedhurEmrin':
+      '👤 Waiters: Click the button below to choose your name',
   'kamariereRegjistruar': 'Registered waiters',
   'kamarieret': 'Waiters',
   'kamarieriShitjetLarta': 'The waiter with the highest sales.',
   'keniTavolinaHapura': 'You have open tables',
-  'kerkesaEkzistonEshtePritjeAprovimit': 'The request exists and is awaiting approval.',
-  'kerkesaNukULejuaKontaktoniAdministratorin': 'The request was denied. Contact your administrator.',
-  'kerkesaTransferimUDerguaSuperadmin': 'The transfer request was sent to SuperAdmin. ',
+  'kerkesaEkzistonEshtePritjeAprovimit':
+      'The request exists and is awaiting approval.',
+  'kerkesaNukULejuaKontaktoniAdministratorin':
+      'The request was denied. Contact your administrator.',
+  'kerkesaTransferimUDerguaSuperadmin':
+      'The transfer request was sent to SuperAdmin. ',
   'kerkesaUAnulua': 'The request was cancelled.',
   'kerkoIdShitjeje': 'Search by sale ID',
   'kerkoPorosiArtikujOseKamariere': 'Search orders, items or waiters...',
   'kerkohetAprovimSuperadmin': 'SuperAdmin approval required',
   'kerkohetFjalekalim': 'Password required',
   'keteMuaj': 'This Month',
-  'kjoCaktivizonVetemKeteInstalimLokal': 'This deactivates only this local installation. ',
+  'kjoCaktivizonVetemKeteInstalimLokal':
+      'This deactivates only this local installation. ',
   'kjoJave': 'This week',
-  'kjoLicenceEshtePerdorurParePajisje': 'This licence was previously used on another device. ',
-  'kjoPajisjeEshteCaktivizuarAdministratori': 'This device was deactivated by the administrator. ',
-  'kjoPajisjeEshteTashmeAktivizuarDege': 'This device is already activated in another branch.',
+  'kjoLicenceEshtePerdorurParePajisje':
+      'This licence was previously used on another device. ',
+  'kjoPajisjeEshteCaktivizuarAdministratori':
+      'This device was deactivated by the administrator. ',
+  'kjoPajisjeEshteTashmeAktivizuarDege':
+      'This device is already activated in another branch.',
   'klikoniPoshteZgjedhurEmrinTuaj': 'Click below to choose your name',
   'kodiDeges': 'Branch Code',
   'kodiDeges2': 'Branch code',
@@ -178,25 +214,37 @@ const Map<String, String> kEn = {
   'krijoBiznesTjeter': 'Create another business',
   'kthehu': 'Back',
   'kuponiUDerguaPrinter': 'The receipt was sent to the printer.',
-  'kurMbyllniGjendjenPaneliGjendjaShitjet': 'When you close the shift from the Shift panel, that interval’s sales ',
-  'kyEshteVeprimPerfundimtarRuhetSnapshot': 'This is a final action: the shift snapshot is saved, ',
+  'kurMbyllniGjendjenPaneliGjendjaShitjet':
+      'When you close the shift from the Shift panel, that interval’s sales ',
+  'kyEshteVeprimPerfundimtarRuhetSnapshot':
+      'This is a final action: the shift snapshot is saved, ',
   'kyPinEkzistonTashme': 'This PIN already exists.',
-  'kyRaportEshteVetemLeximRegjistri': 'This report is read-only. The audit log cannot be changed from the app.',
-  'kyVersionNukMundPerdoreLocalhost': 'This build cannot use localhost. Place app_config.json next to ',
+  'kyRaportEshteVetemLeximRegjistri':
+      'This report is read-only. The audit log cannot be changed from the app.',
+  'kyVersionNukMundPerdoreLocalhost':
+      'This build cannot use localhost. Place app_config.json next to ',
   'lart': 'Top',
   'licenca': 'Licence',
-  'licencaEshteEndePezulluarKontaktoniAdministratorin': 'The licence is still suspended. Contact your administrator.',
-  'licencaEshtePezulluarKontaktoniAdministratorin': 'The licence is suspended. Contact your administrator.',
-  'licencaEshtePezulluarOseKaSkaduar': 'The licence is suspended or has expired.',
+  'licencaEshteEndePezulluarKontaktoniAdministratorin':
+      'The licence is still suspended. Contact your administrator.',
+  'licencaEshtePezulluarKontaktoniAdministratorin':
+      'The licence is suspended. Contact your administrator.',
+  'licencaEshtePezulluarOseKaSkaduar':
+      'The licence is suspended or has expired.',
   'licencaJuajSkadon1Dite': 'Your licence expires: 1 day',
-  'licencaKaSkaduarKontaktoniAdministratorinRinovim': 'The licence has expired. Contact your administrator to renew.',
-  'licencaNukUGjetKontrolloniCelesin': 'Licence not found. Check the activation key.',
-  'licencaUVazhduaLokalishtKlientiDuhet': 'The licence was extended locally. The client must enter the new key.',
-  'lidhjaServerinDeshtoiCertifikatePavlefshme': 'The server connection failed (invalid certificate).',
+  'licencaKaSkaduarKontaktoniAdministratorinRinovim':
+      'The licence has expired. Contact your administrator to renew.',
+  'licencaNukUGjetKontrolloniCelesin':
+      'Licence not found. Check the activation key.',
+  'licencaUVazhduaLokalishtKlientiDuhet':
+      'The licence was extended locally. The client must enter the new key.',
+  'lidhjaServerinDeshtoiCertifikatePavlefshme':
+      'The server connection failed (invalid certificate).',
   'lira': 'Free',
   'lire': 'Free',
   'lire2': 'Free',
-  'llogariDrejtaMenaxheriDashboardGjendjeMenu': 'Accounts with manager rights: dashboard, shift, menu and more.',
+  'llogariDrejtaMenaxheriDashboardGjendjeMenu':
+      'Accounts with manager rights: dashboard, shift, menu and more.',
   'llogaritesiKusurit': 'Change Calculator',
   'lloji': 'Type',
   'marte': 'Tuesday',
@@ -204,12 +252,14 @@ const Map<String, String> kEn = {
   'mbyll': 'Close',
   'mbyllAplikacionin': 'Close the application',
   'mbyllGjitha': 'Collapse all',
-  'mbyllenPorositeHapuraTavolinaNisShift': 'the open table orders are closed and a new shift starts. ',
+  'mbyllenPorositeHapuraTavolinaNisShift':
+      'the open table orders are closed and a new shift starts. ',
   'mbylljeGjendje': 'Shift close',
   'menaxheret': 'Managers',
   'menaxhimiKamariereve': 'Waiter Management',
   'menaxhimiTavolinave': 'Table Management',
-  'menaxhoAnetaretStafitKodetHyrjes': 'Manage staff members and their access codes.',
+  'menaxhoAnetaretStafitKodetHyrjes':
+      'Manage staff members and their access codes.',
   'menjehereHerenTjeter': 'immediately next time.',
   'menu': 'Menu',
   'menyraPageses': 'PAYMENT METHOD',
@@ -219,52 +269,67 @@ const Map<String, String> kEn = {
   'mesazhiFund': 'Footer message',
   'modalitetiErret': 'Dark mode',
   'modalitetiNdritshem': 'Light mode',
-  'monitoroMenaxhoTavolinatRestorantit': 'Monitor and manage the restaurant tables',
-  'ndjekFiltroEksportoTransaksionetOperative': 'Track, filter and export operating transactions.',
+  'monitoroMenaxhoTavolinatRestorantit':
+      'Monitor and manage the restaurant tables',
+  'ndjekFiltroEksportoTransaksionetOperative':
+      'Track, filter and export operating transactions.',
   'ndrysho': 'Edit',
   'ndryshoFiltratOsePeriudhen': 'Change the filters or the period.',
   'ndryshoKategorineOsePeriudhen': 'Change the category or the period.',
   'ndryshoMenune': 'Edit the menu',
   'ndryshoPagenDitore': 'Change daily pay',
   'ndryshoPin': 'Change PIN',
-  'ndryshoPinHapDashboardMenaxherit': 'Change the PIN that opens the manager dashboard.',
+  'ndryshoPinHapDashboardMenaxherit':
+      'Change the PIN that opens the manager dashboard.',
   'nen': 'Nov',
   'nentor': 'November',
   'nentotali': 'Subtotal  ',
-  'neseKeMarreKeyRiVendose': 'If you received a new key, enter it here to extend the licence.',
+  'neseKeMarreKeyRiVendose':
+      'If you received a new key, enter it here to extend the licence.',
   'ngarkoShume': 'Load more',
   'nukEshteKonfiguruarAsnjeMenaxherN': 'No manager is configured.\\n',
-  'nukEshteKonfiguruarAsnjePinAdministratorit': 'No administrator PIN is configured.\\n',
+  'nukEshteKonfiguruarAsnjePinAdministratorit':
+      'No administrator PIN is configured.\\n',
   'nukKaKamariereEnde': 'No waiters yet',
   'nukKaKamariereRegjistruar': 'No waiters are registered.',
-  'nukKaKategoriMenuNmenaxheriDuhet': 'There are no menu categories.\\nThe manager must add categories.',
-  'nukKaKategoriShtoKategoriVazhduar': 'There are no categories. Add a category to continue.',
-  'nukKaLidhjeServerinKontrolloniInternetin': 'No connection to the server. Check the internet and try again.',
-  'nukKaLidhjeServerinProvoniSerish': 'No connection to the server. Please try again.',
+  'nukKaKategoriMenuNmenaxheriDuhet':
+      'There are no menu categories.\\nThe manager must add categories.',
+  'nukKaKategoriShtoKategoriVazhduar':
+      'There are no categories. Add a category to continue.',
+  'nukKaLidhjeServerinKontrolloniInternetin':
+      'No connection to the server. Check the internet and try again.',
+  'nukKaLidhjeServerinProvoniSerish':
+      'No connection to the server. Please try again.',
   'nukKaLinjaProdukteshRegjistruara': 'No product lines are recorded.',
   'nukKaMbylljeGjendje': 'No shift closes',
   'nukKaMenaxhereEnde': 'No managers yet',
   'nukKaProdukteKeteKategori': 'There are no products in this category.',
-  'nukKaRreshtaEksportShtoOse': 'No rows to export — add one or change the filters.',
+  'nukKaRreshtaEksportShtoOse':
+      'No rows to export — add one or change the filters.',
   'nukKaRreshtaPerputhenFiltrat': 'No rows match the filters',
   'nukKaShitjeEndeKrahasuarStafin': 'No sales yet to compare staff.',
   'nukKaShitjeKetePeriudhe': 'No sales in this period.',
   'nukKaShitjeRegjistruaraSesion': 'No sales recorded in this session.',
-  'nukKaShitjeRegjistruaraShiftAs': 'No sales recorded for the shift and no open table orders.',
+  'nukKaShitjeRegjistruaraShiftAs':
+      'No sales recorded for the shift and no open table orders.',
   'nukKaShpenzimeRegjistruara': 'No expenses recorded.',
   'nukKaTavolinaKonfiguruara': 'No tables are configured.',
   'nukKaVeprimeKetePeriudhe': 'No actions in this period.',
   'nukMundKthehetMbrapsht': 'This cannot be undone.',
-  'nukMundLidhemiServerinKontrolloniLidhjen': 'We cannot reach the server. Check your internet connection ',
-  'nukProcesonWaitersPorosiKuzhineEtj': 'does not process (waiters, orders, kitchen, etc.). ',
+  'nukMundLidhemiServerinKontrolloniLidhjen':
+      'We cannot reach the server. Check your internet connection ',
+  'nukProcesonWaitersPorosiKuzhineEtj':
+      'does not process (waiters, orders, kitchen, etc.). ',
   'nukUGjetAsnjeKamarier': 'No waiters found',
   'nukUGjetAsnjePrinterWindows': 'No Windows printer was found.',
   'nukUGjetenFotoAssetsImages': 'No photos were found in assets/images/.',
-  'nukUGjetenRreshtaOutboxPambeshtetur': 'No unsupported outbox rows were found.',
+  'nukUGjetenRreshtaOutboxPambeshtetur':
+      'No unsupported outbox rows were found.',
   'numriStafit': 'Staff Count',
   'operacioniEshteAktiv': 'Operation is active',
   'oraNgarkuar': 'Busiest hour',
-  'oseVendosniVariablinMjedisitPosApi': 'Or set the POS_API_BASE_URL environment variable to the same URL, ',
+  'oseVendosniVariablinMjedisitPosApi':
+      'Or set the POS_API_BASE_URL environment variable to the same URL, ',
   'pShMainPaneliAdmin': 'e.g. MAIN (from the admin panel)',
   'pShPosXxxxXxxxXxxx': 'e.g. POS-XXXX-XXXX-XXXX',
   'paFoto': 'No photo',
@@ -275,22 +340,28 @@ const Map<String, String> kEn = {
   'pagesaNeto': 'Net Payments',
   'pagese': 'Payment',
   'pagoiKlienti': 'Customer Paid',
-  'pajisjaEshtePezulluarKontaktoniAdministratorin': 'The device is suspended. Contact your administrator.',
+  'pajisjaEshtePezulluarKontaktoniAdministratorin':
+      'The device is suspended. Contact your administrator.',
   'pajisjaUCaktivizua': 'The device was deactivated',
   'pamjaErretEshteAktive': 'Dark appearance is active.',
   'pamjaOperative': 'Operating view',
   'paraPastroshDhenatLokale': 'before clearing the local data.',
-  'pariVerifikoniCelesinButoninVerifikoCelesin': 'First verify the key with the "Verify key" button.',
-  'pasAprovimitProvoAktiviziminPerseri': 'After approval, try activating again.',
+  'pariVerifikoniCelesinButoninVerifikoCelesin':
+      'First verify the key with the "Verify key" button.',
+  'pasAprovimitProvoAktiviziminPerseri':
+      'After approval, try activating again.',
   'pasPagesesSuksesshme': 'After a successful payment.',
   'pasShpenzimeve': 'After expenses',
   'password': 'Password',
   'passwordMin8Characters': 'Password (min 8 characters)',
   'passwordPasakte': 'Incorrect password.',
-  'pastrimDetyrueshemNdryshimBiznesiRelease': 'Mandatory cleanup on business change (release)',
-  'pastrimLokalDetyrueshemParaVazhdimit': 'a mandatory local cleanup before continuing.',
+  'pastrimDetyrueshemNdryshimBiznesiRelease':
+      'Mandatory cleanup on business change (release)',
+  'pastrimLokalDetyrueshemParaVazhdimit':
+      'a mandatory local cleanup before continuing.',
   'pastrimOpsionalDebug': 'Optional cleanup in debug',
-  'pastrimiDhenaveLokaleDeshtoiAktivizimiU': 'Clearing the local data failed. Activation stopped.\\n',
+  'pastrimiDhenaveLokaleDeshtoiAktivizimiU':
+      'Clearing the local data failed. Activation stopped.\\n',
   'pastroOutboxPambeshtetur': 'Clear unsupported outbox',
   'perdorniSuperadmin': 'use SuperAdmin.',
   'perdorues': 'Users',
@@ -305,12 +376,15 @@ const Map<String, String> kEn = {
   'pershkrimi2': 'Description',
   'pinAktualEshteGabuar': 'The current PIN is incorrect.',
   'pinDuhetJeteUnikMinimum4': 'The PIN must be unique and at least 4 digits.',
-  'pinMinimum4ShifraVetemNumra': 'PIN: at least 4 digits, numbers only (any length).',
+  'pinMinimum4ShifraVetemNumra':
+      'PIN: at least 4 digits, numbers only (any length).',
   'pinMode': 'PIN Mode',
   'pinPerdorTani': 'The PIN you use now',
-  'pinRiKonfirmimiNukPerputhen': 'The new PIN and the confirmation do not match.',
+  'pinRiKonfirmimiNukPerputhen':
+      'The new PIN and the confirmation do not match.',
   'pinRiMinimum4ShifraVetem': 'New PIN: at least 4 digits, numbers only.',
-  'plotesoInformacioninPersonalizoFoton': 'Fill in the details and customise the photo.',
+  'plotesoInformacioninPersonalizoFoton':
+      'Fill in the details and customise the photo.',
   'porosi': 'Orders',
   'porosiFshireMenaxheri': 'Order deleted by the manager',
   'porosiGjithsej': 'Total Orders',
@@ -339,9 +413,11 @@ const Map<String, String> kEn = {
   'rifreskoPrinteret': 'Refresh printers',
   'riperseritPinRi': 'Repeat the new PIN',
   'riprovoGjitha': 'Retry all',
-  'rivendosVetemAktiviziminLokalCaktivizimServer': 'Resets only the local activation. For server-side deactivation, ',
+  'rivendosVetemAktiviziminLokalCaktivizimServer':
+      'Resets only the local activation. For server-side deactivation, ',
   'rregull': 'OK',
-  'rrezikRuajVetemTestimMundShfaqen': 'Risk: "Keep for testing only" may show data from ',
+  'rrezikRuajVetemTestimMundShfaqen':
+      'Risk: "Keep for testing only" may show data from ',
   'rrogaDite': 'Salary (€/day)',
   'rroge': 'Salary',
   'rrugaShembullNr1Tirane': 'Example Street No. 1, Tirana',
@@ -350,13 +426,18 @@ const Map<String, String> kEn = {
   'ruajPlanimetrine': 'Save Floor Plan',
   'ruajVetemTestim': 'Keep for testing only',
   'searchTransactions': 'Search transactions...',
-  'serveriKtheuPergjigjeBoshProvoniPerseri': 'The server returned an empty response. Please try again.',
-  'serveriNukKtheuBusinessidProvoniPerseri': 'The server did not return a businessId. Please try again.',
-  'serveriNukKtheuRefreshTokenAktivizimi': 'The server did not return a refresh token — the activation cannot be saved.',
+  'serveriKtheuPergjigjeBoshProvoniPerseri':
+      'The server returned an empty response. Please try again.',
+  'serveriNukKtheuBusinessidProvoniPerseri':
+      'The server did not return a businessId. Please try again.',
+  'serveriNukKtheuRefreshTokenAktivizimi':
+      'The server did not return a refresh token — the activation cannot be saved.',
   'shenimOpsional': 'Note (optional)',
   'shfaqenKetuDatenOren': 'appear here with the date and time.',
-  'shiftUMbyllPermbledhjaGjithePunonjesve': 'The shift was closed. The summary for all employees was printed.',
-  'shiftUMbyllPorPermbledhjaNuk': 'The shift was closed, but the summary was not printed. ',
+  'shiftUMbyllPermbledhjaGjithePunonjesve':
+      'The shift was closed. The summary for all employees was printed.',
+  'shiftUMbyllPorPermbledhjaNuk':
+      'The shift was closed, but the summary was not printed. ',
   'shikoUdhezimet': 'View the instructions',
   'shitjaURuajtPorPrintimiDeshtoi': 'The sale was saved, but printing failed. ',
   'shitje': 'Sales',
@@ -364,11 +445,13 @@ const Map<String, String> kEn = {
   'shitjet': 'Sales',
   'shitjet7Diteve': '7-day sales',
   'shitjetDitesAktuale': 'The current day\'s sales',
-  'shitjetDoShfaqenKetuPasiRegjistroni': 'Sales will appear here once you record the first ones.',
+  'shitjetDoShfaqenKetuPasiRegjistroni':
+      'Sales will appear here once you record the first ones.',
   'shitjetSipasMbylljesGjendjes': 'Sales by shift close',
   'shkoKamarieretShtuarPunonjes': 'Go to "Waiters" to add employees.',
   'shkoPunaDuhetTani': 'Go to the task you need right now.',
-  'shkruajPinSakteStafitDoRuhet': 'Enter the correct staff PIN. It will be saved so you can see it ',
+  'shkruajPinSakteStafitDoRuhet':
+      'Enter the correct staff PIN. It will be saved so you can see it ',
   'shpenzime': 'Expenses',
   'shpenzimeGjithsej': 'Total Expenses',
   'shpenzimeRrogaDeri25Rreshta': 'Expenses / salaries (up to 25 rows)',
@@ -376,27 +459,33 @@ const Map<String, String> kEn = {
   'shpenzimetSotme': 'Today\'s Expenses',
   'shtoKamarierRi': 'Add a New Waiter',
   'shtoMenaxherRi': 'Add a New Manager',
-  'shtoMenaxherinPareFormularinSiper': 'Add the first manager using the form above.',
+  'shtoMenaxherinPareFormularinSiper':
+      'Add the first manager using the form above.',
   'shtoPijeRe': 'Add a new drink',
   'shtoPijenMenu': 'Add the drink to the menu',
   'shtoShpenzim': 'Add expense',
   'shtoShpenzimRroge': 'Add expense / salary',
-  'shtuarProdukteDuhetEkzistojePaktenKategori': 'To add products, at least one category must exist.',
+  'shtuarProdukteDuhetEkzistojePaktenKategori':
+      'To add products, at least one category must exist.',
   'shtune': 'Saturday',
   'shuma': 'Amount (€)',
   'shumaDuhetJete0': 'The amount must be > 0',
   'shumaFatures': 'Receipt Amount',
   'shumaPrintimeve': 'Amount of prints',
-  'shumePerpjekjeProvoniPerseriPasPak': 'Too many attempts. Please try again shortly.',
-  'siguriDuhetPastrohenDhenatLokalePara': 'For safety, the local data must be cleared before ',
+  'shumePerpjekjeProvoniPerseriPasPak':
+      'Too many attempts. Please try again shortly.',
+  'siguriDuhetPastrohenDhenatLokalePara':
+      'For safety, the local data must be cleared before ',
   'siguriaMenaxherit': 'Manager security',
-  'sistemShpejteThjeshteMenaxhimRestoranti': 'A fast and simple restaurant management system',
+  'sistemShpejteThjeshteMenaxhimRestoranti':
+      'A fast and simple restaurant management system',
   'skedariEkziston': 'The file exists',
   'skedariPritur': 'Expected file',
   'stafAktiv': 'Active staff',
   'stafRegjistruar': 'Registered staff',
   'statistikatShitjeveSipasPunonjesve': 'Sales statistics by employee',
-  'taBllokuarPajisjenServerPerdorniSuperadmin': 'To block the device on the server, use SuperAdmin ',
+  'taBllokuarPajisjenServerPerdorniSuperadmin':
+      'To block the device on the server, use SuperAdmin ',
   'tavolina': 'Tables',
   'tavolinaGjithsej': 'Total Tables',
   'tavolinaLira': 'Free Tables',
@@ -404,7 +493,8 @@ const Map<String, String> kEn = {
   'tavolinaZena': 'Occupied tables',
   'tavolinat': 'Tables',
   'tavolinatTani': 'Tables right now',
-  'tekstiPrintohetFundFatures': 'The text printed at the bottom of the receipt.',
+  'tekstiPrintohetFundFatures':
+      'The text printed at the bottom of the receipt.',
   'topKamarier': 'Top waiter',
   'totaliGjitha': 'Total (all)',
   'totaliGjithaTavolinave': 'Total of all tables',
@@ -414,18 +504,26 @@ const Map<String, String> kEn = {
   'urlAktuale': 'Current URL',
   'urlApi': 'and the API URL.',
   'vazhdoLicencen': 'Extend the licence',
-  'vazhduarAktiviziminDuhetTMbyllni': 'To continue the activation you must close them.',
-  'vendosPasswordHapurDiagnostikenSinkronizimit': 'Enter the password to open the sync diagnostics.',
-  'vendosPinAdministratoritVazhduar': 'Enter the administrator PIN to continue.',
+  'vazhduarAktiviziminDuhetTMbyllni':
+      'To continue the activation you must close them.',
+  'vendosPasswordHapurDiagnostikenSinkronizimit':
+      'Enter the password to open the sync diagnostics.',
+  'vendosPinAdministratoritVazhduar':
+      'Enter the administrator PIN to continue.',
   'veprimeShpejta': 'Quick actions',
   'verifikoCelesin': 'Verify key',
-  'verifikoniCelesinKonfirmoniBiznesinPastajAktivizoni': 'Verify the key, confirm the business, then activate the terminal.',
-  'versioninPublikuarAktivizimiBiznesiRiKerkon': 'In the published build, activating a new business requires ',
-  'versioninPublikuarPastrimiLokalEshteDetyrueshem': 'In the published build, the local cleanup is mandatory.',
+  'verifikoniCelesinKonfirmoniBiznesinPastajAktivizoni':
+      'Verify the key, confirm the business, then activate the terminal.',
+  'versioninPublikuarAktivizimiBiznesiRiKerkon':
+      'In the published build, activating a new business requires ',
+  'versioninPublikuarPastrimiLokalEshteDetyrueshem':
+      'In the published build, the local cleanup is mandatory.',
   'vleraMesatare': 'Average Value',
-  'waitersEnterTheirPinAccessTheir': 'Waiters enter their PIN to access their tables',
+  'waitersEnterTheirPinAccessTheir':
+      'Waiters enter their PIN to access their tables',
   'windowsPrinter': 'Windows Printer',
-  'zbrazKerkiminZgjidhGjithaLlojiOse': 'Clear the search, pick "All" for the type, or add a new transaction.',
+  'zbrazKerkiminZgjidhGjithaLlojiOse':
+      'Clear the search, pick "All" for the type, or add a new transaction.',
   'zena': 'Occupied',
   'zena2': 'Occupied',
   'zena3': 'occupied',
@@ -436,9 +534,34 @@ const Map<String, String> kEn = {
   'zgjidhKamarier': 'Choose a waiter.',
   'zgjidhKamarierPareTavolinatTij': 'Choose a waiter to see their tables.',
   'zgjidhKategorine': 'Choose the category',
-  'zgjidhPamjenErretPerdorimRehatshem': 'Choose dark appearance for more comfortable use.',
-  'zgjidhniBiznesinVendosniDiteVlefshme': 'Choose the business and enter a valid number of days.',
+  'zgjidhPamjenErretPerdorimRehatshem':
+      'Choose dark appearance for more comfortable use.',
+  'zgjidhniBiznesinVendosniDiteVlefshme':
+      'Choose the business and enter a valid number of days.',
   'pagatAvans': 'Payroll & advances',
   'refund': 'Refunds',
   'regjistriAuditit': 'Audit log',
+  'deviceDeactivatedByAdmin':
+      'This device was deactivated by the administrator. Activate it again with a new key.',
+  'localhostNotAllowed':
+      'This build cannot use localhost. Place app_config.json next to the application, or configure POS_API_BASE_URL.',
+  'clearUnsupportedOutboxExplainer':
+      'Removes from the outbox only events whose entityType pos_api does not process (waiters, orders, kitchen, etc.). Sales and synced entities are not affected.',
+  'configStep1':
+      '1. Create the app_config.json file in the same folder as the application executable (pos_system.exe).',
+  'configStep2':
+      'Or set the POS_API_BASE_URL environment variable to the same URL, and the API URL.',
+  'localDeactivateExplainer':
+      'This deactivates only this local installation. Local sales data remains untouched.\n\nTo block the device on the server, use SuperAdmin (PATCH /devices/:id/revoke).',
+  'tenantCleanupRequired':
+      'For safety, the local data must be cleared before the new business is activated.',
+  'releaseCleanupMandatory':
+      'In the published build, the local cleanup is mandatory.',
+  'shiftClosedSummaryNotPrinted':
+      'The shift was closed, but the summary was not printed. Resend it from the Sales history.',
+  'deleteOnlyThisPrintExplainer': 'not the other prints of the same table.',
+  'fshinTokenatMetadataSinkronizimit': 'Clears the tokens and sync metadata.',
+  'data': 'DATE',
+  'kategoria': 'CATEGORY',
+  'shumaHeader': 'AMOUNT',
 };

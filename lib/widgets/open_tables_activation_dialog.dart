@@ -12,7 +12,7 @@ Future<bool?> showOpenTablesActivationDialog(
   final totalLabel = summary.totalAmount.toStringAsFixed(2);
   final countLabel = summary.count == 1
       ? tr.k1TavolinePorosiHapur
-      : '${summary.count} tavolina/porosi të hapura';
+      : trf.openTablesSummary(summary.count);
 
   return showDialog<bool>(
     context: context,
@@ -20,8 +20,8 @@ Future<bool?> showOpenTablesActivationDialog(
     builder: (ctx) => AlertDialog(
       title: Text(tr.keniTavolinaHapura),
       content: Text(
-        'Janë gjetur $countLabel me total $totalLabel €. '
-        'Për të vazhduar aktivizimin duhet t\'i mbyllni.',
+        trf.openTablesFound(countLabel, totalLabel) +
+            tr.vazhduarAktiviziminDuhetTMbyllni,
       ),
       actions: [
         TextButton(

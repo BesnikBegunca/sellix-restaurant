@@ -15,6 +15,8 @@ class ExpensesDataTable extends StatelessWidget {
   final String Function(DateTime) fmtDate;
   final void Function(ExpenseRow) onDelete;
 
+  // These match the expense type values stored in the database, not UI
+  // text, so they are deliberately not translated.
   Color _categoryColor(String type) {
     switch (type) {
       case 'Rrogë':
@@ -45,10 +47,10 @@ class ExpensesDataTable extends StatelessWidget {
             decoration: BoxDecoration(color: AppColors.lightGreenBg),
             child: Row(
               children: [
-                SizedBox(width: 130, child: Text('DATA', style: headerStyle)),
+                SizedBox(width: 130, child: Text(tr.data, style: headerStyle)),
                 SizedBox(
                   width: 130,
-                  child: Text('KATEGORIA', style: headerStyle),
+                  child: Text(tr.kategoria, style: headerStyle),
                 ),
                 Expanded(child: Text(tr.pershkrimi, style: headerStyle)),
                 SizedBox(
@@ -58,7 +60,7 @@ class ExpensesDataTable extends StatelessWidget {
                 SizedBox(
                   width: 100,
                   child: Text(
-                    'SHUMA',
+                    tr.shumaHeader,
                     textAlign: TextAlign.right,
                     style: headerStyle,
                   ),

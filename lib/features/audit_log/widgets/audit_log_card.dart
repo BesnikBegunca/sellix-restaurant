@@ -113,9 +113,9 @@ String auditLogDescription(AuditLogRow log) {
 String auditTimeAgo(DateTime ts) {
   final diff = DateTime.now().difference(ts);
   if (diff.inMinutes < 1) return 'Tani';
-  if (diff.inMinutes < 60) return '${diff.inMinutes} min më parë';
-  if (diff.inHours < 24) return '${diff.inHours} orë më parë';
-  return '${diff.inDays} ditë më parë';
+  if (diff.inMinutes < 60) return trf.minutesAgo(diff.inMinutes);
+  if (diff.inHours < 24) return trf.hoursAgo(diff.inHours);
+  return trf.daysAgo(diff.inDays);
 }
 
 Color auditActionColor(String action) {

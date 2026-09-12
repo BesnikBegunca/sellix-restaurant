@@ -24,9 +24,8 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
       builder: (ctx) => AlertDialog(
         title: Text(tr.biznesTjeterUZbulua),
         content: Text(
-          'Ky terminal ka të dhëna lokale nga një biznes tjetër ($previousLabel).\n\n'
-          'Për siguri, duhet të pastrohen të dhënat lokale para se të '
-          'aktivizohet biznesi i ri.',
+          '${trf.tenantConflict(previousLabel)}\n\n'
+          '${tr.tenantCleanupRequired}',
         ),
         actions: [
           TextButton(
@@ -57,8 +56,8 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Ky terminal ka të dhëna lokale nga një biznes tjetër ($previousLabel).\n\n'
-            'Në versionin e publikuar, pastrimi lokal është i detyrueshëm.',
+            '${trf.tenantConflict(previousLabel)}\n\n'
+            '${tr.releaseCleanupMandatory}',
           ),
           const SizedBox(height: 12),
           Container(
