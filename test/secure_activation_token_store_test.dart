@@ -15,10 +15,7 @@ void main() {
     });
 
     test('storageLabel describes OS-backed storage', () {
-      expect(
-        SecureActivationTokenStore.storageLabel,
-        contains('Secure'),
-      );
+      expect(SecureActivationTokenStore.storageLabel, contains('Secure'));
     });
   });
 }

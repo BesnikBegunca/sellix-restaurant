@@ -228,7 +228,8 @@ abstract final class AppTheme {
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? primary : Colors.transparent,
+          (s) =>
+              s.contains(WidgetState.selected) ? primary : Colors.transparent,
         ),
         checkColor: WidgetStateProperty.all(onPrimary),
         side: BorderSide(color: borderStrong, width: 1.5),
@@ -283,9 +284,7 @@ abstract final class AppTheme {
           fontFamily: 'DMSans',
           color: isDark ? onSurface : Colors.white,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: surface,

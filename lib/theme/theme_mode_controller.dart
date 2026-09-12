@@ -17,6 +17,15 @@ class ThemeModeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sets the appearance in memory only, without touching the database.
+  /// Tests use this to exercise both themes; app code should use [setDark].
+  @visibleForTesting
+  void debugSetDark(bool value) {
+    if (_isDark == value) return;
+    _isDark = value;
+    notifyListeners();
+  }
+
   Future<void> setDark(bool value) async {
     if (_isDark == value) return;
     _isDark = value;

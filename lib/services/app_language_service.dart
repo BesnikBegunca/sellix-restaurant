@@ -86,6 +86,16 @@ class AppLanguageService extends ChangeNotifier {
     _language = AppLanguage.fromCode(saved);
   }
 
+  /// Sets the language in memory only, without touching the database.
+  /// Tests use this to exercise each language; app code should use
+  /// [setLanguage].
+  @visibleForTesting
+  void debugSetLanguage(AppLanguage language) {
+    if (_language == language) return;
+    _language = language;
+    notifyListeners();
+  }
+
   Future<void> setLanguage(AppLanguage language) async {
     if (_language == language) return;
     _language = language;

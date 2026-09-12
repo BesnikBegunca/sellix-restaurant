@@ -50,10 +50,10 @@ void main() {
     });
 
     test('isDuplicate flag carried through', () {
-      final resp = DeviceTransferResponse.fromJson(
-        {'id': '', 'status': 'pending'},
-        isDuplicate: true,
-      );
+      final resp = DeviceTransferResponse.fromJson({
+        'id': '',
+        'status': 'pending',
+      }, isDuplicate: true);
       expect(resp.isDuplicate, isTrue);
       expect(resp.isPending, isTrue);
     });
@@ -80,10 +80,7 @@ void main() {
     });
 
     test('not duplicate when fresh request', () {
-      const resp = DeviceTransferResponse(
-        id: 'tr-2',
-        status: 'pending',
-      );
+      const resp = DeviceTransferResponse(id: 'tr-2', status: 'pending');
       const ex = DeviceTransferRequiredException(resp);
       expect(ex.isDuplicate, isFalse);
     });
@@ -103,20 +100,23 @@ void main() {
   });
 
   group('DeviceTransferRequiredException — no tokens saved', () {
-    test('throwing DeviceTransferRequiredException does not produce tokens', () {
-      // Verify that DeviceTransferRequiredException is distinct from a
-      // successful ActivationResponse so the caller cannot accidentally
-      // treat it as an activated state.
-      const resp = DeviceTransferResponse(id: 'tr-3', status: 'pending');
-      Object? caught;
-      try {
-        throw const DeviceTransferRequiredException(resp);
-      } catch (e) {
-        caught = e;
-      }
-      expect(caught, isA<DeviceTransferRequiredException>());
-      // Ensure it is NOT an ActivationResponse — no token fields exposed
-      expect(caught, isNot(isA<Map>()));
-    });
+    test(
+      'throwing DeviceTransferRequiredException does not produce tokens',
+      () {
+        // Verify that DeviceTransferRequiredException is distinct from a
+        // successful ActivationResponse so the caller cannot accidentally
+        // treat it as an activated state.
+        const resp = DeviceTransferResponse(id: 'tr-3', status: 'pending');
+        Object? caught;
+        try {
+          throw const DeviceTransferRequiredException(resp);
+        } catch (e) {
+          caught = e;
+        }
+        expect(caught, isA<DeviceTransferRequiredException>());
+        // Ensure it is NOT an ActivationResponse — no token fields exposed
+        expect(caught, isNot(isA<Map>()));
+      },
+    );
   });
 }

@@ -99,14 +99,20 @@ abstract final class AppColors {
       _pick(const Color(0xFFFFEBEE), const Color(0xFF3A1F24));
 
   // ── Dynamic border helpers (kept for backward compatibility) ──────────────
-  static Color borderSubtle([double a = 0.1]) =>
-      _pick(const Color(0xFF234B36), const Color(0xFF8FD8B8)).withValues(alpha: a);
+  static Color borderSubtle([double a = 0.1]) => _pick(
+    const Color(0xFF234B36),
+    const Color(0xFF8FD8B8),
+  ).withValues(alpha: a);
 
-  static Color borderVisible([double a = 0.2]) =>
-      _pick(const Color(0xFF234B36), const Color(0xFF8FD8B8)).withValues(alpha: a);
+  static Color borderVisible([double a = 0.2]) => _pick(
+    const Color(0xFF234B36),
+    const Color(0xFF8FD8B8),
+  ).withValues(alpha: a);
 
-  static Color borderEmphasized([double a = 0.3]) =>
-      _pick(const Color(0xFF234B36), const Color(0xFF8FD8B8)).withValues(alpha: a);
+  static Color borderEmphasized([double a = 0.3]) => _pick(
+    const Color(0xFF234B36),
+    const Color(0xFF8FD8B8),
+  ).withValues(alpha: a);
 
   static Color lightGreenBorderEmpty() =>
       lightGreenBorder.withValues(alpha: 0.72);

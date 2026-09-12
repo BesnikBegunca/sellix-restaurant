@@ -205,9 +205,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                       label: const Text('Eksporto PDF'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.darkGreenText,
-                        side: BorderSide(
-                          color: AppColors.lightGreenBorder,
-                        ),
+                        side: BorderSide(color: AppColors.lightGreenBorder),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
@@ -230,9 +228,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                       label: const Text('Shtyp'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.darkGreenText,
-                        side: BorderSide(
-                          color: AppColors.lightGreenBorder,
-                        ),
+                        side: BorderSide(color: AppColors.lightGreenBorder),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
@@ -284,15 +280,11 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                     fillColor: AppColors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.lightGreenBorder,
-                      ),
+                      borderSide: BorderSide(color: AppColors.lightGreenBorder),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppColors.lightGreenBorder,
-                      ),
+                      borderSide: BorderSide(color: AppColors.lightGreenBorder),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),

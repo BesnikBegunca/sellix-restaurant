@@ -9,7 +9,9 @@ void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  testWidgets('Login screen renders when activated', (WidgetTester tester) async {
+  testWidgets('Login screen renders when activated', (
+    WidgetTester tester,
+  ) async {
     ActivationStateController.instance.setActivated(true);
     await tester.pumpWidget(const PosSystemApp());
     await tester.pumpAndSettle(const Duration(seconds: 2));

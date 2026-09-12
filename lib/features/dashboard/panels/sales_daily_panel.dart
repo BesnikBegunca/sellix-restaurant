@@ -131,7 +131,9 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
         PanelHeader(
           icon: Icons.point_of_sale_outlined,
           title: 'Shitjet',
-          subtitle: 'Çdo rresht = një mbyllje gjendje. Totali është shitja e atij intervali ' '(nga hapja deri në mbylljen e gjendjes).',
+          subtitle:
+              'Çdo rresht = një mbyllje gjendje. Totali është shitja e atij intervali '
+              '(nga hapja deri në mbylljen e gjendjes).',
         ),
         LayoutBuilder(
           builder: (context, constraints) {

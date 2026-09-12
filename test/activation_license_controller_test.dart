@@ -24,25 +24,25 @@ void main() {
   });
 
   test('setExpiresAt notifies listeners and updates daysRemaining', () async {
-  final past = DateTime.now().add(const Duration(days: 3));
-  var notified = 0;
-  void listener() => notified++;
-  ActivationLicenseController.instance.addListener(listener);
+    final past = DateTime.now().add(const Duration(days: 3));
+    var notified = 0;
+    void listener() => notified++;
+    ActivationLicenseController.instance.addListener(listener);
 
-  await ActivationLicenseController.instance.setExpiresAt(
-    past.toUtc().toIso8601String(),
-  );
+    await ActivationLicenseController.instance.setExpiresAt(
+      past.toUtc().toIso8601String(),
+    );
 
-  expect(notified, greaterThan(0));
-  expect(ActivationLicenseController.instance.daysRemaining, 3);
+    expect(notified, greaterThan(0));
+    expect(ActivationLicenseController.instance.daysRemaining, 3);
 
-  final renewed = DateTime.now().add(const Duration(days: 90));
-  await ActivationLicenseController.instance.setExpiresAt(
-    renewed.toUtc().toIso8601String(),
-  );
+    final renewed = DateTime.now().add(const Duration(days: 90));
+    await ActivationLicenseController.instance.setExpiresAt(
+      renewed.toUtc().toIso8601String(),
+    );
 
-  expect(ActivationLicenseController.instance.daysRemaining, 90);
-  ActivationLicenseController.instance.removeListener(listener);
+    expect(ActivationLicenseController.instance.daysRemaining, 90);
+    ActivationLicenseController.instance.removeListener(listener);
   });
 
   test('reloadFromStorage picks up app_meta changes', () async {

@@ -65,8 +65,7 @@ void main() {
       expect(ActivationLicenseController.instance.expiresAtIso, renewed);
       expect(notified, greaterThan(0));
 
-      final renewedDays =
-          ActivationLicenseController.instance.daysRemaining;
+      final renewedDays = ActivationLicenseController.instance.daysRemaining;
       expect(renewedDays, isNotNull);
       expect(renewedDays! > staleDays!, isTrue);
 

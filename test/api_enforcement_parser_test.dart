@@ -42,16 +42,16 @@ void main() {
 
   group('ApiEnforcementParser.actionFromDio', () {
     DioException err(int? status, Map<String, dynamic>? data) => DioException(
-          requestOptions: RequestOptions(path: kEndpointSyncPush),
-          response: data == null
-              ? null
-              : Response(
-                  requestOptions: RequestOptions(path: kEndpointSyncPush),
-                  statusCode: status,
-                  data: data,
-                ),
-          type: DioExceptionType.badResponse,
-        );
+      requestOptions: RequestOptions(path: kEndpointSyncPush),
+      response: data == null
+          ? null
+          : Response(
+              requestOptions: RequestOptions(path: kEndpointSyncPush),
+              statusCode: status,
+              data: data,
+            ),
+      type: DioExceptionType.badResponse,
+    );
 
     test('LICENSE_EXPIRED blocks', () {
       final e = err(403, {

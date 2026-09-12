@@ -50,17 +50,11 @@ class _LanguageOptionTileState extends State<LanguageOptionTile> {
                 ? scheme.surfaceContainerHighest
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: borderColor,
-              width: selected ? 1.6 : 1,
-            ),
+            border: Border.all(color: borderColor, width: selected ? 1.6 : 1),
           ),
           child: Row(
             children: [
-              Text(
-                widget.language.flag,
-                style: const TextStyle(fontSize: 20),
-              ),
+              Text(widget.language.flag, style: const TextStyle(fontSize: 20)),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -75,10 +69,7 @@ class _LanguageOptionTileState extends State<LanguageOptionTile> {
                 ),
               ),
               const SizedBox(width: 8),
-              _Badge(
-                text: widget.language.badge,
-                selected: selected,
-              ),
+              _Badge(text: widget.language.badge, selected: selected),
               const SizedBox(width: 8),
               AnimatedScale(
                 duration: const Duration(milliseconds: 150),

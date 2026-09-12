@@ -46,12 +46,12 @@ void main() {
         ),
         type: DioExceptionType.badResponse,
       );
-      expect(await LicenseGateService.instance.handleDioException(error), isTrue);
-      expect(LicenseGateService.instance.isBlocked, isTrue);
       expect(
-        LicenseGateService.instance.code,
-        LicenseBlockCode.licenseExpired,
+        await LicenseGateService.instance.handleDioException(error),
+        isTrue,
       );
+      expect(LicenseGateService.instance.isBlocked, isTrue);
+      expect(LicenseGateService.instance.code, LicenseBlockCode.licenseExpired);
     });
   });
 
@@ -104,8 +104,8 @@ void main() {
         LicenseGateService.kLicenseExpiresAtMeta,
         past.toIso8601String(),
       );
-      final blocked =
-          await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
+      final blocked = await LicenseGateService.instance
+          .checkAndBlockIfLocallyExpired();
       expect(blocked, isTrue);
       expect(LicenseGateService.instance.isBlocked, isTrue);
     });

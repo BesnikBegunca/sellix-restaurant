@@ -8,7 +8,10 @@ import 'package:pos_system/services/local_tenant_data_service.dart';
 void main() {
   group('TenantActivationGateResult', () {
     test('noConflict allows activation', () {
-      expect(TenantActivationGateResult.noConflict().canProceedToActivation, isTrue);
+      expect(
+        TenantActivationGateResult.noConflict().canProceedToActivation,
+        isTrue,
+      );
     });
 
     test('wipeCompleted allows activation', () {
@@ -20,7 +23,9 @@ void main() {
         wipeRequired: true,
       );
       expect(
-        TenantActivationGateResult.wipeCompleted(conflict).canProceedToActivation,
+        TenantActivationGateResult.wipeCompleted(
+          conflict,
+        ).canProceedToActivation,
         isTrue,
       );
     });
@@ -44,8 +49,10 @@ void main() {
         hasForeignScopedData: false,
       );
       expect(
-        TenantActivationGateResult.wipeFailed(conflict, 'err')
-            .canProceedToActivation,
+        TenantActivationGateResult.wipeFailed(
+          conflict,
+          'err',
+        ).canProceedToActivation,
         isFalse,
       );
     });

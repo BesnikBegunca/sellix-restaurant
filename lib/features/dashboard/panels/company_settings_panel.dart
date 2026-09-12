@@ -226,9 +226,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         _themeCard(),
 
         const SizedBox(height: 28),
-        PanelSectionLabel(
-          text: _language.t('Printimi', 'Printing'),
-        ),
+        PanelSectionLabel(text: _language.t('Printimi', 'Printing')),
         PanelColumns(left: _printerCard(), right: _receiptCard()),
 
         const SizedBox(height: 28),
@@ -666,19 +664,12 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: AppColors.negativeText,
-            size: 18,
-          ),
+          Icon(Icons.error_outline, color: AppColors.negativeText, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                color: AppColors.negativeText,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: AppColors.negativeText, fontSize: 13),
             ),
           ),
         ],

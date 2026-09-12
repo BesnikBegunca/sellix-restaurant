@@ -6,10 +6,7 @@ import 'package:pos_system/services/activation_service.dart';
 void main() {
   group('deviceRevokeEndpoint', () {
     test('encodes device id in path', () {
-      expect(
-        deviceRevokeEndpoint('abc-123'),
-        '/devices/abc-123/revoke',
-      );
+      expect(deviceRevokeEndpoint('abc-123'), '/devices/abc-123/revoke');
     });
   });
 
@@ -44,10 +41,7 @@ void main() {
         response: Response(
           requestOptions: RequestOptions(path: kEndpointVerifyActivation),
           statusCode: 403,
-          data: {
-            'code': 'LICENSE_SUSPENDED',
-            'message': 'License suspended',
-          },
+          data: {'code': 'LICENSE_SUSPENDED', 'message': 'License suspended'},
         ),
         type: DioExceptionType.badResponse,
       );
@@ -60,10 +54,7 @@ void main() {
         response: Response(
           requestOptions: RequestOptions(path: kEndpointVerifyActivation),
           statusCode: 403,
-          data: {
-            'code': 'DEVICE_REVOKED',
-            'message': 'Device revoked',
-          },
+          data: {'code': 'DEVICE_REVOKED', 'message': 'Device revoked'},
         ),
         type: DioExceptionType.badResponse,
       );

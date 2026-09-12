@@ -4,14 +4,8 @@ import 'package:pos_system/services/support_bundle_redaction.dart';
 void main() {
   group('support bundle redaction', () {
     test('redactSensitiveValue redacts token keys', () {
-      expect(
-        redactSensitiveValue('accessToken', 'secret-value'),
-        '<redacted>',
-      );
-      expect(
-        redactSensitiveValue('refresh_token', 'x'),
-        '<redacted>',
-      );
+      expect(redactSensitiveValue('accessToken', 'secret-value'), '<redacted>');
+      expect(redactSensitiveValue('refresh_token', 'x'), '<redacted>');
     });
 
     test('redactSensitiveValue redacts pin and password keys', () {
@@ -28,10 +22,7 @@ void main() {
     test('redactMap deep-redacts nested maps', () {
       final out = redactMap({
         'entityType': 'sales',
-        'payload': {
-          'uuid': 'sale-1',
-          'accessToken': 'must-not-appear',
-        },
+        'payload': {'uuid': 'sale-1', 'accessToken': 'must-not-appear'},
       });
       expect(out['entityType'], 'sales');
       final payload = out['payload'] as Map<String, dynamic>;

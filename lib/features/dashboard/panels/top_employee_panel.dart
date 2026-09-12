@@ -20,10 +20,10 @@ class TopEmployeePanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           PanelHeader(
-          icon: Icons.emoji_events_outlined,
-          title: 'Realizimi sipas punëtorëve',
-          subtitle: 'Statistikat e shitjeve sipas punonjësve',
-        ),
+            icon: Icons.emoji_events_outlined,
+            title: 'Realizimi sipas punëtorëve',
+            subtitle: 'Statistikat e shitjeve sipas punonjësve',
+          ),
           Center(
             child: Column(
               children: [

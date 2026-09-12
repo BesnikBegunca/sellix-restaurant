@@ -76,10 +76,7 @@ class PanelHeader extends StatelessWidget {
     );
 
     if (actions.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 24),
-        child: text,
-      );
+      return Padding(padding: const EdgeInsets.only(bottom: 24), child: text);
     }
 
     return Padding(
@@ -199,10 +196,7 @@ class PanelCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 12),
-                  trailing!,
-                ],
+                if (trailing != null) ...[const SizedBox(width: 12), trailing!],
               ],
             ),
             const SizedBox(height: 20),
@@ -370,9 +364,7 @@ class PanelSectionLabel extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Divider(color: scheme.outlineVariant, height: 1),
-          ),
+          Expanded(child: Divider(color: scheme.outlineVariant, height: 1)),
           if (trailing != null) ...[const SizedBox(width: 12), trailing!],
         ],
       ),
@@ -403,11 +395,7 @@ class PanelErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.35,
-                color: scheme.error,
-              ),
+              style: TextStyle(fontSize: 13, height: 1.35, color: scheme.error),
             ),
           ),
         ],
@@ -438,7 +426,11 @@ class PanelColumns extends StatelessWidget {
         if (c.maxWidth < breakpoint) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [left, SizedBox(height: gap), right],
+            children: [
+              left,
+              SizedBox(height: gap),
+              right,
+            ],
           );
         }
         return Row(
@@ -496,10 +488,7 @@ class PanelStatRow extends StatelessWidget {
 
         final rows = <Widget>[];
         for (var i = 0; i < cards.length; i += perRow) {
-          final slice = cards.sublist(
-            i,
-            (i + perRow).clamp(0, cards.length),
-          );
+          final slice = cards.sublist(i, (i + perRow).clamp(0, cards.length));
           rows.add(
             IntrinsicHeight(
               child: Row(

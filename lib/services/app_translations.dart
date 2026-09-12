@@ -119,8 +119,7 @@ abstract final class AppTranslations {
     'Cancel': 'Annulla',
     'Confirm': 'Conferma',
     'Select waiter': 'Seleziona cameriere',
-    'Welcome! Please select your name':
-        'Benvenuto! Seleziona il tuo nome',
+    'Welcome! Please select your name': 'Benvenuto! Seleziona il tuo nome',
     'No waiters found': 'Nessun cameriere trovato',
   };
 
@@ -195,8 +194,7 @@ abstract final class AppTranslations {
     'Cancel': 'Abbräche',
     'Confirm': 'Bestätige',
     'Select waiter': 'Kellner uswähle',
-    'Welcome! Please select your name':
-        'Willkomme! Bitte wähl din Name',
+    'Welcome! Please select your name': 'Willkomme! Bitte wähl din Name',
     'No waiters found': 'Kei Kellner gfunde',
     'Configure administrator PIN': 'Administrator-PIN iirichte',
     'No administrator PIN is configured.\nWould you like to use this PIN as the administrator PIN?':

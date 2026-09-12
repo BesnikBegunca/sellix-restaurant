@@ -67,52 +67,61 @@ void main() {
       expect(summary.totalAmount, 19.5);
     });
 
-    test('closeOpenTablesSafely converts open orders to completed_local sales', () async {
-      await seedOpenOrder(tableId: 3, waiterName: 'Ana', total: 15.0);
+    test(
+      'closeOpenTablesSafely converts open orders to completed_local sales',
+      () async {
+        await seedOpenOrder(tableId: 3, waiterName: 'Ana', total: 15.0);
 
-      await DatabaseService.instance.closeOpenTablesSafely();
+        await DatabaseService.instance.closeOpenTablesSafely();
 
-      expect(await DatabaseService.instance.hasAnyOpenTableBusiness(), isFalse);
+        expect(
+          await DatabaseService.instance.hasAnyOpenTableBusiness(),
+          isFalse,
+        );
 
-      final db = await DatabaseService.instance.database;
-      final sales = await db.query('sales');
-      expect(sales, hasLength(1));
-      expect(sales.first['total'], 15.0);
-      expect(sales.first['status'], 'completed_local');
-      expect(
-        sales.first['closeReason'],
-        DatabaseService.activationResetCloseReason,
-      );
-      expect(sales.first['closedAt'], isNotNull);
+        final db = await DatabaseService.instance.database;
+        final sales = await db.query('sales');
+        expect(sales, hasLength(1));
+        expect(sales.first['total'], 15.0);
+        expect(sales.first['status'], 'completed_local');
+        expect(
+          sales.first['closeReason'],
+          DatabaseService.activationResetCloseReason,
+        );
+        expect(sales.first['closedAt'], isNotNull);
 
-      final lines = await db.query('sale_lines');
-      expect(lines, hasLength(1));
-      expect(lines.first['lineTotal'], 15.0);
-    });
+        final lines = await db.query('sale_lines');
+        expect(lines, hasLength(1));
+        expect(lines.first['lineTotal'], 15.0);
+      },
+    );
 
-    test('archiveClosedOrdersBeforeReset preserves sales before wipe', () async {
-      await seedOpenOrder(tableId: 4, waiterName: 'Ana', total: 9.0);
-      await DatabaseService.instance.closeOpenTablesSafely();
+    test(
+      'archiveClosedOrdersBeforeReset preserves sales before wipe',
+      () async {
+        await seedOpenOrder(tableId: 4, waiterName: 'Ana', total: 9.0);
+        await DatabaseService.instance.closeOpenTablesSafely();
 
-      await DatabaseService.instance.archiveClosedOrdersBeforeReset();
-      await DatabaseService.instance.clearLocalBusinessData(
-        skipOpenTableCheck: true,
-      );
+        await DatabaseService.instance.archiveClosedOrdersBeforeReset();
+        await DatabaseService.instance.clearLocalBusinessData(
+          skipOpenTableCheck: true,
+        );
 
-      final db = await DatabaseService.instance.database;
-      final archivedOrders = await db.query('local_archived_orders');
-      expect(archivedOrders, isNotEmpty);
-      expect(archivedOrders.first['totalAmount'], 9.0);
+        final db = await DatabaseService.instance.database;
+        final archivedOrders = await db.query('local_archived_orders');
+        expect(archivedOrders, isNotEmpty);
+        expect(archivedOrders.first['totalAmount'], 9.0);
 
-      final archivedLines = await db.query('local_archived_order_lines');
-      expect(archivedLines, isNotEmpty);
+        final archivedLines = await db.query('local_archived_order_lines');
+        expect(archivedLines, isNotEmpty);
 
-      final archivedPayments = await db.query('local_archived_payments');
-      expect(archivedPayments, isNotEmpty);
+        final archivedPayments = await db.query('local_archived_payments');
+        expect(archivedPayments, isNotEmpty);
 
-      final liveSales = await db.query('sales');
-      expect(liveSales, isEmpty);
-    });
+        final liveSales = await db.query('sales');
+        expect(liveSales, isEmpty);
+      },
+    );
 
     test('clearLocalBusinessData blocks when open tables remain', () async {
       await seedOpenOrder(tableId: 1, waiterName: 'Ana', total: 5.0);

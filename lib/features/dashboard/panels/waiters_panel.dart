@@ -74,7 +74,8 @@ class _WaitersPanelState extends State<WaitersPanel> {
         PanelCard(
           icon: Icons.person_add_alt_1_outlined,
           title: 'Shto Kamarier të Ri',
-          subtitle: 'Emri dhe PIN-i janë të detyrueshëm; rroga është opsionale.',
+          subtitle:
+              'Emri dhe PIN-i janë të detyrueshëm; rroga është opsionale.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

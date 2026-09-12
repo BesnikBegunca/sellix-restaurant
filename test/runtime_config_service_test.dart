@@ -12,10 +12,7 @@ void main() {
         RuntimeConfigService.isLocalhostUrl('http://localhost:3000'),
         isTrue,
       );
-      expect(
-        RuntimeConfigService.isLocalhostUrl('http://[::1]:3000'),
-        isTrue,
-      );
+      expect(RuntimeConfigService.isLocalhostUrl('http://[::1]:3000'), isTrue);
     });
 
     test('allows production hosts', () {

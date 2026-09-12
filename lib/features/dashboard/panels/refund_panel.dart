@@ -211,7 +211,9 @@ class _RefundPanelState extends State<RefundPanel> {
         PanelHeader(
           icon: Icons.undo_outlined,
           title: 'Refund — Porositë e Printuara',
-          subtitle: 'Çdo shtypje PRINTO shfaqet veçmas (p.sh. 3€, pastaj 4€, pastaj 5€). ' 'Fshirja heq vetëm atë printim nga tavolina, jo të gjitha së bashku.',
+          subtitle:
+              'Çdo shtypje PRINTO shfaqet veçmas (p.sh. 3€, pastaj 4€, pastaj 5€). '
+              'Fshirja heq vetëm atë printim nga tavolina, jo të gjitha së bashku.',
         ),
         PanelStatRow(
           cards: [

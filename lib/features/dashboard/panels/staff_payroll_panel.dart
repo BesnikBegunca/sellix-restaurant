@@ -321,18 +321,12 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                           label: 'Paga Mesatare',
                           value: '${avgSalary.toStringAsFixed(2)}€',
                         ),
-                        Divider(
-                          height: 24,
-                          color: AppColors.lightGreenBorder,
-                        ),
+                        Divider(height: 24, color: AppColors.lightGreenBorder),
                         PayrollSummaryRow(
                           label: 'Bruto Më i Lartë',
                           value: '${maxGross.toStringAsFixed(2)}€',
                         ),
-                        Divider(
-                          height: 24,
-                          color: AppColors.lightGreenBorder,
-                        ),
+                        Divider(height: 24, color: AppColors.lightGreenBorder),
                         PayrollSummaryRow(
                           label: 'Avanse Gjithsej',
                           value: '-${totalAdv.toStringAsFixed(2)}€',
@@ -340,10 +334,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                               ? AppColors.softRed
                               : AppColors.mediumGreenText,
                         ),
-                        Divider(
-                          height: 24,
-                          color: AppColors.lightGreenBorder,
-                        ),
+                        Divider(height: 24, color: AppColors.lightGreenBorder),
                         PayrollSummaryRow(
                           label: 'Numri i Stafit',
                           value: '$staffCount',

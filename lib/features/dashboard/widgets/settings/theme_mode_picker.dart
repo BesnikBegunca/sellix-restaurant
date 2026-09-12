@@ -40,11 +40,7 @@ class ThemeModePicker extends StatelessWidget {
 
         if (stacked) {
           return Column(
-            children: [
-              options[0],
-              const SizedBox(height: 10),
-              options[1],
-            ],
+            children: [options[0], const SizedBox(height: 10), options[1]],
           );
         }
         return Row(
@@ -121,74 +117,83 @@ class _ThemeOptionState extends State<_ThemeOption> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Miniature app window.
-              Container(
-                height: 76,
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: line),
-                ),
-                padding: const EdgeInsets.all(7),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Sidebar
-                    Container(
-                      width: 16,
-                      decoration: BoxDecoration(
-                        color: surface,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: line),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 3,
-                        vertical: 4,
-                      ),
-                      child: Column(
-                        children: [
-                          Container(height: 3, color: accent),
-                          const SizedBox(height: 3),
-                          Container(
-                            height: 2,
-                            color: textBar.withValues(alpha: 0.45),
-                          ),
-                          const SizedBox(height: 3),
-                          Container(
-                            height: 2,
-                            color: textBar.withValues(alpha: 0.45),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    // Content
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Container(
-                            height: 5,
-                            width: 26,
-                            decoration: BoxDecoration(
-                              color: textBar,
-                              borderRadius: BorderRadius.circular(2),
+              // Miniature app window. Unselected previews are dimmed slightly
+              // so a light preview does not glare out of a dark settings page
+              // (and vice versa) before it is chosen.
+              Opacity(
+                opacity: selected ? 1 : 0.72,
+                child: Container(
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: line),
+                  ),
+                  padding: const EdgeInsets.all(7),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Sidebar
+                      Container(
+                        width: 16,
+                        decoration: BoxDecoration(
+                          color: surface,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: line),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 3,
+                          vertical: 4,
+                        ),
+                        child: Column(
+                          children: [
+                            Container(height: 3, color: accent),
+                            const SizedBox(height: 3),
+                            Container(
+                              height: 2,
+                              color: textBar.withValues(alpha: 0.45),
                             ),
-                          ),
-                          const SizedBox(height: 5),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(child: _miniCard(surface, line, accent)),
-                                const SizedBox(width: 4),
-                                Expanded(child: _miniCard(surface, line, null)),
-                              ],
+                            const SizedBox(height: 3),
+                            Container(
+                              height: 2,
+                              color: textBar.withValues(alpha: 0.45),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      // Content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              height: 5,
+                              width: 26,
+                              decoration: BoxDecoration(
+                                color: textBar,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _miniCard(surface, line, accent),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: _miniCard(surface, line, null),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 10),

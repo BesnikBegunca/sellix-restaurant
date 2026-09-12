@@ -1,5 +1,7 @@
 # Para build: .\scripts\sync_windows_app_icon.ps1  (app_icon.png -> .ico)
-# Pastaj: flutter build windows --release
+# Pastaj: flutter build windows --release --no-tree-shake-icons
+#   (--no-tree-shake-icons duhet: menuja ruan ikonat si code point ne DB,
+#    prandaj IconData ndertohet ne runtime dhe tree-shaking deshton.)
 # Pastaj: ky skript (app_config + Inno)
 
 $ErrorActionPreference = 'Stop'
@@ -20,7 +22,7 @@ if (-not (Test-Path $configSrc)) {
 }
 
 if (-not (Test-Path $releaseDir)) {
-    Write-Error "Mungon $releaseDir — ekzekutoni: flutter build windows --release"
+    Write-Error "Mungon $releaseDir — ekzekutoni: flutter build windows --release --no-tree-shake-icons"
 }
 
 Copy-Item $configSrc (Join-Path $releaseDir 'app_config.json') -Force
