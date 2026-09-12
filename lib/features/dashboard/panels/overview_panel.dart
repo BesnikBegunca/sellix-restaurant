@@ -11,6 +11,7 @@ import '../widgets/overview/table_occupancy_chart.dart';
 import '../widgets/overview/today_summary_card.dart';
 import '../widgets/overview/top_performer_card.dart';
 import '../widgets/overview/weekly_sales_trend_chart.dart';
+import '../../../l10n/tr.dart';
 
 class OverviewPanel extends StatelessWidget {
   const OverviewPanel({super.key, required this.m, required this.onNavigate});
@@ -40,7 +41,7 @@ class OverviewPanel extends StatelessWidget {
     );
     final company = m.companyName?.trim().isNotEmpty == true
         ? m.companyName!
-        : 'POS System';
+        : tr.posSystem;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -66,9 +67,9 @@ class OverviewPanel extends StatelessWidget {
                 SizedBox(
                   width: kpiW,
                   child: KpiCard(
-                    label: 'Të ardhura sot',
+                    label: tr.ardhuraSot,
                     value: _euro(m.revenueToday),
-                    subtitle: 'Shitjet e ditës aktuale',
+                    subtitle: tr.shitjetDitesAktuale,
                     icon: Icons.point_of_sale_outlined,
                     onTap: () => onNavigate(6),
                   ),
@@ -76,9 +77,9 @@ class OverviewPanel extends StatelessWidget {
                 SizedBox(
                   width: kpiW,
                   child: KpiCard(
-                    label: 'Fitim sot',
+                    label: tr.fitimSot,
                     value: _euro(m.profitToday),
-                    subtitle: 'Pas shpenzimeve',
+                    subtitle: tr.pasShpenzimeve,
                     icon: Icons.trending_up,
                     accentColor: AppColors.warmGold,
                     onTap: () => onNavigate(5),
@@ -87,10 +88,10 @@ class OverviewPanel extends StatelessWidget {
                 SizedBox(
                   width: kpiW,
                   child: KpiCard(
-                    label: 'Bilanci i hapur',
+                    label: tr.bilanciHapur,
                     value: _euro(openCheck),
                     subtitle: occupied == 0
-                        ? 'Asnjë tavolinë e zënë'
+                        ? tr.asnjeTavolineZene
                         : '$occupied tavolina të zëna',
                     icon: Icons.account_balance_wallet_outlined,
                     accentColor: AppColors.infoBlue,
@@ -100,11 +101,11 @@ class OverviewPanel extends StatelessWidget {
                 SizedBox(
                   width: kpiW,
                   child: KpiCard(
-                    label: 'Turni',
+                    label: tr.turni,
                     value: m.shiftOpen ? 'Hapur' : 'Mbyllur',
                     subtitle: m.shiftOpen
-                        ? 'Operacioni është aktiv'
-                        : 'Hape turnin për të shitur',
+                        ? tr.operacioniEshteAktiv
+                        : tr.hapeTurninShitur,
                     icon: Icons.schedule_outlined,
                     accentColor: m.shiftOpen
                         ? AppColors.successGreen
@@ -191,7 +192,7 @@ class _WelcomeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Përmbledhje e ditës',
+                  tr.permbledhjeDites,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -256,9 +257,9 @@ class _OpsSnapshotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      title: 'Pamja operative',
+      title: tr.pamjaOperative,
       subtitle:
-          'Gjendja e stafit, tavolinave dhe menusë — kliko për të hapur seksionin.',
+          tr.gjendjaStafitTavolinaveMenuseKlikoHapur,
       child: LayoutBuilder(
         builder: (context, c) {
           final cols = c.maxWidth >= 900
@@ -275,33 +276,33 @@ class _OpsSnapshotCard extends StatelessWidget {
               _MiniMetric(
                 width: itemW,
                 icon: Icons.people_outline,
-                label: 'Kamarierë',
+                label: tr.kamariere,
                 value: '$waiters',
-                hint: 'Staf i regjistruar',
+                hint: tr.stafRegjistruar,
                 onTap: () => onNavigate(2),
               ),
               _MiniMetric(
                 width: itemW,
                 icon: Icons.payments_outlined,
-                label: 'Shpenzime',
+                label: tr.shpenzime,
                 value: '${expenses.toStringAsFixed(0)}€',
-                hint: 'Totali i shpenzimeve',
+                hint: tr.totaliShpenzimeve,
                 accent: AppColors.softRed,
                 onTap: () => onNavigate(4),
               ),
               _MiniMetric(
                 width: itemW,
                 icon: Icons.calendar_view_week_outlined,
-                label: 'Fitim javor',
+                label: tr.fitimJavor2,
                 value: '${weekProfit.toStringAsFixed(0)}€',
-                hint: '7 ditët e fundit',
+                hint: tr.k7DitetFundit,
                 accent: AppColors.warmGold,
                 onTap: () => onNavigate(5),
               ),
               _MiniMetric(
                 width: itemW,
                 icon: Icons.table_restaurant_outlined,
-                label: 'Tavolina',
+                label: tr.tavolina,
                 value: '$freeTables lira',
                 hint: '$occupied të zëna · $occPct%',
                 onTap: () => onNavigate(9),
@@ -309,7 +310,7 @@ class _OpsSnapshotCard extends StatelessWidget {
               _MiniMetric(
                 width: itemW,
                 icon: Icons.restaurant_menu_outlined,
-                label: 'Menu',
+                label: tr.menu,
                 value: '$products produkte',
                 hint: '$categories kategori',
                 onTap: () => onNavigate(8),
@@ -317,7 +318,7 @@ class _OpsSnapshotCard extends StatelessWidget {
               _MiniMetric(
                 width: itemW,
                 icon: Icons.emoji_events_outlined,
-                label: 'Top kamarier',
+                label: tr.topKamarier,
                 value: topName == '—' ? '—' : topName,
                 hint: topName == '—'
                     ? 'Nuk ka shitje ende'

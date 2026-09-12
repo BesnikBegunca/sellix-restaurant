@@ -21,6 +21,7 @@ import 'local_tenant_data_service.dart';
 import 'runtime_config_service.dart';
 import 'local_license_service.dart';
 import 'secure_activation_token_store.dart';
+import '../l10n/tr.dart';
 
 /// Manages device activation against the NestJS backend.
 ///
@@ -546,7 +547,7 @@ class ActivationService {
     final license = LocalLicenseService.instance.validate(key);
     if (license == null) {
       throw StateError(
-        'Çelësi i licencës është i pavlefshëm ose ka skaduar.',
+        tr.celesiLicencesEshtePavlefshemOseKa,
       );
     }
     await DatabaseService.instance.setAppMeta(
@@ -832,7 +833,7 @@ class ActivationService {
     final refresh = r.refreshToken?.trim() ?? '';
     if (refresh.isEmpty) {
       throw StateError(
-        'Serveri nuk ktheu refresh token — aktivizimi nuk mund të ruhet.',
+        tr.serveriNukKtheuRefreshTokenAktivizimi,
       );
     }
     await SecureActivationTokenStore.instance.saveTokens(

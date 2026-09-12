@@ -13,6 +13,7 @@ import '../theme/app_colors.dart';
 import '../widgets/open_tables_activation_dialog.dart';
 import '../widgets/gg_header.dart';
 import '../models/tenant_activation_gate_result.dart';
+import '../l10n/tr.dart';
 
 /// First-run screen shown when the device has not yet been activated.
 ///
@@ -46,7 +47,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
   Future<void> _validateKey() async {
     final key = _keyController.text.trim();
     if (key.isEmpty) {
-      setState(() => _error = 'Ju lutem vendosni çelësin e aktivizimit.');
+      setState(() => _error = tr.juLutemVendosniCelesinAktivizimit);
       return;
     }
     setState(() {
@@ -79,24 +80,24 @@ class _ActivationScreenState extends State<ActivationScreen> {
     final key = _keyController.text.trim();
     final branch = _branchController.text.trim();
     if (key.isEmpty) {
-      setState(() => _error = 'Ju lutem vendosni çelësin e aktivizimit.');
+      setState(() => _error = tr.juLutemVendosniCelesinAktivizimit);
       return;
     }
     if (_validated == null) {
       setState(
         () => _error =
-            'Së pari verifikoni çelësin me butonin "Verifiko çelësin".',
+            tr.pariVerifikoniCelesinButoninVerifikoCelesin,
       );
       return;
     }
     if (branch.isEmpty) {
-      setState(() => _error = 'Ju lutem vendosni kodin e degës.');
+      setState(() => _error = tr.juLutemVendosniKodinDeges);
       return;
     }
 
     final newBusinessId = _validated!.businessId;
     if (newBusinessId == null || newBusinessId.isEmpty) {
-      setState(() => _error = 'Serveri nuk ktheu businessId. Provoni përsëri.');
+      setState(() => _error = tr.serveriNukKtheuBusinessidProvoniPerseri);
       return;
     }
 
@@ -192,25 +193,23 @@ class _ActivationScreenState extends State<ActivationScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kërkohet aprovim nga SuperAdmin'),
+        title: Text(tr.kerkohetAprovimSuperadmin),
         content: Text(
           isDuplicate
-              ? 'Kërkesa ekziston dhe është në pritje të aprovimit.'
-              : 'Kjo licencë është përdorur më parë në një pajisje tjetër. '
-                    'Kërkesa për transferim u dërgua te SuperAdmin. '
-                    'Pas aprovimit, provo aktivizimin përsëri.',
+              ? tr.kerkesaEkzistonEshtePritjeAprovimit
+              : tr.kjoLicenceEshtePerdorurParePajisje + tr.kerkesaTransferimUDerguaSuperadmin + tr.pasAprovimitProvoAktiviziminPerseri,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Në rregull'),
+            child: Text(tr.rregull),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               _activate();
             },
-            child: const Text('Provo përsëri'),
+            child: Text(tr.provoPerseri),
           ),
         ],
       ),
@@ -229,7 +228,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -287,7 +286,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Verifikoni çelësin, konfirmoni biznesin, pastaj aktivizoni terminalin.',
+                      tr.verifikoniCelesinKonfirmoniBiznesinPastajAktivizoni,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -310,9 +309,9 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     TextField(
                       controller: _keyController,
                       enabled: inputsEnabled,
-                      decoration: const InputDecoration(
-                        labelText: 'Çelësi i Aktivizimit',
-                        hintText: 'p.sh. POS-XXXX-XXXX-XXXX',
+                      decoration: InputDecoration(
+                        labelText: tr.celesiAktivizimit,
+                        hintText: tr.pShPosXxxxXxxxXxxx,
                         prefixIcon: Icon(Icons.vpn_key_rounded),
                       ),
                       textInputAction: TextInputAction.done,
@@ -327,7 +326,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Verifiko çelësin'),
+                          : Text(tr.verifikoCelesin),
                     ),
                     if (_validated != null) ...[
                       const SizedBox(height: 16),
@@ -336,9 +335,9 @@ class _ActivationScreenState extends State<ActivationScreen> {
                       TextField(
                         controller: _branchController,
                         enabled: inputsEnabled,
-                        decoration: const InputDecoration(
-                          labelText: 'Kodi i Degës',
-                          hintText: 'p.sh. MAIN (nga paneli admin)',
+                        decoration: InputDecoration(
+                          labelText: tr.kodiDeges,
+                          hintText: tr.pShMainPaneliAdmin,
                           prefixIcon: Icon(Icons.business_rounded),
                         ),
                         textInputAction: TextInputAction.done,
@@ -360,8 +359,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                           ),
                         ),
                         child: Text(
-                          'Kërkesa për transferim u dërgua te SuperAdmin. '
-                          'Pas aprovimit, provo aktivizimin përsëri.',
+                          tr.kerkesaTransferimUDerguaSuperadmin + tr.pasAprovimitProvoAktiviziminPerseri,
                           style: TextStyle(
                             color: AppColors.mutedOrange,
                             fontSize: 13,
@@ -528,7 +526,7 @@ class _ValidationSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Çelësi u verifikua',
+            tr.celesiUVerifikua,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -536,9 +534,9 @@ class _ValidationSummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          _row('Biznesi', validation.businessName ?? '—'),
+          _row(tr.biznesi, validation.businessName ?? '—'),
           _row('Dega', validation.branchName ?? '—'),
-          _row('Licenca', validation.licenseStatus ?? '—'),
+          _row(tr.licenca, validation.licenseStatus ?? '—'),
           if (validation.licenseExpiresAt != null)
             _row('Skadon', validation.licenseExpiresAt!),
         ],

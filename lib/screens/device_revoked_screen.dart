@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/activation_service.dart';
 import '../services/activation_state_controller.dart';
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 /// Full-screen state after SuperAdmin (or API) revokes this device.
 ///
 /// Shown when [ActivationStateController.serverRevoked] is true.
@@ -50,7 +51,7 @@ class DeviceRevokedScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Pajisja u çaktivizua',
+                    tr.pajisjaUCaktivizua,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 22,

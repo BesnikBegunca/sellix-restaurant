@@ -8,6 +8,7 @@ import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/profits/profit_breakdown_row.dart';
+import '../../../l10n/tr.dart';
 
 class ProfitsPanel extends StatefulWidget {
   const ProfitsPanel({super.key, required this.m});
@@ -67,7 +68,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
 
   String _xLabel(int i) {
     final today = DateTime.now();
-    const dayAbbr = ['Hën', 'Mar', 'Mër', 'Enj', 'Pre', 'Sht', 'Die'];
+    final dayAbbr = [tr.hen, 'Mar', tr.mer, 'Enj', 'Pre', 'Sht', 'Die'];
     switch (_tab) {
       case 0:
         final h = (today.hour - 11 + i).clamp(0, 23);
@@ -124,32 +125,32 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
       children: [
         PanelHeader(
           icon: Icons.trending_up_outlined,
-          title: 'Fitime',
-          subtitle: 'Fitimi = shitje – shpenzime, sipas periudhës.',
+          title: tr.fitime,
+          subtitle: tr.fitimiShitjeShpenzimeSipasPeriudhes,
         ),
 
         PanelStatRow(
           cards: [
             StatCard(
-              title: 'Fitim Ditor',
+              title: tr.fitimDitor,
               value: '${profDay.toStringAsFixed(0)}€',
               icon: Icons.attach_money,
               accentColor: AppColors.warmGold,
             ),
             StatCard(
-              title: 'Fitim Javor',
+              title: tr.fitimJavor,
               value: '${profWeek.toStringAsFixed(0)}€',
               icon: Icons.trending_up_outlined,
               accentColor: AppColors.warmGold,
             ),
             StatCard(
-              title: 'Fitim Mujor',
+              title: tr.fitimMujor,
               value: '${profMonth.toStringAsFixed(0)}€',
               icon: Icons.calendar_month_outlined,
               accentColor: AppColors.warmGold,
             ),
             StatCard(
-              title: 'Shitje Gjithsej',
+              title: tr.shitjeGjithsej,
               value: '${totalSales.toStringAsFixed(0)}€',
               icon: Icons.bar_chart_outlined,
             ),
@@ -401,12 +402,12 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                           ),
                           const SizedBox(height: 14),
                           ProfitBreakdownRow(
-                            label: 'Të Ardhura',
+                            label: tr.ardhura,
                             value: '${selRev.toStringAsFixed(0)}€',
                           ),
                           const SizedBox(height: 10),
                           ProfitBreakdownRow(
-                            label: 'Kosto',
+                            label: tr.kosto,
                             value: selExp > 0
                                 ? '-${selExp.toStringAsFixed(0)}€'
                                 : '0€',
@@ -427,7 +428,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: ProfitBreakdownRow(
-                              label: 'Fitimi',
+                              label: tr.fitimi,
                               value: '${selProfit.toStringAsFixed(0)}€',
                               valueColor: AppColors.primaryGreen,
                               bold: true,

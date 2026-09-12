@@ -438,4 +438,7 @@ const Map<String, String> kFr = {
   'zgjidhKategorine': 'Choisissez la catégorie',
   'zgjidhPamjenErretPerdorimRehatshem': 'Choisissez l\'apparence sombre pour un confort accru.',
   'zgjidhniBiznesinVendosniDiteVlefshme': 'Choisissez l\'entreprise et saisissez un nombre de jours valide.',
+  'pagatAvans': 'Salaires et avances',
+  'refund': 'Remboursements',
+  'regjistriAuditit': 'Journal d\'audit',
 };

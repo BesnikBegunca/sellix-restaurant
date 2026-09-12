@@ -14,6 +14,7 @@ import 'background_sync_service.dart';
 import 'database_schema.dart';
 import 'printed_order_sync_payload.dart';
 import 'supported_sync_entity_types.dart';
+import '../l10n/tr.dart';
 
 /// Central SQLite service — single source of truth for all persistent data.
 ///
@@ -2342,8 +2343,7 @@ class DatabaseService {
   Future<void> clearLocalBusinessData({bool skipOpenTableCheck = false}) async {
     if (!skipOpenTableCheck && await hasAnyOpenTableBusiness()) {
       throw StateError(
-        'Ka tavolina me porosi të hapura. Paguaj ose mbyll porositë '
-        'para se të pastrosh të dhënat lokale.',
+        tr.kaTavolinaPorosiHapuraPaguajOse + tr.paraPastroshDhenatLokale,
       );
     }
     await archiveClosedOrdersBeforeReset();

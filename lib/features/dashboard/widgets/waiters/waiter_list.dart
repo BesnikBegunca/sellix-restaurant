@@ -4,6 +4,7 @@ import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
 import '../staff_pin_reveal_dialog.dart';
 import 'waiter_grid_card.dart';
+import '../../../../l10n/tr.dart';
 
 class WaiterList extends StatelessWidget {
   const WaiterList({
@@ -45,7 +46,7 @@ class WaiterList extends StatelessWidget {
             ),
             SizedBox(height: 16),
             Text(
-              'Nuk ka kamarierë ende',
+              tr.nukKaKamariereEnde,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

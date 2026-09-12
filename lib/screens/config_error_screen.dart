@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/runtime_config_service.dart';
 import '../theme/app_colors.dart';
 import 'developer_login_screen.dart';
+import '../l10n/tr.dart';
 
 /// Full-screen blocker when release mode has no valid production API URL.
 class ConfigErrorScreen extends StatelessWidget {
@@ -15,7 +16,7 @@ class ConfigErrorScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Si ta konfiguroni API-n'),
-        content: const SingleChildScrollView(
+        content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -40,8 +41,7 @@ class ConfigErrorScreen extends StatelessWidget {
               ),
               SizedBox(height: 12),
               Text(
-                'Instaluesi Windows mund të kopjojë app_config.json nga release\\ '
-                'në folderin e instalimit. Mos vendosni sekrete në këtë skedar.',
+                tr.instaluesiWindowsMundKopjojeAppConfig + tr.folderinInstalimitMosVendosniSekreteKete,
               ),
             ],
           ),
@@ -49,7 +49,7 @@ class ConfigErrorScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Mbyll'),
+            child: Text(tr.mbyll),
           ),
         ],
       ),
@@ -106,25 +106,25 @@ class ConfigErrorScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _InfoCard(label: 'Burimi', value: config.sourceLabel),
+                  _InfoCard(label: tr.burimi, value: config.sourceLabel),
                   const SizedBox(height: 8),
                   _InfoCard(
-                    label: 'URL aktuale',
+                    label: tr.urlAktuale,
                     value: config.apiBaseUrl,
                     monospace: true,
                   ),
                   const SizedBox(height: 8),
                   _InfoCard(
-                    label: 'Skedari i pritur',
+                    label: tr.skedariPritur,
                     value: config.expectedConfigFilePath,
                     monospace: true,
                   ),
                   const SizedBox(height: 8),
                   _InfoCard(
-                    label: 'Skedari ekziston',
+                    label: tr.skedariEkziston,
                     value: config.configFileExists
                         ? 'po'
-                        : 'jo — kopjoni app_config.json këtu',
+                        : tr.joKopjoniAppConfigJsonKetu,
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
@@ -141,7 +141,7 @@ class ConfigErrorScreen extends StatelessWidget {
                     height: 48,
                     child: OutlinedButton(
                       onPressed: () => _showInstructions(context),
-                      child: const Text('Shiko udhëzimet'),
+                      child: Text(tr.shikoUdhezimet),
                     ),
                   ),
                   const SizedBox(height: 12),

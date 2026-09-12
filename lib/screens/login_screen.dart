@@ -23,6 +23,7 @@ import 'manager_dashboard_screen.dart';
 import 'developer_login_screen.dart';
 import 'table_selection_screen.dart';
 import 'waiter_selection_screen.dart';
+import '../l10n/tr.dart';
 
 /// Ekrani 1: PIN + kalkulator ndarë; tastiera e PIN-it dhe numpadi i kalkulatorit janë të pavarura.
 class LoginScreen extends StatefulWidget {
@@ -335,15 +336,14 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Konfiguro Menaxherin e Parë'),
-        content: const Text(
-          'Nuk është konfiguruar asnjë menaxher.\n'
-          'Dëshironi ta vendosni këtë PIN për menaxherin "Administrator"?',
+        title: Text(tr.konfiguroMenaxherinPare),
+        content: Text(
+          tr.nukEshteKonfiguruarAsnjeMenaxherN + tr.deshironiTaVendosniKetePinMenaxherin,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
           TextButton(
             onPressed: () async {
@@ -499,7 +499,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     final companyName = ManagerData.instance.companyName;
     final title = companyName != null && companyName.isNotEmpty
         ? companyName
-        : 'POS System';
+        : tr.posSystem;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -526,7 +526,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
               const SizedBox(height: 12),
               Text(
                 _language.t(
-                  'Sistem i shpejtë dhe i thjeshtë për menaxhim restoranti',
+                  tr.sistemShpejteThjeshteMenaxhimRestoranti,
                   'A fast and simple restaurant management system',
                 ),
                 style: TextStyle(fontSize: 16, color: scheme.onSurfaceVariant),
@@ -585,7 +585,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                 ),
                 child: Text(
                   _language.t(
-                    '👤 Kamarierë: Klikoni butonin poshtë për të zgjedhur emrin tuaj',
+                    tr.kamariereKlikoniButoninPoshteZgjedhurEmrin,
                     '👤 Waiters: Click the button below to choose your name',
                   ),
                   textAlign: TextAlign.center,
@@ -794,7 +794,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Llogaritësi i Kusurit',
+                        tr.llogaritesiKusurit,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
@@ -803,14 +803,14 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                       ),
                       const SizedBox(height: 16),
                       _moneyField(
-                        label: 'Shuma e Faturës',
+                        label: tr.shumaFatures,
                         value: _bill,
                         selected: _calcField == 0,
                         onTap: () => _setCalcField(0),
                       ),
                       const SizedBox(height: 12),
                       _moneyField(
-                        label: 'Pagoi Klienti',
+                        label: tr.pagoiKlienti,
                         value: _paid,
                         selected: _calcField == 1,
                         onTap: () => _setCalcField(1),
@@ -903,7 +903,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
           ),
           const SizedBox(height: 8),
           Text(
-            'Klikoni poshtë për të zgjedhur emrin tuaj',
+            tr.klikoniPoshteZgjedhurEmrinTuaj,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
           ),
@@ -925,7 +925,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                   ),
                 ),
                 child: Text(
-                  '👤 Zgjidh Emrin Tënd',
+                  tr.zgjidhEmrinTend,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -1102,7 +1102,7 @@ class _LicenseExpiryChip extends StatelessWidget {
   String get _label {
     if (daysRemaining < 0) return 'Licenca juaj ka skaduar';
     if (daysRemaining == 0) return 'Licenca juaj skadon: sot';
-    if (daysRemaining == 1) return 'Licenca juaj skadon: 1 ditë';
+    if (daysRemaining == 1) return tr.licencaJuajSkadon1Dite;
     return 'Licenca juaj skadon: $daysRemaining ditë';
   }
 
@@ -1135,7 +1135,7 @@ class _LoginExitButtonState extends State<_LoginExitButton> {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Mbyll aplikacionin',
+      message: tr.mbyllAplikacionin,
       child: MouseRegion(
         onEnter: (_) => setState(() => _hover = true),
         onExit: (_) => setState(() => _hover = false),

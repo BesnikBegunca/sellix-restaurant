@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 
 const double _kPinBoxSize = 68;
 const double _kPinBoxRadius = 18;
@@ -217,7 +218,7 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Vendos PIN-in e administratorit për të vazhduar.',
+                      tr.vendosPinAdministratoritVazhduar,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
@@ -333,8 +334,8 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        child: const Text(
-                          'Anulo',
+                        child: Text(
+                          tr.anulo,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,

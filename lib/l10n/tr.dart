@@ -1317,6 +1317,14 @@ class Tr {
   /// sq: Zgjidhni biznesin dhe vendosni ditë të vlefshme.
   String get zgjidhniBiznesinVendosniDiteVlefshme => trKey('zgjidhniBiznesinVendosniDiteVlefshme');
 
+  /// sq: Pagat & avans
+  String get pagatAvans => trKey('pagatAvans');
+
+  /// sq: Refund
+  String get refund => trKey('refund');
+
+  /// sq: Regjistri i auditit
+  String get regjistriAuditit => trKey('regjistriAuditit');
 }
 
 /// The app-wide string accessor.

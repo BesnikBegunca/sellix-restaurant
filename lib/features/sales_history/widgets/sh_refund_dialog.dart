@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/sales_models.dart';
 import '../../../manager/manager_data.dart';
 import '../../../theme/app_colors.dart';
+import '../../../l10n/tr.dart';
 
 Future<void> showSHRefundDialog(
   BuildContext context,
@@ -51,14 +52,14 @@ Future<void> showSHRefundDialog(
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
-                    labelText: 'Shuma (€)',
+                  decoration: InputDecoration(
+                    labelText: tr.shuma,
                     border: OutlineInputBorder(),
                     suffixText: '€',
                   ),
                   validator: (v) {
                     final n = double.tryParse(v ?? '');
-                    if (n == null || n <= 0) return 'Shuma duhet të jetë > 0';
+                    if (n == null || n <= 0) return tr.shumaDuhetJete0;
                     if (n > swl.sale.total) return 'Kalon totalin e shitjes';
                     return null;
                   },
@@ -66,8 +67,8 @@ Future<void> showSHRefundDialog(
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: reasonCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Arsyeja (opsionale)',
+                  decoration: InputDecoration(
+                    labelText: tr.arsyejaOpsionale,
                     border: OutlineInputBorder(),
                   ),
                   maxLines: 2,
@@ -79,7 +80,7 @@ Future<void> showSHRefundDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
           FilledButton(
             style: FilledButton.styleFrom(

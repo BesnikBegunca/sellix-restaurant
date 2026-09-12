@@ -10,6 +10,7 @@ import '../widgets/gg_header.dart';
 import '../widgets/hover_interaction.dart';
 import 'pos_order_screen.dart';
 import '../services/app_language_service.dart';
+import '../l10n/tr.dart';
 
 class TableSelectionScreen extends StatefulWidget {
   const TableSelectionScreen({super.key, required this.waiterName});
@@ -156,7 +157,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
           children: [
             GgAppHeader(
               showBack: true,
-              title: 'Tavolinat',
+              title: tr.tavolinat,
               userName: widget.waiterName,
               onBack: () => Navigator.of(context).maybePop(),
             ),
@@ -180,7 +181,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
         children: [
           GgAppHeader(
             showBack: true,
-            title: 'Tavolinat',
+            title: tr.tavolinat,
             userName: widget.waiterName,
             onBack: () => Navigator.of(context).maybePop(),
           ),
@@ -274,7 +275,7 @@ class _TableScreenHeaderRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Totali i të gjitha tavolinave',
+                      tr.totaliGjithaTavolinave,
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.lightGreenText,
@@ -322,9 +323,9 @@ class _OccupiedCountBadge extends StatelessWidget {
       ),
       child: Text(
         occupied == 0
-            ? 'Të gjitha të lira'
+            ? tr.gjithaLira
             : occupied == 1
-            ? '1 e zënë'
+            ? tr.k1Zene
             : '$occupied të zëna',
         style: TextStyle(fontSize: 14, color: AppColors.primaryGreen),
       ),
@@ -536,7 +537,7 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Text(
-        occupied ? 'E zënë' : 'E lirë',
+        occupied ? tr.zene : tr.lire,
         style: TextStyle(
           fontSize: 11,
           color: occupied ? AppColors.primaryGreen : AppColors.lightGreenText,

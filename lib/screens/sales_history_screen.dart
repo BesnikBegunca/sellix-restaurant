@@ -13,6 +13,7 @@ import '../services/database_service.dart';
 import '../services/sale_receipt_service.dart';
 import '../services/sales_history_pdf.dart';
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 
 // ─────────────────────────── main panel widget ───────────────────────────────
 
@@ -94,11 +95,11 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
       case SHDateFilter.today:
         return 'Sot';
       case SHDateFilter.thisWeek:
-        return 'Kjo javë';
+        return tr.kjoJave;
       case SHDateFilter.thisMonth:
         return 'Ky muaj';
       case SHDateFilter.allTime:
-        return 'Të gjitha';
+        return tr.gjitha;
       case SHDateFilter.custom:
         if (_customRange == null) return 'Personalizuar';
         final s = _customRange!.start;
@@ -111,15 +112,15 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
     final ok = await SaleReceiptService.reprintPaymentReceipt(
       sale: data.sale,
       lines: data.lines,
-      companyName: ManagerData.instance.companyName ?? 'POS System',
+      companyName: ManagerData.instance.companyName ?? tr.posSystem,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           ok
-              ? 'Kuponi u dërgua në printer.'
-              : 'Printimi dështoi. Kontrolloni printerin.',
+              ? tr.kuponiUDerguaPrinter
+              : tr.printimiDeshtoiKontrolloniPrinterin,
         ),
         behavior: SnackBarBehavior.floating,
       ),
@@ -257,7 +258,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
 
       final reportData = SalesHistoryReportData(
         dateRangeLabel: _dateRangeLabel,
-        companyName: ManagerData.instance.companyName ?? 'POS System',
+        companyName: ManagerData.instance.companyName ?? tr.posSystem,
         sales: _sales
             .map(
               (s) => SaleWithLinesData(
@@ -480,8 +481,8 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                   ),
                   label: Text(
                     _expandedIds.length == _sales.length
-                        ? 'Mbyll të gjitha'
-                        : 'Hap të gjitha',
+                        ? tr.mbyllGjitha
+                        : tr.hapGjitha,
                     style: const TextStyle(fontSize: 13),
                   ),
                   style: TextButton.styleFrom(
@@ -544,7 +545,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ndrysho filtrat ose periudhën.',
+            tr.ndryshoFiltratOsePeriudhen,
             style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
           ),
         ],

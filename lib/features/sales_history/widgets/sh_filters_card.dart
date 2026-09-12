@@ -4,6 +4,7 @@ import '../../../theme/app_colors.dart';
 import '../models/sales_models.dart';
 import 'sh_category_chart.dart';
 import 'sh_top_products_card.dart';
+import '../../../l10n/tr.dart';
 
 class SHFiltersCard extends StatelessWidget {
   const SHFiltersCard({
@@ -67,12 +68,12 @@ class SHFiltersCard extends StatelessWidget {
   Widget _waiterDropdown() {
     return DropdownButtonFormField<String?>(
       value: selectedWaiter,
-      decoration: _filterDeco('Të gjithë kamarierët'),
+      decoration: _filterDeco(tr.gjitheKamarieret),
       isExpanded: true,
       items: [
-        const DropdownMenuItem<String?>(
+        DropdownMenuItem<String?>(
           value: null,
-          child: Text('Të gjithë kamarierët'),
+          child: Text(tr.gjitheKamarieret),
         ),
         for (final w in allWaiters)
           DropdownMenuItem<String?>(value: w, child: Text(w)),
@@ -84,12 +85,12 @@ class SHFiltersCard extends StatelessWidget {
   Widget _tableDropdown() {
     return DropdownButtonFormField<int?>(
       value: selectedTable,
-      decoration: _filterDeco('Të gjitha tavolinat'),
+      decoration: _filterDeco(tr.gjithaTavolinat),
       isExpanded: true,
       items: [
-        const DropdownMenuItem<int?>(
+        DropdownMenuItem<int?>(
           value: null,
-          child: Text('Të gjitha tavolinat'),
+          child: Text(tr.gjithaTavolinat),
         ),
         for (final t in allTables)
           DropdownMenuItem<int?>(value: t, child: Text('Tavolina $t')),
@@ -145,7 +146,7 @@ class SHFiltersCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Filtrat & Kërkim',
+            tr.filtratKerkim,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -160,7 +161,7 @@ class SHFiltersCard extends StatelessWidget {
                 child: TextField(
                   controller: searchCtrl,
                   decoration: InputDecoration(
-                    hintText: 'Kërko porosi, artikuj ose kamarierë...',
+                    hintText: tr.kerkoPorosiArtikujOseKamariere,
                     prefixIcon: Icon(
                       Icons.search,
                       size: 20,
@@ -209,9 +210,9 @@ class SHFiltersCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _periodTab(SHDateFilter.today, 'Sot'),
-                    _periodTab(SHDateFilter.thisWeek, 'Javë'),
+                    _periodTab(SHDateFilter.thisWeek, tr.jave),
                     _periodTab(SHDateFilter.thisMonth, 'Muaj'),
-                    _periodTab(SHDateFilter.allTime, 'Të gjitha'),
+                    _periodTab(SHDateFilter.allTime, tr.gjitha),
                   ],
                 ),
               ),

@@ -4,6 +4,7 @@ import '../../../../models/pos_models.dart';
 import '../../../../manager/manager_data.dart';
 import '../staff_pin_reveal_dialog.dart';
 import 'manager_grid_card.dart';
+import '../../../../l10n/tr.dart';
 
 class ManagerList extends StatelessWidget {
   const ManagerList({
@@ -45,7 +46,7 @@ class ManagerList extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Nuk ka menaxherë ende',
+              tr.nukKaMenaxhereEnde,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -54,7 +55,7 @@ class ManagerList extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Shto menaxherin e parë me formularin më sipër.',
+              tr.shtoMenaxherinPareFormularinSiper,
               style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
             ),
           ],

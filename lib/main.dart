@@ -17,6 +17,7 @@ import 'services/app_language_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_controller.dart';
 import 'widgets/license_blocked_overlay.dart';
+import 'l10n/tr.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -115,7 +116,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
     return MaterialApp(
       builder: (context, child) =>
           LicenseBlockedOverlay(child: child ?? const SizedBox.shrink()),
-      title: 'POS System',
+      title: tr.posSystem,
       locale: _language.locale,
       supportedLocales: AppLanguageService.supportedLocales,
       localizationsDelegates: const [

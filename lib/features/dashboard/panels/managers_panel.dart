@@ -5,6 +5,7 @@ import '../../../manager/manager_data.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
 import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/managers/manager_list.dart';
+import '../../../l10n/tr.dart';
 
 class ManagersPanel extends StatefulWidget {
   const ManagersPanel({super.key, required this.m});
@@ -37,12 +38,12 @@ class _ManagersPanelState extends State<ManagersPanel> {
     if (pin.length < 4 || !RegExp(r'^\d+$').hasMatch(pin)) {
       setState(
         () =>
-            _errorMsg = 'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
+            _errorMsg = tr.pinMinimum4ShifraVetemNumra,
       );
       return;
     }
     if (await widget.m.staffPinExists(pin)) {
-      setState(() => _errorMsg = 'Ky PIN ekziston tashmë.');
+      setState(() => _errorMsg = tr.kyPinEkzistonTashme);
       return;
     }
     await widget.m.addManager(name, pin);
@@ -60,22 +61,22 @@ class _ManagersPanelState extends State<ManagersPanel> {
       children: [
         PanelHeader(
           icon: Icons.supervisor_account_outlined,
-          title: 'Menaxherët',
+          title: tr.menaxheret,
           subtitle:
-              'Llogari me të drejta menaxheri: dashboard, gjendje, menu e më tej.',
+              tr.llogariDrejtaMenaxheriDashboardGjendjeMenu,
         ),
 
         PanelCard(
           icon: Icons.person_add_alt_1_outlined,
-          title: 'Shto Menaxher të Ri',
-          subtitle: 'PIN-i duhet të jetë unik dhe minimum 4 shifra.',
+          title: tr.shtoMenaxherRi,
+          subtitle: tr.pinDuhetJeteUnikMinimum4,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PanelFormRow(
                 fields: [
                   PanelField(
-                    label: 'Emri i plotë',
+                    label: tr.emriPlote,
                     flex: 5,
                     child: TextField(
                       controller: _nameCtrl,
@@ -84,7 +85,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
                     ),
                   ),
                   PanelField(
-                    label: 'Kodi PIN',
+                    label: tr.kodiPin,
                     flex: 3,
                     helper: 'Minimum 4 shifra.',
                     child: TextField(

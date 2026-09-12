@@ -8,6 +8,7 @@ import '../../../services/sync_status_service.dart';
 import '../../../services/app_language_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_tokens.dart';
+import '../../../l10n/tr.dart';
 
 class ManagerTopBar extends StatefulWidget {
   const ManagerTopBar({super.key, required this.sectionTitle, required this.m});
@@ -123,15 +124,15 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Kërkohet fjalëkalim'),
+              title: Text(tr.kerkohetFjalekalim),
               content: SizedBox(
                 width: 360,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Vendos password për të hapur diagnostikën e sinkronizimit.',
+                    Text(
+                      tr.vendosPasswordHapurDiagnostikenSinkronizimit,
                     ),
                     const SizedBox(height: 12),
                     TextField(
@@ -144,10 +145,10 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
                           Navigator.of(dialogContext).pop(true);
                           return;
                         }
-                        setStateDialog(() => errorText = 'Password i pasaktë.');
+                        setStateDialog(() => errorText = tr.passwordPasakte);
                       },
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: tr.password,
                         errorText: errorText,
                       ),
                     ),
@@ -157,7 +158,7 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Anulo'),
+                  child: Text(tr.anulo),
                 ),
                 FilledButton(
                   onPressed: () {
@@ -166,7 +167,7 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
                       Navigator.of(dialogContext).pop(true);
                       return;
                     }
-                    setStateDialog(() => errorText = 'Password i pasaktë.');
+                    setStateDialog(() => errorText = tr.passwordPasakte);
                   },
                   child: const Text('Hap'),
                 ),

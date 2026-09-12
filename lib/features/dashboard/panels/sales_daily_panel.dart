@@ -8,6 +8,7 @@ import '../../../theme/app_tokens.dart';
 import '../../../widgets/dashboard/app_empty_states.dart';
 import '../../../widgets/dashboard/data_table_card.dart';
 import '../widgets/stat_card.dart';
+import '../../../l10n/tr.dart';
 
 class _TableRowKind {
   const _TableRowKind.data(this.shift) : day = null, total = null;
@@ -130,22 +131,21 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
       children: [
         PanelHeader(
           icon: Icons.point_of_sale_outlined,
-          title: 'Shitjet',
+          title: tr.shitjet,
           subtitle:
-              'Çdo rresht = një mbyllje gjendje. Totali është shitja e atij intervali '
-              '(nga hapja deri në mbylljen e gjendjes).',
+              tr.cdoRreshtMbylljeGjendjeTotaliEshte + tr.hapjaDeriMbylljenGjendjes,
         ),
         LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth > 700;
             final cards = [
               StatCard(
-                title: 'Mbyllje gjendje',
+                title: tr.mbylljeGjendje,
                 value: '$closeCount',
                 icon: Icons.schedule_outlined,
               ),
               StatCard(
-                title: 'Totali (të gjitha)',
+                title: tr.totaliGjitha,
                 value: '${grandTotal.toStringAsFixed(2)}€',
                 icon: Icons.payments_outlined,
                 accentColor: AppColors.warmGold,
@@ -178,10 +178,9 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
           )
         else if (tableRows.isEmpty)
           DashboardEmptyState(
-            title: 'Nuk ka mbyllje gjendje',
+            title: tr.nukKaMbylljeGjendje,
             message:
-                'Kur mbyllni gjendjen nga paneli Gjendja, shitjet e atij intervali '
-                'shfaqen këtu me datën dhe orën.',
+                tr.kurMbyllniGjendjenPaneliGjendjaShitjet + tr.shfaqenKetuDatenOren,
             icon: Icons.receipt_long_outlined,
           )
         else
@@ -190,9 +189,9 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
               final tableWidth =
                   constraints.maxWidth - AppTokens.cardPadding * 2;
               return DataTableCard(
-                title: 'Shitjet sipas mbylljes së gjendjes',
+                title: tr.shitjetSipasMbylljesGjendjes,
                 subtitle:
-                    'Data · ora e mbylljes · intervali · totali për atë gjendje',
+                    tr.dataOraMbylljesIntervaliTotaliAte,
                 table: SizedBox(
                   width: tableWidth > 0 ? tableWidth : constraints.maxWidth,
                   child: DataTable(

@@ -438,4 +438,7 @@ const Map<String, String> kIt = {
   'zgjidhKategorine': 'Scegli la categoria',
   'zgjidhPamjenErretPerdorimRehatshem': 'Scegli l\'aspetto scuro per un uso più confortevole.',
   'zgjidhniBiznesinVendosniDiteVlefshme': 'Scegli l\'attività e inserisci un numero di giorni valido.',
+  'pagatAvans': 'Stipendi e anticipi',
+  'refund': 'Rimborsi',
+  'regjistriAuditit': 'Registro di controllo',
 };

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../services/audit_log_service.dart';
 import 'audit_kpi_card.dart';
 import 'audit_log_card.dart';
+import '../../../l10n/tr.dart';
 
 class AuditKpiRow extends StatelessWidget {
   const AuditKpiRow({super.key, required this.logs});
@@ -26,7 +27,7 @@ class AuditKpiRow extends StatelessWidget {
           Expanded(
             child: AuditKpiCard(
               icon: Icons.monitor_heart_outlined,
-              label: 'Evente Gjithsej',
+              label: tr.eventeGjithsej,
               value: '${logs.length}',
             ),
           ),
@@ -34,7 +35,7 @@ class AuditKpiRow extends StatelessWidget {
           Expanded(
             child: AuditKpiCard(
               icon: Icons.shield_outlined,
-              label: 'Evente Sigurie',
+              label: tr.eventeSigurie,
               value: '$securityCount',
             ),
           ),
@@ -42,7 +43,7 @@ class AuditKpiRow extends StatelessWidget {
           Expanded(
             child: AuditKpiCard(
               icon: Icons.attach_money_outlined,
-              label: 'Evente Pagesash',
+              label: tr.eventePagesash,
               value: '$paymentCount',
             ),
           ),
@@ -50,7 +51,7 @@ class AuditKpiRow extends StatelessWidget {
           Expanded(
             child: AuditKpiCard(
               icon: Icons.schedule_outlined,
-              label: 'Aktiviteti i Fundit',
+              label: tr.aktivitetiFundit,
               value: lastActivity,
             ),
           ),

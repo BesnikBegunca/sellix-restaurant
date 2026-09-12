@@ -162,7 +162,7 @@ extension SalesMethods on ManagerData {
       adjustmentType: 'void',
       saleId: saleId,
       amount: sale.total,
-      reason: reason ?? 'Porosi e fshirë nga menaxheri',
+      reason: reason ?? tr.porosiFshireMenaxheri,
       performedBy: performedBy ?? 'Menaxher',
       shiftId: _currentShiftId,
     );

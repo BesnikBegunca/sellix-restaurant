@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../manager/manager_data.dart';
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 
 /// Shared Sellix brand mark used throughout the application.
 class GgLogoBox extends StatelessWidget {
@@ -61,16 +62,16 @@ class GgAppHeader extends StatelessWidget {
   final String? userName;
 
   static String formattedDate(DateTime d) {
-    const days = [
-      'E hënë',
-      'E martë',
-      'E mërkurë',
+    final days = [
+      tr.hene,
+      tr.marte,
+      tr.merkure,
       'E enjte',
       'E premte',
-      'E shtunë',
+      tr.shtune,
       'E diel',
     ];
-    const months = [
+    final months = [
       'Janar',
       'Shkurt',
       'Mars',
@@ -81,7 +82,7 @@ class GgAppHeader extends StatelessWidget {
       'Gusht',
       'Shtator',
       'Tetor',
-      'Nëntor',
+      tr.nentor,
       'Dhjetor',
     ];
     return '${days[d.weekday - 1]}, ${d.day} ${months[d.month - 1]}';
@@ -108,7 +109,7 @@ class GgAppHeader extends StatelessWidget {
             const SizedBox(width: 12),
           ],
           Text(
-            title ?? ManagerData.instance.companyName ?? 'POS System',
+            title ?? ManagerData.instance.companyName ?? tr.posSystem,
             style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w500,

@@ -438,4 +438,7 @@ const Map<String, String> kDe = {
   'zgjidhKategorine': 'Kategorie wählen',
   'zgjidhPamjenErretPerdorimRehatshem': 'Wählen Sie das dunkle Design für angenehmeres Arbeiten.',
   'zgjidhniBiznesinVendosniDiteVlefshme': 'Wählen Sie den Betrieb und geben Sie eine gültige Anzahl Tage ein.',
+  'pagatAvans': 'Löhne und Vorschüsse',
+  'refund': 'Rückerstattungen',
+  'regjistriAuditit': 'Auditprotokoll',
 };

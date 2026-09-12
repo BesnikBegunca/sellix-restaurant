@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../widgets/dashboard/app_card.dart';
+import '../../../../l10n/tr.dart';
 
 class TableOccupancyChart extends StatelessWidget {
   const TableOccupancyChart({
@@ -21,9 +22,9 @@ class TableOccupancyChart extends StatelessWidget {
     final occupiedTables = m.cashierTables.where((t) => t.occupied).toList();
 
     return AppCard(
-      title: 'Tavolinat tani',
+      title: tr.tavolinatTani,
       subtitle: total == 0
-          ? 'Nuk ka tavolina të konfiguruara.'
+          ? tr.nukKaTavolinaKonfiguruara
           : '$occupied të zëna · $free të lira',
       child: Column(
         children: [
@@ -85,7 +86,7 @@ class TableOccupancyChart extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  'të zëna',
+                                  tr.zena3,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: AppColors.lightGreenText,
@@ -103,13 +104,13 @@ class TableOccupancyChart extends StatelessWidget {
                         children: [
                           _Legend(
                             color: AppColors.mutedOrange,
-                            label: 'Të zëna',
+                            label: tr.zena2,
                             value: '$occupied',
                           ),
                           const SizedBox(height: 10),
                           _Legend(
                             color: AppColors.primaryGreen,
-                            label: 'Të lira',
+                            label: tr.lira,
                             value: '$free',
                           ),
                         ],
@@ -127,7 +128,7 @@ class TableOccupancyChart extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'Asnjë tavolinë e zënë për momentin.',
+                tr.asnjeTavolineZeneMomentin,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

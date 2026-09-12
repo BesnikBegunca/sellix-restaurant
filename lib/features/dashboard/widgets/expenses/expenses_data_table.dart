@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../l10n/tr.dart';
 
 class ExpensesDataTable extends StatelessWidget {
   const ExpensesDataTable({
@@ -49,10 +50,10 @@ class ExpensesDataTable extends StatelessWidget {
                   width: 130,
                   child: Text('KATEGORIA', style: headerStyle),
                 ),
-                Expanded(child: Text('PËRSHKRIMI', style: headerStyle)),
+                Expanded(child: Text(tr.pershkrimi, style: headerStyle)),
                 SizedBox(
                   width: 140,
-                  child: Text('MËNYRA E PAGESËS', style: headerStyle),
+                  child: Text(tr.menyraPageses, style: headerStyle),
                 ),
                 SizedBox(
                   width: 100,
@@ -163,7 +164,7 @@ class ExpensesDataTable extends StatelessWidget {
                       SizedBox(
                         width: 52,
                         child: IconButton(
-                          tooltip: 'Fshi rreshtin',
+                          tooltip: tr.fshiRreshtin,
                           icon: Icon(
                             Icons.delete_outline,
                             size: 18,

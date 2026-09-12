@@ -29,23 +29,25 @@ import '../features/dashboard/panels/sales_daily_panel.dart';
 import '../features/dashboard/widgets/manager_side_nav.dart';
 import '../features/dashboard/widgets/manager_top_bar.dart';
 import '../widgets/session_lock_dialog.dart';
+import '../l10n/tr.dart';
 
-const _kSectionTitles = <({String sq, String en})>[
-  (sq: 'Përmbledhje', en: 'Overview'),
-  (sq: 'Gjendja e turnit', en: 'Shift status'),
-  (sq: 'Kamarierët', en: 'Waiters'),
-  (sq: 'Menaxherët', en: 'Managers'),
-  (sq: 'Shpenzime', en: 'Expenses'),
-  (sq: 'Fitime', en: 'Profits'),
-  (sq: 'Shitjet', en: 'Sales'),
-  (sq: 'Top puntor', en: 'Top employee'),
-  (sq: 'Menu', en: 'Menu'),
-  (sq: 'Tavolinat', en: 'Tables'),
-  (sq: 'Cilësimet', en: 'Settings'),
-  (sq: 'Pagat & avans', en: 'Payroll & advances'),
-  (sq: 'Refund', en: 'Refunds'),
-  (sq: 'Historiku i shitjeve', en: 'Sales history'),
-  (sq: 'Regjistri i auditit', en: 'Audit log'),
+/// Section headings, resolved per language on every read.
+List<String> get _kSectionTitles => [
+  tr.permbledhje,
+  tr.gjendjaTurnit,
+  tr.kamarieret,
+  tr.menaxheret,
+  tr.shpenzime,
+  tr.fitime,
+  tr.shitjet,
+  tr.realizimiSipasPunetoreve,
+  tr.menu,
+  tr.tavolinat,
+  tr.cilesimet,
+  tr.pagatAvans,
+  tr.refund,
+  tr.historikuShitjeve,
+  tr.regjistriAuditit,
 ];
 
 final RegExp _pinDigits = RegExp(r'^\d+$');
@@ -276,10 +278,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ManagerTopBar(
-                        sectionTitle: AppLanguageService.instance.t(
-                          _kSectionTitles[_railIndex].sq,
-                          _kSectionTitles[_railIndex].en,
-                        ),
+                        sectionTitle: _kSectionTitles[_railIndex],
                         m: _m,
                       ),
                       Expanded(

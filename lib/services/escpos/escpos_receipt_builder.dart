@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../receipt_text.dart';
 import 'escpos_bytes.dart';
 import 'printer_profile.dart';
+import '../../l10n/tr.dart';
 
 /// Builds ESC/POS byte payloads for every receipt type used in the POS.
 ///
@@ -92,7 +93,7 @@ class EscPosReceiptBuilder {
     b.lf();
     _metaLines(b, orderNumber);
     b.lf();
-    b.boldCenteredLine(footerText.isNotEmpty ? footerText : 'Ju Faleminderit!');
+    b.boldCenteredLine(footerText.isNotEmpty ? footerText : tr.juFaleminderit);
     b.lf(4);
 
     if (profile.supportsCut) b.partialCut();

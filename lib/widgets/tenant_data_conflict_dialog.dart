@@ -5,6 +5,7 @@ import '../models/tenant_activation_gate_result.dart';
 import '../models/tenant_data_conflict.dart';
 import '../services/local_tenant_data_service.dart';
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 
 /// Asks whether to wipe local SQLite data before activating a new business.
 Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
@@ -13,7 +14,7 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
 ) {
   final previousLabel = conflict.previousBusinessName ??
       conflict.previousBusinessId ??
-      'biznesi i mëparshëm';
+      tr.biznesiMeparshem;
   final release = LocalTenantDataService.isMandatoryWipeEnforced;
 
   if (release) {
@@ -21,7 +22,7 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Biznes tjetër u zbulua'),
+        title: Text(tr.biznesTjeterUZbulua),
         content: Text(
           'Ky terminal ka të dhëna lokale nga një biznes tjetër ($previousLabel).\n\n'
           'Për siguri, duhet të pastrohen të dhënat lokale para se të '
@@ -32,7 +33,7 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
             onPressed: () => Navigator.of(ctx).pop(
               TenantConflictDialogChoice.cancelled,
             ),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.softRed),
@@ -50,7 +51,7 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
-      title: const Text('Biznes tjetër u zbulua'),
+      title: Text(tr.biznesTjeterUZbulua),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,8 +71,7 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
               ),
             ),
             child: Text(
-              'Rrezik: "Ruaj vetëm për testim" mund të shfaqen të dhëna të '
-              'biznesit tjetër (leximet nuk filtrohen ende sipas tenant-it).',
+              tr.rrezikRuajVetemTestimMundShfaqen + tr.biznesitTjeterLeximetNukFiltrohenEnde,
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
@@ -86,14 +86,14 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
           onPressed: () => Navigator.of(ctx).pop(
             TenantConflictDialogChoice.cancelled,
           ),
-          child: const Text('Anulo'),
+          child: Text(tr.anulo),
         ),
         if (kDebugMode)
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(
               TenantConflictDialogChoice.keepLocalDebugOnly,
             ),
-            child: const Text('Ruaj vetëm për testim'),
+            child: Text(tr.ruajVetemTestim),
           ),
         TextButton(
           style: TextButton.styleFrom(foregroundColor: AppColors.softRed),

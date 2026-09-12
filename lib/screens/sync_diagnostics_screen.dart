@@ -14,6 +14,7 @@ import '../services/support_bundle_service.dart';
 import '../services/sync_diagnostics_export_service.dart';
 import '../services/sync_status_service.dart';
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 /// Opens the Sync Diagnostics modal. Call from any [BuildContext].
 Future<void> showSyncDiagnosticsDialog(BuildContext context) {
   return showDialog<void>(
@@ -221,7 +222,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.softRed),
@@ -264,7 +265,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Pastro outbox të pambështetur'),
+        title: Text(tr.pastroOutboxPambeshtetur),
         content: const Text(
           'Fshin nga outbox vetëm ngjarjet me entityType që pos_api '
           'nuk i proceson (waiters, porosi, kuzhinë, etj.). '
@@ -273,7 +274,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -292,7 +293,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       await _loadFailed();
       if (!mounted) return;
       final msg = result.totalRemoved == 0
-          ? 'Nuk u gjetën rreshta outbox të pambështetur.'
+          ? tr.nukUGjetenRreshtaOutboxPambeshtetur
           : 'U fshinë ${result.totalRemoved} rreshta outbox të pambështetur.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
@@ -398,7 +399,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                       if (_sync.backoffExhausted)
                         _row(
                           'Backoff',
-                          'Max retries — përdorni Retry manual',
+                          tr.maxRetriesPerdorniRetryManual,
                           valueColor: AppColors.softRed,
                         ),
                       _row('Session conflict skips',
@@ -465,7 +466,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
             icon: const Icon(Icons.close, size: 18),
             color: AppColors.lightGreenText,
             onPressed: () => Navigator.of(context).pop(),
-            tooltip: 'Close',
+            tooltip: tr.close,
           ),
         ],
       ),
@@ -599,7 +600,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                       )
                     : const Icon(Icons.refresh, size: 16),
                 label: Text(
-                  _retryingAllFailed ? 'Duke riprovuar…' : 'Riprovo të gjitha',
+                  _retryingAllFailed ? 'Duke riprovuar…' : tr.riprovoGjitha,
                 ),
               ),
             ),
@@ -728,10 +729,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
           SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Të dhënat operative lokale mund të jenë nga një biznes tjetër. '
-              'Historiku audit (audit_logs) ruhet gjithmonë. '
-              'Në versionin e publikuar, aktivizimi i një biznesi të ri kërkon '
-              'pastrim lokal të detyrueshëm para vazhdimit.',
+              tr.dhenatOperativeLokaleMundJeneBiznes + tr.historikuAuditAuditLogsRuhetGjithmone + tr.versioninPublikuarAktivizimiBiznesiRiKerkon + tr.pastrimLokalDetyrueshemParaVazhdimit,
               style: TextStyle(fontSize: 12, color: AppColors.darkGreenText),
             ),
           ),
@@ -820,7 +818,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       label: Text(
         _cleaningUnsupported
             ? 'Duke pastruar…'
-            : 'Pastro outbox të pambështetur',
+            : tr.pastroOutboxPambeshtetur,
       ),
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.mediumGreenText,
@@ -862,8 +860,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
         Divider(color: AppColors.lightGreenBorder, height: 1),
         const SizedBox(height: 12),
         Text(
-          'Rivendos vetëm aktivizimin lokal. Për çaktivizim server-side, '
-          'përdorni SuperAdmin.',
+          tr.rivendosVetemAktiviziminLokalCaktivizimServer + tr.perdorniSuperadmin,
           style: TextStyle(
             fontSize: 12,
             height: 1.4,

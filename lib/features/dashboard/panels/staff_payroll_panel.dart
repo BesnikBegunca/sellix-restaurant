@@ -8,6 +8,7 @@ import '../widgets/stat_card.dart';
 import '../widgets/staff/payroll_summary_row.dart';
 import '../widgets/staff/waiter_payroll_detail.dart';
 import '../widgets/staff/waiter_summary_card.dart';
+import '../../../l10n/tr.dart';
 
 class StaffPayrollPanel extends StatefulWidget {
   const StaffPayrollPanel({super.key, required this.m});
@@ -44,7 +45,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
     super.dispose();
   }
 
-  static const _monthNames = [
+  static List<String> get _monthNames => [
     'Janar',
     'Shkurt',
     'Mars',
@@ -55,7 +56,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
     'Gusht',
     'Shtator',
     'Tetor',
-    'Nëntor',
+    tr.nentor,
     'Dhjetor',
   ];
 
@@ -177,7 +178,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
               Expanded(
                 child: StatCard(
                   icon: Icons.account_balance_wallet_outlined,
-                  title: 'Pagesa Gjithsej',
+                  title: tr.pagesaGjithsej,
                   value: '${totalGross.toStringAsFixed(0)}€',
                   accentColor: AppColors.primaryGreen,
                 ),
@@ -186,7 +187,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
               Expanded(
                 child: StatCard(
                   icon: Icons.money_off_outlined,
-                  title: 'Avanse Gjithsej',
+                  title: tr.avanseGjithsej,
                   value: '${totalAdv.toStringAsFixed(0)}€',
                   accentColor: AppColors.softRed,
                 ),
@@ -195,7 +196,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
               Expanded(
                 child: StatCard(
                   icon: Icons.people_outline,
-                  title: 'Numri i Stafit',
+                  title: tr.numriStafit,
                   value: '$staffCount',
                 ),
               ),
@@ -203,7 +204,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
               Expanded(
                 child: StatCard(
                   icon: Icons.check_circle_outline,
-                  title: 'Pagesa Neto',
+                  title: tr.pagesaNeto,
                   value: '${totalNet.toStringAsFixed(0)}€',
                   accentColor: totalNet >= 0
                       ? AppColors.primaryGreen
@@ -279,7 +280,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Përmbledhja Mujore',
+                          tr.permbledhjaMujore,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -298,7 +299,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Pagesa Gjithsej',
+                                tr.pagesaGjithsej,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: AppColors.mediumGreenText,
@@ -318,17 +319,17 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                         ),
                         const SizedBox(height: 20),
                         PayrollSummaryRow(
-                          label: 'Paga Mesatare',
+                          label: tr.pagaMesatare,
                           value: '${avgSalary.toStringAsFixed(2)}€',
                         ),
                         Divider(height: 24, color: AppColors.lightGreenBorder),
                         PayrollSummaryRow(
-                          label: 'Bruto Më i Lartë',
+                          label: tr.brutoLarte,
                           value: '${maxGross.toStringAsFixed(2)}€',
                         ),
                         Divider(height: 24, color: AppColors.lightGreenBorder),
                         PayrollSummaryRow(
-                          label: 'Avanse Gjithsej',
+                          label: tr.avanseGjithsej,
                           value: '-${totalAdv.toStringAsFixed(2)}€',
                           valueColor: totalAdv > 0
                               ? AppColors.softRed
@@ -336,7 +337,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                         ),
                         Divider(height: 24, color: AppColors.lightGreenBorder),
                         PayrollSummaryRow(
-                          label: 'Numri i Stafit',
+                          label: tr.numriStafit,
                           value: '$staffCount',
                           bold: true,
                         ),
@@ -378,7 +379,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Nuk ka kamarierë të regjistruar.',
+              tr.nukKaKamariereRegjistruar,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -387,7 +388,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Shko te "Kamarierët" për të shtuar punonjës.',
+              tr.shkoKamarieretShtuarPunonjes,
               style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
             ),
           ],

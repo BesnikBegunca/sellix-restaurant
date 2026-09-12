@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../l10n/tr.dart';
 
 /// Dialog: menaxheri shkruan PIN-in e stafit për ta verifikuar dhe ruajtur.
 Future<String?> showStaffPinRevealDialog(
@@ -18,8 +19,7 @@ Future<String?> showStaffPinRevealDialog(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Shkruaj PIN-in e saktë të stafit. Do të ruhet që ta shohësh '
-            'menjëherë herën tjetër.',
+            tr.shkruajPinSakteStafitDoRuhet + tr.menjehereHerenTjeter,
             style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
           ),
           const SizedBox(height: 16),
@@ -47,7 +47,7 @@ Future<String?> showStaffPinRevealDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('Anulo'),
+          child: Text(tr.anulo),
         ),
         FilledButton(
           onPressed: () {

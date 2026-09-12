@@ -4,12 +4,15 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../manager/manager_data.dart';
+import '../l10n/tr.dart';
 
 /// Gjeneron PDF për listën e shpenzimeve (A4, tabelë + përmbledhje).
 Future<Uint8List> buildExpensesPdfBytes({
   required List<ExpenseRow> rows,
-  String businessName = 'POS System',
+  // Defaults cannot call tr (it resolves at runtime), so resolve it here.
+  String? businessName,
 }) async {
+  final name = businessName ?? tr.posSystem;
   final total = rows.fold<double>(0, (s, e) => s + e.amount);
   final byType = <String, double>{};
   for (final e in rows) {
@@ -33,7 +36,7 @@ Future<Uint8List> buildExpensesPdfBytes({
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  businessName,
+                  name,
                   style: pw.TextStyle(
                     fontSize: 20,
                     fontWeight: pw.FontWeight.bold,
@@ -95,8 +98,8 @@ Future<Uint8List> buildExpensesPdfBytes({
             pw.TableRow(
               decoration: const pw.BoxDecoration(color: PdfColors.grey200),
               children: [
-                _pdfHead('Lloji'),
-                _pdfHead('Përshkrimi'),
+                _pdfHead(tr.lloji),
+                _pdfHead(tr.pershkrimi2),
                 _pdfHead('Shuma', right: true),
                 _pdfHead('Data'),
               ],
@@ -115,7 +118,7 @@ Future<Uint8List> buildExpensesPdfBytes({
         if (byType.isNotEmpty) ...[
           pw.SizedBox(height: 28),
           pw.Text(
-            'Përmbledhje sipas llojit',
+            tr.permbledhjeSipasLlojit,
             style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 8),
@@ -129,7 +132,7 @@ Future<Uint8List> buildExpensesPdfBytes({
               pw.TableRow(
                 decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                 children: [
-                  _pdfHead('Lloji'),
+                  _pdfHead(tr.lloji),
                   _pdfHead('Shuma', right: true),
                 ],
               ),

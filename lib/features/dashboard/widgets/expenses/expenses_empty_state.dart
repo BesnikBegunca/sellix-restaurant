@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_colors.dart';
+import '../../../../l10n/tr.dart';
 
 class ExpensesEmptyState extends StatelessWidget {
   const ExpensesEmptyState({super.key, required this.onAdd});
@@ -25,7 +26,7 @@ class ExpensesEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Nuk ka rreshta që përputhen me filtrat',
+            tr.nukKaRreshtaPerputhenFiltrat,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 17,
@@ -35,7 +36,7 @@ class ExpensesEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Zbraz kërkimin, zgjidh "Të gjitha" te lloji, ose shto një transaksion të ri.',
+            tr.zbrazKerkiminZgjidhGjithaLlojiOse,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: AppColors.mediumGreenText),
           ),

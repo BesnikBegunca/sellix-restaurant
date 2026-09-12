@@ -45,7 +45,7 @@ extension TablesMethods on ManagerData {
 
     if (blockedDeletes > 0) {
       return blockedDeletes == 1
-          ? '1 tavolinë me porosi të hapur nuk u fshi (fatura e ruajtur).'
+          ? tr.k1TavolinePorosiHapurNukU
           : '$blockedDeletes tavolina me porosi të hapura nuk u fshinë (faturat u ruajtën).';
     }
     if (targetCount > count.clamp(1, 48)) {
@@ -210,7 +210,7 @@ extension TablesMethods on ManagerData {
       details: {
         'waiterName': waiterName,
         'printTotal': meta['total'],
-        'reason': 'PRINTO i vetëm u fshi nga menaxheri',
+        'reason': tr.printoVetemUFshiMenaxheri,
       },
     );
     _notify();

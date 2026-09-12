@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/app_colors.dart';
 import '../../../../widgets/dashboard/app_card.dart';
+import '../../../../l10n/tr.dart';
 
 class QuickActionsCard extends StatelessWidget {
   const QuickActionsCard({super.key, required this.onNavigate});
@@ -10,35 +11,35 @@ class QuickActionsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      title: 'Veprime të shpejta',
-      subtitle: 'Shko te puna që të duhet tani.',
+      title: tr.veprimeShpejta,
+      subtitle: tr.shkoPunaDuhetTani,
       child: Column(
         children: [
           _ActionRow(
             icon: Icons.schedule_outlined,
-            label: 'Gjendja e turnit',
-            hint: 'Hap ose mbyll turnin',
+            label: tr.gjendjaTurnit,
+            hint: tr.hapOseMbyllTurnin,
             onTap: () => onNavigate(1),
           ),
           const SizedBox(height: 8),
           _ActionRow(
             icon: Icons.payments_outlined,
-            label: 'Shto shpenzim',
-            hint: 'Regjistro një kosto',
+            label: tr.shtoShpenzim,
+            hint: tr.regjistroKosto,
             onTap: () => onNavigate(4),
           ),
           const SizedBox(height: 8),
           _ActionRow(
             icon: Icons.menu_book_outlined,
-            label: 'Ndrysho menunë',
-            hint: 'Produkte dhe çmime',
+            label: tr.ndryshoMenune,
+            hint: tr.produkteCmime,
             onTap: () => onNavigate(8),
           ),
           const SizedBox(height: 8),
           _ActionRow(
             icon: Icons.history_outlined,
-            label: 'Historiku i shitjeve',
-            hint: 'Fatura dhe rimbursime',
+            label: tr.historikuShitjeve,
+            hint: tr.faturaRimbursime,
             onTap: () => onNavigate(13),
           ),
         ],

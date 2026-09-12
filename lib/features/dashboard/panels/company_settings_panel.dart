@@ -15,6 +15,7 @@ import '../widgets/settings/settings_card.dart';
 import '../widgets/settings/settings_check_tile.dart';
 import '../widgets/settings/language_option_tile.dart';
 import '../widgets/settings/theme_mode_picker.dart';
+import '../../../l10n/tr.dart';
 
 class CompanySettingsPanel extends StatefulWidget {
   const CompanySettingsPanel({super.key, required this.m});
@@ -95,7 +96,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   Future<void> _saveCompany() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      setState(() => _errorMsg = 'Emri i kompanisë është i detyrueshëm.');
+      setState(() => _errorMsg = tr.emriKompaniseEshteDetyrueshem);
       return;
     }
     await widget.m.saveCompanyName(name);
@@ -143,7 +144,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   Future<void> _saveReceipt() async {
     await widget.m.saveEscPosSettings(
       receiptFooter: _footerCtrl.text.trim().isEmpty
-          ? 'Ju Faleminderit!'
+          ? tr.juFaleminderit
           : _footerCtrl.text.trim(),
       businessAddress: _addressCtrl.text.trim().isEmpty
           ? null
@@ -152,7 +153,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           ? null
           : _phoneCtrl.text.trim(),
     );
-    _toast('Cilësimet e faturës u ruajtën.');
+    _toast(tr.cilesimetFaturesURuajten);
   }
 
   Future<void> _changeAdminPin() async {
@@ -161,17 +162,17 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     final confirmPin = _confirmPinCtrl.text.trim();
 
     if (currentPin.isEmpty || newPin.isEmpty || confirmPin.isEmpty) {
-      setState(() => _pinErrorMsg = 'Të gjitha fushat janë të detyrueshme.');
+      setState(() => _pinErrorMsg = tr.gjithaFushatJaneDetyrueshme);
       return;
     }
     if (newPin.length < 4 || !RegExp(r'^\d+$').hasMatch(newPin)) {
       setState(
-        () => _pinErrorMsg = 'PIN-i i ri: minimum 4 shifra, vetëm numra.',
+        () => _pinErrorMsg = tr.pinRiMinimum4ShifraVetem,
       );
       return;
     }
     if (newPin != confirmPin) {
-      setState(() => _pinErrorMsg = 'PIN-i i ri dhe konfirmimi nuk përputhen.');
+      setState(() => _pinErrorMsg = tr.pinRiKonfirmimiNukPerputhen);
       return;
     }
 
@@ -185,7 +186,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
 
     if (!valid) {
       setState(() {
-        _pinErrorMsg = 'PIN-i aktual është i gabuar.';
+        _pinErrorMsg = tr.pinAktualEshteGabuar;
         _pinChanging = false;
       });
       return;
@@ -211,9 +212,9 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       children: [
         PanelHeader(
           icon: Icons.tune_rounded,
-          title: _language.t('Cilësimet e kompanisë', 'Company settings'),
+          title: _language.t(tr.cilesimetKompanise, 'Company settings'),
           subtitle: _language.t(
-            'Gjithçka që ndikon te stafi, printeri dhe faturat — e ndarë sipas kartave.',
+            tr.gjithckaNdikonStafiPrinteriFaturatNdare,
             'Everything affecting staff, printing and receipts — grouped into cards.',
           ),
         ),
@@ -241,8 +242,8 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   Widget _businessCard() {
     return SettingsCard(
       icon: Icons.storefront_outlined,
-      title: 'Biznesi',
-      subtitle: 'Emri që shfaqet në faturë dhe në dashboard.',
+      title: tr.biznesi,
+      subtitle: tr.emriShfaqetFatureDashboard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -263,7 +264,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           Align(
             alignment: Alignment.centerLeft,
             child: AppButton(
-              label: 'Ruaj emrin',
+              label: tr.ruajEmrin,
               icon: Icons.save_outlined,
               onPressed: _saveCompany,
             ),
@@ -278,7 +279,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       icon: Icons.language_rounded,
       title: _language.t('Gjuha', 'Language'),
       subtitle: _language.t(
-        'Gjuha e ekraneve të menaxherit dhe stafit.',
+        tr.gjuhaEkraneveMenaxheritStafit,
         'Language used across manager and staff screens.',
       ),
       child: LayoutBuilder(
@@ -337,18 +338,18 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           title: _language.t('Pamja e aplikacionit', 'Application appearance'),
           subtitle: isDark
               ? _language.t(
-                  'Pamja e errët është aktive.',
+                  tr.pamjaErretEshteAktive,
                   'Dark appearance is active.',
                 )
               : _language.t(
-                  'Zgjidh pamjen e errët për përdorim më të rehatshëm.',
+                  tr.zgjidhPamjenErretPerdorimRehatshem,
                   'Choose dark appearance for more comfortable use.',
                 ),
           child: ThemeModePicker(
             isDark: isDark,
             onChanged: ThemeModeController.instance.setDark,
-            lightLabel: _language.t('Modaliteti i ndritshëm', 'Light mode'),
-            darkLabel: _language.t('Modaliteti i errët', 'Dark mode'),
+            lightLabel: _language.t(tr.modalitetiNdritshem, 'Light mode'),
+            darkLabel: _language.t(tr.modalitetiErret, 'Dark mode'),
           ),
         );
       },
@@ -358,10 +359,10 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   Widget _printerCard() {
     return SettingsCard(
       icon: Icons.print_outlined,
-      title: 'Printeri',
-      subtitle: 'Printeri i Windows për faturat POS.',
+      title: tr.printeri,
+      subtitle: tr.printeriWindowsFaturatPos,
       trailing: IconButton(
-        tooltip: 'Rifresko printerët',
+        tooltip: tr.rifreskoPrinteret,
         onPressed: _loadPrinters,
         icon: const Icon(Icons.refresh_outlined, size: 20),
       ),
@@ -386,7 +387,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
             )
           else if (_printers.isEmpty)
             Text(
-              'Nuk u gjet asnjë printer Windows.',
+              tr.nukUGjetAsnjePrinterWindows,
               style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
             )
           else
@@ -411,19 +412,19 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           const SizedBox(height: 14),
           SettingsCheckTile(
             label: 'ESC/POS',
-            description: 'Printim i drejtpërdrejtë (i rekomanduar).',
+            description: tr.printimDrejtperdrejteRekomanduar,
             value: widget.m.useEscPos,
             onChanged: (v) => widget.m.saveEscPosSettings(useEscPos: v),
           ),
           const SizedBox(height: 8),
           SettingsCheckTile(
-            label: 'Hap sirtarin e parave',
-            description: 'Pas pagesës së suksesshme.',
+            label: tr.hapSirtarinParave,
+            description: tr.pasPagesesSuksesshme,
             value: widget.m.cashDrawerEnabled,
             onChanged: (v) => widget.m.saveEscPosSettings(cashDrawerEnabled: v),
           ),
           const SizedBox(height: 14),
-          _fieldLabel('Gjerësia e letrës'),
+          _fieldLabel(tr.gjeresiaLetres),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -469,8 +470,8 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   Widget _receiptCard() {
     return SettingsCard(
       icon: Icons.receipt_long_outlined,
-      title: 'Fatura',
-      subtitle: 'Teksti që printohet në fund të faturës.',
+      title: tr.fatura,
+      subtitle: tr.tekstiPrintohetFundFatures,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -485,17 +486,17 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           const SizedBox(height: 8),
           TextField(controller: _phoneCtrl, decoration: inputDeco('+355 …')),
           const SizedBox(height: 12),
-          _fieldLabel('Mesazhi në fund'),
+          _fieldLabel(tr.mesazhiFund),
           const SizedBox(height: 8),
           TextField(
             controller: _footerCtrl,
-            decoration: inputDeco('Ju Faleminderit!'),
+            decoration: inputDeco(tr.juFaleminderit),
           ),
           const SizedBox(height: 16),
           Align(
             alignment: Alignment.centerLeft,
             child: AppButton(
-              label: 'Ruaj faturën',
+              label: tr.ruajFaturen,
               icon: Icons.save_outlined,
               onPressed: _saveReceipt,
             ),
@@ -508,9 +509,9 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   Widget _licenseCard() {
     return SettingsCard(
       icon: Icons.vpn_key_rounded,
-      title: 'Licenca',
+      title: tr.licenca,
       subtitle:
-          'Nëse ke marrë një key të ri, vendose këtu për ta vazhduar licencën.',
+          tr.neseKeMarreKeyRiVendose,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -524,7 +525,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           Align(
             alignment: Alignment.centerLeft,
             child: AppButton(
-              label: 'Vazhdo licencën',
+              label: tr.vazhdoLicencen,
               icon: Icons.autorenew_rounded,
               onPressed: _replaceLicenseKey,
             ),
@@ -537,8 +538,8 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   Widget _pinCard() {
     return SettingsCard(
       icon: Icons.lock_outline,
-      title: 'Siguria e menaxherit',
-      subtitle: 'Ndrysho PIN-in që hap dashboard-in e menaxherit.',
+      title: tr.siguriaMenaxherit,
+      subtitle: tr.ndryshoPinHapDashboardMenaxherit,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -549,13 +550,13 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                 _pinField(
                   _currentPinCtrl,
                   'PIN aktual',
-                  'PIN-i që përdor tani',
+                  tr.pinPerdorTani,
                 ),
                 _pinField(_newPinCtrl, 'PIN i ri', 'Minimum 4 shifra'),
                 _pinField(
                   _confirmPinCtrl,
                   'Konfirmo PIN-in',
-                  'Ripërsërit PIN-in e ri',
+                  tr.riperseritPinRi,
                   onSubmitted: (_) => _pinChanging ? null : _changeAdminPin(),
                 ),
               ];
@@ -588,13 +589,13 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           Row(
             children: [
               AppButton(
-                label: 'Ndrysho PIN-in',
+                label: tr.ndryshoPin,
                 icon: Icons.lock_reset_outlined,
                 onPressed: _pinChanging ? null : _changeAdminPin,
               ),
               const SizedBox(width: 10),
               AppButton(
-                label: 'Anulo',
+                label: tr.anulo,
                 variant: AppButtonVariant.secondary,
                 onPressed: () {
                   _currentPinCtrl.clear();

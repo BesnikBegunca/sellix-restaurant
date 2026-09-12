@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../l10n/tr.dart';
 
 class WaiterSummaryCard extends StatelessWidget {
   const WaiterSummaryCard({
@@ -83,7 +84,7 @@ class WaiterSummaryCard extends StatelessWidget {
                   Text(
                     rate > 0
                         ? '${rate.toStringAsFixed(2)}€/ditë · $worked ditë'
-                        : 'Pa pagë të caktuar',
+                        : tr.paPageCaktuar,
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.mediumGreenText,

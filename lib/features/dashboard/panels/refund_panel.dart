@@ -8,6 +8,7 @@ import '../../../theme/app_colors.dart';
 import '../../sales_history/models/sales_models.dart';
 import '../../sales_history/widgets/sale_card.dart';
 import '../widgets/stat_card.dart';
+import '../../../l10n/tr.dart';
 
 /// Çdo shtypje **PRINTO** = një rresht i veçantë (jo totali i bashkuar i tavolinës).
 class RefundPanel extends StatefulWidget {
@@ -144,7 +145,7 @@ class _RefundPanelState extends State<RefundPanel> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Fshi këtë printim?'),
+        title: Text(tr.fshiKetePrintim),
         content: SizedBox(
           width: 400,
           child: Text(
@@ -158,14 +159,14 @@ class _RefundPanelState extends State<RefundPanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.negativeText,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Fshi'),
+            child: Text(tr.fshi),
           ),
         ],
       ),
@@ -210,21 +211,20 @@ class _RefundPanelState extends State<RefundPanel> {
       children: [
         PanelHeader(
           icon: Icons.undo_outlined,
-          title: 'Refund — Porositë e Printuara',
+          title: tr.refundPorositePrintuara,
           subtitle:
-              'Çdo shtypje PRINTO shfaqet veçmas (p.sh. 3€, pastaj 4€, pastaj 5€). '
-              'Fshirja heq vetëm atë printim nga tavolina, jo të gjitha së bashku.',
+              tr.cdoShtypjePrintoShfaqetVecmasP + tr.fshirjaHeqVetemAtePrintimTavolina,
         ),
         PanelStatRow(
           cards: [
             StatCard(
               icon: Icons.print_outlined,
-              title: 'Printime (turni aktual)',
+              title: tr.printimeTurniAktual,
               value: '${_orders.length}',
             ),
             StatCard(
               icon: Icons.euro_outlined,
-              title: 'Shuma e printimeve',
+              title: tr.shumaPrintimeve,
               value: '${_printsTotal.toStringAsFixed(2)}€',
               accentColor: AppColors.warmGold,
             ),
@@ -258,7 +258,7 @@ class _RefundPanelState extends State<RefundPanel> {
               Expanded(
                 child: waiters.isEmpty
                     ? Text(
-                        'Nuk ka kamarierë të regjistruar.',
+                        tr.nukKaKamariereRegjistruar,
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.lightGreenText,
@@ -326,7 +326,7 @@ class _RefundPanelState extends State<RefundPanel> {
                   padding: EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: Text(
-                      'Zgjidh një kamarier.',
+                      tr.zgjidhKamarier,
                       style: TextStyle(color: AppColors.lightGreenText),
                     ),
                   ),

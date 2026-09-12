@@ -11,6 +11,7 @@ import '../services/restore_service.dart';
 import '../services/windows_printers_service.dart';
 import 'login_screen.dart';
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -131,9 +132,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     const SizedBox(height: 24),
                     _buildModeOption(
                       mode: 'PINMODE',
-                      title: 'PIN Mode',
+                      title: tr.pinMode,
                       description:
-                          'Waiters enter their PIN to access their tables',
+                          tr.waitersEnterTheirPinAccessTheir,
                       isSelected: _selectedMode == 'PINMODE',
                       onTap: () => _changeMode('PINMODE'),
                     ),
@@ -193,9 +194,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           if (v == null) return;
                           _savePrinter(v);
                         },
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: OutlineInputBorder(),
-                          labelText: 'Windows Printer',
+                          labelText: tr.windowsPrinter,
                         ),
                       ),
                     const SizedBox(height: 10),
@@ -384,10 +385,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             // Footer text
             TextField(
               controller: _footerCtrl,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Receipt footer text',
-                hintText: 'Ju Faleminderit!',
+                labelText: tr.receiptFooterText,
+                hintText: tr.juFaleminderit,
               ),
               onSubmitted: (_) => _saveReceiptText(),
               onEditingComplete: _saveReceiptText,
@@ -397,10 +398,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             // Business address
             TextField(
               controller: _addressCtrl,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Business address (optional)',
-                hintText: 'Rruga Shembull Nr. 1, Tiranë',
+                labelText: tr.businessAddressOptional,
+                hintText: tr.rrugaShembullNr1Tirane,
               ),
               onSubmitted: (_) => _saveReceiptText(),
               onEditingComplete: _saveReceiptText,
@@ -410,10 +411,10 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             // Business phone
             TextField(
               controller: _phoneCtrl,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Business phone (optional)',
-                hintText: '+355 69 123 4567',
+                labelText: tr.businessPhoneOptional,
+                hintText: tr.k355691234567,
               ),
               onSubmitted: (_) => _saveReceiptText(),
               onEditingComplete: _saveReceiptText,
@@ -457,7 +458,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   Future<void> _saveReceiptText() async {
     await _m.saveEscPosSettings(
-      receiptFooter:   _footerCtrl.text.trim().isEmpty ? 'Ju Faleminderit!' : _footerCtrl.text.trim(),
+      receiptFooter:   _footerCtrl.text.trim().isEmpty ? tr.juFaleminderit : _footerCtrl.text.trim(),
       businessAddress: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
       businessPhone:   _phoneCtrl.text.trim().isEmpty  ? null : _phoneCtrl.text.trim(),
     );
@@ -478,7 +479,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           .withPaperWidth(_paperWidthMm);
       final ok = await EscPosPrinterService.instance.printTestPage(
         printerName: _selectedPrinter,
-        companyName: _m.companyName ?? 'POS System',
+        companyName: _m.companyName ?? tr.posSystem,
         profile: profile,
       );
       if (!mounted) return;
@@ -915,7 +916,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     _dialogRadio(
                       ctx: ctx,
                       setState: setDialogState,
-                      label: 'Encrypted (.enc.db)',
+                      label: tr.encryptedEncDb,
                       value: 0,
                       groupValue: selectedFormat,
                       onChanged: (v) => selectedFormat = v!,
@@ -923,7 +924,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     _dialogRadio(
                       ctx: ctx,
                       setState: setDialogState,
-                      label: 'Encrypted + Compressed (.enc.zip)',
+                      label: tr.encryptedCompressedEncZip,
                       value: 1,
                       groupValue: selectedFormat,
                       onChanged: (v) => selectedFormat = v!,
@@ -942,8 +943,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     TextField(
                       controller: pwCtrl,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
+                      decoration: InputDecoration(
+                        labelText: tr.password,
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
@@ -952,8 +953,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     TextField(
                       controller: pwConfirmCtrl,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Confirm password',
+                      decoration: InputDecoration(
+                        labelText: tr.confirmPassword,
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
@@ -1066,8 +1067,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               controller: ctrl,
               obscureText: true,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Backup password',
+              decoration: InputDecoration(
+                labelText: tr.backupPassword,
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
@@ -1166,8 +1167,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 controller: pwCtrl,
                 obscureText: true,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password (min 8 characters)',
+                decoration: InputDecoration(
+                  labelText: tr.passwordMin8Characters,
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -1176,8 +1177,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               TextField(
                 controller: pwConfirmCtrl,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm password',
+                decoration: InputDecoration(
+                  labelText: tr.confirmPassword,
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),

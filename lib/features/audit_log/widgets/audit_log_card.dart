@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../services/audit_log_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/theme_mode_controller.dart';
+import '../../../l10n/tr.dart';
 
 // ── date filter enum ──────────────────────────────────────────────────────────
 
@@ -45,9 +46,9 @@ AuditCategoryFilter auditActionCategory(String action) {
 
 String auditCategoryLabel(AuditCategoryFilter cat) => switch (cat) {
   AuditCategoryFilter.security => 'Siguri',
-  AuditCategoryFilter.payments => 'Pagesë',
-  AuditCategoryFilter.settings => 'Cilësime',
-  AuditCategoryFilter.users => 'Përdorues',
+  AuditCategoryFilter.payments => tr.pagese,
+  AuditCategoryFilter.settings => tr.cilesime,
+  AuditCategoryFilter.users => tr.perdorues,
   AuditCategoryFilter.all => '',
 };
 

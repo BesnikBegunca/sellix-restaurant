@@ -8,6 +8,7 @@ import '../models/tenant_data_conflict.dart';
 import '../widgets/tenant_data_conflict_dialog.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
+import '../l10n/tr.dart';
 
 /// Detects and clears local SQLite business data when the activated tenant changes.
 class LocalTenantDataService {
@@ -180,7 +181,7 @@ class LocalTenantDataService {
         await localDataMayBeFromPreviousTenant();
 
     if (foreign) {
-      return 'Të dhëna nga biznes tjetër në SQLite';
+      return tr.dhenaBiznesTjeterSqlite;
     }
     if (lastId != null &&
         activeId != null &&
@@ -190,8 +191,8 @@ class LocalTenantDataService {
       return 'Biznesi aktiv ≠ biznesi i fundit lokal';
     }
     if (isMandatoryWipeEnforced) {
-      return 'Pastrim i detyrueshëm në ndryshim biznesi (release)';
+      return tr.pastrimDetyrueshemNdryshimBiznesiRelease;
     }
-    return 'Pastrim opsional në debug';
+    return tr.pastrimOpsionalDebug;
   }
 }

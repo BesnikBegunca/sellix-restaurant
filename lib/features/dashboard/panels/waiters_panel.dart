@@ -4,6 +4,7 @@ import '../../../manager/manager_data.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
 import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/waiters/waiter_list.dart';
+import '../../../l10n/tr.dart';
 
 class WaitersPanel extends StatefulWidget {
   const WaitersPanel({super.key, required this.m});
@@ -38,12 +39,12 @@ class _WaitersPanelState extends State<WaitersPanel> {
     if (pin.length < 4 || !RegExp(r'^\d+$').hasMatch(pin)) {
       setState(
         () =>
-            _errorMsg = 'PIN: minimum 4 shifra, vetëm numra (gjatësia e lirë).',
+            _errorMsg = tr.pinMinimum4ShifraVetemNumra,
       );
       return;
     }
     if (await widget.m.waiterPinExists(pin)) {
-      setState(() => _errorMsg = 'Ky PIN ekziston tashmë.');
+      setState(() => _errorMsg = tr.kyPinEkzistonTashme);
       return;
     }
     await widget.m.addWaiter(name, pin);
@@ -67,22 +68,22 @@ class _WaitersPanelState extends State<WaitersPanel> {
       children: [
         PanelHeader(
           icon: Icons.badge_outlined,
-          title: 'Menaxhimi i Kamarierëve',
-          subtitle: 'Menaxho anëtarët e stafit dhe kodet e hyrjes.',
+          title: tr.menaxhimiKamariereve,
+          subtitle: tr.menaxhoAnetaretStafitKodetHyrjes,
         ),
 
         PanelCard(
           icon: Icons.person_add_alt_1_outlined,
-          title: 'Shto Kamarier të Ri',
+          title: tr.shtoKamarierRi,
           subtitle:
-              'Emri dhe PIN-i janë të detyrueshëm; rroga është opsionale.',
+              tr.emriPinJaneDetyrueshemRrogaEshte,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               PanelFormRow(
                 fields: [
                   PanelField(
-                    label: 'Emri i plotë',
+                    label: tr.emriPlote,
                     flex: 4,
                     child: TextField(
                       controller: _nameCtrl,
@@ -91,7 +92,7 @@ class _WaitersPanelState extends State<WaitersPanel> {
                     ),
                   ),
                   PanelField(
-                    label: 'Kodi PIN',
+                    label: tr.kodiPin,
                     flex: 3,
                     helper: 'Minimum 4 shifra.',
                     child: TextField(
@@ -105,7 +106,7 @@ class _WaitersPanelState extends State<WaitersPanel> {
                     ),
                   ),
                   PanelField(
-                    label: 'Rroga (€/ditë)',
+                    label: tr.rrogaDite,
                     flex: 3,
                     helper: 'Opsionale.',
                     child: TextField(

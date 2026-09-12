@@ -8,6 +8,7 @@ import '../../../shared/widgets/dashboard_helpers.dart';
 import '../../../utils/image_utils.dart';
 import '../widgets/menu/asset_picker.dart';
 import '../widgets/menu/category_product_table.dart';
+import '../../../l10n/tr.dart';
 
 // ── Menu Panel ───────────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ class _MenuPanelState extends State<MenuPanel> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Fshi kategorinë?'),
+        title: Text(tr.fshiKategorine2),
         content: Text(
           count > 0
               ? 'Kategoria «${category.name}» dhe $count produkte do të fshihen përgjithmonë.'
@@ -80,14 +81,14 @@ class _MenuPanelState extends State<MenuPanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.negativeText,
             ),
-            child: const Text('Fshi'),
+            child: Text(tr.fshi),
           ),
         ],
       ),
@@ -141,7 +142,7 @@ class _MenuPanelState extends State<MenuPanel> {
           sectionTitle('7. Menu / kategori dinamike'),
           const SizedBox(height: 16),
           Text(
-            'Nuk ka kategori. Shto një kategori për të vazhduar.',
+            tr.nukKaKategoriShtoKategoriVazhduar,
             style: TextStyle(color: AppColors.lightGreenText),
           ),
           const SizedBox(height: 20),
@@ -150,7 +151,7 @@ class _MenuPanelState extends State<MenuPanel> {
               Expanded(
                 child: TextField(
                   controller: _catCtrl,
-                  decoration: inputDeco('Emri i kategorisë së re'),
+                  decoration: inputDeco(tr.emriKategoriseRe),
                 ),
               ),
               const SizedBox(width: 12),
@@ -172,7 +173,7 @@ class _MenuPanelState extends State<MenuPanel> {
           ),
           const SizedBox(height: 28),
           Text(
-            'Për të shtuar produkte, duhet të ekzistojë të paktën një kategori.',
+            tr.shtuarProdukteDuhetEkzistojePaktenKategori,
             style: TextStyle(color: AppColors.mediumGreenText),
           ),
         ],
@@ -195,7 +196,7 @@ class _MenuPanelState extends State<MenuPanel> {
             Expanded(
               child: TextField(
                 controller: _catCtrl,
-                decoration: inputDeco('Emri i kategorisë së re'),
+                decoration: inputDeco(tr.emriKategoriseRe),
               ),
             ),
             const SizedBox(width: 12),
@@ -272,7 +273,7 @@ class _MenuPanelState extends State<MenuPanel> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    'Krijo një artikull të ri për menunë e POS-it.',
+                    tr.krijoArtikullRiMenunePosIt,
                     style: TextStyle(
                       fontSize: 13,
                       color: scheme.onSurfaceVariant,
@@ -287,7 +288,7 @@ class _MenuPanelState extends State<MenuPanel> {
                   DropdownButtonFormField<String>(
                     initialValue: catValue,
                     isExpanded: true,
-                    decoration: inputDeco('Zgjidh kategorinë'),
+                    decoration: inputDeco(tr.zgjidhKategorine),
                     items: [
                       for (final c in cats)
                         DropdownMenuItem(value: c.id, child: Text(c.name)),
@@ -307,7 +308,7 @@ class _MenuPanelState extends State<MenuPanel> {
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 14),
-                    _MenuFieldLabel(icon: Icons.euro_outlined, text: 'Çmimi'),
+                    _MenuFieldLabel(icon: Icons.euro_outlined, text: tr.cmimi),
                     const SizedBox(height: 7),
                     _priceField(catValue),
                   ] else
@@ -341,7 +342,7 @@ class _MenuPanelState extends State<MenuPanel> {
                             children: [
                               _MenuFieldLabel(
                                 icon: Icons.euro_outlined,
-                                text: 'Çmimi',
+                                text: tr.cmimi,
                               ),
                               const SizedBox(height: 7),
                               _priceField(catValue),
@@ -354,7 +355,7 @@ class _MenuPanelState extends State<MenuPanel> {
                   FilledButton.icon(
                     onPressed: () => _addProduct(catValue),
                     icon: const Icon(Icons.add_rounded, size: 20),
-                    label: const Text('Shto pijen në menu'),
+                    label: Text(tr.shtoPijenMenu),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(50),
                       backgroundColor: scheme.primary,
@@ -396,7 +397,7 @@ class _MenuPanelState extends State<MenuPanel> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Shto pije të re',
+                                tr.shtoPijeRe,
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
@@ -404,7 +405,7 @@ class _MenuPanelState extends State<MenuPanel> {
                                 ),
                               ),
                               Text(
-                                'Plotëso informacionin dhe personalizo foton.',
+                                tr.plotesoInformacioninPersonalizoFoton,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: scheme.onSurfaceVariant,
@@ -656,7 +657,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
               const SizedBox(height: 12),
               TextField(
                 controller: _priceCtrl,
-                decoration: inputDeco('Çmimi'),
+                decoration: inputDeco(tr.cmimi),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -670,7 +671,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Anulo'),
+                    child: Text(tr.anulo),
                   ),
                   const SizedBox(width: 8),
                   FilledButton(

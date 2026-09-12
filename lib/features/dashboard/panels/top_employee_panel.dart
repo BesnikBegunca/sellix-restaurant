@@ -4,6 +4,7 @@ import '../../../manager/manager_data.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/panel_layout.dart';
+import '../../../l10n/tr.dart';
 
 class TopEmployeePanel extends StatelessWidget {
   const TopEmployeePanel({super.key, required this.m});
@@ -21,8 +22,8 @@ class TopEmployeePanel extends StatelessWidget {
         children: [
           PanelHeader(
             icon: Icons.emoji_events_outlined,
-            title: 'Realizimi sipas punëtorëve',
-            subtitle: 'Statistikat e shitjeve sipas punonjësve',
+            title: tr.realizimiSipasPunetoreve,
+            subtitle: tr.statistikatShitjeveSipasPunonjesve,
           ),
           Center(
             child: Column(
@@ -42,7 +43,7 @@ class TopEmployeePanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Asnjë shitje e regjistruar ende.',
+                  tr.asnjeShitjeRegjistruarEnde,
                   style: TextStyle(
                     fontSize: 15,
                     color: AppColors.mediumGreenText,
@@ -51,7 +52,7 @@ class TopEmployeePanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Shitjet do të shfaqen këtu pasi të regjistroni shitjet e para.',
+                  tr.shitjetDoShfaqenKetuPasiRegjistroni,
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.lightGreenText,
@@ -72,8 +73,8 @@ class TopEmployeePanel extends StatelessWidget {
       children: [
         PanelHeader(
           icon: Icons.emoji_events_outlined,
-          title: 'Realizimi sipas punëtorëve',
-          subtitle: 'Statistikat e shitjeve sipas punonjësve',
+          title: tr.realizimiSipasPunetoreve,
+          subtitle: tr.statistikatShitjeveSipasPunonjesve,
         ),
 
         Container(
@@ -113,7 +114,7 @@ class TopEmployeePanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Punëtori më i mirë',
+                      tr.punetoriMire,
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.lightGreenText,
@@ -187,7 +188,7 @@ class TopEmployeePanel extends StatelessWidget {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'PUNËTORI',
+                        tr.punetori,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,

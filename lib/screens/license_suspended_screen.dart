@@ -5,6 +5,7 @@ import '../services/activation_service.dart';
 import '../services/api_enforcement_parser.dart';
 import '../services/license_gate_service.dart';
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 
 /// Full-screen block shown when the tenant license/business is suspended.
 class LicenseSuspendedScreen extends StatefulWidget {
@@ -37,14 +38,14 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
 
       setState(() {
         _statusMessage =
-            'Licenca është ende pezulluar. Kontaktoni administratorin.';
+            tr.licencaEshteEndePezulluarKontaktoniAdministratorin;
       });
     } on DioException catch (e) {
       if (!mounted) return;
       if (await LicenseGateService.instance.handleDioException(e)) {
         setState(() {
           _statusMessage =
-              'Licenca është ende pezulluar. Kontaktoni administratorin.';
+              tr.licencaEshteEndePezulluarKontaktoniAdministratorin;
         });
       } else if (ApiEnforcementParser.requiresDeviceRevoke(e)) {
         await ActivationService.instance.handleRevokedByServer(
@@ -55,17 +56,17 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
       } else if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout) {
         setState(() {
-          _statusMessage = 'Nuk ka lidhje me serverin. Provoni sërish.';
+          _statusMessage = tr.nukKaLidhjeServerinProvoniSerish;
         });
       } else {
         setState(() {
-          _statusMessage = 'Kontrolli dështoi. Provoni sërish.';
+          _statusMessage = tr.kontrolliDeshtoiProvoniSerish;
         });
       }
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _statusMessage = 'Kontrolli dështoi. Provoni sërish.';
+        _statusMessage = tr.kontrolliDeshtoiProvoniSerish;
       });
     } finally {
       if (mounted) {
@@ -78,7 +79,7 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
   Widget build(BuildContext context) {
     final reason =
         LicenseGateService.instance.reason ??
-        'Licenca është pezulluar. Kontaktoni administratorin.';
+        tr.licencaEshtePezulluarKontaktoniAdministratorin;
 
     return Material(
       color: AppColors.beige,

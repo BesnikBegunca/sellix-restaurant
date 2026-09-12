@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../manager/manager_data.dart';
 import '../../../../shared/widgets/dashboard_helpers.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../l10n/tr.dart';
 
 class WaiterPayrollDetail extends StatefulWidget {
   const WaiterPayrollDetail({
@@ -100,13 +101,13 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: inputDeco('Shuma (€)'),
+                  decoration: inputDeco(tr.shuma),
                   autofocus: true,
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: noteCtrl,
-                  decoration: inputDeco('Shënim (opsional)'),
+                  decoration: inputDeco(tr.shenimOpsional),
                   maxLength: 80,
                 ),
                 const SizedBox(height: 8),
@@ -136,7 +137,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                         );
                         if (d != null) setDlg(() => pickedDate = d);
                       },
-                      child: const Text('Ndrysho'),
+                      child: Text(tr.ndrysho),
                     ),
                   ],
                 ),
@@ -147,7 +148,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: Text(
-                'Anulo',
+                tr.anulo,
                 style: TextStyle(color: AppColors.mediumGreenText),
               ),
             ),
@@ -178,7 +179,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
     );
   }
 
-  static const _monthNames = [
+  static List<String> get _monthNames => [
     'Janar',
     'Shkurt',
     'Mars',
@@ -189,10 +190,10 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
     'Gusht',
     'Shtator',
     'Tetor',
-    'Nëntor',
+    tr.nentor,
     'Dhjetor',
   ];
-  static const _dayLabels = ['Hën', 'Mar', 'Mër', 'Enj', 'Pre', 'Sht', 'Die'];
+  static List<String> get _dayLabels => [tr.hen, 'Mar', tr.mer, 'Enj', 'Pre', 'Sht', 'Die'];
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +222,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
               onPressed: widget.onBack,
               icon: const Icon(Icons.arrow_back),
               color: AppColors.primaryGreen,
-              tooltip: 'Kthehu',
+              tooltip: tr.kthehu,
             ),
             CircleAvatar(
               backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.15),
@@ -323,7 +324,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                           ),
                         ),
                         child: Text(
-                          allWorked ? 'Çzgjidh të Gjitha' : 'Zgjidh të Gjitha',
+                          allWorked ? tr.czgjidhGjitha : tr.zgjidhGjitha,
                         ),
                       );
                     },
@@ -532,7 +533,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                         minWidth: 28,
                         minHeight: 28,
                       ),
-                      tooltip: 'Ndrysho pagën ditore',
+                      tooltip: tr.ndryshoPagenDitore,
                     ),
                 ],
               ),
@@ -542,7 +543,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                 runSpacing: 12,
                 children: [
                   _payKpi(
-                    'Ditë të punuara',
+                    tr.ditePunuara,
                     '$worked',
                     Icons.calendar_month_outlined,
                   ),
@@ -658,7 +659,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
               color: AppColors.negativeText,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              tooltip: 'Fshi avancin',
+              tooltip: tr.fshiAvancin,
             ),
           ],
         ),

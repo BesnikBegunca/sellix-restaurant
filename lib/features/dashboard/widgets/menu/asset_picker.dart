@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../theme/app_colors.dart';
 import '../../../../utils/image_utils.dart';
+import '../../../../l10n/tr.dart';
 
 const _kImageExtensions = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'};
 
@@ -78,7 +79,7 @@ Future<String?> showImageSourcePicker(
                     color: AppColors.primaryGreen,
                   ),
                   title: const Text('Nga asetat e aplikacionit'),
-                  subtitle: const Text('Foto të parakonfighuruara'),
+                  subtitle: Text(tr.fotoParakonfighuruara),
                   onTap: () => Navigator.pop(ctx, 'assets'),
                 ),
                 ListTile(
@@ -106,7 +107,7 @@ Future<String?> showImageSourcePicker(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Anulo'),
+                    child: Text(tr.anulo),
                   ),
                 ),
               ],
@@ -136,7 +137,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
       final dialogW = _assetDialogWidth(ctx);
       final dialogH = _assetDialogHeight(ctx);
       final items = <({String? path, String label})>[
-        (path: null, label: 'Pa foto'),
+        (path: null, label: tr.paFoto),
         for (final a in assets) (path: a, label: _assetLabel(a)),
       ];
 
@@ -165,7 +166,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Mbyll',
+                      tooltip: tr.mbyll,
                       onPressed: () => Navigator.pop(ctx),
                       icon: const Icon(Icons.close, size: 22),
                       color: AppColors.mediumGreenText,
@@ -191,7 +192,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
                         child: Padding(
                           padding: EdgeInsets.all(24),
                           child: Text(
-                            'Nuk u gjetën foto në assets/images/.',
+                            tr.nukUGjetenFotoAssetsImages,
                             textAlign: TextAlign.center,
                             style: TextStyle(color: AppColors.mediumGreenText),
                           ),
@@ -231,7 +232,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Anulo'),
+                      child: Text(tr.anulo),
                     ),
                   ],
                 ),

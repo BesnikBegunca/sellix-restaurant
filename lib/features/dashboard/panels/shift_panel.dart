@@ -6,6 +6,7 @@ import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/shift/gjendja_dialog.dart';
+import '../../../l10n/tr.dart';
 
 class ShiftPanel extends StatelessWidget {
   const ShiftPanel({super.key, required this.m});
@@ -33,7 +34,7 @@ class ShiftPanel extends StatelessWidget {
     final waiterTotals = report.waiterGrandTotalsForPrint();
     final ok = await ReceiptPrinter.printShiftStatus(
       header: ShiftReceiptHeader.pressed,
-      companyName: m.companyName ?? 'POS System',
+      companyName: m.companyName ?? tr.posSystem,
       waiterTotals: waiterTotals,
       summaryPaid: report.grandPaid,
       summaryOpen: report.grandOpen,
@@ -45,7 +46,7 @@ class ShiftPanel extends StatelessWidget {
         SnackBar(
           content: Text(
             ok
-                ? 'Gjendja u dërgua në printer.'
+                ? tr.gjendjaUDerguaPrinter
                 : 'Nuk u printua. Zgjidh printerin te Company Settings > Printers.',
           ),
           behavior: SnackBarBehavior.floating,
@@ -84,8 +85,8 @@ class ShiftPanel extends StatelessWidget {
       children: [
         PanelHeader(
           icon: Icons.schedule_outlined,
-          title: 'Gjendja',
-          subtitle: 'Hap, shtyp ose mbyll turne operative.',
+          title: tr.gjendja,
+          subtitle: tr.hapShtypOseMbyllTurneOperative,
         ),
 
         LayoutBuilder(
@@ -276,26 +277,26 @@ class ShiftPanel extends StatelessWidget {
           runSpacing: 16,
           children: [
             StatCard(
-              title: 'Shitje',
+              title: tr.shitje,
               value:
                   '${m.waiterSales.values.fold(0.0, (a, b) => a + b).toStringAsFixed(0)}€',
               icon: Icons.point_of_sale_outlined,
               accentColor: AppColors.warmGold,
             ),
             StatCard(
-              title: 'Shpenzime',
+              title: tr.shpenzime,
               value: '${m.totalExpenses.toStringAsFixed(0)}€',
               icon: Icons.payments_outlined,
               accentColor: AppColors.softRed,
             ),
             StatCard(
-              title: 'Fitimi',
+              title: tr.fitimi,
               value: '${m.profitToday.toStringAsFixed(0)}€',
               icon: Icons.trending_up,
               accentColor: AppColors.primaryGreen,
             ),
             StatCard(
-              title: 'Staf aktiv',
+              title: tr.stafAktiv,
               value: '${m.waiters.length}',
               icon: Icons.badge_outlined,
             ),

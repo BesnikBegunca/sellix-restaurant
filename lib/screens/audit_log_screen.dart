@@ -11,6 +11,7 @@ import '../manager/manager_data.dart';
 import '../services/audit_log_pdf.dart';
 import '../services/audit_log_service.dart';
 import '../theme/app_colors.dart';
+import '../l10n/tr.dart';
 
 // ── date filter enum ──────────────────────────────────────────────────────────
 
@@ -93,9 +94,9 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
 
   String get _dateRangeLabel => switch (_dateFilter) {
     _DateFilter.today     => 'Sot',
-    _DateFilter.thisWeek  => 'Kjo javë',
+    _DateFilter.thisWeek  => tr.kjoJave,
     _DateFilter.thisMonth => 'Ky muaj',
-    _DateFilter.allTime   => 'Të gjitha',
+    _DateFilter.allTime   => tr.gjitha,
     _DateFilter.custom    => _customRange == null
         ? 'Personalizuar'
         : '${_customRange!.start.day}/${_customRange!.start.month}/${_customRange!.start.year}'
@@ -180,7 +181,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
       final bytes = await buildAuditLogPdfBytes(
         logs:          _logs,
         dateRangeLabel: _dateRangeLabel,
-        companyName:   ManagerData.instance.companyName ?? 'POS System',
+        companyName:   ManagerData.instance.companyName ?? tr.posSystem,
         generatedBy:   'manager',
         exportId:      exportId,
       );
@@ -246,7 +247,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
               ),
               SizedBox(height: 4),
               Text(
-                'Gjurmo të gjitha aktivitetet e sistemit',
+                tr.gjurmoGjithaAktivitetetSistemit,
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.lightGreenText,
@@ -308,7 +309,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Filtro sipas Kategorisë',
+            tr.filtroSipasKategorise,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -351,7 +352,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
                       : OutlinedButton.icon(
                           onPressed: () => _loadData(reset: false),
                           icon: const Icon(Icons.expand_more, size: 18),
-                          label: const Text('Ngarko më shumë'),
+                          label: Text(tr.ngarkoShume),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primaryGreen,
                             side: BorderSide(
@@ -396,9 +397,9 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   Widget _buildDatePeriodDropdown() {
     final labels = {
       _DateFilter.today:     'Sot',
-      _DateFilter.thisWeek:  'Kjo javë',
+      _DateFilter.thisWeek:  tr.kjoJave,
       _DateFilter.thisMonth: 'Ky muaj',
-      _DateFilter.allTime:   'Të gjitha',
+      _DateFilter.allTime:   tr.gjitha,
       _DateFilter.custom:    'Personalizuar',
     };
     return DropdownButtonFormField<_DateFilter>(
@@ -446,12 +447,12 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   Widget _actorDropdown() {
     return DropdownButtonFormField<String?>(
       initialValue: _selectedActor,
-      decoration: _filterDeco('Të gjithë aktorët'),
+      decoration: _filterDeco(tr.gjitheAktoret),
       isExpanded: true,
       items: [
-        const DropdownMenuItem<String?>(
+        DropdownMenuItem<String?>(
           value: null,
-          child: Text('Të gjithë aktorët'),
+          child: Text(tr.gjitheAktoret),
         ),
         for (final a in _actors)
           DropdownMenuItem<String?>(value: a, child: Text(a)),
@@ -466,12 +467,12 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   Widget _actionTypeDropdown() {
     return DropdownButtonFormField<String?>(
       initialValue: _selectedActionType,
-      decoration: _filterDeco('Të gjitha veprimet'),
+      decoration: _filterDeco(tr.gjithaVeprimet),
       isExpanded: true,
       items: [
-        const DropdownMenuItem<String?>(
+        DropdownMenuItem<String?>(
           value: null,
-          child: Text('Të gjitha veprimet'),
+          child: Text(tr.gjithaVeprimet),
         ),
         for (final a in kAllAuditActionTypes)
           DropdownMenuItem<String?>(
@@ -489,7 +490,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   Widget _searchField() {
     return TextField(
       controller: _searchCtrl,
-      decoration: _filterDeco('Kërko me ID shitjeje'),
+      decoration: _filterDeco(tr.kerkoIdShitjeje),
       keyboardType: TextInputType.number,
       onChanged: (_) => _loadData(reset: true),
     );

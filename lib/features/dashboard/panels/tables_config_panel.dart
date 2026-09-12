@@ -7,6 +7,7 @@ import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/tables/table_legend_dot.dart';
+import '../../../l10n/tr.dart';
 
 class TablesConfigPanel extends StatefulWidget {
   const TablesConfigPanel({super.key, required this.m});
@@ -109,26 +110,26 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
       children: [
         PanelHeader(
           icon: Icons.grid_view_outlined,
-          title: 'Menaxhimi i Tavolinave',
-          subtitle: 'Monitoro dhe menaxho tavolinat e restorantit',
+          title: tr.menaxhimiTavolinave,
+          subtitle: tr.monitoroMenaxhoTavolinatRestorantit,
         ),
 
         PanelStatRow(
           cards: [
             StatCard(
               icon: Icons.table_restaurant_outlined,
-              title: 'Tavolina Gjithsej',
+              title: tr.tavolinaGjithsej,
               value: '$total',
             ),
             StatCard(
               icon: Icons.people_outline,
-              title: 'Tavolina të Lira',
+              title: tr.tavolinaLira,
               value: '$free',
               accentColor: AppColors.primaryGreen,
             ),
             StatCard(
               icon: Icons.schedule_outlined,
-              title: 'Të Zëna',
+              title: tr.zena,
               value: '$occupied',
               accentColor: AppColors.softRed,
               badge: '$occupancyPct%',
@@ -164,7 +165,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
               Expanded(
                 child: waiters.isEmpty
                     ? Text(
-                        'Nuk ka kamarierë të regjistruar.',
+                        tr.nukKaKamariereRegjistruar,
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.lightGreenText,
@@ -221,9 +222,9 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                     ),
                   ),
                   const Spacer(),
-                  TableLegendDot(color: AppColors.primaryGreen, label: 'Lirë'),
+                  TableLegendDot(color: AppColors.primaryGreen, label: tr.lire2),
                   const SizedBox(width: 16),
-                  TableLegendDot(color: AppColors.softRed, label: 'Zënë'),
+                  TableLegendDot(color: AppColors.softRed, label: tr.zene2),
                 ],
               ),
               const SizedBox(height: 20),
@@ -232,7 +233,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                   padding: EdgeInsets.symmetric(vertical: 48),
                   child: Center(
                     child: Text(
-                      'Zgjidh një kamarier për të parë tavolinat e tij.',
+                      tr.zgjidhKamarierPareTavolinatTij,
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.lightGreenText,
@@ -349,8 +350,8 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                                         ),
                                     ],
                                   )
-                                : const Text(
-                                    'Lirë',
+                                : Text(
+                                    tr.lire2,
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
@@ -380,7 +381,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Konfigurimi i Planimetrisë',
+                tr.konfigurimiPlanimetrise,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -437,7 +438,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
               Row(
                 children: [
                   Text(
-                    'Tavolina për rresht',
+                    tr.tavolinaRresht,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: AppColors.darkGreenText,
@@ -506,7 +507,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                     );
                   },
                   icon: const Icon(Icons.save_outlined, size: 18),
-                  label: const Text('Ruaj Planimetrinë'),
+                  label: Text(tr.ruajPlanimetrine),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: AppColors.white,

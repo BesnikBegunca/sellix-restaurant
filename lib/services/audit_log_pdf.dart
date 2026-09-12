@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import 'audit_log_service.dart';
+import '../l10n/tr.dart';
 
 /// Builds an A4 PDF audit report grouped by calendar day.
 ///
@@ -25,7 +26,7 @@ Future<Uint8List> buildAuditLogPdfBytes({
   final pdf = pw.Document();
   final now = DateTime.now();
   final resolvedExportId = exportId ?? _generateExportId(now);
-  final company = companyName.isNotEmpty ? companyName : 'POS System';
+  final company = companyName.isNotEmpty ? companyName : tr.posSystem;
 
   // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -135,7 +136,7 @@ Future<Uint8List> buildAuditLogPdfBytes({
 
         // ── Summary ────────────────────────────────────────────────────────
         pw.Text(
-          'Përmbledhje',
+          tr.permbledhje,
           style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 6),
@@ -148,11 +149,11 @@ Future<Uint8List> buildAuditLogPdfBytes({
           children: [
             _hdr2('Metrika', 'Vlera'),
             _row2('Veprime gjithsej', '${logs.length}'),
-            _row2('Ditë', '${days.length}'),
-            _row2('Aktorë unikë', '${actorCounts.length}'),
+            _row2(tr.dite, '${days.length}'),
+            _row2(tr.aktoreUnike, '${actorCounts.length}'),
             if (topActors.isNotEmpty)
               _row2(
-                'Aktori me të shumë veprime',
+                tr.aktoriShumeVeprime,
                 '${topActors.first.key} (${topActors.first.value})',
               ),
           ],
@@ -175,7 +176,7 @@ Future<Uint8List> buildAuditLogPdfBytes({
             _hdr2('Fusha', 'Vlera'),
             _row2('Export ID',      resolvedExportId),
             _row2('Gjeneruar nga', generatedBy),
-            _row2('Gjeneruar në',  fmtDateTime(now)),
+            _row2(tr.gjeneruar,  fmtDateTime(now)),
             _row2('Rreshta total', '${logs.length}'),
             _row2('Fingerprint',   fingerprint),
           ],
@@ -191,7 +192,7 @@ Future<Uint8List> buildAuditLogPdfBytes({
 
         if (logs.isEmpty)
           pw.Text(
-            'Nuk ka veprime në këtë periudhë.',
+            tr.nukKaVeprimeKetePeriudhe,
             style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
           )
         else
@@ -232,7 +233,7 @@ Future<Uint8List> buildAuditLogPdfBytes({
 
         pw.SizedBox(height: 10),
         pw.Text(
-          'Ky raport është vetëm-lexim. Regjistri i auditimit nuk mund të ndryshohet nga aplikacioni.',
+          tr.kyRaportEshteVetemLeximRegjistri,
           style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey500),
         ),
       ],
@@ -264,9 +265,9 @@ String _computeFingerprint(List<AuditLogRow> logs) {
 String _dayLabel(String isoDay) {
   try {
     final d = DateTime.parse(isoDay);
-    const weekdays = [
-      'E hënë', 'E martë', 'E mërkurë',
-      'E enjte', 'E premte', 'E shtunë', 'E diel',
+    final weekdays = [
+      tr.hene, tr.marte, tr.merkure,
+      'E enjte', 'E premte', tr.shtune, 'E diel',
     ];
     return '${weekdays[d.weekday - 1]}, '
         '${d.day.toString().padLeft(2, '0')}.'

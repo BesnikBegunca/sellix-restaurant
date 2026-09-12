@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 
 import 'manager_dashboard_screen.dart';
 import 'table_selection_screen.dart';
+import '../l10n/tr.dart';
 
 class _PinInputDialog extends StatefulWidget {
   const _PinInputDialog({
@@ -141,8 +142,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
         ),
         content: Text(
           _language.t(
-            'Nuk është konfiguruar asnjë PIN i administratorit.\n'
-                'Dëshironi ta vendosni këtë PIN si PIN-in e administratorit?',
+            tr.nukEshteKonfiguruarAsnjePinAdministratorit + tr.deshironiTaVendosniKetePinPin,
             'No administrator PIN is configured.\n'
                 'Would you like to use this PIN as the administrator PIN?',
           ),
@@ -150,7 +150,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(_language.t('Anulo', 'Cancel')),
+            child: Text(_language.t(tr.anulo, 'Cancel')),
           ),
           TextButton(
             onPressed: () async {
@@ -191,7 +191,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Admin',
+            tooltip: tr.admin,
             icon: const Icon(Icons.admin_panel_settings_outlined),
             onPressed: () {
               showDialog<void>(
@@ -199,8 +199,8 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                 barrierDismissible: false,
                 builder: (dialogCtx) {
                   return _PinInputDialog(
-                    title: 'Admin PIN',
-                    hint: 'Enter admin PIN',
+                    title: tr.adminPin,
+                    hint: tr.enterAdminPin,
                     onSubmit: (pin) async {
                       // Capture before async gaps to satisfy lint.
                       final nav = Navigator.of(context);
@@ -316,7 +316,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                           SizedBox(height: 16),
                           Text(
                             _language.t(
-                              'Nuk u gjet asnjë kamarier',
+                              tr.nukUGjetAsnjeKamarier,
                               'No waiters found',
                             ),
                             style: TextStyle(

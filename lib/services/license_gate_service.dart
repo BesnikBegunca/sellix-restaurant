@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'activation_license_controller.dart';
 import 'api_enforcement_parser.dart';
 import 'database_service.dart';
+import '../l10n/tr.dart';
 
 enum LicenseBlockCode {
   licenseExpired,
@@ -71,7 +72,7 @@ class LicenseGateService extends ChangeNotifier {
       await block(
         code: LicenseBlockCode.licenseExpired,
         message:
-            'Licenca ka skaduar. Kontaktoni administratorin për rinovim.',
+            tr.licencaKaSkaduarKontaktoniAdministratorinRinovim,
       );
       return true;
     }
@@ -114,7 +115,7 @@ class LicenseGateService extends ChangeNotifier {
   void enforceOrThrow() {
     if (!_blocked) return;
     throw LicenseBlockedException(
-      _message ?? 'Licenca është pezulluar. Kontaktoni administratorin.',
+      _message ?? tr.licencaEshtePezulluarKontaktoniAdministratorin,
     );
   }
 
@@ -194,13 +195,13 @@ class LicenseGateService extends ChangeNotifier {
       case LicenseBlockCode.licenseExpired:
         return 'Licenca ka skaduar. Kontaktoni administratorin.';
       case LicenseBlockCode.licenseSuspended:
-        return 'Licenca është pezulluar. Kontaktoni administratorin.';
+        return tr.licencaEshtePezulluarKontaktoniAdministratorin;
       case LicenseBlockCode.businessSuspended:
-        return 'Biznesi është pezulluar. Kontaktoni administratorin.';
+        return tr.biznesiEshtePezulluarKontaktoniAdministratorin;
       case LicenseBlockCode.deviceSuspended:
-        return 'Pajisja është pezulluar. Kontaktoni administratorin.';
+        return tr.pajisjaEshtePezulluarKontaktoniAdministratorin;
       case null:
-        return 'Licenca është pezulluar. Kontaktoni administratorin.';
+        return tr.licencaEshtePezulluarKontaktoniAdministratorin;
     }
   }
 

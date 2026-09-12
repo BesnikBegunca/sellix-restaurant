@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../widgets/dashboard/app_card.dart';
+import '../../../../l10n/tr.dart';
 
 class TodaySummaryCard extends StatelessWidget {
   const TodaySummaryCard({super.key, required this.m});
@@ -39,26 +40,26 @@ class TodaySummaryCard extends StatelessWidget {
         : hourCounts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
 
     return AppCard(
-      title: 'Përmbledhja e sotme',
-      subtitle: 'Porositë dhe të ardhurat e ditës.',
+      title: tr.permbledhjaSotme,
+      subtitle: tr.porositeArdhuratDites,
       child: Column(
         children: [
-          _SummaryRow(label: 'Porosi', value: '$totalOrders'),
+          _SummaryRow(label: tr.porosi, value: '$totalOrders'),
           const SizedBox(height: 12),
           _SummaryRow(
-            label: 'Porosia mesatare',
+            label: tr.porosiaMesatare,
             value: '${avgOrder.toStringAsFixed(2)}€',
           ),
           const SizedBox(height: 12),
           _SummaryRow(
-            label: 'Ora më e ngarkuar',
+            label: tr.oraNgarkuar,
             value: peakHour != null ? _fmtHour(peakHour) : '—',
           ),
           const SizedBox(height: 14),
           Divider(color: AppColors.lightGreenBorder, height: 1),
           const SizedBox(height: 14),
           _SummaryRow(
-            label: 'Të ardhura',
+            label: tr.ardhura2,
             value: '${totalRevenue.toStringAsFixed(2)}€',
             bold: true,
             valueColor: AppColors.primaryGreen,

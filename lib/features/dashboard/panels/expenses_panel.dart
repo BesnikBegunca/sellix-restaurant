@@ -14,6 +14,7 @@ import '../widgets/expenses/expense_filter_chip.dart';
 import '../widgets/expenses/expenses_data_table.dart';
 import '../widgets/expenses/expenses_empty_state.dart';
 import '../widgets/stat_card.dart';
+import '../../../l10n/tr.dart';
 
 enum _ExpSort { dateDesc, dateAsc, amountDesc, amountAsc }
 
@@ -88,8 +89,8 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            'Nuk ka rreshta për eksport — shto ose ndrysho filtrat.',
+          content: Text(
+            tr.nukKaRreshtaEksportShtoOse,
           ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.negativeText,
@@ -110,7 +111,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
     }
   }
 
-  static const _monthsEn = [
+  static List<String> get _monthsEn => [
     'Jan',
     'Feb',
     'Mars',
@@ -121,7 +122,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
     'Gus',
     'Sht',
     'Tet',
-    'Nën',
+    tr.nen,
     'Dhj',
   ];
 
@@ -141,31 +142,31 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
       children: [
         PanelHeader(
           icon: Icons.receipt_long_outlined,
-          title: 'Shpenzime',
-          subtitle: 'Ndjek, filtro dhe eksporto transaksionet operative.',
+          title: tr.shpenzime,
+          subtitle: tr.ndjekFiltroEksportoTransaksionetOperative,
         ),
 
         PanelStatRow(
           cards: [
             StatCard(
-              title: 'Shpenzime Gjithsej',
+              title: tr.shpenzimeGjithsej,
               value: '${totalAll.toStringAsFixed(2)}€',
               icon: Icons.attach_money,
               accentColor: AppColors.softRed,
             ),
             StatCard(
-              title: 'Shpenzimet e Sotme',
+              title: tr.shpenzimetSotme,
               value: '${m.expensesToday.toStringAsFixed(2)}€',
               icon: Icons.trending_down_outlined,
               accentColor: AppColors.softRed,
             ),
             StatCard(
-              title: 'Transaksione',
+              title: tr.transaksione,
               value: '${m.expenses.length}',
               icon: Icons.receipt_outlined,
             ),
             StatCard(
-              title: 'Këtë Muaj',
+              title: tr.keteMuaj,
               value: '${m.expensesThisMonth.toStringAsFixed(0)}€',
               icon: Icons.calendar_month_outlined,
               accentColor: AppColors.warmGold,
@@ -189,7 +190,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                 Row(
                   children: [
                     Text(
-                      'Të gjitha transaksionet',
+                      tr.gjithaTransaksionet,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -270,7 +271,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                 TextField(
                   controller: _searchCtrl,
                   decoration: InputDecoration(
-                    hintText: 'Search transactions...',
+                    hintText: tr.searchTransactions,
                     prefixIcon: Icon(
                       Icons.search,
                       size: 20,
@@ -310,7 +311,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                   child: Row(
                     children: [
                       ExpenseFilterChip(
-                        label: 'Të gjitha',
+                        label: tr.gjitha,
                         selected: _typeFilter == null,
                         onTap: () => setState(() => _typeFilter = null),
                       ),
@@ -426,7 +427,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Shto shpenzim / rrogë'),
+      title: Text(tr.shtoShpenzimRroge),
       content: SizedBox(
         width: 480,
         child: Column(
@@ -434,19 +435,19 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             PanelField(
-              label: 'Lloji',
+              label: tr.lloji,
               child: InputDecorator(
-                decoration: inputDeco('Lloji'),
+                decoration: inputDeco(tr.lloji),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selType,
                     isExpanded: true,
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: 'Shpenzim',
                         child: Text('Shpenzim'),
                       ),
-                      DropdownMenuItem(value: 'Rrogë', child: Text('Rrogë')),
+                      DropdownMenuItem(value: tr.rroge, child: Text(tr.rroge)),
                       DropdownMenuItem(value: 'Bonus', child: Text('Bonus')),
                     ],
                     onChanged: (v) {
@@ -458,7 +459,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
             ),
             const SizedBox(height: 14),
             PanelField(
-              label: 'Përshkrimi',
+              label: tr.pershkrimi2,
               child: TextField(
                 controller: _descCtrl,
                 decoration: inputDeco('p.sh. Furnizim me pije'),
@@ -466,7 +467,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
             ),
             const SizedBox(height: 14),
             PanelField(
-              label: 'Shuma (€)',
+              label: tr.shuma,
               child: TextField(
                 controller: _amtCtrl,
                 decoration: inputDeco('0.00'),
@@ -484,7 +485,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Anulo'),
+          child: Text(tr.anulo),
         ),
         FilledButton(onPressed: _submit, child: const Text('Ruaj')),
       ],

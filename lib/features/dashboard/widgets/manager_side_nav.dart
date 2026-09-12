@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../services/app_language_service.dart';
 import '../../../widgets/gg_header.dart';
+import '../../../l10n/tr.dart';
 
 class ManagerSideNav extends StatelessWidget {
   const ManagerSideNav({
@@ -20,47 +21,48 @@ class ManagerSideNav extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onLogout;
 
-  static const _items = <({IconData icon, IconData sel, String sq, String en})>[
+  static List<({IconData icon, IconData sel, String sq, String en})>
+  get _items => <({IconData icon, IconData sel, String sq, String en})>[
     (
       icon: Icons.dashboard_outlined,
       sel: Icons.dashboard,
-      sq: 'Përmbledhje',
+      sq: tr.permbledhje,
       en: 'Overview',
     ),
     (
       icon: Icons.schedule_outlined,
       sel: Icons.schedule,
-      sq: 'Gjendja',
+      sq: tr.gjendja,
       en: 'Shift',
     ),
     (
       icon: Icons.badge_outlined,
       sel: Icons.badge,
-      sq: 'Kamarierët',
+      sq: tr.kamarieret,
       en: 'Waiters',
     ),
     (
       icon: Icons.supervisor_account_outlined,
       sel: Icons.supervisor_account,
-      sq: 'Menaxherët',
+      sq: tr.menaxheret,
       en: 'Managers',
     ),
     (
       icon: Icons.table_rows_outlined,
       sel: Icons.table_rows,
-      sq: 'Shpenzime',
+      sq: tr.shpenzime,
       en: 'Expenses',
     ),
     (
       icon: Icons.trending_up_outlined,
       sel: Icons.trending_up,
-      sq: 'Fitime',
+      sq: tr.fitime,
       en: 'Profits',
     ),
     (
       icon: Icons.receipt_long_outlined,
       sel: Icons.receipt_long,
-      sq: 'Shitjet',
+      sq: tr.shitjet,
       en: 'Sales',
     ),
     (
@@ -72,19 +74,19 @@ class ManagerSideNav extends StatelessWidget {
     (
       icon: Icons.menu_book_outlined,
       sel: Icons.menu_book,
-      sq: 'Menu',
-      en: 'Menu',
+      sq: tr.menu,
+      en: tr.menu,
     ),
     (
       icon: Icons.grid_view_outlined,
       sel: Icons.grid_view,
-      sq: 'Tavolinat',
+      sq: tr.tavolinat,
       en: 'Tables',
     ),
     (
       icon: Icons.settings_outlined,
       sel: Icons.settings,
-      sq: 'Cilësimet',
+      sq: tr.cilesimet,
       en: 'Settings',
     ),
     (
@@ -280,7 +282,7 @@ class _ToggleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: expanded ? 'Mbyll' : 'Hap',
+      tooltip: expanded ? tr.mbyll : 'Hap',
       onPressed: onPressed,
       visualDensity: VisualDensity.compact,
       padding: EdgeInsets.zero,

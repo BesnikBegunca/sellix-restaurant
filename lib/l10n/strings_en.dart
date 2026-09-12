@@ -438,4 +438,7 @@ const Map<String, String> kEn = {
   'zgjidhKategorine': 'Choose the category',
   'zgjidhPamjenErretPerdorimRehatshem': 'Choose dark appearance for more comfortable use.',
   'zgjidhniBiznesinVendosniDiteVlefshme': 'Choose the business and enter a valid number of days.',
+  'pagatAvans': 'Payroll & advances',
+  'refund': 'Refunds',
+  'regjistriAuditit': 'Audit log',
 };

@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../manager/manager_data.dart';
+import '../l10n/tr.dart';
 
 // ─────────────────────────── data contract ───────────────────────────────────
 
@@ -92,7 +93,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
       build: (context) => [
         // ── title ──────────────────────────────────────────────────────────
         pw.Text(
-          data.companyName.isNotEmpty ? data.companyName : 'POS System',
+          data.companyName.isNotEmpty ? data.companyName : tr.posSystem,
           style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 2),
@@ -108,7 +109,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
 
         // ── summary stats ──────────────────────────────────────────────────
         pw.Text(
-          'Përmbledhje',
+          tr.permbledhje,
           style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 6),
@@ -121,13 +122,13 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
           children: [
             hdr2('Metrika', 'Vlera'),
             _row2('Shitje gjithsej', '${a.totalSales}'),
-            _row2('Të ardhura bruto', '${a.grossRevenue.toStringAsFixed(2)}€'),
+            _row2(tr.ardhuraBruto, '${a.grossRevenue.toStringAsFixed(2)}€'),
             if (a.totalRefunded > 0)
               _row2('Rimbursime', '-${a.totalRefunded.toStringAsFixed(2)}€'),
             if (a.totalRefunded > 0)
-              _row2('Të ardhura neto', '${a.netRevenue.toStringAsFixed(2)}€'),
-            _row2('Mesatarja e porosisë', '${a.avgOrderValue.toStringAsFixed(2)}€'),
-            _row2('Artikuj të shitur', '${a.totalItemsSold}'),
+              _row2(tr.ardhuraNeto, '${a.netRevenue.toStringAsFixed(2)}€'),
+            _row2(tr.mesatarjaPorosise, '${a.avgOrderValue.toStringAsFixed(2)}€'),
+            _row2(tr.artikujShitur2, '${a.totalItemsSold}'),
             _row2(
               'Kamarieri top',
               a.topWaiterName == '—'
@@ -153,7 +154,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
               2: const pw.FlexColumnWidth(1.2),
             },
             children: [
-              _row3('Produkti', 'Sasia', 'Të ardhura', header: true),
+              _row3('Produkti', 'Sasia', tr.ardhura2, header: true),
               for (final p in a.topProducts)
                 _row3(
                   p.name,
@@ -168,7 +169,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
         // ── top categories ─────────────────────────────────────────────────
         if (a.topCategories.isNotEmpty) ...[
           pw.Text(
-            'Të ardhurat sipas kategorisë',
+            tr.ardhuratSipasKategorise,
             style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 6),
@@ -179,7 +180,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
               1: const pw.FlexColumnWidth(1.2),
             },
             children: [
-              hdr2('Kategoria', 'Të ardhura'),
+              hdr2('Kategoria', tr.ardhura2),
               for (final c in a.topCategories)
                 _row2(c.name, '${c.revenue.toStringAsFixed(2)}€'),
             ],
@@ -196,7 +197,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
 
         if (data.sales.isEmpty)
           pw.Text(
-            'Nuk ka shitje në këtë periudhë.',
+            tr.nukKaShitjeKetePeriudhe,
             style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
           )
         else
@@ -268,7 +269,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
                   4: const pw.FlexColumnWidth(1.2),
                 },
                 children: [
-                  hdr5('Produkti', 'Kat.', 'Sasia', 'Çmimi', 'Totali'),
+                  hdr5('Produkti', 'Kat.', 'Sasia', tr.cmimi, 'Totali'),
                   for (final l in s.lines)
                     _row5(
                       l.productName,
@@ -296,7 +297,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
                   ),
                 ),
                 child: pw.Text(
-                  'Nuk ka linja produktesh të regjistruara.',
+                  tr.nukKaLinjaProdukteshRegjistruara,
                   style: const pw.TextStyle(
                     fontSize: 8,
                     color: PdfColors.grey500,
@@ -333,7 +334,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
                   pw.TableRow(
                     decoration: const pw.BoxDecoration(color: PdfColors.red50),
                     children: [
-                      for (final t in ['Lloji', 'Arsyeja', 'Shuma'])
+                      for (final t in [tr.lloji, 'Arsyeja', 'Shuma'])
                         pw.Padding(
                           padding: const pw.EdgeInsets.all(4),
                           child: pw.Text(
@@ -390,7 +391,7 @@ Future<Uint8List> buildSalesHistoryPdfBytes(
 
         pw.SizedBox(height: 12),
         pw.Text(
-          'Çmimet janë snapshot-e në kohën e pagesës dhe nuk ndikohen nga ndryshimet e mëvonshme të katalogut.',
+          tr.cmimetJaneSnapshotKohenPagesesNuk,
           style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey500),
         ),
       ],

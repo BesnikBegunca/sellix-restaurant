@@ -16,6 +16,7 @@ import '../repositories/shift_repository.dart';
 import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
 import '../services/license_gate_service.dart';
+import '../l10n/tr.dart';
 export '../models/pos_models.dart';
 
 part 'manager_data_sales.dart';
@@ -58,7 +59,7 @@ class ManagerData extends ChangeNotifier {
   bool useEscPos          = true;
   bool cashDrawerEnabled  = false;
   int  paperWidthMm       = 80;
-  String receiptFooter    = 'Ju Faleminderit!';
+  String receiptFooter    = tr.juFaleminderit;
   String? businessAddress;
   String? businessPhone;
 
@@ -132,7 +133,7 @@ class ManagerData extends ChangeNotifier {
       useEscPos         = ((company['useEscPos']         as int?) ?? 1) == 1;
       cashDrawerEnabled = ((company['cashDrawerEnabled'] as int?) ?? 0) == 1;
       paperWidthMm      = (company['paperWidthMm']       as int?) ?? 80;
-      receiptFooter     = (company['receiptFooter']  as String?) ?? 'Ju Faleminderit!';
+      receiptFooter     = (company['receiptFooter']  as String?) ?? tr.juFaleminderit;
       businessAddress   = company['businessAddress'] as String?;
       businessPhone     = company['businessPhone']   as String?;
       _adminPinHash     = company['adminPinHash']    as String?;

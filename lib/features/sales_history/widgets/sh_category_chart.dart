@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../l10n/tr.dart';
 
 class SHCategoryChart extends StatelessWidget {
   const SHCategoryChart({super.key, required this.categories});
@@ -26,7 +27,7 @@ class SHCategoryChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Të Ardhura sipas Kategorisë',
+            tr.ardhuraSipasKategorise,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,

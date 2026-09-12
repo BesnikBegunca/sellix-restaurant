@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
 import 'audit_log_card.dart';
+import '../../../l10n/tr.dart';
 
 class AuditCategoryTabs extends StatelessWidget {
   const AuditCategoryTabs({
@@ -15,12 +16,12 @@ class AuditCategoryTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tabs = [
-      (AuditCategoryFilter.all,      Icons.bar_chart_outlined,    'Të gjitha'),
+    final tabs = [
+      (AuditCategoryFilter.all,      Icons.bar_chart_outlined,    tr.gjitha),
       (AuditCategoryFilter.security, Icons.shield_outlined,       'Siguri'),
       (AuditCategoryFilter.payments, Icons.attach_money_outlined, 'Pagesat'),
-      (AuditCategoryFilter.settings, Icons.settings_outlined,     'Cilësimet'),
-      (AuditCategoryFilter.users,    Icons.person_outline,        'Përdoruesit'),
+      (AuditCategoryFilter.settings, Icons.settings_outlined,     tr.cilesimet),
+      (AuditCategoryFilter.users,    Icons.person_outline,        tr.perdoruesit),
     ];
     return Wrap(
       spacing: 8,

@@ -6,6 +6,7 @@ import '../services/local_business_service.dart';
 import '../services/local_license_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/gg_header.dart';
+import '../l10n/tr.dart';
 
 class DeveloperLoginScreen extends StatefulWidget {
   const DeveloperLoginScreen({super.key});
@@ -55,7 +56,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
       setState(
         () => _error = t(
           'Business name and valid license days are required.',
-          'Emri i biznesit dhe ditët e licencës janë të detyrueshme.',
+          tr.emriBiznesitDitetLicencesJaneDetyrueshme,
         ),
       );
       return;
@@ -102,7 +103,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
       setState(
         () => _error = t(
           'Select a business and enter valid days.',
-          'Zgjidhni biznesin dhe vendosni ditë të vlefshme.',
+          tr.zgjidhniBiznesinVendosniDiteVlefshme,
         ),
       );
       return;
@@ -149,7 +150,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                   : 'License extended locally. The client must enter the new key.',
               activeLicenseUpdated
                   ? 'Licenca u vazhdua deri më ${license.expiresAt.toLocal().toString().split('.').first}.'
-                  : 'Licenca u vazhdua lokalisht. Klienti duhet ta vendosë key-n e ri.',
+                  : tr.licencaUVazhduaLokalishtKlientiDuhet,
             ),
           ),
         ),
@@ -169,7 +170,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(t('License key ready', 'Çelësi është gati')),
+        title: Text(t('License key ready', tr.celesiEshteGati)),
         content: SelectableText(key),
         actions: [
           TextButton(
@@ -181,7 +182,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(t('Close', 'Mbyll')),
+            child: Text(t(tr.close, tr.mbyll)),
           ),
         ],
       ),
@@ -267,7 +268,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                             ? t('Create business', 'Krijo biznes')
                             : t(
                                 'Create another business',
-                                'Krijo biznes tjetër',
+                                tr.krijoBiznesTjeter,
                               ),
                         style: const TextStyle(
                           fontSize: 20,
@@ -295,13 +296,13 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                       const SizedBox(height: 12),
                       _field(
                         _branch,
-                        t('Branch code', 'Kodi i degës'),
+                        t('Branch code', tr.kodiDeges2),
                         Icons.account_tree_rounded,
                       ),
                       const SizedBox(height: 12),
                       _field(
                         _days,
-                        t('Days to add', 'Ditë për t’u shtuar'),
+                        t('Days to add', tr.diteTUShtuar),
                         Icons.calendar_month_rounded,
                         numeric: true,
                       ),
@@ -334,7 +335,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                                 onPressed: _busy ? null : _extendSelected,
                                 icon: const Icon(Icons.autorenew_rounded),
                                 label: Text(
-                                  t('Extend license', 'Vazhdo licencën'),
+                                  t('Extend license', tr.vazhdoLicencen),
                                 ),
                               ),
                             ),
@@ -348,7 +349,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
               TextButton.icon(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.arrow_back_rounded),
-                label: Text(t('Back', 'Kthehu')),
+                label: Text(t('Back', tr.kthehu)),
               ),
             ],
           ),

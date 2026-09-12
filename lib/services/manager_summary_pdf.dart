@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../manager/manager_data.dart';
+import '../l10n/tr.dart';
 
 /// Raport PDF përmbledhës për menaxherin (fitime reale, shpenzime, staf, tavolina).
 Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
@@ -21,7 +22,7 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
       margin: const pw.EdgeInsets.all(40),
       build: (context) => [
         pw.Text(
-          'POS System',
+          tr.posSystem,
           style: pw.TextStyle(
             fontSize: 22,
             fontWeight: pw.FontWeight.bold,
@@ -29,7 +30,7 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
         ),
         pw.SizedBox(height: 4),
         pw.Text(
-          'Raport përmbledhës menaxheri',
+          tr.raportPermbledhesMenaxheri,
           style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
         ),
         pw.Text(
@@ -50,12 +51,12 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
           },
           children: [
             _pdfRow('Gjendja (shift)', m.shiftOpen ? 'E hapur' : 'E mbyllur', header: true),
-            _pdfRow('Kamarierë të regjistruar', '${m.waiters.length}'),
+            _pdfRow(tr.kamariereRegjistruar, '${m.waiters.length}'),
             _pdfRow('Tavolina (gjithsej)', '${m.cashierTables.length}'),
-            _pdfRow('Tavolina të zëna', '$occupied'),
-            _pdfRow('Shpenzime totale (regjistër)', '${m.totalExpenses.toStringAsFixed(2)}€'),
-            _pdfRow('Fitim sot',        '${m.profitToday.toStringAsFixed(2)}€'),
-            _pdfRow('Fitim kjo javë',   '${m.profitThisWeek.toStringAsFixed(2)}€'),
+            _pdfRow(tr.tavolinaZena, '$occupied'),
+            _pdfRow(tr.shpenzimeTotaleRegjister, '${m.totalExpenses.toStringAsFixed(2)}€'),
+            _pdfRow(tr.fitimSot,        '${m.profitToday.toStringAsFixed(2)}€'),
+            _pdfRow(tr.fitimKjoJave,   '${m.profitThisWeek.toStringAsFixed(2)}€'),
             _pdfRow('Fitim ky muaj',    '${m.profitThisMonth.toStringAsFixed(2)}€'),
             _pdfRow(
               'Top puntor (sesion)',
@@ -73,7 +74,7 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
         pw.SizedBox(height: 8),
         if (salesRows.isEmpty)
           pw.Text(
-            'Nuk ka shitje të regjistruara në sesion.',
+            tr.nukKaShitjeRegjistruaraSesion,
             style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
           )
         else
@@ -84,20 +85,20 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
               1: const pw.FlexColumnWidth(1),
             },
             children: [
-              _pdfRow('Kamarieri', 'Shitje', header: true),
+              _pdfRow('Kamarieri', tr.shitje, header: true),
               for (final e in salesRows)
                 _pdfRow(e.key, '${e.value.toStringAsFixed(2)}€'),
             ],
           ),
         pw.SizedBox(height: 22),
         pw.Text(
-          'Shpenzime / rroga (deri në 25 rreshta)',
+          tr.shpenzimeRrogaDeri25Rreshta,
           style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
         ),
         pw.SizedBox(height: 8),
         if (m.expenses.isEmpty)
           pw.Text(
-            'Nuk ka shpenzime të regjistruara.',
+            tr.nukKaShpenzimeRegjistruara,
             style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
           )
         else
@@ -110,7 +111,7 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
               3: const pw.FlexColumnWidth(0.9),
             },
             children: [
-              _pdfRow4('Lloji', 'Përshkrimi', 'Shuma', 'Data', header: true),
+              _pdfRow4(tr.lloji, tr.pershkrimi2, 'Shuma', 'Data', header: true),
               for (final e in m.expenses.take(25))
                 _pdfRow4(
                   e.type,
@@ -124,7 +125,7 @@ Future<Uint8List> buildManagerSummaryPdfBytes(ManagerData m) async {
           ),
         pw.SizedBox(height: 16),
         pw.Text(
-          'Fitimi = shitjet e regjistruara nga kamarierët minus shpenzimet e periudhës.',
+          tr.fitimiShitjetRegjistruaraKamarieretMinusShpenzimet,
           style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
         ),
       ],

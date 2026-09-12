@@ -6,12 +6,13 @@ import 'package:flutter/material.dart';
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../widgets/dashboard/chart_card.dart';
+import '../../../../l10n/tr.dart';
 
 class WeeklySalesTrendChart extends StatelessWidget {
   const WeeklySalesTrendChart({super.key, required this.m});
   final ManagerData m;
 
-  static const _dayAbbr = ['Hën', 'Mar', 'Mër', 'Enj', 'Pre', 'Sht', 'Die'];
+  static List<String> get _dayAbbr => [tr.hen, 'Mar', tr.mer, 'Enj', 'Pre', 'Sht', 'Die'];
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +53,8 @@ class WeeklySalesTrendChart extends StatelessWidget {
     });
 
     return ChartCard(
-      title: 'Shitjet e 7 ditëve',
-      subtitle: 'Të ardhurat ditore, jo porositë e hapura.',
+      title: tr.shitjet7Diteve,
+      subtitle: tr.ardhuratDitoreJoPorositeHapura,
       minHeight: 240,
       child: SizedBox(
         height: 240,

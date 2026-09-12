@@ -18,6 +18,7 @@ import '../services/printer_settings_store.dart';
 import '../services/receipt_printer.dart';
 import '../services/receipt_text.dart';
 import '../services/app_language_service.dart';
+import '../l10n/tr.dart';
 
 class PosOrderScreen extends StatefulWidget {
   const PosOrderScreen({
@@ -226,7 +227,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       if (printAfterSave) {
         try {
           printOk = await ReceiptPrinter.printKitchenOrder(
-            companyName: data.companyName ?? 'POS System',
+            companyName: data.companyName ?? tr.posSystem,
             waiterName: widget.waiterName,
             tableNumber: widget.tableNumber,
             orderNumber: _activeOrderNumber,
@@ -346,10 +347,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         Navigator.of(context).popUntil((route) => route.isFirst);
         if (shouldRecordSale && !printOk) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
-                'Shitja u ruajt, por printimi dështoi. '
-                'Ridërgojeni nga Historiku i shitjeve.',
+                tr.shitjaURuajtPorPrintimiDeshtoi + tr.ridergojeniHistorikuShitjeve,
               ),
               behavior: SnackBarBehavior.floating,
             ),
@@ -419,7 +419,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     // Printo kuponin termik / POS80 (tekst i formatum per POS80).
     try {
       await ReceiptPrinter.printKitchenOrder(
-        companyName: ManagerData.instance.companyName ?? 'POS System',
+        companyName: ManagerData.instance.companyName ?? tr.posSystem,
         waiterName: widget.waiterName,
         tableNumber: widget.tableNumber,
         orderNumber: _activeOrderNumber,
@@ -531,14 +531,14 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
               children: [
                 GgAppHeader(
                   showBack: true,
-                  title: 'Porosia',
+                  title: tr.porosia,
                   userName: widget.waiterName,
                   onBack: () => Navigator.of(context).maybePop(),
                 ),
                 Expanded(
                   child: Center(
                     child: Text(
-                      'Nuk ka kategori në menu.\nMenaxheri duhet të shtojë kategori.',
+                      tr.nukKaKategoriMenuNmenaxheriDuhet,
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.mediumGreenText),
                     ),
@@ -557,7 +557,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
             children: [
               GgAppHeader(
                 showBack: true,
-                title: 'Porosia',
+                title: tr.porosia,
                 userName: widget.waiterName,
                 onBack: () => Navigator.of(context).maybePop(),
               ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../manager/manager_data.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../widgets/dashboard/app_card.dart';
+import '../../../../l10n/tr.dart';
 
 class TopPerformerCard extends StatelessWidget {
   const TopPerformerCard({super.key, required this.m});
@@ -28,8 +29,8 @@ class TopPerformerCard extends StatelessWidget {
         : 0;
 
     return AppCard(
-      title: 'Performuesi i ditës',
-      subtitle: 'Kamarieri me shitjet më të larta.',
+      title: tr.performuesiDites,
+      subtitle: tr.kamarieriShitjetLarta,
       child: hasData
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +98,7 @@ class TopPerformerCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Shitje',
+                            tr.shitje,
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.lightGreenText,
@@ -146,7 +147,7 @@ class TopPerformerCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
-                  'Nuk ka shitje ende për të krahasuar stafin.',
+                  tr.nukKaShitjeEndeKrahasuarStafin,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,

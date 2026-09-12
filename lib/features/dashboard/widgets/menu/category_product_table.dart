@@ -4,6 +4,7 @@ import '../../../../config/default_menu_catalog.dart';
 import '../../../../models/mock_data.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../../utils/image_utils.dart';
+import '../../../../l10n/tr.dart';
 
 typedef ProductDrag = ({String fromCatId, ProductItem product});
 
@@ -108,7 +109,7 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        tooltip: 'Fshi kategorinë',
+                        tooltip: tr.fshiKategorine,
                         icon: const Icon(Icons.delete_outline, size: 20),
                         color: AppColors.negativeText,
                         onPressed: widget.onDeleteCategory,
@@ -140,7 +141,7 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            'Nuk ka produkte në këtë kategori.',
+                            tr.nukKaProdukteKeteKategori,
                             style: TextStyle(
                               color: scheme.onSurfaceVariant,
                               fontSize: 13,
@@ -175,7 +176,7 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                                 SizedBox(
                                   width: 100,
                                   child: Text(
-                                    'Çmimi',
+                                    tr.cmimi,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
@@ -320,7 +321,7 @@ class _ProductTableRowState extends State<_ProductTableRow> {
                 children: [
                   _ActionBtn(
                     icon: Icons.arrow_upward_rounded,
-                    tooltip: 'Lart',
+                    tooltip: tr.lart,
                     color: AppColors.mediumGreenText,
                     onTap: widget.canMoveUp ? widget.onMoveUp : null,
                     enabled: widget.canMoveUp,
@@ -328,7 +329,7 @@ class _ProductTableRowState extends State<_ProductTableRow> {
                   const SizedBox(width: 2),
                   _ActionBtn(
                     icon: Icons.arrow_downward_rounded,
-                    tooltip: 'Poshtë',
+                    tooltip: tr.poshte,
                     color: AppColors.mediumGreenText,
                     onTap: widget.canMoveDown ? widget.onMoveDown : null,
                     enabled: widget.canMoveDown,
@@ -336,7 +337,7 @@ class _ProductTableRowState extends State<_ProductTableRow> {
                   const SizedBox(width: 4),
                   _ActionBtn(
                     icon: Icons.edit_outlined,
-                    tooltip: 'Ndrysho',
+                    tooltip: tr.ndrysho,
                     color: AppColors.primaryGreen,
                     onTap: widget.onEdit,
                   ),
@@ -344,7 +345,7 @@ class _ProductTableRowState extends State<_ProductTableRow> {
                     const SizedBox(width: 4),
                     _ActionBtn(
                       icon: Icons.delete_outline,
-                      tooltip: 'Fshi',
+                      tooltip: tr.fshi,
                       color: AppColors.negativeText,
                       onTap: widget.onDelete,
                     ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../manager/manager_data.dart';
 import '../../../../services/receipt_printer.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../l10n/tr.dart';
 
 class GjendjaDialog extends StatefulWidget {
   const GjendjaDialog({
@@ -79,7 +80,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Anulo'),
+            child: Text(tr.anulo),
           ),
         ],
       );
@@ -92,7 +93,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Mbyll'),
+            child: Text(tr.mbyll),
           ),
           FilledButton(
             onPressed: () {
@@ -115,7 +116,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
     final grandTotal = report.grandTotal;
     final shiftLine = report.shiftId != null
         ? 'Shift #${report.shiftId} · aktiv'
-        : 'Pa shift aktiv në DB';
+        : tr.paShiftAktivDb;
 
     return AlertDialog(
       title: Text(
@@ -148,7 +149,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
-                    'Nuk ka shitje të regjistruara për shift-in dhe as porosi të hapura në tavolina.',
+                    tr.nukKaShitjeRegjistruaraShiftAs,
                     style: TextStyle(color: AppColors.mediumGreenText),
                   ),
                 )
@@ -225,9 +226,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
                   child: Text(
-                    'Ky është veprim përfundimtar: ruhet snapshot-i i shift-it, '
-                    'mbyllen porositë e hapura në tavolina dhe nis shift i ri. '
-                    'Nuk mund të kthehet mbrapsht.',
+                    tr.kyEshteVeprimPerfundimtarRuhetSnapshot + tr.mbyllenPorositeHapuraTavolinaNisShift + tr.nukMundKthehetMbrapsht,
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.darkGreenText,
@@ -242,7 +241,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
       actions: [
         TextButton(
           onPressed: _closing ? null : () => Navigator.of(context).pop(),
-          child: Text(widget.isClose ? 'Anulo' : 'Mbyll'),
+          child: Text(widget.isClose ? tr.anulo : tr.mbyll),
         ),
         if (widget.isClose)
           FilledButton(
@@ -260,7 +259,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                           .waiterGrandTotalsForPrint();
                       final printed = await ReceiptPrinter.printShiftStatus(
                         header: ShiftReceiptHeader.closed,
-                        companyName: widget.m.companyName ?? 'POS System',
+                        companyName: widget.m.companyName ?? tr.posSystem,
                         waiterTotals: waiterTotals,
                         summaryPaid: closureReport.grandPaid,
                         summaryOpen: closureReport.grandOpen,
@@ -273,7 +272,7 @@ class _GjendjaDialogState extends State<GjendjaDialog> {
                         SnackBar(
                           content: Text(
                             printed
-                                ? 'Shift-i u mbyll. Përmbledhja e të gjithë punonjësve u printua.'
+                                ? tr.shiftUMbyllPermbledhjaGjithePunonjesve
                                 : 'Shift-i u mbyll, por përmbledhja nuk u printua. '
                                       'Kontrollo printerin te Company Settings > Printers.',
                           ),

@@ -439,4 +439,7 @@ const Map<String, String> kSq = {
   'zgjidhKategorine': 'Zgjidh kategorinë',
   'zgjidhPamjenErretPerdorimRehatshem': 'Zgjidh pamjen e errët për përdorim më të rehatshëm.',
   'zgjidhniBiznesinVendosniDiteVlefshme': 'Zgjidhni biznesin dhe vendosni ditë të vlefshme.',
+  'pagatAvans': 'Pagat & avans',
+  'refund': 'Refund',
+  'regjistriAuditit': 'Regjistri i auditit',
 };

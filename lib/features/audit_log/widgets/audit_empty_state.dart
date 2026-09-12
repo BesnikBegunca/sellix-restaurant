@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_colors.dart';
+import '../../../l10n/tr.dart';
 
 class AuditEmptyState extends StatelessWidget {
   const AuditEmptyState({super.key});
@@ -28,7 +29,7 @@ class AuditEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ndrysho kategorinë ose periudhën.',
+            tr.ndryshoKategorineOsePeriudhen,
             style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
           ),
         ],

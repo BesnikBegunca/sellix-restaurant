@@ -4,6 +4,7 @@ import '../../../manager/manager_data.dart';
 import '../../../theme/app_colors.dart';
 import '../models/sales_models.dart';
 import 'adjustment_row.dart';
+import '../../../l10n/tr.dart';
 
 class SaleCard extends StatelessWidget {
   const SaleCard({
@@ -187,7 +188,7 @@ class SaleCard extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'Artikujt e Porosisë',
+                  tr.artikujtPorosise,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -281,7 +282,7 @@ class SaleCard extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline, size: 14),
-                    label: const Text('Fshi porosinë'),
+                    label: Text(tr.fshiPorosine),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.negativeText,
                       foregroundColor: AppColors.white,
@@ -297,7 +298,7 @@ class SaleCard extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: onReprint,
                     icon: const Icon(Icons.print_outlined, size: 14),
-                    label: const Text('Ridërgo kuponin'),
+                    label: Text(tr.ridergoKuponin),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryGreen,
                       side: BorderSide(color: AppColors.lightGreenBorder),
@@ -337,7 +338,7 @@ class SaleCard extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            'Nëntotali  ',
+                            tr.nentotali,
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.mediumGreenText,
