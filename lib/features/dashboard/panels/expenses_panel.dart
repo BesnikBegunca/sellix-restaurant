@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 
 import '../../../manager/manager_data.dart';
+import '../../../theme/app_theme.dart';
 import '../../../services/expenses_pdf_export.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/expenses/expense_filter_chip.dart';
 import '../widgets/expenses/expenses_data_table.dart';
 import '../widgets/expenses/expenses_empty_state.dart';
@@ -137,69 +139,47 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        sectionTitle('Shpenzime'),
-        const SizedBox(height: 6),
-        Text(
-          'Ndjek, filtro dhe eksporto transaksionet operative.',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        PanelHeader(
+          icon: Icons.receipt_long_outlined,
+          title: 'Shpenzime',
+          subtitle: 'Ndjek, filtro dhe eksporto transaksionet operative.',
         ),
-        const SizedBox(height: 24),
 
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: StatCard(
-                  title: 'Shpenzime Gjithsej',
-                  value: '${totalAll.toStringAsFixed(2)}€',
-                  icon: Icons.attach_money,
-                  accentColor: AppColors.softRed,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  title: "Today's Expenses",
-                  value: '${m.expensesToday.toStringAsFixed(2)}€',
-                  icon: Icons.trending_down_outlined,
-                  accentColor: AppColors.softRed,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  title: 'Transaksione',
-                  value: '${m.expenses.length}',
-                  icon: Icons.receipt_outlined,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  title: 'Këtë Muaj',
-                  value: '${m.expensesThisMonth.toStringAsFixed(0)}€',
-                  icon: Icons.calendar_month_outlined,
-                  accentColor: AppColors.warmGold,
-                ),
-              ),
-            ],
-          ),
+        PanelStatRow(
+          cards: [
+            StatCard(
+              title: 'Shpenzime Gjithsej',
+              value: '${totalAll.toStringAsFixed(2)}€',
+              icon: Icons.attach_money,
+              accentColor: AppColors.softRed,
+            ),
+            StatCard(
+              title: 'Shpenzimet e Sotme',
+              value: '${m.expensesToday.toStringAsFixed(2)}€',
+              icon: Icons.trending_down_outlined,
+              accentColor: AppColors.softRed,
+            ),
+            StatCard(
+              title: 'Transaksione',
+              value: '${m.expenses.length}',
+              icon: Icons.receipt_outlined,
+            ),
+            StatCard(
+              title: 'Këtë Muaj',
+              value: '${m.expensesThisMonth.toStringAsFixed(0)}€',
+              icon: Icons.calendar_month_outlined,
+              accentColor: AppColors.warmGold,
+            ),
+          ],
         ),
         const SizedBox(height: 20),
 
         Container(
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
+            border: Border.all(color: scheme.outlineVariant),
+            boxShadow: AppTheme.cardShadow(context),
           ),
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -459,42 +439,52 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
         width: 480,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            InputDecorator(
-              decoration: inputDeco('Lloji'),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selType,
-                  isExpanded: true,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'Shpenzim',
-                      child: Text('Shpenzim'),
-                    ),
-                    DropdownMenuItem(value: 'Rrogë', child: Text('Rrogë')),
-                    DropdownMenuItem(value: 'Bonus', child: Text('Bonus')),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) setState(() => _selType = v);
-                  },
+            PanelField(
+              label: 'Lloji',
+              child: InputDecorator(
+                decoration: inputDeco('Lloji'),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selType,
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Shpenzim',
+                        child: Text('Shpenzim'),
+                      ),
+                      DropdownMenuItem(value: 'Rrogë', child: Text('Rrogë')),
+                      DropdownMenuItem(value: 'Bonus', child: Text('Bonus')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setState(() => _selType = v);
+                    },
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descCtrl,
-              decoration: inputDeco('Përshkrimi'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _amtCtrl,
-              decoration: inputDeco('Shuma'),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+            const SizedBox(height: 14),
+            PanelField(
+              label: 'Përshkrimi',
+              child: TextField(
+                controller: _descCtrl,
+                decoration: inputDeco('p.sh. Furnizim me pije'),
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-              ],
+            ),
+            const SizedBox(height: 14),
+            PanelField(
+              label: 'Shuma (€)',
+              child: TextField(
+                controller: _amtCtrl,
+                decoration: inputDeco('0.00'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                ],
+              ),
             ),
           ],
         ),

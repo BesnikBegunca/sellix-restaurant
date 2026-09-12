@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
+import '../../../theme/app_theme.dart';
 import '../../../models/mock_data.dart';
 import '../../../theme/app_colors.dart';
-import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/tables/table_legend_dot.dart';
 
@@ -106,55 +107,42 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        sectionTitle('Menaxhimi i Tavolinave'),
-        const SizedBox(height: 6),
-        Text(
-          'Monitoro dhe menaxho tavolinat e restorantit',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        PanelHeader(
+          icon: Icons.grid_view_outlined,
+          title: 'Menaxhimi i Tavolinave',
+          subtitle: 'Monitoro dhe menaxho tavolinat e restorantit',
         ),
-        const SizedBox(height: 24),
 
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: StatCard(
-                  icon: Icons.table_restaurant_outlined,
-                  title: 'Tavolina Gjithsej',
-                  value: '$total',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  icon: Icons.people_outline,
-                  title: 'Tavolina të Lira',
-                  value: '$free',
-                  accentColor: AppColors.primaryGreen,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  icon: Icons.schedule_outlined,
-                  title: 'Të Zëna',
-                  value: '$occupied',
-                  accentColor: AppColors.softRed,
-                  badge: '$occupancyPct%',
-                ),
-              ),
-            ],
-          ),
+        PanelStatRow(
+          cards: [
+            StatCard(
+              icon: Icons.table_restaurant_outlined,
+              title: 'Tavolina Gjithsej',
+              value: '$total',
+            ),
+            StatCard(
+              icon: Icons.people_outline,
+              title: 'Tavolina të Lira',
+              value: '$free',
+              accentColor: AppColors.primaryGreen,
+            ),
+            StatCard(
+              icon: Icons.schedule_outlined,
+              title: 'Të Zëna',
+              value: '$occupied',
+              accentColor: AppColors.softRed,
+              badge: '$occupancyPct%',
+            ),
+          ],
         ),
         const SizedBox(height: 20),
 
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
+            border: Border.all(color: scheme.outlineVariant),
           ),
           child: Row(
             children: [
@@ -212,16 +200,10 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
+            border: Border.all(color: scheme.outlineVariant),
+            boxShadow: AppTheme.cardShadow(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,7 +291,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: scheme.surfaceContainerHighest,
+                                color: scheme.surface,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Center(
@@ -389,16 +371,10 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
+            border: Border.all(color: scheme.outlineVariant),
+            boxShadow: AppTheme.cardShadow(context),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

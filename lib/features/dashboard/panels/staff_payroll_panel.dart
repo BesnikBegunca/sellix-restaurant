@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
+import '../../../theme/app_theme.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
 import '../widgets/stat_card.dart';
@@ -113,7 +114,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.lightGreenBorder),
+                border: Border.all(color: scheme.outlineVariant),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -229,14 +230,8 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                         context,
                       ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.lightGreenBorder),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x0A000000),
-                          blurRadius: 18,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
+                      border: Border.all(color: scheme.outlineVariant),
+                      boxShadow: AppTheme.cardShadow(context),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,16 +270,10 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                   child: Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHighest,
+                      color: scheme.surface,
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.lightGreenBorder),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x0A000000),
-                          blurRadius: 18,
-                          offset: Offset(0, 8),
-                        ),
-                      ],
+                      border: Border.all(color: scheme.outlineVariant),
+                      boxShadow: AppTheme.cardShadow(context),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,9 +365,9 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
     return Container(
       padding: const EdgeInsets.all(48),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.lightGreenBorder),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Center(
         child: Column(

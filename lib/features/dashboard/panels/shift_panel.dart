@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../manager/manager_data.dart';
+import '../../../theme/app_theme.dart';
 import '../../../services/receipt_printer.dart';
 import '../../../theme/app_colors.dart';
-import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/shift/gjendja_dialog.dart';
 
@@ -81,13 +82,11 @@ class ShiftPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        sectionTitle('Gjendja'),
-        const SizedBox(height: 6),
-        Text(
-          'Hap, shtyp ose mbyll turne operative.',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        PanelHeader(
+          icon: Icons.schedule_outlined,
+          title: 'Gjendja',
+          subtitle: 'Hap, shtyp ose mbyll turne operative.',
         ),
-        const SizedBox(height: 28),
 
         LayoutBuilder(
           builder: (context, constraints) {
@@ -95,7 +94,7 @@ class ShiftPanel extends StatelessWidget {
             final statusCard = Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
+                color: scheme.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isOpen
@@ -103,13 +102,7 @@ class ShiftPanel extends StatelessWidget {
                       : AppColors.lightGreenBorder,
                   width: isOpen ? 1.5 : 1,
                 ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x0A000000),
-                    blurRadius: 18,
-                    offset: Offset(0, 8),
-                  ),
-                ],
+                boxShadow: AppTheme.cardShadow(context),
               ),
               child: Row(
                 children: [

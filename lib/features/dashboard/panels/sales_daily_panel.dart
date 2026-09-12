@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
 import '../../../services/database_service.dart';
-import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_tokens.dart';
 import '../../../widgets/dashboard/app_empty_states.dart';
@@ -128,14 +128,11 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        sectionTitle('Shitjet'),
-        const SizedBox(height: 6),
-        Text(
-          'Çdo rresht = një mbyllje gjendje. Totali është shitja e atij intervali '
-          '(nga hapja deri në mbylljen e gjendjes).',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        PanelHeader(
+          icon: Icons.point_of_sale_outlined,
+          title: 'Shitjet',
+          subtitle: 'Çdo rresht = një mbyllje gjendje. Totali është shitja e atij intervali ' '(nga hapja deri në mbylljen e gjendjes).',
         ),
-        const SizedBox(height: 24),
         LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth > 700;

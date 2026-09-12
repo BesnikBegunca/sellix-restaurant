@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
+import '../../../theme/app_theme.dart';
 import '../../../theme/app_colors.dart';
-import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 
 class TopEmployeePanel extends StatelessWidget {
   const TopEmployeePanel({super.key, required this.m});
@@ -18,13 +19,11 @@ class TopEmployeePanel extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          sectionTitle('Realizimi sipas punëtorëve'),
-          const SizedBox(height: 8),
-          Text(
-            'Statistikat e shitjeve sipas punonjësve',
-            style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
-          ),
-          const SizedBox(height: 40),
+          PanelHeader(
+          icon: Icons.emoji_events_outlined,
+          title: 'Realizimi sipas punëtorëve',
+          subtitle: 'Statistikat e shitjeve sipas punonjësve',
+        ),
           Center(
             child: Column(
               children: [
@@ -71,13 +70,11 @@ class TopEmployeePanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        sectionTitle('Realizimi sipas punëtorëve'),
-        const SizedBox(height: 4),
-        Text(
-          'Statistikat e shitjeve sipas punonjësve',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        PanelHeader(
+          icon: Icons.emoji_events_outlined,
+          title: 'Realizimi sipas punëtorëve',
+          subtitle: 'Statistikat e shitjeve sipas punonjësve',
         ),
-        const SizedBox(height: 24),
 
         Container(
           padding: const EdgeInsets.all(24),
@@ -166,16 +163,10 @@ class TopEmployeePanel extends StatelessWidget {
 
         Container(
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
+            border: Border.all(color: scheme.outlineVariant),
+            boxShadow: AppTheme.cardShadow(context),
           ),
           child: Column(
             children: [

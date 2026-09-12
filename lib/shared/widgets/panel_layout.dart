@@ -453,3 +453,83 @@ class PanelColumns extends StatelessWidget {
     );
   }
 }
+
+/// Row of KPI/stat cards that reflows into fewer columns as the window
+/// narrows, instead of squeezing every card onto one line.
+class PanelStatRow extends StatelessWidget {
+  const PanelStatRow({
+    super.key,
+    required this.cards,
+    this.gap = 12,
+    this.minCardWidth = 220,
+  });
+
+  final List<Widget> cards;
+  final double gap;
+
+  /// Below this width a card stops being readable, so the row wraps instead.
+  final double minCardWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    if (cards.isEmpty) return const SizedBox.shrink();
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        final perRow = ((c.maxWidth + gap) / (minCardWidth + gap))
+            .floor()
+            .clamp(1, cards.length);
+
+        if (perRow >= cards.length) {
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < cards.length; i++) ...[
+                  if (i > 0) SizedBox(width: gap),
+                  Expanded(child: cards[i]),
+                ],
+              ],
+            ),
+          );
+        }
+
+        final rows = <Widget>[];
+        for (var i = 0; i < cards.length; i += perRow) {
+          final slice = cards.sublist(
+            i,
+            (i + perRow).clamp(0, cards.length),
+          );
+          rows.add(
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var j = 0; j < perRow; j++) ...[
+                    if (j > 0) SizedBox(width: gap),
+                    // Pad the final row so cards keep their column width.
+                    Expanded(
+                      child: j < slice.length
+                          ? slice[j]
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i > 0) SizedBox(height: gap),
+              rows[i],
+            ],
+          ],
+        );
+      },
+    );
+  }
+}

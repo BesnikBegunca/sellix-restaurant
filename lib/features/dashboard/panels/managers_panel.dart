@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../manager/manager_data.dart';
-import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/managers/manager_list.dart';
 
 class ManagersPanel extends StatefulWidget {
@@ -54,127 +54,73 @@ class _ManagersPanelState extends State<ManagersPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final m = widget.m;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        sectionTitle('Menaxherët'),
-        const SizedBox(height: 6),
-        Text(
-          'Shto dhe menaxho llogaritë me të drejta menaxheri (dashboard, gjendje, menu, etj.)',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        PanelHeader(
+          icon: Icons.supervisor_account_outlined,
+          title: 'Menaxherët',
+          subtitle:
+              'Llogari me të drejta menaxheri: dashboard, gjendje, menu e më tej.',
         ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
+
+        PanelCard(
+          icon: Icons.person_add_alt_1_outlined,
+          title: 'Shto Menaxher të Ri',
+          subtitle: 'PIN-i duhet të jetë unik dhe minimum 4 shifra.',
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Shto Menaxher të Ri',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
+              PanelFormRow(
+                fields: [
+                  PanelField(
+                    label: 'Emri i plotë',
+                    flex: 5,
                     child: TextField(
                       controller: _nameCtrl,
-                      decoration: inputDeco('Emri i Plotë'),
+                      decoration: inputDeco('p.sh. Driton Berisha'),
                       textInputAction: TextInputAction.next,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
+                  PanelField(
+                    label: 'Kodi PIN',
+                    flex: 3,
+                    helper: 'Minimum 4 shifra.',
                     child: TextField(
                       controller: _pinCtrl,
-                      decoration: inputDeco('Kodi PIN'),
+                      decoration: inputDeco('••••'),
                       keyboardType: TextInputType.number,
                       obscureText: true,
+                      obscuringCharacter: '•',
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _add(),
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  FilledButton.icon(
-                    onPressed: _add,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Shto Menaxher'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      foregroundColor: AppColors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
                 ],
-              ),
-              if (_errorMsg != null) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.softRed.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppColors.softRed.withValues(alpha: 0.2),
+                trailing: FilledButton.icon(
+                  onPressed: _add,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Shto Menaxher'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 16,
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 16,
-                        color: AppColors.softRed,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _errorMsg!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.softRed,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
+              ),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 14),
+                PanelErrorBanner(message: _errorMsg!),
               ],
             ],
           ),
         ),
+
         const SizedBox(height: 20),
+
         ManagerList(
           managers: m.managers,
           onRemove: (i) => m.removeManagerAt(i),

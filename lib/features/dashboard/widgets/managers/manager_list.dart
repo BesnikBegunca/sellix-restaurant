@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../models/pos_models.dart';
 import '../../../../manager/manager_data.dart';
-import '../../../../theme/app_colors.dart';
 import '../staff_pin_reveal_dialog.dart';
 import 'manager_grid_card.dart';
 
@@ -33,44 +32,52 @@ class ManagerList extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(48),
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.lightGreenBorder),
+          border: Border.all(color: scheme.outlineVariant),
         ),
         child: Column(
           children: [
             Icon(
               Icons.supervisor_account_outlined,
               size: 48,
-              color: AppColors.lightGreenBorder,
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               'Nuk ka menaxherë ende',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.mediumGreenText,
+                color: scheme.onSurface,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               'Shto menaxherin e parë me formularin më sipër.',
-              style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
+              style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
             ),
           ],
         ),
       );
     }
 
-    return GridView.builder(
+    return LayoutBuilder(
+      builder: (context, c) {
+        // Keep cards a readable width instead of always forcing two columns.
+        final columns = c.maxWidth >= 1180
+            ? 3
+            : c.maxWidth >= 640
+            ? 2
+            : 1;
+        return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 4.5,
+        mainAxisExtent: 76,
       ),
       itemCount: managers.length,
       itemBuilder: (context, i) {
@@ -83,6 +90,8 @@ class ManagerList extends StatelessWidget {
               ? () => _revealManagerPin(context, i)
               : null,
           onDelete: () => onRemove(i),
+        );
+      },
         );
       },
     );
@@ -98,7 +107,7 @@ class ManagerList extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('PIN i gabuar.'),
-          backgroundColor: AppColors.softRed,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
       );

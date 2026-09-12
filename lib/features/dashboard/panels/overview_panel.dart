@@ -375,7 +375,9 @@ class _MiniMetric extends StatelessWidget {
                       context,
                     ).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.lightGreenBorder),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
                   ),
                   child: Icon(icon, size: 20, color: color),
                 ),

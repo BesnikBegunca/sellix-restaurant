@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../manager/manager_data.dart';
 import '../../../models/pos_models.dart';
 import '../../../services/database_service.dart';
-import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../../../theme/app_colors.dart';
 import '../../sales_history/models/sales_models.dart';
 import '../../sales_history/widgets/sale_card.dart';
@@ -208,44 +208,33 @@ class _RefundPanelState extends State<RefundPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        sectionTitle('Refund — Porositë e Printuara'),
-        const SizedBox(height: 6),
-        Text(
-          'Çdo shtypje PRINTO shfaqet veçmas (p.sh. 3€, pastaj 4€, pastaj 5€). '
-          'Fshirja heq vetëm atë printim nga tavolina, jo të gjitha së bashku.',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        PanelHeader(
+          icon: Icons.undo_outlined,
+          title: 'Refund — Porositë e Printuara',
+          subtitle: 'Çdo shtypje PRINTO shfaqet veçmas (p.sh. 3€, pastaj 4€, pastaj 5€). ' 'Fshirja heq vetëm atë printim nga tavolina, jo të gjitha së bashku.',
         ),
-        const SizedBox(height: 24),
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: StatCard(
-                  icon: Icons.print_outlined,
-                  title: 'Printime (turni aktual)',
-                  value: '${_orders.length}',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  icon: Icons.euro_outlined,
-                  title: 'Shuma e printimeve',
-                  value: '${_printsTotal.toStringAsFixed(2)}€',
-                  accentColor: AppColors.warmGold,
-                ),
-              ),
-            ],
-          ),
+        PanelStatRow(
+          cards: [
+            StatCard(
+              icon: Icons.print_outlined,
+              title: 'Printime (turni aktual)',
+              value: '${_orders.length}',
+            ),
+            StatCard(
+              icon: Icons.euro_outlined,
+              title: 'Shuma e printimeve',
+              value: '${_printsTotal.toStringAsFixed(2)}€',
+              accentColor: AppColors.warmGold,
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
+            border: Border.all(color: scheme.outlineVariant),
           ),
           child: Row(
             children: [
@@ -307,9 +296,9 @@ class _RefundPanelState extends State<RefundPanel> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
+            border: Border.all(color: scheme.outlineVariant),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

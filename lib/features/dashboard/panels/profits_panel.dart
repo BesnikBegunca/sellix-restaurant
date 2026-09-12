@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
 import '../../../theme/app_colors.dart';
-import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/profits/profit_breakdown_row.dart';
 
@@ -122,63 +122,47 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        sectionTitle('Fitime'),
-        const SizedBox(height: 6),
-        Text(
-          'Fitimi = shitje – shpenzime, sipas periudhës.',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+        PanelHeader(
+          icon: Icons.trending_up_outlined,
+          title: 'Fitime',
+          subtitle: 'Fitimi = shitje – shpenzime, sipas periudhës.',
         ),
-        const SizedBox(height: 24),
 
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: StatCard(
-                  title: 'Fitim Ditor',
-                  value: '${profDay.toStringAsFixed(0)}€',
-                  icon: Icons.attach_money,
-                  accentColor: AppColors.warmGold,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  title: 'Fitim Javor',
-                  value: '${profWeek.toStringAsFixed(0)}€',
-                  icon: Icons.trending_up_outlined,
-                  accentColor: AppColors.warmGold,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  title: 'Fitim Mujor',
-                  value: '${profMonth.toStringAsFixed(0)}€',
-                  icon: Icons.calendar_month_outlined,
-                  accentColor: AppColors.warmGold,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  title: 'Shitje Gjithsej',
-                  value: '${totalSales.toStringAsFixed(0)}€',
-                  icon: Icons.bar_chart_outlined,
-                ),
-              ),
-            ],
-          ),
+        PanelStatRow(
+          cards: [
+            StatCard(
+              title: 'Fitim Ditor',
+              value: '${profDay.toStringAsFixed(0)}€',
+              icon: Icons.attach_money,
+              accentColor: AppColors.warmGold,
+            ),
+            StatCard(
+              title: 'Fitim Javor',
+              value: '${profWeek.toStringAsFixed(0)}€',
+              icon: Icons.trending_up_outlined,
+              accentColor: AppColors.warmGold,
+            ),
+            StatCard(
+              title: 'Fitim Mujor',
+              value: '${profMonth.toStringAsFixed(0)}€',
+              icon: Icons.calendar_month_outlined,
+              accentColor: AppColors.warmGold,
+            ),
+            StatCard(
+              title: 'Shitje Gjithsej',
+              value: '${totalSales.toStringAsFixed(0)}€',
+              icon: Icons.bar_chart_outlined,
+            ),
+          ],
         ),
         const SizedBox(height: 20),
 
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.lightGreenBorder),
+            border: Border.all(color: scheme.outlineVariant),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x08000000),
@@ -344,7 +328,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                     (s) => LineTooltipItem(
                                       '${s.y.toStringAsFixed(0)}€',
                                       TextStyle(
-                                        color: scheme.surfaceContainerHighest,
+                                        color: scheme.surface,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -400,9 +384,9 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHighest,
+                        color: scheme.surface,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.lightGreenBorder),
+                        border: Border.all(color: scheme.outlineVariant),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
