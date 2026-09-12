@@ -39,7 +39,7 @@ class TopPerformerCard extends StatelessWidget {
                     Container(
                       width: 48,
                       height: 48,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.primaryGreen,
                         shape: BoxShape.circle,
                       ),
@@ -52,7 +52,7 @@ class TopPerformerCard extends StatelessWidget {
                                     .take(2)
                                     .join()
                               : top.key[0].toUpperCase(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: AppColors.white,
@@ -69,13 +69,13 @@ class TopPerformerCard extends StatelessWidget {
                             top.key,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: AppColors.darkGreenText,
                             ),
                           ),
-                          const Text(
+                          Text(
                             'Kamarier',
                             style: TextStyle(
                               fontSize: 12,
@@ -88,7 +88,7 @@ class TopPerformerCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Divider(color: AppColors.lightGreenBorder, height: 1),
+                Divider(color: AppColors.lightGreenBorder, height: 1),
                 const SizedBox(height: 14),
                 Row(
                   children: [
@@ -96,7 +96,7 @@ class TopPerformerCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Shitje',
                             style: TextStyle(
                               fontSize: 12,
@@ -106,7 +106,7 @@ class TopPerformerCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             '${top.value.toStringAsFixed(0)}€',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: AppColors.darkGreenText,
@@ -119,7 +119,7 @@ class TopPerformerCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Porosi sot',
                             style: TextStyle(
                               fontSize: 12,
@@ -129,7 +129,7 @@ class TopPerformerCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             '$topOrders',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
                               color: AppColors.darkGreenText,
@@ -142,7 +142,7 @@ class TopPerformerCard extends StatelessWidget {
                 ),
               ],
             )
-          : const Padding(
+          : Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(

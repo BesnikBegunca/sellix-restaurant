@@ -98,7 +98,7 @@ class _ActionRowState extends State<_ActionRow> {
                   children: [
                     Text(
                       widget.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.darkGreenText,
@@ -106,7 +106,7 @@ class _ActionRowState extends State<_ActionRow> {
                     ),
                     Text(
                       widget.hint,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.lightGreenText,
                       ),
@@ -114,7 +114,7 @@ class _ActionRowState extends State<_ActionRow> {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.arrow_forward,
                 size: 16,
                 color: AppColors.lightGreenText,

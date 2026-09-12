@@ -141,7 +141,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
           onSurface: AppColors.charcoalText,
         ),
         fontFamily: 'DMSans',
-        textTheme: const TextTheme().apply(
+        textTheme: TextTheme().apply(
           fontFamily: 'DMSans',
           bodyColor: AppColors.darkGreenText,
           displayColor: AppColors.darkGreenText,
@@ -155,20 +155,20 @@ class _PosSystemAppState extends State<PosSystemApp> {
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+            borderSide: BorderSide(color: AppColors.lightGreenBorder),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+            borderSide: BorderSide(color: AppColors.lightGreenBorder),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(
+            borderSide: BorderSide(
               color: AppColors.primaryGreen,
               width: 2,
             ),
           ),
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             color: AppColors.lightGreenText,
             fontSize: 14,
           ),
@@ -209,7 +209,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primaryGreen,
             minimumSize: const Size(0, 48),
-            side: const BorderSide(color: AppColors.lightGreenBorder),
+            side: BorderSide(color: AppColors.lightGreenBorder),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -221,7 +221,7 @@ class _PosSystemAppState extends State<PosSystemApp> {
             ),
           ),
         ),
-        dividerTheme: const DividerThemeData(
+        dividerTheme: DividerThemeData(
           color: AppColors.lightGreenBorder,
           thickness: 1,
           space: 1,
@@ -231,11 +231,11 @@ class _PosSystemAppState extends State<PosSystemApp> {
           color: AppColors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: AppColors.lightGreenBorder),
+            side: BorderSide(color: AppColors.lightGreenBorder),
           ),
           margin: EdgeInsets.zero,
         ),
-        snackBarTheme: const SnackBarThemeData(
+        snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.primaryGreen,
           contentTextStyle: TextStyle(
@@ -252,14 +252,14 @@ class _PosSystemAppState extends State<PosSystemApp> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          titleTextStyle: const TextStyle(
+          titleTextStyle: TextStyle(
             inherit: false,
             fontFamily: 'DMSans',
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.darkGreenText,
           ),
-          contentTextStyle: const TextStyle(
+          contentTextStyle: TextStyle(
             inherit: false,
             fontFamily: 'DMSans',
             fontSize: 14,

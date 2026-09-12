@@ -642,7 +642,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
+                  borderSide: BorderSide(
                     color: AppColors.primaryGreen,
                     width: 2,
                   ),
@@ -952,7 +952,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 14, color: AppColors.lightGreenText),
+          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
         const SizedBox(height: 8),
         MouseRegion(
@@ -976,7 +976,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
               ),
               child: Text(
                 value.isEmpty ? '0.00€' : '$value€',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   color: AppColors.darkGreenText,
                 ),
@@ -1036,7 +1036,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.borderSubtle(0.1)),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.backspace_outlined,
                   color: AppColors.primaryGreen,
                   size: 28,
@@ -1110,7 +1110,7 @@ class _LicenseExpiryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       _label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w300,
         color: AppColors.lightGreenText,

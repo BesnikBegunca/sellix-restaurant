@@ -27,7 +27,7 @@ class ExpensesDataTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const headerStyle = TextStyle(
+    final headerStyle = TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.w700,
       color: AppColors.lightGreenText,
@@ -41,8 +41,8 @@ class ExpensesDataTable extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            decoration: const BoxDecoration(color: AppColors.lightGreenBg),
-            child: const Row(
+            decoration: BoxDecoration(color: AppColors.lightGreenBg),
+            child: Row(
               children: [
                 SizedBox(width: 130, child: Text('DATA', style: headerStyle)),
                 SizedBox(
@@ -70,7 +70,7 @@ class ExpensesDataTable extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: rows.length,
-            separatorBuilder: (_, __) => const Divider(
+            separatorBuilder: (_, __) => Divider(
               height: 1,
               thickness: 1,
               color: AppColors.lightGreenBorder,
@@ -92,7 +92,7 @@ class ExpensesDataTable extends StatelessWidget {
                         width: 130,
                         child: Text(
                           fmtDate(e.date),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.mediumGreenText,
                           ),
@@ -130,7 +130,7 @@ class ExpensesDataTable extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 12),
                           child: Text(
                             e.description,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               color: AppColors.darkGreenText,
                               height: 1.35,
@@ -142,7 +142,7 @@ class ExpensesDataTable extends StatelessWidget {
                         width: 140,
                         child: Text(
                           '—',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.mediumGreenText,
                           ),
@@ -153,7 +153,7 @@ class ExpensesDataTable extends StatelessWidget {
                         child: Text(
                           '${e.amount.toStringAsFixed(2)}€',
                           textAlign: TextAlign.right,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: AppColors.negativeText,

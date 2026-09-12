@@ -577,7 +577,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
       color: AppColors.lightGreenBg,
       borderRadius: BorderRadius.circular(10),
     ),
-    child: const Icon(
+    child: Icon(
       Icons.hide_image_outlined,
       size: 28,
       color: AppColors.lightGreenText,
@@ -596,7 +596,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Ndrysho produktin',
                 style: TextStyle(
                   fontSize: 20,
@@ -623,7 +623,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Fotoja',
                         style: TextStyle(
                           fontSize: 13,
@@ -637,7 +637,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                         label: const Text('Ndrysho foton'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryGreen,
-                          side: const BorderSide(color: AppColors.primaryGreen),
+                          side: BorderSide(color: AppColors.primaryGreen),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 10,

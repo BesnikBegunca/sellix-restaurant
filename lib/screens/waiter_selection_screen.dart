@@ -308,7 +308,7 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.person_outline,
                             size: 70,
                             color: AppColors.primaryGreen,

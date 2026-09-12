@@ -251,7 +251,7 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
                       Text(
                         'Shumë tentativa. Provo pas ${widget.lockoutSeconds}s.',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.softRed,
@@ -261,7 +261,7 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
                       Text(
                         errorText,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: AppColors.softRed,
@@ -276,7 +276,7 @@ class _SessionLockDialogContentState extends State<SessionLockDialogContent>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           gradient: _canSubmit
-                              ? const LinearGradient(
+                              ? LinearGradient(
                                   begin: Alignment.centerLeft,
                                   end: Alignment.centerRight,
                                   colors: [
@@ -388,7 +388,7 @@ class _PinBoxField extends StatelessWidget {
             obscureText: true,
             obscuringCharacter: '•',
             maxLength: 1,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreenText,

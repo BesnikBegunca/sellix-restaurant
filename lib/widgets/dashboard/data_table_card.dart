@@ -44,7 +44,7 @@ class DataTableCard extends StatelessWidget {
                 horizontal: AppTokens.cardPadding,
                 vertical: 18,
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: AppColors.lightGreenBorder),
                 ),
@@ -57,7 +57,7 @@ class DataTableCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: AppTokens.sectionTitleSize,
                             fontWeight: FontWeight.w600,
                             color: AppColors.charcoalText,
@@ -67,7 +67,7 @@ class DataTableCard extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             subtitle!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: AppTokens.metaTextSize,
                               color: AppColors.mutedGray,
                             ),

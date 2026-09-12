@@ -73,7 +73,7 @@ class WaiterSummaryCard extends StatelessWidget {
                 children: [
                   Text(
                     waiter.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.darkGreenText,
@@ -84,7 +84,7 @@ class WaiterSummaryCard extends StatelessWidget {
                     rate > 0
                         ? '${rate.toStringAsFixed(2)}€/ditë · $worked ditë'
                         : 'Pa pagë të caktuar',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.mediumGreenText,
                     ),
@@ -116,7 +116,7 @@ class WaiterSummaryCard extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 12),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               size: 18,
               color: AppColors.mediumGreenText,
@@ -133,7 +133,7 @@ class WaiterSummaryCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             color: AppColors.mediumGreenText,
           ),

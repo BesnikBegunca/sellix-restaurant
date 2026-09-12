@@ -112,7 +112,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Login Mode',
                       style: TextStyle(
                         fontSize: 20,
@@ -121,7 +121,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Select how waiters log in to the system',
                       style: TextStyle(
                         fontSize: 14,
@@ -152,7 +152,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Printers',
                       style: TextStyle(
                         fontSize: 20,
@@ -161,7 +161,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Select the Windows printer used for POS80 receipts.',
                       style: TextStyle(
                         fontSize: 14,
@@ -170,9 +170,9 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (_loadingPrinters)
-                      const CircularProgressIndicator()
+                      CircularProgressIndicator()
                     else if (_printers.isEmpty)
-                      const Text(
+                      Text(
                         'No Windows printers found.',
                         style: TextStyle(color: AppColors.lightGreenText),
                       )
@@ -219,7 +219,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           children: [
                             Text(
                               'Detected profile: ${profile.name}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.darkGreenText,
@@ -230,7 +230,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                               'Paper: ${profile.paperWidthMm}mm  ·  '
                               'Cut: ${profile.supportsCut ? "✓" : "✗"}  ·  '
                               'Drawer: ${profile.supportsDrawer ? "✓" : "✗"}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.lightGreenText,
                               ),
@@ -251,7 +251,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             ),
                             onPressed: _isTesting ? null : _testPrint,
                             icon: _isTesting
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 16,
                                     height: 16,
                                     child: CircularProgressIndicator(
@@ -299,7 +299,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Receipt Settings',
               style: TextStyle(
                 fontSize: 20,
@@ -308,7 +308,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Configure ESC/POS mode, paper size, cash drawer, and receipt content.',
               style: TextStyle(fontSize: 14, color: AppColors.darkGreenText),
             ),
@@ -317,14 +317,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             // ESC/POS toggle
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text(
+              title: Text(
                 'ESC/POS mode',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppColors.darkGreenText,
                 ),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Send raw ESC/POS commands (recommended). Disable to use legacy text-mode printing.',
                 style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
               ),
@@ -341,14 +341,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             // Cash drawer toggle
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text(
+              title: Text(
                 'Open cash drawer after payment',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppColors.darkGreenText,
                 ),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Sends ESC p command after a successful sale. Requires a compatible drawer.',
                 style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
               ),
@@ -363,7 +363,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             const SizedBox(height: 16),
 
             // Paper width selector
-            const Text(
+            Text(
               'Paper width',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
@@ -463,7 +463,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text('Receipt settings saved.'),
         backgroundColor: AppColors.primaryGreen,
       ),
@@ -500,7 +500,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       await EscPosPrinterService.instance.openCashDrawer(_selectedPrinter);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Cash drawer command sent.'),
           backgroundColor: AppColors.primaryGreen,
         ),
@@ -555,7 +555,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.darkGreenText,
                     ),
@@ -564,7 +564,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               ),
             ),
             if (isSelected)
-              const Icon(
+              Icon(
                 Icons.check_circle,
                 color: AppColors.primaryGreen,
                 size: 24,
@@ -586,7 +586,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Database Backup',
               style: TextStyle(
                 fontSize: 20,
@@ -595,7 +595,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Export the database to a file or restore from a previous backup.',
               style: TextStyle(fontSize: 14, color: AppColors.darkGreenText),
             ),
@@ -612,7 +612,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     label: const Text('Export Database'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryGreen,
-                      side: const BorderSide(color: AppColors.primaryGreen),
+                      side: BorderSide(color: AppColors.primaryGreen),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
@@ -636,7 +636,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
             if (_isBackupOperation) ...[
               const SizedBox(height: 16),
-              const Row(
+              Row(
                 children: [
                   SizedBox(
                     width: 18,
@@ -677,7 +677,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             const SizedBox(height: 20),
 
             // Auto-backup section
-            const Text(
+            Text(
               'Auto-Backup',
               style: TextStyle(
                 fontSize: 16,
@@ -686,7 +686,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Creates one backup per day automatically. Keeps the last 7 backups.',
               style: TextStyle(fontSize: 13, color: AppColors.darkGreenText),
             ),
@@ -706,7 +706,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   activeTrackColor: AppColors.lightGreenBg,
                 ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Compress backups (.zip)',
                   style: TextStyle(
                     fontSize: 13,
@@ -764,7 +764,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.folder_outlined,
                       size: 16,
                       color: AppColors.primaryGreen,
@@ -773,7 +773,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     Expanded(
                       child: Text(
                         _autoBackupFolder!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.darkGreenText,
                         ),
@@ -800,7 +800,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primaryGreen,
-                    side: const BorderSide(color: AppColors.primaryGreen),
+                    side: BorderSide(color: AppColors.primaryGreen),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -811,7 +811,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   label: const Text('Backup Now'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primaryGreen,
-                    side: const BorderSide(color: AppColors.primaryGreen),
+                    side: BorderSide(color: AppColors.primaryGreen),
                   ),
                 ),
               ],
@@ -895,7 +895,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
             return AlertDialog(
-              title: const Text(
+              title: Text(
                 'Export Options',
                 style: TextStyle(color: AppColors.darkGreenText),
               ),
@@ -904,7 +904,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Format',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -931,7 +931,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                     const SizedBox(height: 16),
                     const Divider(height: 1),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Encryption Password (required, min 8 characters)',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -962,7 +962,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                       const SizedBox(height: 8),
                       Text(
                         errorMsg!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.negativeText,
                           fontSize: 12,
                         ),
@@ -1035,7 +1035,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             activeColor: AppColors.primaryGreen,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          Text(label, style: const TextStyle(color: AppColors.darkGreenText)),
+          Text(label, style: TextStyle(color: AppColors.darkGreenText)),
         ],
       ),
     );
@@ -1049,7 +1049,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text(
+        title: Text(
           'Encrypted Backup',
           style: TextStyle(color: AppColors.darkGreenText),
         ),
@@ -1057,7 +1057,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'This backup is password-protected.\nEnter the password to continue.',
               style: TextStyle(fontSize: 13, color: AppColors.darkGreenText),
             ),
@@ -1107,11 +1107,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final proceed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(
+        title: Text(
           'Unencrypted Backup',
           style: TextStyle(color: AppColors.darkGreenText),
         ),
-        content: const Text(
+        content: Text(
           'This backup file is not encrypted. Restoring an unencrypted backup '
           'replaces all current data with plaintext data.\n\n'
           'Are you sure you want to continue?',
@@ -1148,7 +1148,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text(
+          title: Text(
             'Auto-Backup Encryption Password',
             style: TextStyle(color: AppColors.darkGreenText),
           ),
@@ -1156,7 +1156,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Set a password to encrypt automatic backups. '
                 'You will need this password to restore any auto-backup.',
                 style: TextStyle(fontSize: 13, color: AppColors.darkGreenText),
@@ -1186,7 +1186,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 const SizedBox(height: 8),
                 Text(
                   errorMsg!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.negativeText,
                     fontSize: 12,
                   ),
@@ -1237,7 +1237,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     if (!mounted) return;
     setState(() => _autoBackupPasswordSet = true);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text('Auto-backup encryption password set.'),
         backgroundColor: AppColors.primaryGreen,
       ),
@@ -1248,11 +1248,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(
+        title: Text(
           'Undo Last Restore',
           style: TextStyle(color: AppColors.darkGreenText),
         ),
-        content: const Text(
+        content: Text(
           'This will replace the current database with the one that was active '
           'before the last restore.\n\nAre you sure?',
           style: TextStyle(color: AppColors.darkGreenText),
@@ -1289,7 +1289,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         (_) => false,
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Restore undone successfully.'),
           backgroundColor: AppColors.primaryGreen,
         ),
@@ -1317,11 +1317,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text(
+        title: Text(
           'Restore Database',
           style: TextStyle(color: AppColors.darkGreenText),
         ),
-        content: const Text(
+        content: Text(
           'This will replace ALL current data with the selected backup.\n\n'
           'The app will restart after the restore is complete.\n\n'
           'Are you sure you want to continue?',
@@ -1368,7 +1368,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         (_) => false,
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Database restored successfully.'),
           backgroundColor: AppColors.primaryGreen,
         ),

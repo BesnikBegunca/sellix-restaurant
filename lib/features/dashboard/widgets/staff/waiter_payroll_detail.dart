@@ -84,7 +84,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
         builder: (ctx, setDlg) => AlertDialog(
           title: Text(
             'Avans — ${widget.waiter.name}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.darkGreenText,
@@ -112,7 +112,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today_outlined,
                       size: 18,
                       color: AppColors.mediumGreenText,
@@ -120,7 +120,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                     const SizedBox(width: 8),
                     Text(
                       '${pickedDate.day.toString().padLeft(2, '0')}.${pickedDate.month.toString().padLeft(2, '0')}.${pickedDate.year}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.darkGreenText,
                         fontSize: 14,
                       ),
@@ -228,7 +228,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
               radius: 18,
               child: Text(
                 w.name.isNotEmpty ? w.name[0].toUpperCase() : '?',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.primaryGreen,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -238,7 +238,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
             const SizedBox(width: 10),
             Text(
               w.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: AppColors.darkGreenText,
@@ -292,7 +292,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                     child: Center(
                       child: Text(
                         '${_monthNames[month.month - 1]} ${month.year}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
                           color: AppColors.darkGreenText,
@@ -416,7 +416,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                 ),
                 child: Text(
                   'Ditë të punuara: $worked / $daysInMonth  •  ${_monthNames[month.month - 1]} ${month.year}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.primaryGreen,
                     fontWeight: FontWeight.w500,
@@ -440,7 +440,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
             children: [
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.euro_outlined,
                     size: 18,
                     color: AppColors.mediumGreenText,
@@ -471,13 +471,13 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
+                            borderSide: BorderSide(
                               color: AppColors.primaryGreen,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
+                            borderSide: BorderSide(
                               color: AppColors.primaryGreen,
                               width: 2,
                             ),
@@ -617,7 +617,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.arrow_downward,
               size: 14,
               color: AppColors.negativeText,
@@ -625,7 +625,7 @@ class _WaiterPayrollDetailState extends State<WaiterPayrollDetail> {
             const SizedBox(width: 8),
             Text(
               '${a.amount.toStringAsFixed(2)}€',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppColors.negativeText,

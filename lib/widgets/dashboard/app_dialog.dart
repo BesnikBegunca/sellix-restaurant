@@ -17,10 +17,10 @@ Future<T?> showAppDialog<T>({
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTokens.cardRadius),
-          side: const BorderSide(color: AppColors.lightGreenBorder),
+          side: BorderSide(color: AppColors.lightGreenBorder),
         ),
         title: DefaultTextStyle.merge(
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppTokens.sectionTitleSize,
             fontWeight: FontWeight.w600,
             color: AppColors.charcoalText,
@@ -28,7 +28,7 @@ Future<T?> showAppDialog<T>({
           child: title,
         ),
         content: DefaultTextStyle.merge(
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppTokens.bodySize,
             color: AppColors.charcoalText,
             height: 1.4,

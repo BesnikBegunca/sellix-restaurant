@@ -188,7 +188,7 @@ class _BackButtonState extends State<_BackButton> {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: widget.onPressed,
-          child: const SizedBox(
+          child: SizedBox(
             width: 40,
             height: 40,
             child: Icon(

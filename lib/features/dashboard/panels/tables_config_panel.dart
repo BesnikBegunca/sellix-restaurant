@@ -108,7 +108,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
       children: [
         sectionTitle('Menaxhimi i Tavolinave'),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Monitoro dhe menaxho tavolinat e restorantit',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
@@ -158,13 +158,13 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.person_outline,
                 size: 22,
                 color: AppColors.primaryGreen,
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Kamarieri',
                 style: TextStyle(
                   fontSize: 15,
@@ -175,7 +175,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
               const SizedBox(width: 16),
               Expanded(
                 child: waiters.isEmpty
-                    ? const Text(
+                    ? Text(
                         'Nuk ka kamarierë të regjistruar.',
                         style: TextStyle(
                           fontSize: 14,
@@ -232,7 +232,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                     _tableViewWaiter == null
                         ? 'Planimetria'
                         : 'Tavolinat — $_tableViewWaiter',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: AppColors.darkGreenText,
@@ -246,7 +246,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
               ),
               const SizedBox(height: 20),
               if (_tableViewWaiter == null)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 48),
                   child: Center(
                     child: Text(
@@ -259,7 +259,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                   ),
                 )
               else if (_waiterTablesSnapshot == null)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 48),
                   child: Center(child: CircularProgressIndicator()),
                 )
@@ -315,7 +315,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                               child: Center(
                                 child: Text(
                                   '$id',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.darkGreenText,
@@ -351,7 +351,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                                           info!.assignedWaiterName!,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.darkGreenText,
@@ -360,7 +360,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                                       if ((info?.currentTotal ?? 0) > 0)
                                         Text(
                                           '${info!.currentTotal!.toStringAsFixed(0)}€',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 11,
                                             color: AppColors.mediumGreenText,
                                           ),
@@ -403,7 +403,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+              Text(
                 'Konfigurimi i Planimetrisë',
                 style: TextStyle(
                   fontSize: 16,
@@ -414,7 +414,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
               const SizedBox(height: 18),
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Numri i tavolinave',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
@@ -433,7 +433,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                     ),
                     child: Text(
                       '${_count.round()}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryGreen,
                       ),
@@ -460,7 +460,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Text(
+                  Text(
                     'Tavolina për rresht',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
@@ -479,7 +479,7 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
                     ),
                     child: Text(
                       '${_perRow.round()}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryGreen,
                       ),

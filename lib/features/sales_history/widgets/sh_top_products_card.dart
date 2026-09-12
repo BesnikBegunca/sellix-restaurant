@@ -18,7 +18,7 @@ class SHTopProductsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Produktet Kryesore',
             style: TextStyle(
               fontSize: 15,
@@ -38,7 +38,7 @@ class SHTopProductsCard extends StatelessWidget {
                         p.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: AppColors.darkGreenText,
@@ -46,7 +46,7 @@ class SHTopProductsCard extends StatelessWidget {
                       ),
                       Text(
                         '${p.qty} shitur',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.mediumGreenText,
                         ),
@@ -56,7 +56,7 @@ class SHTopProductsCard extends StatelessWidget {
                 ),
                 Text(
                   '${p.revenue.toStringAsFixed(0)}€',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryGreen,

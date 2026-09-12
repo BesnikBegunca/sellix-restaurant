@@ -20,7 +20,7 @@ class TableLegendDot extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             color: AppColors.mediumGreenText,
           ),

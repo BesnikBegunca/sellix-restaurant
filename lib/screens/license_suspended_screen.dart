@@ -98,14 +98,14 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
                       color: AppColors.negativeBg,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.pause_circle_filled_rounded,
                       size: 40,
                       color: AppColors.softRed,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Aksesi i pezulluar',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -119,7 +119,7 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
                   Text(
                     reason,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       height: 1.45,
                       color: AppColors.charcoalText,
@@ -130,7 +130,7 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
                     Text(
                       _statusMessage!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.lightGreenText,
                       ),
@@ -143,7 +143,7 @@ class _LicenseSuspendedScreenState extends State<LicenseSuspendedScreen> {
                     child: FilledButton(
                       onPressed: _checking ? null : _retryStatusCheck,
                       child: _checking
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(

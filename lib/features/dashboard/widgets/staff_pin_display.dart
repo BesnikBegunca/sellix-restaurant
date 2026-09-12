@@ -54,7 +54,7 @@ class _StaffPinDisplayState extends State<StaffPinDisplay> {
       children: [
         Text(
           'PIN: $_displayText',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             color: AppColors.mediumGreenText,
           ),

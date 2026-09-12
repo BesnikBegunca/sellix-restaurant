@@ -69,7 +69,7 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
                 color: AppColors.softRed.withValues(alpha: 0.35),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Rrezik: "Ruaj vetëm për testim" mund të shfaqen të dhëna të '
               'biznesit tjetër (leximet nuk filtrohen ende sipas tenant-it).',
               style: TextStyle(

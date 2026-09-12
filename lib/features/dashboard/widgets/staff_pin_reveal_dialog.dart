@@ -17,7 +17,7 @@ Future<String?> showStaffPinRevealDialog(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Shkruaj PIN-in e saktë të stafit. Do të ruhet që ta shohësh '
             'menjëherë herën tjetër.',
             style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),

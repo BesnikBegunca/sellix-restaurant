@@ -309,7 +309,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                         const SizedBox(height: 12),
                         Text(
                           _error!,
-                          style: const TextStyle(color: AppColors.softRed),
+                          style: TextStyle(color: AppColors.softRed),
                         ),
                       ],
                       const SizedBox(height: 20),
@@ -371,7 +371,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
                 'Manage local businesses and licenses',
                 'Menaxho bizneset dhe licencat lokale',
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.white,
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
@@ -390,7 +390,7 @@ class _DeveloperLoginScreenState extends State<DeveloperLoginScreen> {
       subtitle: Text(
         '${business.branch}  •  Skadon: ${business.expiresAt.toLocal().toString().split('.').first}',
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.verified_rounded,
         color: AppColors.successGreen,
       ),

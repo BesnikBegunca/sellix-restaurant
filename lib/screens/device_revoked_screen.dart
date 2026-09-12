@@ -42,14 +42,14 @@ class DeviceRevokedScreen extends StatelessWidget {
                       color: AppColors.negativeBg,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.phonelink_erase_rounded,
                       size: 40,
                       color: AppColors.softRed,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'Pajisja u çaktivizua',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -63,7 +63,7 @@ class DeviceRevokedScreen extends StatelessWidget {
                   Text(
                     body,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       height: 1.45,
                       color: AppColors.charcoalText,

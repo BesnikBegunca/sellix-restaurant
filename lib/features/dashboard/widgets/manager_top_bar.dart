@@ -207,7 +207,7 @@ class _TopBarChip extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.darkGreenText,
@@ -217,7 +217,7 @@ class _TopBarChip extends StatelessWidget {
               if (sublabel != null)
                 Text(
                   sublabel!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     color: AppColors.lightGreenText,
                     height: 1.2,
@@ -240,7 +240,7 @@ class _TopBarManagerBadge extends StatelessWidget {
         color: AppColors.primaryGreen,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.manage_accounts, size: 16, color: AppColors.white),
@@ -386,7 +386,7 @@ class ManagerBusinessPill extends StatelessWidget {
               managerData.companyName ?? 'Main location',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: AppColors.charcoalText,
@@ -417,7 +417,7 @@ class ManagerShiftPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.schedule_rounded,
             size: 20,
             color: AppColors.deepForestGreen,
@@ -425,7 +425,7 @@ class ManagerShiftPill extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             open ? 'Shift open' : 'Shift closed',
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 13,
               color: AppColors.charcoalText,

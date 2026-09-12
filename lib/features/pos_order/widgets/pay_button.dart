@@ -34,7 +34,7 @@ class _PayButtonState extends State<PayButton> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.borderVisible(0.12)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(

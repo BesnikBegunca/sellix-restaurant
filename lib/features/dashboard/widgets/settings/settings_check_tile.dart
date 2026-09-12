@@ -33,7 +33,7 @@ class SettingsCheckTile extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.darkGreenText,
@@ -43,7 +43,7 @@ class SettingsCheckTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     description!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       height: 1.3,
                       color: AppColors.lightGreenText,

@@ -66,7 +66,7 @@ class LoginModeTile extends StatelessWidget {
             ),
             Text(
               subtitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.mediumGreenText,
               ),

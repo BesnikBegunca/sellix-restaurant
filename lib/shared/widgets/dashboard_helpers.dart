@@ -58,17 +58,17 @@ InputDecoration inputDeco(String hint, {String? prefix}) {
     fillColor: AppColors.pureWhite,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+      borderSide: BorderSide(color: AppColors.lightGreenBorder),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+      borderSide: BorderSide(color: AppColors.lightGreenBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.controlRadius),
-      borderSide: const BorderSide(color: AppColors.deepForestGreen, width: 2),
+      borderSide: BorderSide(color: AppColors.deepForestGreen, width: 2),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    hintStyle: const TextStyle(color: AppColors.lightGreenText, fontSize: 14),
+    hintStyle: TextStyle(color: AppColors.lightGreenText, fontSize: 14),
   );
 }

@@ -210,7 +210,7 @@ class _RefundPanelState extends State<RefundPanel> {
       children: [
         sectionTitle('Refund — Porositë e Printuara'),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Çdo shtypje PRINTO shfaqet veçmas (p.sh. 3€, pastaj 4€, pastaj 5€). '
           'Fshirja heq vetëm atë printim nga tavolina, jo të gjitha së bashku.',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
@@ -249,13 +249,13 @@ class _RefundPanelState extends State<RefundPanel> {
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.person_outline,
                 size: 22,
                 color: AppColors.primaryGreen,
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Kamarieri',
                 style: TextStyle(
                   fontSize: 15,
@@ -266,7 +266,7 @@ class _RefundPanelState extends State<RefundPanel> {
               const SizedBox(width: 16),
               Expanded(
                 child: waiters.isEmpty
-                    ? const Text(
+                    ? Text(
                         'Nuk ka kamarierë të regjistruar.',
                         style: TextStyle(
                           fontSize: 14,
@@ -318,7 +318,7 @@ class _RefundPanelState extends State<RefundPanel> {
                 _selectedWaiter == null
                     ? 'Printimet'
                     : 'PRINTO — $_selectedWaiter',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: AppColors.darkGreenText,
@@ -326,12 +326,12 @@ class _RefundPanelState extends State<RefundPanel> {
               ),
               const SizedBox(height: 16),
               if (_loading)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 48),
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (_selectedWaiter == null)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: Text(
@@ -348,7 +348,7 @@ class _RefundPanelState extends State<RefundPanel> {
                       'Nuk ka printime për $_selectedWaiter në këtë turn.\n'
                       'Çdo shtypje PRINTO krijon një rresht të ri këtu.',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppColors.lightGreenText),
+                      style: TextStyle(color: AppColors.lightGreenText),
                     ),
                   ),
                 )
@@ -384,7 +384,7 @@ class _RefundPanelState extends State<RefundPanel> {
                                 child: Text(
                                   'Order #${orderNo.toString().padLeft(3, '0')} · '
                                   '${order.sale.total.toStringAsFixed(2)}€ · T${order.sale.tableId}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.warmGold,

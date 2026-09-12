@@ -232,7 +232,7 @@ class ManagerSideNav extends StatelessWidget {
                         child: InkWell(
                           onTap: onLogout,
                           borderRadius: BorderRadius.circular(12),
-                          child: const SizedBox(
+                          child: SizedBox(
                             height: 48,
                             width: double.infinity,
                             child: Icon(

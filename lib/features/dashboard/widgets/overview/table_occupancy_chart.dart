@@ -30,7 +30,7 @@ class TableOccupancyChart extends StatelessWidget {
           SizedBox(
             height: 180,
             child: total == 0
-                ? const Center(
+                ? Center(
                     child: Text(
                       'Shto tavolina te seksioni Tavolinat.',
                       style: TextStyle(color: AppColors.lightGreenText),
@@ -77,14 +77,14 @@ class TableOccupancyChart extends StatelessWidget {
                               children: [
                                 Text(
                                   '$occupied',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 26,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.darkGreenText,
                                     height: 1,
                                   ),
                                 ),
-                                const Text(
+                                Text(
                                   'të zëna',
                                   style: TextStyle(
                                     fontSize: 12,
@@ -126,7 +126,7 @@ class TableOccupancyChart extends StatelessWidget {
                 color: AppColors.lightGreenBg.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
+              child: Text(
                 'Asnjë tavolinë e zënë për momentin.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -144,7 +144,7 @@ class TableOccupancyChart extends StatelessWidget {
                     Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.mutedOrange,
                         shape: BoxShape.circle,
                       ),
@@ -153,7 +153,7 @@ class TableOccupancyChart extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Tavolina ${t.id}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: AppColors.darkGreenText,
@@ -162,7 +162,7 @@ class TableOccupancyChart extends StatelessWidget {
                     ),
                     Text(
                       t.assignedWaiterName ?? '—',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppColors.mediumGreenText,
                       ),
@@ -170,7 +170,7 @@ class TableOccupancyChart extends StatelessWidget {
                     const SizedBox(width: 12),
                     Text(
                       '${(t.currentTotal ?? 0).toStringAsFixed(0)}€',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: AppColors.darkGreenText,
@@ -209,7 +209,7 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             color: AppColors.mediumGreenText,
           ),
@@ -217,7 +217,7 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
             color: AppColors.darkGreenText,

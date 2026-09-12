@@ -1,56 +1,107 @@
 import 'package:flutter/material.dart';
 
+import 'theme_mode_controller.dart';
+
 /// Premium POS design token palette.
+///
+/// Every token below is a *getter* that resolves against the currently active
+/// appearance ([ThemeModeController.instance.isDark]). Call sites stay the
+/// same (`AppColors.primaryGreen`), but the value follows the theme, so the
+/// whole app switches to a properly designed dark palette instead of leaving
+/// hardcoded light colours behind.
+///
+/// Because these are runtime getters, they cannot be used inside `const`
+/// expressions — drop the `const` on the surrounding widget/TextStyle.
 abstract final class AppColors {
+  static bool get _dark => ThemeModeController.instance.isDark;
+
+  static Color _pick(Color light, Color dark) => _dark ? dark : light;
+
   // ── Primary brand ──────────────────────────────────────────────────────────
-  static const Color primaryGreen = Color(0xFF234B36);   // deep forest green — CTAs, active nav
-  static const Color oliveGreen   = Color(0xFF3E6B52);   // secondary accent
+  /// Deep forest green in light; a luminous mint in dark so it stays legible
+  /// against dark surfaces and passes contrast on text + icons.
+  static Color get primaryGreen =>
+      _pick(const Color(0xFF234B36), const Color(0xFF5EC79A));
+
+  static Color get oliveGreen =>
+      _pick(const Color(0xFF3E6B52), const Color(0xFF41A87B));
 
   // ── Backgrounds ───────────────────────────────────────────────────────────
-  static const Color beige         = Color(0xFFF7F8F6);  // page background
-  static const Color lightGreenBg  = Color(0xFFEAF0EA);  // hover / selected bg
-  static const Color white         = Color(0xFFFFFFFF);  // card surface
+  /// Page background.
+  static Color get beige =>
+      _pick(const Color(0xFFF7F8F6), const Color(0xFF0E1512));
+
+  /// Hover / selected background tint.
+  static Color get lightGreenBg =>
+      _pick(const Color(0xFFEAF0EA), const Color(0xFF1B2A23));
+
+  /// Card surface.
+  static Color get white =>
+      _pick(const Color(0xFFFFFFFF), const Color(0xFF16201B));
 
   // ── Borders ───────────────────────────────────────────────────────────────
-  static const Color lightGreenBorder = Color(0xFFDCE5DC);  // card / input border
+  static Color get lightGreenBorder =>
+      _pick(const Color(0xFFDCE5DC), const Color(0xFF2C3B33));
 
   // ── Text ──────────────────────────────────────────────────────────────────
-  static const Color darkGreenText   = Color(0xFF222222);  // charcoal — headings
-  static const Color mediumGreenText = Color(0xFF555555);  // body text
-  static const Color lightGreenText  = Color(0xFF888888);  // muted / metadata
+  /// Headings.
+  static Color get darkGreenText =>
+      _pick(const Color(0xFF222222), const Color(0xFFECF3EE));
+
+  /// Body text.
+  static Color get mediumGreenText =>
+      _pick(const Color(0xFF555555), const Color(0xFFB4C4BA));
+
+  /// Muted / metadata.
+  static Color get lightGreenText =>
+      _pick(const Color(0xFF888888), const Color(0xFF82988B));
 
   // ── Semantic / accents ────────────────────────────────────────────────────
-  static const Color warmGold       = Color(0xFFD4AF37);  // revenue / profit
-  static const Color softRed        = Color(0xFFDC3545);  // errors
-  static const Color mutedOrange    = Color(0xFFFFA07A);  // warnings
-  static const Color infoBlue       = Color(0xFF5B9BD5);  // info / reserved
+  static Color get warmGold =>
+      _pick(const Color(0xFFD4AF37), const Color(0xFFE8C765));
+
+  static Color get softRed =>
+      _pick(const Color(0xFFDC3545), const Color(0xFFFF6B7A));
+
+  static Color get mutedOrange =>
+      _pick(const Color(0xFFFFA07A), const Color(0xFFFFB48F));
+
+  static Color get infoBlue =>
+      _pick(const Color(0xFF5B9BD5), const Color(0xFF74B4EC));
 
   // ── Semantic aliases (new widget tokens) ──────────────────────────────────
-  static const Color deepForestGreen = primaryGreen;           // alias
-  static const Color pureWhite       = white;                  // alias
-  static const Color charcoalText    = darkGreenText;          // alias
-  static const Color softGreenTint   = lightGreenBg;           // alias
-  static const Color warmOffWhite    = beige;                  // alias
-  static const Color mutedGray       = Color(0xFF9E9E9E);      // neutral grey
-  static const Color successGreen    = Color(0xFF28A745);      // positive / success
-  static const Color accentRed       = softRed;                // alias
-  static const Color accentOrange    = mutedOrange;            // alias
-  static const Color accentBlue      = infoBlue;               // alias
+  static Color get deepForestGreen => primaryGreen;
+  static Color get pureWhite => white;
+  static Color get charcoalText => darkGreenText;
+  static Color get softGreenTint => lightGreenBg;
+  static Color get warmOffWhite => beige;
+
+  static Color get mutedGray =>
+      _pick(const Color(0xFF9E9E9E), const Color(0xFF93A39A));
+
+  static Color get successGreen =>
+      _pick(const Color(0xFF28A745), const Color(0xFF4ED18B));
+
+  static Color get accentRed => softRed;
+  static Color get accentOrange => mutedOrange;
+  static Color get accentBlue => infoBlue;
 
   // ── Legacy aliases (kept for backward compatibility) ──────────────────────
-  static const Color darkerGreenHover = oliveGreen;
-  static const Color negativeText     = softRed;
-  static const Color negativeBg       = Color(0xFFFFEBEE);
+  static Color get darkerGreenHover => oliveGreen;
+  static Color get negativeText => softRed;
+
+  static Color get negativeBg =>
+      _pick(const Color(0xFFFFEBEE), const Color(0xFF3A1F24));
 
   // ── Dynamic border helpers (kept for backward compatibility) ──────────────
   static Color borderSubtle([double a = 0.1]) =>
-      const Color(0xFF234B36).withValues(alpha: a);
+      _pick(const Color(0xFF234B36), const Color(0xFF8FD8B8)).withValues(alpha: a);
 
   static Color borderVisible([double a = 0.2]) =>
-      const Color(0xFF234B36).withValues(alpha: a);
+      _pick(const Color(0xFF234B36), const Color(0xFF8FD8B8)).withValues(alpha: a);
 
   static Color borderEmphasized([double a = 0.3]) =>
-      const Color(0xFF234B36).withValues(alpha: a);
+      _pick(const Color(0xFF234B36), const Color(0xFF8FD8B8)).withValues(alpha: a);
 
   static Color lightGreenBorderEmpty() =>
       lightGreenBorder.withValues(alpha: 0.72);

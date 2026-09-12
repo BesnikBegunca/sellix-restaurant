@@ -32,7 +32,7 @@ class SearchField extends StatelessWidget {
         readOnly: readOnly,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: AppTokens.tableTextSize,
           color: AppColors.charcoalText,
         ),
@@ -53,15 +53,15 @@ class SearchField extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppTokens.controlRadius),
-            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+            borderSide: BorderSide(color: AppColors.lightGreenBorder),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppTokens.controlRadius),
-            borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+            borderSide: BorderSide(color: AppColors.lightGreenBorder),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppTokens.controlRadius),
-            borderSide: const BorderSide(
+            borderSide: BorderSide(
               color: AppColors.deepForestGreen,
               width: 2,
             ),

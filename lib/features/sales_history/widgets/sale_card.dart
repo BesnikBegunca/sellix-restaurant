@@ -73,7 +73,7 @@ class SaleCard extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Text(
                       'T${sale.tableId}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryGreen,
@@ -88,7 +88,7 @@ class SaleCard extends StatelessWidget {
                       children: [
                         Text(
                           orderId,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: AppColors.darkGreenText,
@@ -97,7 +97,7 @@ class SaleCard extends StatelessWidget {
                         const SizedBox(height: 3),
                         Text(
                           '$dateStr at $timeStr  •  ${sale.waiterName}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             color: AppColors.mediumGreenText,
                           ),
@@ -110,7 +110,7 @@ class SaleCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text(
+                      Text(
                         'Total',
                         style: TextStyle(
                           fontSize: 11,
@@ -120,7 +120,7 @@ class SaleCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '${sale.total.toStringAsFixed(2)}€',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primaryGreen,
@@ -186,7 +186,7 @@ class SaleCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Row(
               children: [
-                const Text(
+                Text(
                   'Artikujt e Porosisë',
                   style: TextStyle(
                     fontSize: 13,
@@ -197,7 +197,7 @@ class SaleCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   '${lines.length} artikull${lines.length == 1 ? '' : 'ë'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.mediumGreenText,
                   ),
@@ -222,7 +222,7 @@ class SaleCard extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Text(
                       '${line.quantity}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppColors.primaryGreen,
@@ -239,7 +239,7 @@ class SaleCard extends StatelessWidget {
                       line.productName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         color: AppColors.darkGreenText,
                       ),
@@ -248,7 +248,7 @@ class SaleCard extends StatelessWidget {
                   // Unit price (small)
                   Text(
                     '${line.productPrice.toStringAsFixed(2)}€ × ${line.quantity}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppColors.lightGreenText,
                     ),
@@ -257,7 +257,7 @@ class SaleCard extends StatelessWidget {
                   // Line total
                   Text(
                     '${line.lineTotal.toStringAsFixed(2)}€',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.darkGreenText,
@@ -300,7 +300,7 @@ class SaleCard extends StatelessWidget {
                     label: const Text('Ridërgo kuponin'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryGreen,
-                      side: const BorderSide(color: AppColors.lightGreenBorder),
+                      side: BorderSide(color: AppColors.lightGreenBorder),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
@@ -336,7 +336,7 @@ class SaleCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Text(
+                          Text(
                             'Nëntotali  ',
                             style: TextStyle(
                               fontSize: 12,
@@ -345,7 +345,7 @@ class SaleCard extends StatelessWidget {
                           ),
                           Text(
                             '${linesTotal.toStringAsFixed(2)}€',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               color: AppColors.darkGreenText,
                             ),
@@ -355,7 +355,7 @@ class SaleCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Text(
+                          Text(
                             'Refund  ',
                             style: TextStyle(
                               fontSize: 12,
@@ -364,7 +364,7 @@ class SaleCard extends StatelessWidget {
                           ),
                           Text(
                             '-${adjTotal.toStringAsFixed(2)}€',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: AppColors.negativeText,
@@ -375,7 +375,7 @@ class SaleCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Text(
+                          Text(
                             'Totali Neto  ',
                             style: TextStyle(
                               fontSize: 13,
@@ -385,7 +385,7 @@ class SaleCard extends StatelessWidget {
                           ),
                           Text(
                             '${(linesTotal - adjTotal).toStringAsFixed(2)}€',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: AppColors.primaryGreen,
@@ -398,7 +398,7 @@ class SaleCard extends StatelessWidget {
                 ] else
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Totali  ',
                         style: TextStyle(
                           fontSize: 13,
@@ -408,7 +408,7 @@ class SaleCard extends StatelessWidget {
                       ),
                       Text(
                         '${linesTotal.toStringAsFixed(2)}€',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primaryGreen,

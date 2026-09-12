@@ -25,12 +25,12 @@ class AuditErrorCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: AppColors.negativeText),
+          Icon(Icons.error_outline, color: AppColors.negativeText),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Gabim gjatë ngarkimit: $error',
-              style: const TextStyle(color: AppColors.negativeText),
+              style: TextStyle(color: AppColors.negativeText),
             ),
           ),
           TextButton(

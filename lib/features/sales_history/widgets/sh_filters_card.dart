@@ -100,7 +100,7 @@ class SHFiltersCard extends StatelessWidget {
 
   static InputDecoration _filterDeco(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
           fontSize: 13,
           color: AppColors.lightGreenText,
         ),
@@ -108,16 +108,16 @@ class SHFiltersCard extends StatelessWidget {
         fillColor: AppColors.beige,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          borderSide: BorderSide(color: AppColors.lightGreenBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          borderSide: BorderSide(color: AppColors.lightGreenBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide:
-              const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+              BorderSide(color: AppColors.primaryGreen, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -144,7 +144,7 @@ class SHFiltersCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Filtrat & Kërkim',
             style: TextStyle(
               fontSize: 18,
@@ -161,7 +161,7 @@ class SHFiltersCard extends StatelessWidget {
                   controller: searchCtrl,
                   decoration: InputDecoration(
                     hintText: 'Kërko porosi, artikuj ose kamarierë...',
-                    prefixIcon: const Icon(
+                    prefixIcon: Icon(
                       Icons.search,
                       size: 20,
                       color: AppColors.lightGreenText,
@@ -170,19 +170,19 @@ class SHFiltersCard extends StatelessWidget {
                     fillColor: AppColors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                         color: AppColors.lightGreenBorder,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                         color: AppColors.lightGreenBorder,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                         color: AppColors.primaryGreen,
                         width: 1.5,
                       ),
@@ -191,7 +191,7 @@ class SHFiltersCard extends StatelessWidget {
                       horizontal: 16,
                       vertical: 14,
                     ),
-                    hintStyle: const TextStyle(
+                    hintStyle: TextStyle(
                       color: AppColors.lightGreenText,
                       fontSize: 14,
                     ),

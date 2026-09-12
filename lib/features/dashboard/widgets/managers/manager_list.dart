@@ -37,7 +37,7 @@ class ManagerList extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.lightGreenBorder),
         ),
-        child: const Column(
+        child: Column(
           children: [
             Icon(
               Icons.supervisor_account_outlined,
@@ -96,7 +96,7 @@ class ManagerList extends StatelessWidget {
     if (!context.mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('PIN i gabuar.'),
           backgroundColor: AppColors.softRed,
           behavior: SnackBarBehavior.floating,

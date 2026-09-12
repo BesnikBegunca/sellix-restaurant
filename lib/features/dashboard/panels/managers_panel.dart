@@ -61,7 +61,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
       children: [
         sectionTitle('Menaxherët'),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Shto dhe menaxho llogaritë me të drejta menaxheri (dashboard, gjendje, menu, etj.)',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
@@ -83,7 +83,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Shto Menaxher të Ri',
                 style: TextStyle(
                   fontSize: 16,
@@ -154,7 +154,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
                         size: 16,
                         color: AppColors.softRed,
@@ -162,7 +162,7 @@ class _ManagersPanelState extends State<ManagersPanel> {
                       const SizedBox(width: 8),
                       Text(
                         _errorMsg!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.softRed,
                         ),

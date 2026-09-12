@@ -21,7 +21,7 @@ class PayrollSummaryRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             color: AppColors.mediumGreenText,
           ),

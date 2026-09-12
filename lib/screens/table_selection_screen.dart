@@ -160,7 +160,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
               userName: widget.waiterName,
               onBack: () => Navigator.of(context).maybePop(),
             ),
-            const Expanded(
+            Expanded(
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.primaryGreen),
               ),
@@ -273,7 +273,7 @@ class _TableScreenHeaderRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
+                    Text(
                       'Totali i të gjitha tavolinave',
                       style: TextStyle(
                         fontSize: 14,
@@ -286,7 +286,7 @@ class _TableScreenHeaderRow extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         '${total.toStringAsFixed(2)}€',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w500,
                           color: AppColors.darkGreenText,
@@ -326,7 +326,7 @@ class _OccupiedCountBadge extends StatelessWidget {
             : occupied == 1
             ? '1 e zënë'
             : '$occupied të zëna',
-        style: const TextStyle(fontSize: 14, color: AppColors.primaryGreen),
+        style: TextStyle(fontSize: 14, color: AppColors.primaryGreen),
       ),
     );
   }
@@ -388,7 +388,7 @@ class _AddTableCardState extends State<_AddTableCard> {
                     : AppColors.lightGreenBg.withValues(alpha: 0.6),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.add,
                 size: 32,
                 color: AppColors.primaryGreen,
@@ -466,7 +466,7 @@ class _TableCardState extends State<_TableCard> {
                             'Tavolina ${widget.table.id}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w500,
                               color: AppColors.darkGreenText,
@@ -481,7 +481,7 @@ class _TableCardState extends State<_TableCard> {
                     Container(height: 1, color: AppColors.borderSubtle(0.1)),
                     const SizedBox(height: 8),
                     if (o && widget.table.currentTotal != null) ...[
-                      const Text(
+                      Text(
                         'Totali aktual',
                         style: TextStyle(
                           fontSize: 12,
@@ -494,7 +494,7 @@ class _TableCardState extends State<_TableCard> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           '${widget.table.currentTotal!.toStringAsFixed(2)}€',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w500,
                             color: AppColors.darkGreenText,
@@ -502,7 +502,7 @@ class _TableCardState extends State<_TableCard> {
                         ),
                       ),
                     ] else
-                      const Text(
+                      Text(
                         'Nuk ka porosi aktive',
                         style: TextStyle(
                           fontSize: 12,

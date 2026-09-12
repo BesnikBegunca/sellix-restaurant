@@ -68,7 +68,7 @@ class _WaitersPanelState extends State<WaitersPanel> {
       children: [
         sectionTitle('Menaxhimi i Kamarierëve'),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Menaxho anëtarët e stafit dhe kodet e hyrjes',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
@@ -181,7 +181,7 @@ class _WaitersPanelState extends State<WaitersPanel> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
                         size: 16,
                         color: AppColors.softRed,
@@ -189,7 +189,7 @@ class _WaitersPanelState extends State<WaitersPanel> {
                       const SizedBox(width: 8),
                       Text(
                         _errorMsg!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           color: AppColors.softRed,
                         ),

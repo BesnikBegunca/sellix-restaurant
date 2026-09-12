@@ -124,7 +124,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
       children: [
         sectionTitle('Fitime'),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Fitimi = shitje – shpenzime, sipas periudhës.',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
@@ -197,7 +197,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                   children: [
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Trendi i Fitimit',
                           style: TextStyle(
                             fontSize: 18,
@@ -303,7 +303,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                   padding: const EdgeInsets.only(top: 8),
                                   child: Text(
                                     _xLabel(v.toInt()),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
                                       color: AppColors.mediumGreenText,
                                     ),
@@ -320,7 +320,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                   v >= 1000
                                       ? '${(v / 1000).toStringAsFixed(0)}k'
                                       : v.toStringAsFixed(0),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
                                     color: AppColors.lightGreenText,
                                   ),
@@ -375,7 +375,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Mesatare Ditore',
                             style: TextStyle(
                               fontSize: 13,
@@ -385,7 +385,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                           const SizedBox(height: 8),
                           Text(
                             '${avgDaily.toStringAsFixed(0)}€',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w700,
                               color: AppColors.primaryGreen,
@@ -407,7 +407,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Ndarja',
                             style: TextStyle(
                               fontSize: 14,
@@ -463,7 +463,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Marzhi',
                             style: TextStyle(
                               fontSize: 14,
@@ -478,7 +478,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                             children: [
                               Text(
                                 '${margin.toStringAsFixed(0)}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.primaryGreen,
@@ -490,7 +490,7 @@ class _ProfitsPanelState extends State<ProfitsPanel> {
                                 selRev > 0
                                     ? '+${margin.toStringAsFixed(1)}%'
                                     : '—',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   color: AppColors.primaryGreen,
                                   fontWeight: FontWeight.w500,

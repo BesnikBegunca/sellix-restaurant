@@ -18,7 +18,7 @@ class AuditEmptyState extends StatelessWidget {
             color: AppColors.lightGreenText.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Nuk ka aktivitet',
             style: TextStyle(
               fontSize: 15,
@@ -27,7 +27,7 @@ class AuditEmptyState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Ndrysho kategorinë ose periudhën.',
             style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
           ),

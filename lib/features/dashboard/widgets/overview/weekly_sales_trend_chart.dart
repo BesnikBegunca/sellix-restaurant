@@ -81,7 +81,7 @@ class WeeklySalesTrendChart extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       labels[v.toInt()],
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         color: AppColors.mediumGreenText,
                         fontWeight: FontWeight.w500,
@@ -99,7 +99,7 @@ class WeeklySalesTrendChart extends StatelessWidget {
                     v >= 1000
                         ? '${(v / 1000).toStringAsFixed(0)}k'
                         : v.toStringAsFixed(0),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppColors.lightGreenText,
                     ),
@@ -120,7 +120,7 @@ class WeeklySalesTrendChart extends StatelessWidget {
                 tooltipRoundedRadius: 8,
                 getTooltipItem: (group, _, rod, __) => BarTooltipItem(
                   '${rod.toY.toStringAsFixed(0)}€',
-                  const TextStyle(
+                  TextStyle(
                     color: AppColors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

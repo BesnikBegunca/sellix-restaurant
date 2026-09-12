@@ -130,7 +130,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
       children: [
         sectionTitle('Shitjet'),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Çdo rresht = një mbyllje gjendje. Totali është shitja e atij intervali '
           '(nga hapja deri në mbylljen e gjendjes).',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
@@ -171,14 +171,14 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
         ),
         const SizedBox(height: 24),
         if (_loading)
-          const Center(
+          Center(
             child: Padding(
               padding: EdgeInsets.all(48),
               child: CircularProgressIndicator(color: AppColors.primaryGreen),
             ),
           )
         else if (tableRows.isEmpty)
-          const DashboardEmptyState(
+          DashboardEmptyState(
             title: 'Nuk ka mbyllje gjendje',
             message:
                 'Kur mbyllni gjendjen nga paneli Gjendja, shitjet e atij intervali '
@@ -202,7 +202,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
                     ),
                     columnSpacing: 24,
                     horizontalMargin: 18,
-                    columns: const [
+                    columns: [
                       DataColumn(
                         label: Text(
                           'Data',
@@ -252,7 +252,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
                               DataCell(
                                 Text(
                                   'Totali ditor · ${_formatDate(row.day!)}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.darkGreenText,
@@ -264,7 +264,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
                               DataCell(
                                 Text(
                                   '${row.total!.toStringAsFixed(2)}€',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.primaryGreen,
@@ -279,7 +279,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
                               DataCell(
                                 Text(
                                   _formatDate(row.shift!.closedAt!),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     color: AppColors.darkGreenText,
                                   ),
@@ -288,7 +288,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
                               DataCell(
                                 Text(
                                   _formatTime(row.shift!.closedAt!),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: AppColors.darkGreenText,
@@ -298,7 +298,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
                               DataCell(
                                 Text(
                                   _periodLabel(row.shift!),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     color: AppColors.mediumGreenText,
                                   ),
@@ -307,7 +307,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
                               DataCell(
                                 Text(
                                   '${row.shift!.totalSales.toStringAsFixed(2)}€',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.primaryGreen,

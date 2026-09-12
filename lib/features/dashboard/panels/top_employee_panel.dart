@@ -20,7 +20,7 @@ class TopEmployeePanel extends StatelessWidget {
         children: [
           sectionTitle('Realizimi sipas punëtorëve'),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Statistikat e shitjeve sipas punonjësve',
             style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
           ),
@@ -35,14 +35,14 @@ class TopEmployeePanel extends StatelessWidget {
                     color: AppColors.lightGreenBg,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.emoji_events_outlined,
                     size: 36,
                     color: AppColors.lightGreenText,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Asnjë shitje e regjistruar ende.',
                   style: TextStyle(
                     fontSize: 15,
@@ -51,7 +51,7 @@ class TopEmployeePanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Shitjet do të shfaqen këtu pasi të regjistroni shitjet e para.',
                   style: TextStyle(
                     fontSize: 13,
@@ -73,7 +73,7 @@ class TopEmployeePanel extends StatelessWidget {
       children: [
         sectionTitle('Realizimi sipas punëtorëve'),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Statistikat e shitjeve sipas punonjësve',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
@@ -104,7 +104,7 @@ class TopEmployeePanel extends StatelessWidget {
                   color: AppColors.warmGold.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.emoji_events,
                   size: 34,
                   color: AppColors.warmGold,
@@ -115,7 +115,7 @@ class TopEmployeePanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Punëtori më i mirë',
                       style: TextStyle(
                         fontSize: 12,
@@ -127,7 +127,7 @@ class TopEmployeePanel extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       top.key,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: AppColors.darkGreenText,
@@ -142,7 +142,7 @@ class TopEmployeePanel extends StatelessWidget {
                 children: [
                   Text(
                     '${top.value.toStringAsFixed(2)}€',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w700,
                       color: AppColors.warmGold,
@@ -150,7 +150,7 @@ class TopEmployeePanel extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
+                  Text(
                     'totale',
                     style: TextStyle(
                       fontSize: 12,
@@ -190,7 +190,7 @@ class TopEmployeePanel extends StatelessWidget {
                     top: Radius.circular(17),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     SizedBox(width: 36),
                     SizedBox(width: 12),
@@ -223,7 +223,7 @@ class TopEmployeePanel extends StatelessWidget {
               ),
               for (var i = 0; i < sorted.length; i++) ...[
                 if (i > 0)
-                  const Divider(height: 1, color: AppColors.lightGreenBorder),
+                  Divider(height: 1, color: AppColors.lightGreenBorder),
                 _TopEmployeeRow(
                   rank: i + 1,
                   name: sorted[i].key,
@@ -309,7 +309,7 @@ class _TopEmployeeRow extends StatelessWidget {
                       child: Center(
                         child: Text(
                           name.isNotEmpty ? name[0].toUpperCase() : '?',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primaryGreen,
@@ -320,7 +320,7 @@ class _TopEmployeeRow extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.darkGreenText,

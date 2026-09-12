@@ -156,7 +156,7 @@ class _CategoryProductTableState extends State<CategoryProductTable> {
                               horizontal: 20,
                               vertical: 10,
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
                                 SizedBox(width: 52),
                                 SizedBox(width: 16),
@@ -293,7 +293,7 @@ class _ProductTableRowState extends State<_ProductTableRow> {
               flex: 3,
               child: Text(
                 p.name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: AppColors.darkGreenText,
@@ -305,7 +305,7 @@ class _ProductTableRowState extends State<_ProductTableRow> {
               child: Text(
                 '\$${p.price.toStringAsFixed(2)}',
                 textAlign: TextAlign.right,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primaryGreen,
@@ -365,7 +365,7 @@ class _ProductTableRowState extends State<_ProductTableRow> {
       color: AppColors.lightGreenBg,
       borderRadius: BorderRadius.circular(8),
     ),
-    child: const Icon(
+    child: Icon(
       Icons.fastfood_outlined,
       size: 22,
       color: AppColors.lightGreenText,

@@ -125,7 +125,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                         _viewMonth.month - 1,
                       ),
                     ),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.chevron_left,
                       color: AppColors.primaryGreen,
                     ),
@@ -136,7 +136,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
                       '${_monthNames[_viewMonth.month - 1]} ${_viewMonth.year}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.darkGreenText,
@@ -150,7 +150,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                         _viewMonth.month + 1,
                       ),
                     ),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.chevron_right,
                       color: AppColors.primaryGreen,
                     ),
@@ -163,7 +163,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
           ],
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Menaxho pagat dhe avanset e stafit sipas muajit.',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
@@ -241,7 +241,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Paga e Stafit',
                           style: TextStyle(
                             fontSize: 18,
@@ -252,7 +252,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                         const SizedBox(height: 16),
                         for (int i = 0; i < m.waiters.length; i++) ...[
                           if (i > 0)
-                            const Divider(
+                            Divider(
                               height: 1,
                               color: AppColors.lightGreenBorder,
                             ),
@@ -289,7 +289,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Përmbledhja Mujore',
                           style: TextStyle(
                             fontSize: 18,
@@ -308,7 +308,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Pagesa Gjithsej',
                                 style: TextStyle(
                                   fontSize: 13,
@@ -318,7 +318,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                               const SizedBox(height: 6),
                               Text(
                                 '${totalGross.toStringAsFixed(0)}€',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
                                   color: AppColors.primaryGreen,
@@ -332,7 +332,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                           label: 'Paga Mesatare',
                           value: '${avgSalary.toStringAsFixed(2)}€',
                         ),
-                        const Divider(
+                        Divider(
                           height: 24,
                           color: AppColors.lightGreenBorder,
                         ),
@@ -340,7 +340,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                           label: 'Bruto Më i Lartë',
                           value: '${maxGross.toStringAsFixed(2)}€',
                         ),
-                        const Divider(
+                        Divider(
                           height: 24,
                           color: AppColors.lightGreenBorder,
                         ),
@@ -351,7 +351,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                               ? AppColors.softRed
                               : AppColors.mediumGreenText,
                         ),
-                        const Divider(
+                        Divider(
                           height: 24,
                           color: AppColors.lightGreenBorder,
                         ),
@@ -390,14 +390,14 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                 color: AppColors.lightGreenBg,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.badge_outlined,
                 size: 32,
                 color: AppColors.lightGreenText,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Nuk ka kamarierë të regjistruar.',
               style: TextStyle(
                 fontSize: 15,
@@ -406,7 +406,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Shko te "Kamarierët" për të shtuar punonjës.',
               style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
             ),

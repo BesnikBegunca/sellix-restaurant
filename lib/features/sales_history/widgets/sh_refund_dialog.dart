@@ -29,7 +29,7 @@ Future<void> showSHRefundDialog(
               children: [
                 Text(
                   'Shitja #${swl.sale.dbId}  ·  Totali: ${swl.sale.total.toStringAsFixed(2)}€',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color: AppColors.mediumGreenText,
                   ),

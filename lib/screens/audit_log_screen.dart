@@ -212,7 +212,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
         AuditKpiRow(logs: _logs),
         const SizedBox(height: 20),
         if (_loading && _logs.isEmpty)
-          const Center(
+          Center(
             child: Padding(
               padding: EdgeInsets.all(48),
               child: CircularProgressIndicator(color: AppColors.primaryGreen),
@@ -231,7 +231,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   Widget _buildHeader() {
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -258,7 +258,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
         OutlinedButton.icon(
           onPressed: (_exportingPdf || _logs.isEmpty) ? null : _exportPdf,
           icon: _exportingPdf
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
@@ -270,7 +270,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
           label: const Text('Eksporto PDF'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.darkGreenText,
-            side: const BorderSide(color: AppColors.lightGreenBorder),
+            side: BorderSide(color: AppColors.lightGreenBorder),
             padding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             shape: RoundedRectangleBorder(
@@ -307,7 +307,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Filtro sipas Kategorisë',
             style: TextStyle(
               fontSize: 18,
@@ -326,7 +326,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
           const Divider(height: 1),
           const SizedBox(height: 16),
           if (filtered.isEmpty)
-            const AuditEmptyState()
+            AuditEmptyState()
           else ...[
             for (final log in filtered)
               AuditLogCard(
@@ -345,7 +345,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Center(
                   child: _loading
-                      ? const CircularProgressIndicator(
+                      ? CircularProgressIndicator(
                           color: AppColors.primaryGreen,
                         )
                       : OutlinedButton.icon(
@@ -354,7 +354,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
                           label: const Text('Ngarko më shumë'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primaryGreen,
-                            side: const BorderSide(
+                            side: BorderSide(
                               color: AppColors.primaryGreen,
                             ),
                           ),
@@ -423,7 +423,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
             initialDateRange: _customRange,
             builder: (ctx, child) => Theme(
               data: ThemeData.light().copyWith(
-                colorScheme: const ColorScheme.light(
+                colorScheme: ColorScheme.light(
                   primary: AppColors.primaryGreen,
                 ),
               ),
@@ -497,7 +497,7 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
 
   InputDecoration _filterDeco(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
           fontSize: 13,
           color: AppColors.lightGreenText,
         ),
@@ -505,16 +505,16 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
         fillColor: AppColors.beige,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          borderSide: BorderSide(color: AppColors.lightGreenBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.lightGreenBorder),
+          borderSide: BorderSide(color: AppColors.lightGreenBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide:
-              const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+              BorderSide(color: AppColors.primaryGreen, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

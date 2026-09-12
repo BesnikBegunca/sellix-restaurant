@@ -27,7 +27,7 @@ class DashboardEmptyState extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppTokens.sectionTitleSize,
               fontWeight: FontWeight.w600,
               color: AppColors.charcoalText,
@@ -38,7 +38,7 @@ class DashboardEmptyState extends StatelessWidget {
             Text(
               message!,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppTokens.tableTextSize,
                 color: AppColors.mutedGray,
                 height: 1.4,
@@ -63,7 +63,7 @@ class DashboardLoadingState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(
+          SizedBox(
             width: 36,
             height: 36,
             child: CircularProgressIndicator(
@@ -75,7 +75,7 @@ class DashboardLoadingState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppTokens.tableTextSize,
                 color: AppColors.mutedGray,
               ),

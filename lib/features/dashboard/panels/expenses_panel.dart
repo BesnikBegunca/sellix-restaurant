@@ -139,7 +139,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
       children: [
         sectionTitle('Shpenzime'),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Ndjek, filtro dhe eksporto transaksionet operative.',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
@@ -208,7 +208,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
               children: [
                 Row(
                   children: [
-                    const Text(
+                    Text(
                       'Të gjitha transaksionet',
                       style: TextStyle(
                         fontSize: 18,
@@ -225,7 +225,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                       label: const Text('Eksporto PDF'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.darkGreenText,
-                        side: const BorderSide(
+                        side: BorderSide(
                           color: AppColors.lightGreenBorder,
                         ),
                         padding: const EdgeInsets.symmetric(
@@ -250,7 +250,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                       label: const Text('Shtyp'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.darkGreenText,
-                        side: const BorderSide(
+                        side: BorderSide(
                           color: AppColors.lightGreenBorder,
                         ),
                         padding: const EdgeInsets.symmetric(
@@ -295,7 +295,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                   controller: _searchCtrl,
                   decoration: InputDecoration(
                     hintText: 'Search transactions...',
-                    prefixIcon: const Icon(
+                    prefixIcon: Icon(
                       Icons.search,
                       size: 20,
                       color: AppColors.lightGreenText,
@@ -304,19 +304,19 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                     fillColor: AppColors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                         color: AppColors.lightGreenBorder,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                         color: AppColors.lightGreenBorder,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
+                      borderSide: BorderSide(
                         color: AppColors.primaryGreen,
                         width: 1.5,
                       ),
@@ -325,7 +325,7 @@ class _ExpensesPanelState extends State<ExpensesPanel> {
                       horizontal: 16,
                       vertical: 14,
                     ),
-                    hintStyle: const TextStyle(
+                    hintStyle: TextStyle(
                       color: AppColors.lightGreenText,
                       fontSize: 14,
                     ),

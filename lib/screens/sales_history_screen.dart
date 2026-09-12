@@ -307,7 +307,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
         _buildHeader(),
         const SizedBox(height: 24),
         if (_loading)
-          const Center(
+          Center(
             child: Padding(
               padding: EdgeInsets.all(48),
               child: CircularProgressIndicator(color: AppColors.primaryGreen),
@@ -355,7 +355,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
   Widget _buildHeader() {
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -383,7 +383,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
         OutlinedButton.icon(
           onPressed: _exportingPdf ? null : _exportPdf,
           icon: _exportingPdf
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
@@ -395,7 +395,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           label: const Text('Eksporto PDF'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.darkGreenText,
-            side: const BorderSide(color: AppColors.lightGreenBorder),
+            side: BorderSide(color: AppColors.lightGreenBorder),
             padding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             shape: RoundedRectangleBorder(
@@ -432,7 +432,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
         children: [
           Row(
             children: [
-              const Text(
+              Text(
                 'Historiku i Porosive',
                 style: TextStyle(
                   fontSize: 18,
@@ -450,7 +450,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                   ),
                   child: Text(
                     '${_sales.length} porosi',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: AppColors.primaryGreen,
@@ -534,7 +534,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
             color: AppColors.lightGreenText.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Nuk ka porosi',
             style: TextStyle(
               fontSize: 15,
@@ -543,7 +543,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Ndrysho filtrat ose periudhën.',
             style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
           ),
@@ -564,7 +564,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline,
             color: AppColors.negativeText,
           ),
@@ -572,7 +572,7 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
           Expanded(
             child: Text(
               'Gabim gjatë ngarkimit: $_error',
-              style: const TextStyle(color: AppColors.negativeText),
+              style: TextStyle(color: AppColors.negativeText),
             ),
           ),
           TextButton(

@@ -55,7 +55,7 @@ class TodaySummaryCard extends StatelessWidget {
             value: peakHour != null ? _fmtHour(peakHour) : '—',
           ),
           const SizedBox(height: 14),
-          const Divider(color: AppColors.lightGreenBorder, height: 1),
+          Divider(color: AppColors.lightGreenBorder, height: 1),
           const SizedBox(height: 14),
           _SummaryRow(
             label: 'Të ardhura',

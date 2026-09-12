@@ -276,7 +276,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                   children: [
                     const Center(child: GgLogoBox(size: 64, radius: 16)),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Aktivizimi i Sistemit',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -286,7 +286,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Verifikoni çelësin, konfirmoni biznesin, pastaj aktivizoni terminalin.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -359,7 +359,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                             color: AppColors.mutedOrange.withValues(alpha: 0.4),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Kërkesa për transferim u dërgua te SuperAdmin. '
                           'Pas aprovimit, provo aktivizimin përsëri.',
                           style: TextStyle(
@@ -385,7 +385,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                         ),
                         child: Text(
                           _error!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.softRed,
                             fontSize: 13,
                           ),
@@ -397,7 +397,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                       ElevatedButton(
                         onPressed: inputsEnabled ? _activate : null,
                         child: _activating
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
@@ -436,7 +436,7 @@ class _LocalModeBanner extends StatelessWidget {
         color: AppColors.deepForestGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Text(
+      child: Text(
         'Local mode: no external API or internet connection is required.',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 12, color: AppColors.darkGreenText),
@@ -470,14 +470,14 @@ class _DeveloperModeCard extends StatelessWidget {
                   color: AppColors.white.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(13),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.engineering_rounded,
                   color: AppColors.white,
                   size: 25,
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -497,7 +497,7 @@ class _DeveloperModeCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
                 color: AppColors.white,
                 size: 17,
@@ -527,7 +527,7 @@ class _ValidationSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'Çelësi u verifikua',
             style: TextStyle(
               fontSize: 13,
@@ -555,7 +555,7 @@ class _ValidationSummaryCard extends StatelessWidget {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.mediumGreenText,
               ),
@@ -566,7 +566,7 @@ class _ValidationSummaryCard extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppColors.darkGreenText,

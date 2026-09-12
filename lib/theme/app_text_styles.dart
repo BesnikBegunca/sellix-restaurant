@@ -3,7 +3,7 @@ import 'app_colors.dart';
 
 abstract final class AppTextStyles {
   // ── Page / section titles ─────────────────────────────────────────────────
-  static const TextStyle pageTitle = TextStyle(
+  static TextStyle pageTitle = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 32,
     fontWeight: FontWeight.w600,
@@ -11,7 +11,7 @@ abstract final class AppTextStyles {
     height: 1.2,
   );
 
-  static const TextStyle sectionTitle = TextStyle(
+  static TextStyle sectionTitle = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 24,
     fontWeight: FontWeight.w600,
@@ -19,7 +19,7 @@ abstract final class AppTextStyles {
     height: 1.25,
   );
 
-  static const TextStyle cardTitle = TextStyle(
+  static TextStyle cardTitle = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 18,
     fontWeight: FontWeight.w600,
@@ -28,7 +28,7 @@ abstract final class AppTextStyles {
   );
 
   // ── KPI numbers ───────────────────────────────────────────────────────────
-  static const TextStyle kpiLarge = TextStyle(
+  static TextStyle kpiLarge = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 40,
     fontWeight: FontWeight.w600,
@@ -37,7 +37,7 @@ abstract final class AppTextStyles {
     letterSpacing: -0.5,
   );
 
-  static const TextStyle kpiMedium = TextStyle(
+  static TextStyle kpiMedium = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 28,
     fontWeight: FontWeight.w600,
@@ -47,7 +47,7 @@ abstract final class AppTextStyles {
   );
 
   // ── Body ──────────────────────────────────────────────────────────────────
-  static const TextStyle body = TextStyle(
+  static TextStyle body = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 15,
     fontWeight: FontWeight.w400,
@@ -55,7 +55,7 @@ abstract final class AppTextStyles {
     height: 1.5,
   );
 
-  static const TextStyle bodySmall = TextStyle(
+  static TextStyle bodySmall = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 13,
     fontWeight: FontWeight.w400,
@@ -63,7 +63,7 @@ abstract final class AppTextStyles {
     height: 1.45,
   );
 
-  static const TextStyle muted = TextStyle(
+  static TextStyle muted = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 13,
     fontWeight: FontWeight.w400,
@@ -79,7 +79,7 @@ abstract final class AppTextStyles {
     letterSpacing: 0.1,
   );
 
-  static const TextStyle tableHeader = TextStyle(
+  static TextStyle tableHeader = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 12,
     fontWeight: FontWeight.w600,
@@ -87,7 +87,7 @@ abstract final class AppTextStyles {
     letterSpacing: 0.6,
   );
 
-  static const TextStyle tableCell = TextStyle(
+  static TextStyle tableCell = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 14,
     fontWeight: FontWeight.w400,
@@ -107,7 +107,7 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w500,
   );
 
-  static const TextStyle metadata = TextStyle(
+  static TextStyle metadata = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 12,
     fontWeight: FontWeight.w400,

@@ -33,7 +33,7 @@ class _HoverSmallChipState extends State<HoverSmallChip> {
           ),
           child: Text(
             widget.label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: AppColors.darkGreenText,
             ),

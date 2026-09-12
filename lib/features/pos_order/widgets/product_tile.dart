@@ -156,7 +156,7 @@ class _AddCircleState extends State<_AddCircle> {
           color: h ? AppColors.darkerGreenHover : AppColors.primaryGreen,
           shape: BoxShape.circle,
         ),
-        child: const Icon(Icons.add, color: AppColors.white, size: 20),
+        child: Icon(Icons.add, color: AppColors.white, size: 20),
       ),
     );
   }

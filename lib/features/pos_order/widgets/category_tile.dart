@@ -70,7 +70,7 @@ class _CategoryTileState extends State<CategoryTile> {
                 const SizedBox(height: 8),
                 Text(
                   '${widget.data.products.length} items',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: AppColors.lightGreenText,
                   ),

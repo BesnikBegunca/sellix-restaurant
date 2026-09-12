@@ -60,7 +60,7 @@ Future<String?> showImageSourcePicker(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     'Zgjidh burimin e fotos',
@@ -73,7 +73,7 @@ Future<String?> showImageSourcePicker(
                 ),
                 const SizedBox(height: 4),
                 ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.photo_library_outlined,
                     color: AppColors.primaryGreen,
                   ),
@@ -82,7 +82,7 @@ Future<String?> showImageSourcePicker(
                   onTap: () => Navigator.pop(ctx, 'assets'),
                 ),
                 ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.upload_file_outlined,
                     color: AppColors.primaryGreen,
                   ),
@@ -92,11 +92,11 @@ Future<String?> showImageSourcePicker(
                 ),
                 if (current != null && current.isNotEmpty)
                   ListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.hide_image_outlined,
                       color: AppColors.negativeText,
                     ),
-                    title: const Text(
+                    title: Text(
                       'Hiq foton',
                       style: TextStyle(color: AppColors.negativeText),
                     ),
@@ -154,7 +154,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
                 padding: const EdgeInsets.fromLTRB(20, 18, 12, 8),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Zgjidh foton',
                         style: TextStyle(
@@ -177,17 +177,17 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   '${items.length - 1} foto në asetat e aplikacionit',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.lightGreenText,
                   ),
                 ),
               ),
               const SizedBox(height: 12),
-              const Divider(height: 1, color: AppColors.lightGreenBorder),
+              Divider(height: 1, color: AppColors.lightGreenBorder),
               Expanded(
                 child: assets.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
                           padding: EdgeInsets.all(24),
                           child: Text(
@@ -223,7 +223,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
                         },
                       ),
               ),
-              const Divider(height: 1, color: AppColors.lightGreenBorder),
+              Divider(height: 1, color: AppColors.lightGreenBorder),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: Row(
@@ -311,7 +311,7 @@ class _AssetPickerThumbState extends State<_AssetPickerThumb> {
                         ? productImage(
                             widget.path,
                             fit: BoxFit.contain,
-                            placeholder: () => const Center(
+                            placeholder: () => Center(
                               child: Icon(
                                 Icons.broken_image_outlined,
                                 color: AppColors.lightGreenText,
@@ -319,7 +319,7 @@ class _AssetPickerThumbState extends State<_AssetPickerThumb> {
                               ),
                             ),
                           )
-                        : const Center(
+                        : Center(
                             child: Icon(
                               Icons.hide_image_outlined,
                               color: AppColors.lightGreenText,

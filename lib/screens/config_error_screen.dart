@@ -78,14 +78,14 @@ class ConfigErrorScreen extends StatelessWidget {
                       color: AppColors.mutedOrange.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.cloud_off_rounded,
                       size: 40,
                       color: AppColors.mutedOrange,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     RuntimeConfigService.productionConfigErrorTitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -96,7 +96,7 @@ class ConfigErrorScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     RuntimeConfigService.productionConfigErrorBody,
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -190,7 +190,7 @@ class _InfoCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.mediumGreenText,

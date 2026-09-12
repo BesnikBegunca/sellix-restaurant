@@ -37,7 +37,7 @@ class AdjustmentRow extends StatelessWidget {
             ),
             child: Text(
               _typeLabel,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: AppColors.negativeText,
@@ -50,7 +50,7 @@ class AdjustmentRow extends StatelessWidget {
               adj.reason ?? '—',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.mediumGreenText,
               ),
@@ -58,7 +58,7 @@ class AdjustmentRow extends StatelessWidget {
           ),
           Text(
             timeStr,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               color: AppColors.lightGreenText,
             ),
@@ -66,7 +66,7 @@ class AdjustmentRow extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             '-${adj.amount.toStringAsFixed(2)}€',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: AppColors.negativeText,

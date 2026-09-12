@@ -53,7 +53,7 @@ class SHKpiCard extends StatelessWidget {
               const SizedBox(height: 14),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   color: AppColors.mediumGreenText,
                   fontWeight: FontWeight.w500,
@@ -84,7 +84,7 @@ class SHKpiCard extends StatelessWidget {
                 ),
                 child: Text(
                   badge!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryGreen,

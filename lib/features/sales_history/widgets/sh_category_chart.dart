@@ -25,7 +25,7 @@ class SHCategoryChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Të Ardhura sipas Kategorisë',
             style: TextStyle(
               fontSize: 15,
@@ -43,7 +43,7 @@ class SHCategoryChart extends StatelessWidget {
                     cat.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       color: AppColors.mediumGreenText,
                     ),
@@ -79,7 +79,7 @@ class SHCategoryChart extends StatelessWidget {
                   child: Text(
                     '${cat.revenue.toStringAsFixed(0)}€',
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppColors.darkGreenText,

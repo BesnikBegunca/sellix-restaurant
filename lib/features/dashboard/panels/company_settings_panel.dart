@@ -210,7 +210,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               'Cilësimet e kompanisë',
               style: TextStyle(
                 fontSize: 13,
@@ -220,7 +220,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Gjithçka që ndikon te stafi, printeri dhe faturat — e ndarë sipas kartave.',
               style: TextStyle(
                 fontSize: 15,
@@ -375,7 +375,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           _fieldLabel('Printer i zgjedhur'),
           const SizedBox(height: 8),
           if (_loadingPrinters)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(
                 child: SizedBox(
@@ -389,7 +389,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
               ),
             )
           else if (_printers.isEmpty)
-            const Text(
+            Text(
               'Nuk u gjet asnjë printer Windows.',
               style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
             )
@@ -617,7 +617,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   Widget _fieldLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
         color: AppColors.mediumGreenText,
@@ -668,7 +668,7 @@ class _ErrorBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline,
             color: AppColors.negativeText,
             size: 18,
@@ -677,7 +677,7 @@ class _ErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.negativeText,
                 fontSize: 13,
               ),

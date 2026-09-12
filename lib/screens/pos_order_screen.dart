@@ -283,18 +283,18 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                     Container(
                       width: 64,
                       height: 64,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.lightGreenBg,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.payments_outlined,
                         color: AppColors.primaryGreen,
                         size: 32,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Pagesa u krye!',
                       style: TextStyle(
                         fontSize: 28,
@@ -305,7 +305,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                     const SizedBox(height: 4),
                     Text(
                       'Tavolina ${widget.tableNumber} u lirua',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         color: AppColors.lightGreenText,
                       ),
@@ -314,7 +314,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                       const SizedBox(height: 12),
                       Text(
                         '${tableTotal.toStringAsFixed(2)}€',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w600,
                           color: AppColors.primaryGreen,
@@ -465,18 +465,18 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   Container(
                     width: 64,
                     height: 64,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.lightGreenBg,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.check,
                       color: AppColors.primaryGreen,
                       size: 32,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Porosia u Dergua!',
                     style: TextStyle(
                       fontSize: 32,
@@ -487,7 +487,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Porosia #$_activeOrderNumber',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       color: AppColors.lightGreenText,
                     ),
@@ -535,7 +535,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   userName: widget.waiterName,
                   onBack: () => Navigator.of(context).maybePop(),
                 ),
-                const Expanded(
+                Expanded(
                   child: Center(
                     child: Text(
                       'Nuk ka kategori në menu.\nMenaxheri duhet të shtojë kategori.',

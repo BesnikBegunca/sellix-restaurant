@@ -441,17 +441,17 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: AppColors.lightGreenBorder),
         ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.sync_outlined,
+          Icon(Icons.sync_outlined,
               size: 20, color: AppColors.primaryGreen),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               'Sync Diagnostics',
               style: TextStyle(
@@ -478,7 +478,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       children: [
         Text(
           title.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
             color: AppColors.lightGreenText,
@@ -500,7 +500,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                       children: [
                         e.value,
                         if (e.key < rows.length - 1)
-                          const Divider(
+                          Divider(
                               height: 1, color: AppColors.lightGreenBorder),
                       ],
                     ))
@@ -525,7 +525,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.mediumGreenText,
               ),
@@ -553,7 +553,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                   const SizedBox(width: 6),
                   GestureDetector(
                     onTap: () => Clipboard.setData(ClipboardData(text: value)),
-                    child: const Icon(Icons.copy_outlined,
+                    child: Icon(Icons.copy_outlined,
                         size: 13, color: AppColors.lightGreenText),
                   ),
                 ],
@@ -575,7 +575,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
             Expanded(
               child: Text(
                 'FAILED OUTBOX EVENTS (${_failedEvents.length})'.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: AppColors.lightGreenText,
@@ -628,7 +628,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
           child: ListView.separated(
             shrinkWrap: true,
             itemCount: _failedEvents.length,
-            separatorBuilder: (_, __) => const Divider(
+            separatorBuilder: (_, __) => Divider(
               height: 1,
               color: AppColors.lightGreenBorder,
             ),
@@ -654,7 +654,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, size: 14, color: AppColors.softRed),
+          Icon(Icons.error_outline, size: 14, color: AppColors.softRed),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -662,7 +662,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
               children: [
                 Text(
                   '$entityType · $operation',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.darkGreenText,
@@ -671,7 +671,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                 if (uuid.isNotEmpty)
                   Text(
                     uuid,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
                       fontFamily: 'monospace',
                       color: AppColors.lightGreenText,
@@ -681,14 +681,14 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                   ),
                 Text(
                   err,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     color: AppColors.softRed,
                   ),
                 ),
                 Text(
                   '${_timeAgo(updatedAt)} · retries: $retryCount',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     color: AppColors.lightGreenText,
                   ),
@@ -721,7 +721,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
           color: AppColors.mutedOrange.withValues(alpha: 0.35),
         ),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.warning_amber_outlined,
               size: 16, color: AppColors.mutedOrange),
@@ -751,13 +751,13 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_outlined,
+          Icon(Icons.warning_amber_outlined,
               size: 16, color: AppColors.softRed),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               error,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppColors.softRed,
               ),
@@ -799,7 +799,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
           label: const Text('Clear Resolved'),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.mediumGreenText,
-            side: const BorderSide(color: AppColors.lightGreenBorder),
+            side: BorderSide(color: AppColors.lightGreenBorder),
           ),
         ),
       ],
@@ -825,7 +825,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.mediumGreenText,
         minimumSize: const Size(double.infinity, 44),
-        side: const BorderSide(color: AppColors.lightGreenBorder),
+        side: BorderSide(color: AppColors.lightGreenBorder),
       ),
     );
   }
@@ -850,7 +850,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primaryGreen,
         minimumSize: const Size(double.infinity, 44),
-        side: const BorderSide(color: AppColors.lightGreenBorder),
+        side: BorderSide(color: AppColors.lightGreenBorder),
       ),
     );
   }
@@ -859,9 +859,9 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Divider(color: AppColors.lightGreenBorder, height: 1),
+        Divider(color: AppColors.lightGreenBorder, height: 1),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           'Rivendos vetëm aktivizimin lokal. Për çaktivizim server-side, '
           'përdorni SuperAdmin.',
           style: TextStyle(
@@ -887,7 +887,7 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
           ),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.mediumGreenText,
-            side: const BorderSide(color: AppColors.lightGreenBorder),
+            side: BorderSide(color: AppColors.lightGreenBorder),
           ),
         ),
       ],

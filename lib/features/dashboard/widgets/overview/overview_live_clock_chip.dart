@@ -60,7 +60,7 @@ class _OverviewLiveClockChipState extends State<OverviewLiveClockChip> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             'Ora Aktuale',
             style: TextStyle(
               fontSize: 12,
@@ -71,7 +71,7 @@ class _OverviewLiveClockChipState extends State<OverviewLiveClockChip> {
           const SizedBox(height: 4),
           Text(
             t,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.darkGreenText,

@@ -304,7 +304,7 @@ class AuditLogCard extends StatelessWidget {
                       children: [
                         Text(
                           AuditAction.label(log.actionType),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: AppColors.darkGreenText,
@@ -316,7 +316,7 @@ class AuditLogCard extends StatelessWidget {
                             description,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               color: AppColors.mediumGreenText,
                             ),
@@ -325,7 +325,7 @@ class AuditLogCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.person_outline,
                               size: 13,
                               color: AppColors.lightGreenText,
@@ -333,13 +333,13 @@ class AuditLogCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               log.performedBy ?? '—',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.mediumGreenText,
                               ),
                             ),
                             const SizedBox(width: 16),
-                            const Icon(
+                            Icon(
                               Icons.access_time_outlined,
                               size: 13,
                               color: AppColors.lightGreenText,
@@ -347,7 +347,7 @@ class AuditLogCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               dateStr,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.mediumGreenText,
                                 fontFeatures: [FontFeature.tabularFigures()],
@@ -383,7 +383,7 @@ class AuditLogCard extends StatelessWidget {
                   AnimatedRotation(
                     turns: expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(
+                    child: Icon(
                       Icons.keyboard_arrow_down,
                       size: 18,
                       color: AppColors.mediumGreenText,
@@ -437,7 +437,7 @@ class AuditLogCard extends StatelessWidget {
           // ── device forensics ───────────────────────────────────────────
           if (log.deviceId != null || log.terminalName != null || log.platform != null) ...[
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Terminal',
               style: TextStyle(
                 fontSize: 11,
@@ -467,7 +467,7 @@ class AuditLogCard extends StatelessWidget {
           // ── action details ─────────────────────────────────────────────
           if (entries.isNotEmpty) ...[
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Detajet',
               style: TextStyle(
                 fontSize: 11,
@@ -496,7 +496,7 @@ class AuditLogCard extends StatelessWidget {
                             width: 100,
                             child: Text(
                               e.key,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.mediumGreenText,
@@ -507,7 +507,7 @@ class AuditLogCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               _fmtValue(e.value),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 color: AppColors.darkGreenText,
                               ),
@@ -526,7 +526,7 @@ class AuditLogCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               log.detailsJson!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 color: AppColors.lightGreenText,
                 fontFamily: 'monospace',
@@ -544,14 +544,14 @@ class AuditLogCard extends StatelessWidget {
       children: [
         Text(
           '$label: ',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             color: AppColors.lightGreenText,
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: AppColors.mediumGreenText,

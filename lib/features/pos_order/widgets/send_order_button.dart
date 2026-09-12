@@ -33,7 +33,7 @@ class _SendOrderButtonState extends State<SendOrderButton> {
           color: AppColors.lightGreenText,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
@@ -90,7 +90,7 @@ class _SendOrderButtonState extends State<SendOrderButton> {
               color: bg,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Text(
+            child: Text(
               'PRINTO',
               style: TextStyle(
                 fontSize: 16,

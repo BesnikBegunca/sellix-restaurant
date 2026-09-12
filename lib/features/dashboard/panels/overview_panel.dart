@@ -190,7 +190,7 @@ class _WelcomeCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Përmbledhje e ditës',
                   style: TextStyle(
                     fontSize: 13,
@@ -202,7 +202,7 @@ class _WelcomeCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   company,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
                     color: AppColors.darkGreenText,
@@ -386,7 +386,7 @@ class _MiniMetric extends StatelessWidget {
                     children: [
                       Text(
                         label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: AppColors.lightGreenText,
@@ -397,7 +397,7 @@ class _MiniMetric extends StatelessWidget {
                         value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: AppColors.darkGreenText,
@@ -407,7 +407,7 @@ class _MiniMetric extends StatelessWidget {
                         hint,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.mediumGreenText,
                         ),
@@ -415,7 +415,7 @@ class _MiniMetric extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right,
                   size: 18,
                   color: AppColors.lightGreenText,

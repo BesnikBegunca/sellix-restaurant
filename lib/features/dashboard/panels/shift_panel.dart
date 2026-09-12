@@ -83,7 +83,7 @@ class ShiftPanel extends StatelessWidget {
       children: [
         sectionTitle('Gjendja'),
         const SizedBox(height: 6),
-        const Text(
+        Text(
           'Hap, shtyp ose mbyll turne operative.',
           style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
         ),
@@ -185,7 +185,7 @@ class ShiftPanel extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           isOpen ? 'Gjendja aktive' : 'Gjendja e mbyllur',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
                             color: AppColors.darkGreenText,
@@ -199,7 +199,7 @@ class ShiftPanel extends StatelessWidget {
                               : closedAt != null
                               ? 'Mbyllur: ${_fmtDateTime(closedAt)}'
                               : 'Nuk ka informacion shift.',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
                             color: AppColors.lightGreenText,
                           ),
