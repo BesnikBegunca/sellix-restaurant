@@ -51,22 +51,24 @@ class DashboardSectionCard extends StatelessWidget {
 }
 
 InputDecoration inputDeco(String hint, {String? prefix}) {
+  // Colours come from AppColors, which now resolves per theme, so inputs
+  // follow dark mode without every call site passing a context.
   return InputDecoration(
     hintText: hint,
     prefixText: prefix,
     filled: true,
-    fillColor: AppColors.pureWhite,
+    fillColor: AppColors.fieldFill,
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppTokens.controlRadius),
       borderSide: BorderSide(color: AppColors.lightGreenBorder),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppTokens.controlRadius),
       borderSide: BorderSide(color: AppColors.lightGreenBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.controlRadius),
-      borderSide: BorderSide(color: AppColors.deepForestGreen, width: 2),
+      borderSide: BorderSide(color: AppColors.primaryGreen, width: 2),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     hintStyle: TextStyle(color: AppColors.lightGreenText, fontSize: 14),

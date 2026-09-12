@@ -3,7 +3,7 @@ import 'app_colors.dart';
 
 abstract final class AppTextStyles {
   // ── Page / section titles ─────────────────────────────────────────────────
-  static TextStyle pageTitle = TextStyle(
+  static TextStyle get pageTitle => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 32,
     fontWeight: FontWeight.w600,
@@ -11,7 +11,7 @@ abstract final class AppTextStyles {
     height: 1.2,
   );
 
-  static TextStyle sectionTitle = TextStyle(
+  static TextStyle get sectionTitle => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 24,
     fontWeight: FontWeight.w600,
@@ -19,7 +19,7 @@ abstract final class AppTextStyles {
     height: 1.25,
   );
 
-  static TextStyle cardTitle = TextStyle(
+  static TextStyle get cardTitle => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 18,
     fontWeight: FontWeight.w600,
@@ -28,7 +28,7 @@ abstract final class AppTextStyles {
   );
 
   // ── KPI numbers ───────────────────────────────────────────────────────────
-  static TextStyle kpiLarge = TextStyle(
+  static TextStyle get kpiLarge => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 40,
     fontWeight: FontWeight.w600,
@@ -37,7 +37,7 @@ abstract final class AppTextStyles {
     letterSpacing: -0.5,
   );
 
-  static TextStyle kpiMedium = TextStyle(
+  static TextStyle get kpiMedium => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 28,
     fontWeight: FontWeight.w600,
@@ -47,7 +47,7 @@ abstract final class AppTextStyles {
   );
 
   // ── Body ──────────────────────────────────────────────────────────────────
-  static TextStyle body = TextStyle(
+  static TextStyle get body => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 15,
     fontWeight: FontWeight.w400,
@@ -55,7 +55,7 @@ abstract final class AppTextStyles {
     height: 1.5,
   );
 
-  static TextStyle bodySmall = TextStyle(
+  static TextStyle get bodySmall => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 13,
     fontWeight: FontWeight.w400,
@@ -63,7 +63,7 @@ abstract final class AppTextStyles {
     height: 1.45,
   );
 
-  static TextStyle muted = TextStyle(
+  static TextStyle get muted => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 13,
     fontWeight: FontWeight.w400,
@@ -79,7 +79,7 @@ abstract final class AppTextStyles {
     letterSpacing: 0.1,
   );
 
-  static TextStyle tableHeader = TextStyle(
+  static TextStyle get tableHeader => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 12,
     fontWeight: FontWeight.w600,
@@ -87,7 +87,7 @@ abstract final class AppTextStyles {
     letterSpacing: 0.6,
   );
 
-  static TextStyle tableCell = TextStyle(
+  static TextStyle get tableCell => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 14,
     fontWeight: FontWeight.w400,
@@ -107,7 +107,7 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w500,
   );
 
-  static TextStyle metadata = TextStyle(
+  static TextStyle get metadata => TextStyle(
     fontFamily: 'DMSans',
     fontSize: 12,
     fontWeight: FontWeight.w400,

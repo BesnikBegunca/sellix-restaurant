@@ -9,10 +9,12 @@ import '../../../services/app_language_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/theme_mode_controller.dart';
 import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../../../widgets/dashboard/app_button.dart';
 import '../widgets/settings/settings_card.dart';
 import '../widgets/settings/settings_check_tile.dart';
-import '../widgets/settings/login_mode_tile.dart';
+import '../widgets/settings/language_option_tile.dart';
+import '../widgets/settings/theme_mode_picker.dart';
 
 class CompanySettingsPanel extends StatefulWidget {
   const CompanySettingsPanel({super.key, required this.m});
@@ -204,60 +206,36 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 900;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Cilësimet e kompanisë',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.lightGreenText,
-                letterSpacing: 0.3,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Gjithçka që ndikon te stafi, printeri dhe faturat — e ndarë sipas kartave.',
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.mediumGreenText,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _pair(wide: wide, left: _businessCard(), right: _languageCard()),
-            const SizedBox(height: 16),
-            _themeCard(),
-            const SizedBox(height: 16),
-            _pair(wide: wide, left: _printerCard(), right: _receiptCard()),
-            const SizedBox(height: 16),
-            _licenseCard(),
-            const SizedBox(height: 16),
-            _pinCard(),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _pair({
-    required bool wide,
-    required Widget left,
-    required Widget right,
-  }) {
-    if (!wide) {
-      return Column(children: [left, const SizedBox(height: 16), right]);
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(child: left),
-        const SizedBox(width: 16),
-        Expanded(child: right),
+        PanelHeader(
+          icon: Icons.tune_rounded,
+          title: _language.t('Cilësimet e kompanisë', 'Company settings'),
+          subtitle: _language.t(
+            'Gjithçka që ndikon te stafi, printeri dhe faturat — e ndarë sipas kartave.',
+            'Everything affecting staff, printing and receipts — grouped into cards.',
+          ),
+        ),
+
+        PanelSectionLabel(
+          text: _language.t('Biznesi dhe pamja', 'Business & appearance'),
+        ),
+        PanelColumns(left: _businessCard(), right: _languageCard()),
+        const SizedBox(height: 16),
+        _themeCard(),
+
+        const SizedBox(height: 28),
+        PanelSectionLabel(
+          text: _language.t('Printimi', 'Printing'),
+        ),
+        PanelColumns(left: _printerCard(), right: _receiptCard()),
+
+        const SizedBox(height: 28),
+        PanelSectionLabel(
+          text: _language.t('Licenca dhe siguria', 'Licence & security'),
+        ),
+        PanelColumns(left: _licenseCard(), right: _pinCard()),
       ],
     );
   }
@@ -305,22 +283,48 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         'Gjuha e ekraneve të menaxherit dhe stafit.',
         'Language used across manager and staff screens.',
       ),
-      child: Column(
-        children: [
-          LoginModeTile(
-            title: _language.t('Shqip', 'Albanian'),
-            subtitle: 'SQ',
-            selected: _language.language == AppLanguage.albanian,
-            onTap: () => _setLanguage(AppLanguage.albanian),
-          ),
-          const SizedBox(height: 8),
-          LoginModeTile(
-            title: _language.t('Anglisht', 'English'),
-            subtitle: 'EN',
-            selected: _language.language == AppLanguage.english,
-            onTap: () => _setLanguage(AppLanguage.english),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, c) {
+          // Two columns of language tiles whenever the card is wide enough.
+          final twoUp = c.maxWidth >= 420;
+          final tiles = [
+            for (final lang in AppLanguage.values)
+              LanguageOptionTile(
+                language: lang,
+                selected: _language.language == lang,
+                onTap: () => _setLanguage(lang),
+              ),
+          ];
+
+          if (!twoUp) {
+            return Column(
+              children: [
+                for (var i = 0; i < tiles.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  tiles[i],
+                ],
+              ],
+            );
+          }
+
+          return Column(
+            children: [
+              for (var i = 0; i < tiles.length; i += 2) ...[
+                if (i > 0) const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(child: tiles[i]),
+                    const SizedBox(width: 8),
+                    if (i + 1 < tiles.length)
+                      Expanded(child: tiles[i + 1])
+                    else
+                      const Spacer(),
+                  ],
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -342,17 +346,11 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
                   'Zgjidh pamjen e errët për përdorim më të rehatshëm.',
                   'Choose dark appearance for more comfortable use.',
                 ),
-          child: SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              _language.t('Modaliteti i errët', 'Dark mode'),
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            value: isDark,
+          child: ThemeModePicker(
+            isDark: isDark,
             onChanged: ThemeModeController.instance.setDark,
-            secondary: Icon(
-              isDark ? Icons.nightlight_round : Icons.wb_sunny_outlined,
-            ),
+            lightLabel: _language.t('Modaliteti i ndritshëm', 'Light mode'),
+            darkLabel: _language.t('Modaliteti i errët', 'Dark mode'),
           ),
         );
       },

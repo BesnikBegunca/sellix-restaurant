@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/app_colors.dart';
-
 class SettingsCheckTile extends StatelessWidget {
   const SettingsCheckTile({
     super.key,
@@ -18,12 +16,13 @@ class SettingsCheckTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.lightGreenBg.withValues(alpha: 0.55),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightGreenBorder),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -36,7 +35,7 @@ class SettingsCheckTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.darkGreenText,
+                    color: scheme.onSurface,
                   ),
                 ),
                 if (description != null) ...[
@@ -46,7 +45,7 @@ class SettingsCheckTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.3,
-                      color: AppColors.lightGreenText,
+                      color: scheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -57,8 +56,8 @@ class SettingsCheckTile extends StatelessWidget {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: AppColors.primaryGreen,
-            activeTrackColor: AppColors.primaryGreen.withValues(alpha: 0.35),
+            activeThumbColor: scheme.primary,
+            activeTrackColor: scheme.primary.withValues(alpha: 0.35),
           ),
         ],
       ),

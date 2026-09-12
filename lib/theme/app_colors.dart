@@ -39,6 +39,11 @@ abstract final class AppColors {
   static Color get white =>
       _pick(const Color(0xFFFFFFFF), const Color(0xFF16201B));
 
+  /// Input / field fill. In dark mode fields sit *below* the card surface so
+  /// they read as recessed wells rather than floating panels.
+  static Color get fieldFill =>
+      _pick(const Color(0xFFFFFFFF), const Color(0xFF121A16));
+
   // ── Borders ───────────────────────────────────────────────────────────────
   static Color get lightGreenBorder =>
       _pick(const Color(0xFFDCE5DC), const Color(0xFF2C3B33));
