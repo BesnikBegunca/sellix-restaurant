@@ -1501,6 +1501,71 @@ class Tr {
 
   /// sq: SHUMA
   String get shumaHeader => trKey('shumaHeader');
+  /// sq: Paneli i zhvilluesit
+  String get developerDashboard => trKey('developerDashboard');
+
+  /// sq: Menaxho bizneset dhe licencat lokale
+  String get manageLocalBusinesses => trKey('manageLocalBusinesses');
+
+  /// sq: Zgjidh biznesin
+  String get selectBusiness => trKey('selectBusiness');
+
+  /// sq: Krijo biznes
+  String get createBusiness => trKey('createBusiness');
+
+  /// sq: Krijo dhe gjenero key
+  String get createAndIssueKey => trKey('createAndIssueKey');
+
+  /// sq: Emri i biznesit
+  String get businessName => trKey('businessName');
+
+  /// sq: Telefoni
+  String get telefoni => trKey('telefoni');
+
+  /// sq: Adresa
+  String get adresa => trKey('adresa');
+
+  /// sq: Kopjo
+  String get kopjo => trKey('kopjo');
+
+  /// sq: Çelësi i licencës është gati
+  String get licenceKeyReady => trKey('licenceKeyReady');
+
+  /// sq: Kopjojeni dhe dërgojeni klientit. Nuk ruhet përsëri.
+  String get copyKeyHint => trKey('copyKeyHint');
+
+  /// sq: Çelësi u kopjua.
+  String get keyCopied => trKey('keyCopied');
+
+  /// sq: Skadon
+  String get expiresAtLabel => trKey('expiresAtLabel');
+
+  /// sq: Nuk ka biznese lokale ende
+  String get noBusinessesYet => trKey('noBusinessesYet');
+
+  /// sq: Krijo të parin me formularin në të djathtë.
+  String get noBusinessesYetHint => trKey('noBusinessesYetHint');
+
+  /// sq: Ditë licence
+  String get licenceDays => trKey('licenceDays');
+
+  /// sq: Bizneset ekzistuese
+  String get existingBusinesses => trKey('existingBusinesses');
+
+  /// sq: Biznes i ri
+  String get newBusiness => trKey('newBusiness');
+
+  /// sq: Sa ditë të zgjasë licenca.
+  String get licenceValidDays => trKey('licenceValidDays');
+
+  /// sq: Kodi i degës, p.sh. MAIN.
+  String get branchCodeHint => trKey('branchCodeHint');
+
+  /// sq: Aktive
+  String get active => trKey('active');
+
+  /// sq: Skaduar
+  String get expired => trKey('expired');
 }
 
 /// The app-wide string accessor.
