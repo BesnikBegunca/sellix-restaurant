@@ -5,6 +5,7 @@ import '../../../manager/manager_data.dart';
 import '../../../services/printer_settings_store.dart';
 import '../../../services/windows_printers_service.dart';
 import '../../../services/activation_service.dart';
+import '../../../models/sellix_license.dart';
 import '../../../services/app_language_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/theme_mode_controller.dart';
@@ -43,6 +44,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
   final _phoneCtrl = TextEditingController();
   String? _pinErrorMsg;
   bool _pinChanging = false;
+  SellixBusinessProfile? _licensedBusiness;
 
   @override
   void initState() {
@@ -50,6 +52,13 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     _syncFromManager();
     widget.m.addListener(_onM);
     _loadPrinters();
+    _loadLicensedBusiness();
+  }
+
+  Future<void> _loadLicensedBusiness() async {
+    final profile = await ActivationService.instance.storedBusinessProfile();
+    if (!mounted) return;
+    setState(() => _licensedBusiness = profile);
   }
 
   void _syncFromManager() {
@@ -120,13 +129,19 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
     final key = _licenseKeyCtrl.text.trim();
     if (key.isEmpty) return;
     try {
-      final license = await ActivationService.instance.replaceLocalLicenseKey(
+      final result = await ActivationService.instance.replaceLocalLicenseKey(
         key,
       );
       _licenseKeyCtrl.clear();
+      await widget.m.reload();
       if (!mounted) return;
+      _syncFromManager();
+      await _loadLicensedBusiness();
+      final name = result.businessName ?? result.business?.name ?? '';
       _toast(
-        trf.licenceExtendedUntil(license.expiresAt.toLocal().toString().split('.').first),
+        name.isEmpty
+            ? 'Licenca u përditësua.'
+            : 'Biznesi u lidh: $name',
       );
     } catch (error) {
       if (!mounted) return;
@@ -259,6 +274,16 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           if (_errorMsg != null) ...[
             const SizedBox(height: 12),
             _ErrorBanner(message: _errorMsg!),
+          ],
+          if (_licensedBusiness != null) ...[
+            const SizedBox(height: 16),
+            _licensedRow('NUI', _licensedBusiness!.nui),
+            _licensedRow('Sektori', _licensedBusiness!.sector),
+            _licensedRow('Qyteti', _licensedBusiness!.city),
+            _licensedRow('Nr. fiskal', _licensedBusiness!.fiscalNumber),
+            _licensedRow('Nr. TVSH', _licensedBusiness!.vatNumber),
+            _licensedRow('Email', _licensedBusiness!.email),
+            _licensedRow('Kontakti', _licensedBusiness!.contactPerson),
           ],
           const SizedBox(height: 16),
           Align(
@@ -518,7 +543,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           TextField(
             controller: _licenseKeyCtrl,
             decoration: inputDeco(
-              'POS-LOCAL-...',
+              'SLX-XXXXX-XXXXX-XXXXX-XXXXX',
             ).copyWith(prefixIcon: const Icon(Icons.key_rounded)),
           ),
           const SizedBox(height: 12),
@@ -618,6 +643,34 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         fontSize: 13,
         fontWeight: FontWeight.w600,
         color: AppColors.mediumGreenText,
+      ),
+    );
+  }
+
+  Widget _licensedRow(String label, String value) {
+    if (value.trim().isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 12, color: AppColors.mediumGreenText),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.darkGreenText,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

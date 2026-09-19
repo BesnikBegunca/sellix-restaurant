@@ -1,14 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../config/api_config.dart';
 import 'connectivity_service.dart';
 import 'secure_activation_token_store.dart';
 
-/// Fallback NestJS API root used when no config file or env var is present.
+/// Fallback API root used when no config file or env var is present.
 ///
 /// At startup [RuntimeConfigService.load] resolves the real URL and passes it
 /// to [ApiClient.configureBaseUrl] — do not hardcode URLs in feature code.
-const String kDefaultApiBaseUrl = 'http://127.0.0.1:3000';
+const String kDefaultApiBaseUrl = kSellixWebBaseUrl;
 
 /// Shared HTTP client for future NestJS sync and auth (no feature calls yet).
 class ApiClient {
@@ -78,12 +79,14 @@ class ApiClient {
         onRequest: (options, handler) async {
           final token = await SecureActivationTokenStore.instance
               .readAccessToken();
-          if (token != null &&
-              token.isNotEmpty &&
-              !options.headers.containsKey('Authorization')) {
-            options.headers['authorization'] = 'Bearer $token';
-            options.headers['Authorization'] = 'Bearer $token';
+          if (token != null && token.isNotEmpty) {
             _accessToken = token;
+            if (token.toUpperCase().startsWith('SLX-')) {
+              options.headers[kHeaderLicenseKey] ??= token;
+            } else if (!options.headers.containsKey('Authorization')) {
+              options.headers['authorization'] = 'Bearer $token';
+              options.headers['Authorization'] = 'Bearer $token';
+            }
           }
           if (kDebugMode) {
             debugPrint(

@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
 import '../l10n/tr.dart';
+import '../models/sellix_license.dart';
+import 'sellix_license_client.dart';
 
 /// Maps activation-related errors to user-facing Albanian messages.
 String activationErrorMessage(Object error) {
+  if (error is SellixLicenseException) return error.toString();
   if (error is DioException) return _fromDio(error);
   final text = error.toString();
   if (text.contains('Empty activation response')) {
@@ -95,6 +98,10 @@ String _fromDio(DioException e) {
 
 String? _extractServerMessage(dynamic body) {
   if (body is! Map) return null;
+  final reason = body['reason'];
+  if (reason is String && reason.isNotEmpty) {
+    return sellixLicenseReasonMessage(reason);
+  }
   final message = body['message'];
   if (message is String && message.isNotEmpty) return message;
   if (message is List) {

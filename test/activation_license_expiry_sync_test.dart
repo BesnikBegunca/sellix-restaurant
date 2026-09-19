@@ -24,6 +24,13 @@ void main() {
   });
 
   group('parseLicenseExpiresAtValue', () {
+    test('accepts SQL datetime string from SelliX', () {
+      expect(
+        ActivationService.parseLicenseExpiresAtValue('2027-09-18 14:08:04'),
+        '2027-09-18T14:08:04.000Z',
+      );
+    });
+
     test('accepts ISO-8601 string', () {
       expect(
         ActivationService.parseLicenseExpiresAtValue(

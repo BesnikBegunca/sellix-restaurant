@@ -1,4 +1,6 @@
-/// Deserialized response from POST /activation/validate-key.
+import 'sellix_license.dart';
+
+/// Preview shown after a SelliX license key is verified.
 class ActivationValidateResponse {
   const ActivationValidateResponse({
     required this.valid,
@@ -10,6 +12,8 @@ class ActivationValidateResponse {
     this.licenseStatus,
     this.licenseExpiresAt,
     this.message,
+    this.business,
+    this.license,
   });
 
   final bool valid;
@@ -23,6 +27,8 @@ class ActivationValidateResponse {
   final String? licenseStatus;
   final String? licenseExpiresAt;
   final String? message;
+  final SellixBusinessProfile? business;
+  final SellixLicenseInfo? license;
 
   factory ActivationValidateResponse.fromJson(Map<String, dynamic> json) {
     return ActivationValidateResponse(

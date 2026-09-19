@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:dio/dio.dart';
@@ -6,11 +7,9 @@ import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import '../models/activation_response.dart';
 import '../models/activation_validate_response.dart';
-import '../models/device_transfer_required_response.dart';
 import '../models/device_transfer_response.dart';
-import 'activation_api_log.dart';
+import '../models/sellix_license.dart';
 import 'api_client.dart';
-import 'device_transfer_exception.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
 import 'activation_state_controller.dart';
@@ -19,8 +18,8 @@ import 'api_enforcement_parser.dart';
 import 'license_gate_service.dart';
 import 'local_tenant_data_service.dart';
 import 'runtime_config_service.dart';
-import 'local_license_service.dart';
 import 'secure_activation_token_store.dart';
+import 'sellix_license_client.dart';
 import '../l10n/tr.dart';
 
 /// Manages device activation against the NestJS backend.
@@ -49,6 +48,11 @@ class ActivationService {
   static const String kMetaBusinessId = 'activation_business_id';
   static const String kMetaBranchId = 'activation_branch_id';
   static const String kMetaDeviceId = 'activation_device_id';
+  static const String kMetaLicenseKey = 'activation_license_key';
+  static const String kMetaBusinessJson = 'activation_business_json';
+  static const String kMetaLastCheckAt = 'license_last_check_at';
+
+  static const Duration kOfflineGrace = Duration(days: 7);
 
   static const String _kBusinessId = kMetaBusinessId;
   static const String _kBranchId = kMetaBranchId;
@@ -123,26 +127,21 @@ class ActivationService {
     final businessId = await db.getAppMeta(_kBusinessId);
     final branchId = await db.getAppMeta(_kBranchId);
     final deviceId = await db.getAppMeta(_kDeviceId);
-    final accessToken = await store.readAccessToken();
-    final refreshToken = await store.readRefreshToken();
+    final licenseKey = await db.getAppMeta(kMetaLicenseKey);
+    var accessToken = await store.readAccessToken();
+    var refreshToken = await store.readRefreshToken();
 
     final completedOk = completed == 'true';
     final businessOk = _nonEmpty(businessId);
-    final branchOk = _nonEmpty(branchId);
     final deviceOk = _nonEmpty(deviceId);
-    final accessOk = _nonEmpty(accessToken);
-    final refreshOk = _nonEmpty(refreshToken);
+    final licenseOk = _nonEmpty(licenseKey) && isSellixLicenseKey(licenseKey!);
 
     if (kDebugMode) {
       debugPrint('[Activation] loadPersistedActivation:');
       debugPrint('[Activation]   activation_completed=$completedOk');
       debugPrint('[Activation]   businessId=${businessOk ? "yes" : "no"}');
-      debugPrint('[Activation]   branchId=${branchOk ? "yes" : "no"}');
       debugPrint('[Activation]   deviceId=${deviceOk ? "yes" : "no"}');
-      debugPrint('[Activation]   secureAccessToken=${accessOk ? "yes" : "no"}');
-      debugPrint(
-        '[Activation]   secureRefreshToken=${refreshOk ? "yes" : "no"}',
-      );
+      debugPrint('[Activation]   sellixKey=${licenseOk ? "yes" : "no"}');
     }
 
     if (!completedOk) {
@@ -151,10 +150,7 @@ class ActivationService {
       return false;
     }
 
-    final metadataOk = businessOk && branchOk && deviceOk;
-    final tokensOk = accessOk && refreshOk;
-
-    if (!metadataOk || !tokensOk) {
+    if (!businessOk || !deviceOk || !licenseOk) {
       if (kDebugMode) {
         debugPrint(
           '[Activation]   invalid persisted activation — clearing metadata',
@@ -166,15 +162,25 @@ class ActivationService {
       return false;
     }
 
+    final branch = _nonEmpty(branchId) ? branchId! : DatabaseSchema.kMainBranchId;
+    if (!_nonEmpty(accessToken) || !_nonEmpty(refreshToken)) {
+      await store.saveTokens(
+        accessToken: licenseKey,
+        refreshToken: licenseKey,
+      );
+      accessToken = licenseKey;
+      refreshToken = licenseKey;
+    }
+
     _businessId = businessId;
-    _branchId = branchId;
+    _branchId = branch;
     _serverDeviceId = deviceId;
     _activated = true;
 
     ApiClient.instance.setAccessToken(accessToken!);
     DatabaseSchema.setActivatedTenant(
       businessId: businessId!,
-      branchId: branchId!,
+      branchId: branch,
     );
     ActivationStateController.instance.setActivated(true);
 
@@ -189,154 +195,85 @@ class ActivationService {
   static bool _nonEmpty(String? value) =>
       value != null && value.trim().isNotEmpty;
 
-  /// POST /activation/validate-key — checks key before desktop activation.
+  /// POST /api/license/activate — checks the SelliX key and returns business data.
   Future<ActivationValidateResponse> validateActivationKey({
     required String activationKey,
   }) async {
-    final local = LocalLicenseService.instance.validate(activationKey);
-    if (local == null) {
-      throw StateError('Çelësi lokal është i pavlefshëm ose ka skaduar.');
+    _assertProductionApiConfig();
+    final key = normalizeSellixLicenseKey(activationKey);
+    if (!isSellixLicenseKey(key)) {
+      throw SellixLicenseException('not_found');
     }
+    final deviceId = await DatabaseService.instance.syncDeviceId();
+    final result = await SellixLicenseClient.instance.activate(
+      licenseKey: key,
+      deviceId: deviceId,
+      deviceName: _detectHostname(),
+    );
+    if (!isRestaurantSector(result.business.sector)) {
+      throw SellixLicenseException('not_restaurant');
+    }
+    final businessId = _businessIdFor(result.business, key);
     return ActivationValidateResponse(
       valid: true,
-      businessId: 'local-${local.licenseId}',
-      businessName: local.ownerName,
-      branchCode: null,
-      licenseStatus: 'active',
-      licenseExpiresAt: local.expiresAt.toIso8601String(),
+      businessId: businessId,
+      businessName: result.business.name,
+      branchCode: 'MAIN',
+      branchName: result.business.city.isNotEmpty
+          ? result.business.city
+          : result.business.name,
+      licenseStatus: result.license.status,
+      licenseExpiresAt: result.license.expiresAt,
+      business: result.business,
+      license: result.license,
     );
-    /*
-    _assertProductionApiConfig();
-    final trimmed = activationKey.trim();
-    final body = <String, dynamic>{'activationKey': trimmed};
-    logActivationRequest(
-      endpoint: kEndpointValidateKey,
-      bodyKeys: body.keys.toSet(),
-    );
-
-    try {
-      final response = await ApiClient.instance.post<Map<String, dynamic>>(
-        kEndpointValidateKey,
-        data: body,
-      );
-      logActivationResponse(response);
-      final data = response.data;
-      if (data == null) {
-        throw Exception('Empty validate-key response from server.');
-      }
-      final result = ActivationValidateResponse.fromJson(data);
-      if (!result.valid) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          type: DioExceptionType.badResponse,
-          message: result.message ?? 'Çelësi i aktivizimit nuk është i vlefshëm.',
-        );
-      }
-      return result;
-    } on DioException catch (e) {
-      logActivationError(e);
-      rethrow;
-    }
-    */
   }
 
-  /// Sends POST /activation/desktop and persists the server response locally.
-  ///
-  /// Uses the stable device UUID from [app_meta] (same key as [AuditContextService]).
-  ///
-  /// Throws [DeviceTransferRequiredException] when the license is already bound
-  /// to another device — a transfer request is submitted automatically before
-  /// throwing, so the UI only needs to show the pending-approval message.
+  /// Binds this device to the SelliX license and persists business data locally.
   Future<ActivationResponse> activateDesktop({
     required String activationKey,
     required String branchCode,
     String? businessName,
+    SellixBusinessProfile? business,
+    SellixLicenseInfo? license,
   }) async {
-    final local = LocalLicenseService.instance.validate(activationKey);
-    if (local == null) {
-      throw StateError('Çelësi lokal është i pavlefshëm ose ka skaduar.');
+    _assertProductionApiConfig();
+    final key = normalizeSellixLicenseKey(activationKey);
+    if (!isSellixLicenseKey(key)) {
+      throw SellixLicenseException('not_found');
     }
-    final businessId = 'local-${local.licenseId}';
+
+    final deviceId = await DatabaseService.instance.syncDeviceId();
+    final result = await SellixLicenseClient.instance.activate(
+      licenseKey: key,
+      deviceId: deviceId,
+      deviceName: _detectHostname(),
+    );
+    if (!isRestaurantSector(result.business.sector)) {
+      throw SellixLicenseException('not_restaurant');
+    }
+
+    final profile = business ?? result.business;
+    final licenseInfo = license ?? result.license;
+    final businessId = _businessIdFor(profile, key);
     final response = ActivationResponse(
       businessId: businessId,
-      branchId: 'local-${branchCode.trim().toLowerCase()}',
-      deviceId: await DatabaseService.instance.syncDeviceId(),
-      accessToken: 'local-access-${local.licenseId}',
-      refreshToken: 'local-refresh-${local.licenseId}',
-      licenseExpiresAt: local.expiresAt.toIso8601String(),
+      branchId: branchCode.trim().isEmpty
+          ? DatabaseSchema.kMainBranchId
+          : 'local-${branchCode.trim().toLowerCase()}',
+      deviceId: deviceId,
+      accessToken: key,
+      refreshToken: key,
+      licenseExpiresAt: parseSellixDateTime(licenseInfo.expiresAt),
     );
     await _persistActivation(
       response,
-      businessName: businessName ?? local.ownerName,
-    );
-    await DatabaseService.instance.setAppMeta(
-      'activation_license_key',
-      activationKey.trim(),
+      businessName: businessName ?? profile.name,
+      licenseKey: key,
+      business: profile,
+      license: licenseInfo,
     );
     return response;
-    /*
-    _assertProductionApiConfig();
-    final deviceUuid = await DatabaseService.instance.syncDeviceId();
-    final deviceName = _detectHostname();
-    final body = <String, dynamic>{
-      'activationKey': activationKey.trim(),
-      'branchCode': branchCode.trim(),
-      'deviceUuid': deviceUuid,
-      'deviceName': deviceName,
-      'platform': _detectPlatform(),
-    };
-    logActivationRequest(
-      endpoint: kEndpointActivateDesktop,
-      bodyKeys: body.keys.toSet(),
-    );
-
-    try {
-      final response = await ApiClient.instance.post<Map<String, dynamic>>(
-        kEndpointActivateDesktop,
-        data: body,
-      );
-      logActivationResponse(response);
-      final data = response.data;
-      if (data == null) {
-        throw Exception('Empty activation response from server.');
-      }
-
-      if (data['requiresTransferApproval'] == true) {
-        final required = DeviceTransferRequiredResponse.fromJson(data);
-        final transfer = await requestDeviceTransfer(
-          licenseId: required.licenseId,
-          oldDeviceId: required.oldDeviceId,
-          oldDeviceName: required.oldDeviceName,
-          newDeviceFingerprint: deviceUuid,
-          newDeviceName: deviceName,
-        );
-        throw DeviceTransferRequiredException(transfer);
-      }
-
-      final activation = ActivationResponse.fromJson(data);
-      await _persistActivation(activation, businessName: businessName);
-      return activation;
-    } on DeviceTransferRequiredException {
-      rethrow;
-    } on DioException catch (e) {
-      final errorData = e.response?.data;
-      if (errorData is Map<String, dynamic> &&
-          errorData['requiresTransferApproval'] == true) {
-        final required = DeviceTransferRequiredResponse.fromJson(errorData);
-        final transfer = await requestDeviceTransfer(
-          licenseId: required.licenseId,
-          oldDeviceId: required.oldDeviceId,
-          oldDeviceName: required.oldDeviceName,
-          newDeviceFingerprint: deviceUuid,
-          newDeviceName: deviceName,
-        );
-        throw DeviceTransferRequiredException(transfer);
-      }
-      logActivationError(e);
-      rethrow;
-    }
-    */
   }
 
   /// Submits POST /licenses/request-transfer to ask SuperAdmin to move the
@@ -507,72 +444,101 @@ class ActivationService {
     return kDefaultServerRevokeMessage;
   }
 
-  /// POST /activation/verify with stored access token (pos_api contract).
-  ///
-  /// Returns `true` when activation is valid and license is not blocked.
-  /// Returns `false` on network error (offline) unless locally expired (strict).
+  /// POST /api/license/check. Network errors keep the last good result for
+  /// [kOfflineGrace]; explicit revoked/expired answers block immediately.
   Future<bool> verifyActivation() async {
     if (!_activated) return false;
     if (LicenseGateService.instance.isBlocked) return false;
 
-    final key = await DatabaseService.instance.getAppMeta(
-      'activation_license_key',
-    );
-    final local = key == null
-        ? null
-        : LocalLicenseService.instance.validate(key);
-    if (local == null) {
-      await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
-      return !LicenseGateService.instance.isBlocked;
-    }
-
-    await ActivationLicenseController.instance.setExpiresAt(
-      local.expiresAt.toIso8601String(),
-    );
-    return true;
-
-    /*
-    try {
-      final response = await _postVerifyActivation();
-      return await _processVerifyResponse(response);
-    } on DioException catch (e) {
-      return _handleVerifyDioError(e);
-    } catch (_) {
+    final key = await storedLicenseKey();
+    if (key == null || !isSellixLicenseKey(key)) {
+      await handleRevokedByServer(
+        reason: sellixLicenseReasonMessage('not_found'),
+      );
       return false;
     }
-    */
-  }
 
-  Future<LocalLicenseData> replaceLocalLicenseKey(String key) async {
-    final license = LocalLicenseService.instance.validate(key);
-    if (license == null) {
-      throw StateError(
-        tr.celesiLicencesEshtePavlefshemOseKa,
+    final deviceId =
+        _serverDeviceId ?? await DatabaseService.instance.syncDeviceId();
+
+    try {
+      final result = await SellixLicenseClient.instance.check(
+        licenseKey: key,
+        deviceId: deviceId,
       );
+      if (!isRestaurantSector(result.business.sector)) {
+        await LicenseGateService.instance.block(
+          code: LicenseBlockCode.businessSuspended,
+          message: sellixLicenseReasonMessage('not_restaurant'),
+        );
+        return false;
+      }
+      await _cacheSuccessfulCheck(result);
+      await LicenseGateService.instance.unblock();
+      return !LicenseGateService.instance.isBlocked;
+    } on SellixLicenseException catch (e) {
+      if (e.reason == 'network') {
+        return _allowOfflineGrace();
+      }
+      if (e.reason == 'expired') {
+        await LicenseGateService.instance.block(
+          code: LicenseBlockCode.licenseExpired,
+          message: sellixLicenseReasonMessage('expired'),
+        );
+        return false;
+      }
+      if (e.reason == 'revoked' || e.reason == 'not_found' || e.reason == 'not_activated') {
+        await handleRevokedByServer(reason: sellixLicenseReasonMessage(e.reason));
+        return false;
+      }
+      if (e.reason == 'seat_limit' || e.reason == 'rate_limited') {
+        return _allowOfflineGrace();
+      }
+      await LicenseGateService.instance.block(
+        code: LicenseBlockCode.licenseSuspended,
+        message: sellixLicenseReasonMessage(e.reason),
+      );
+      return false;
+    } catch (_) {
+      return _allowOfflineGrace();
     }
-    await DatabaseService.instance.setAppMeta(
-      'activation_license_key',
-      key.trim(),
-    );
-    await ActivationLicenseController.instance.setExpiresAt(
-      license.expiresAt.toIso8601String(),
-    );
-    return license;
   }
 
-  /// Updates the active local POS license when the developer extends the
-  /// matching business on this same installation.
+  Future<String?> storedLicenseKey() async {
+    final key = await DatabaseService.instance.getAppMeta(kMetaLicenseKey);
+    if (key == null || key.trim().isEmpty) return null;
+    return key.trim();
+  }
+
+  Future<SellixBusinessProfile?> storedBusinessProfile() async {
+    final raw = await DatabaseService.instance.getAppMeta(kMetaBusinessJson);
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      final json = jsonDecode(raw);
+      if (json is Map<String, dynamic>) {
+        return SellixBusinessProfile.fromJson(json);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<ActivationValidateResponse> replaceLocalLicenseKey(String key) async {
+    final validated = await validateActivationKey(activationKey: key);
+    await activateDesktop(
+      activationKey: key,
+      branchCode: validated.branchCode ?? 'MAIN',
+      businessName: validated.businessName,
+      business: validated.business,
+      license: validated.license,
+    );
+    return validated;
+  }
+
+  /// Replaces the stored SelliX key (e.g. after an admin issued a new one).
   Future<bool> extendActiveLocalLicenseForBusiness({
     required String businessId,
     required String replacementKey,
   }) async {
-    final currentKey = await DatabaseService.instance.getAppMeta(
-      'activation_license_key',
-    );
-    final current = currentKey == null
-        ? null
-        : LocalLicenseService.instance.validate(currentKey);
-    if (current == null || current.licenseId != businessId) return false;
     await replaceLocalLicenseKey(replacementKey);
     return true;
   }
@@ -590,8 +556,8 @@ class ActivationService {
     if (raw is String) {
       final trimmed = raw.trim();
       if (trimmed.isEmpty) return null;
-      if (DateTime.tryParse(trimmed) != null) return trimmed;
-      return null;
+      return parseSellixDateTime(trimmed) ??
+          (DateTime.tryParse(trimmed) != null ? trimmed : null);
     }
     if (raw is DateTime) return raw.toUtc().toIso8601String();
     if (raw is num) {
@@ -768,7 +734,9 @@ class ActivationService {
     final db = DatabaseService.instance;
 
     await SecureActivationTokenStore.instance.clearTokens();
-    await DatabaseService.instance.setAppMeta('activation_license_key', '');
+    await DatabaseService.instance.setAppMeta(kMetaLicenseKey, '');
+    await db.setAppMeta(kMetaBusinessJson, '');
+    await db.setAppMeta(kMetaLastCheckAt, '');
     await _clearLegacyTokenMeta(db);
 
     await db.setAppMeta(_kCompleted, '');
@@ -801,6 +769,9 @@ class ActivationService {
   Future<void> _persistActivation(
     ActivationResponse r, {
     String? businessName,
+    String? licenseKey,
+    SellixBusinessProfile? business,
+    SellixLicenseInfo? license,
   }) async {
     final db = DatabaseService.instance;
     final previousId = await db.getAppMeta(_kBusinessId);
@@ -830,25 +801,22 @@ class ActivationService {
     await db.setAppMeta(_kBusinessId, r.businessId);
     await DatabaseService.instance.setAppMeta(_kBranchId, r.branchId);
     await DatabaseService.instance.setAppMeta(_kDeviceId, r.deviceId);
-    final refresh = r.refreshToken?.trim() ?? '';
-    if (refresh.isEmpty) {
-      throw StateError(
-        tr.serveriNukKtheuRefreshTokenAktivizimi,
-      );
-    }
+    final key = (licenseKey ?? r.accessToken).trim();
+    await db.setAppMeta(kMetaLicenseKey, key);
+    final refresh = (r.refreshToken ?? key).trim();
     await SecureActivationTokenStore.instance.saveTokens(
-      accessToken: r.accessToken,
-      refreshToken: refresh,
+      accessToken: key,
+      refreshToken: refresh.isEmpty ? key : refresh,
     );
     await _clearLegacyTokenMeta(db);
-    if (r.licenseExpiresAt != null) {
-      await ActivationLicenseController.instance.setExpiresAt(
-        r.licenseExpiresAt,
-      );
+    final expires =
+        r.licenseExpiresAt ?? parseSellixDateTime(license?.expiresAt);
+    if (expires != null) {
+      await ActivationLicenseController.instance.setExpiresAt(expires);
     }
     await DatabaseService.instance.setAppMeta(_kCompleted, 'true');
 
-    ApiClient.instance.setAccessToken(r.accessToken);
+    ApiClient.instance.setAccessToken(key);
     DatabaseSchema.setActivatedTenant(
       businessId: r.businessId,
       branchId: r.branchId,
@@ -862,6 +830,73 @@ class ActivationService {
     if (businessName != null && businessName.isNotEmpty) {
       await db.setAppMeta('activation_business_name', businessName);
     }
+    if (business != null) {
+      await db.setAppMeta(kMetaBusinessJson, jsonEncode(business.toJson()));
+      await _applyBusinessToCompany(business);
+    }
+    await db.setAppMeta(
+      kMetaLastCheckAt,
+      DateTime.now().toUtc().toIso8601String(),
+    );
+  }
+
+  static String _businessIdFor(SellixBusinessProfile business, String key) {
+    if (business.nui.trim().isNotEmpty) return 'slx-${business.nui.trim()}';
+    return 'slx-${key.hashCode.abs()}';
+  }
+
+  Future<void> _applyBusinessToCompany(SellixBusinessProfile business) async {
+    try {
+      if (business.name.trim().isNotEmpty) {
+        await DatabaseService.instance.updateCompanyName(business.name.trim());
+      }
+      await DatabaseService.instance.updateEscPosSettings(
+        businessAddress: business.formattedAddress.isEmpty
+            ? null
+            : business.formattedAddress,
+        businessPhone: business.phone.isEmpty ? null : business.phone,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ActivationService: apply company profile failed: $e');
+      }
+    }
+  }
+
+  Future<void> _cacheSuccessfulCheck(SellixLicenseResponse result) async {
+    final db = DatabaseService.instance;
+    await db.setAppMeta(kMetaBusinessJson, jsonEncode(result.business.toJson()));
+    await db.setAppMeta(
+      kMetaLastCheckAt,
+      DateTime.now().toUtc().toIso8601String(),
+    );
+    final expires = parseSellixDateTime(result.license.expiresAt);
+    if (expires != null) {
+      await ActivationLicenseController.instance.setExpiresAt(expires);
+    }
+    if (result.business.name.isNotEmpty) {
+      await db.setAppMeta('activation_business_name', result.business.name);
+      await _applyBusinessToCompany(result.business);
+    }
+  }
+
+  Future<bool> _allowOfflineGrace() async {
+    await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
+    if (LicenseGateService.instance.isBlocked) return false;
+    final raw = await DatabaseService.instance.getAppMeta(kMetaLastCheckAt);
+    final last = raw == null ? null : DateTime.tryParse(raw);
+    if (last == null) return true;
+    final age = DateTime.now().toUtc().difference(last.toUtc());
+    if (age > kOfflineGrace) {
+      await LicenseGateService.instance.block(
+        code: LicenseBlockCode.licenseSuspended,
+        message:
+            'Nuk ka lidhje me serverin prej disa ditësh. '
+            'Lidhuni me internet për të verifikuar licencën.',
+      );
+      return false;
+    }
+    return true;
   }
 
   Future<String?> activatedBusinessName() =>

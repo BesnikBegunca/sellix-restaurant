@@ -547,6 +547,11 @@ class DatabaseSchema {
       if (!names.contains('tableName')) {
         await db.execute('ALTER TABLE sales ADD COLUMN tableName TEXT');
       }
+      if (!names.contains('portalSynced')) {
+        await db.execute(
+          'ALTER TABLE sales ADD COLUMN portalSynced INTEGER NOT NULL DEFAULT 0',
+        );
+      }
     } catch (_) {}
   }
 
@@ -719,7 +724,8 @@ class DatabaseSchema {
         timestamp   TEXT    NOT NULL,
         shiftId     INTEGER,
         orderNumber INTEGER,
-        tableName   TEXT
+        tableName   TEXT,
+        portalSynced INTEGER NOT NULL DEFAULT 0
       )
     ''');
     await db.execute('''

@@ -1,18 +1,18 @@
 import 'dart:convert';
-import 'dart:io' show File, Platform;
+import 'dart:io' show Directory, File, Platform;
 
+import 'package:crypto/crypto.dart';
+import 'package:encrypt/encrypt.dart' as aes;
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// OS-backed storage for activation Bearer / refresh tokens (not SQLite).
+import 'windows_dpapi.dart';
+
+/// OS-backed storage for activation tokens (not SQLite plaintext).
 ///
-/// Windows: DPAPI via [WindowsOptions].
-/// macOS: Keychain via [MacOsOptions].
-/// Linux: libsecret via [LinuxOptions] when available.
-///
-/// Debug-only in-memory fallback when secure storage is unavailable — never
-/// used in release builds and never writes tokens to [app_meta].
+/// Windows uses DPAPI via Dart FFI (no `flutter_secure_storage` C++ / ATL).
+/// Other desktops use an AES-encrypted file in the app support directory.
 class SecureActivationTokenStore {
   SecureActivationTokenStore._();
   static final SecureActivationTokenStore instance =
@@ -21,34 +21,22 @@ class SecureActivationTokenStore {
   static const String legacyAccessTokenKey = 'activation_access_token';
   static const String legacyRefreshTokenKey = 'activation_refresh_token';
 
-  static const String _kAccess = 'pos_activation_access_token';
-  static const String _kRefresh = 'pos_activation_refresh_token';
+  static const String storageLabel = 'Secure (OS DPAPI / encrypted file)';
 
-  static const String storageLabel = 'Secure (OS keychain / DPAPI)';
-
-  final FlutterSecureStorage _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.unlocked,
-    ),
-    mOptions: MacOsOptions(
-      accessibility: KeychainAccessibility.unlocked,
-    ),
-    wOptions: WindowsOptions(),
-    lOptions: LinuxOptions(),
-  );
-
+  static const String _fileName = 'pos_activation_tokens.bin';
   static const String _kDebugCacheFileName = '.pos_activation_tokens_debug.json';
 
   String? _debugAccess;
   String? _debugRefresh;
   bool _debugFallback = false;
+  String? _cachedAccess;
+  String? _cachedRefresh;
 
   bool get usesDebugFallback => _debugFallback && kDebugMode;
 
-  /// Human-readable storage mode for Sync Diagnostics (no secrets).
-  String get diagnosticsStorageLabel =>
-      usesDebugFallback ? 'Debug memory (secure storage unavailable)' : storageLabel;
+  String get diagnosticsStorageLabel => usesDebugFallback
+      ? 'Debug memory (secure storage unavailable)'
+      : storageLabel;
 
   Future<void> saveTokens({
     required String accessToken,
@@ -58,8 +46,12 @@ class SecureActivationTokenStore {
       throw ArgumentError.value(accessToken, 'accessToken', 'must not be empty');
     }
     try {
-      await _storage.write(key: _kAccess, value: accessToken);
-      await _storage.write(key: _kRefresh, value: refreshToken);
+      await _writeProtected({
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+      });
+      _cachedAccess = accessToken;
+      _cachedRefresh = refreshToken;
       _debugFallback = false;
       _debugAccess = null;
       _debugRefresh = null;
@@ -83,9 +75,12 @@ class SecureActivationTokenStore {
     if (_debugFallback && kDebugMode && _nonEmpty(_debugAccess)) {
       return _debugAccess;
     }
+    if (_nonEmpty(_cachedAccess)) return _cachedAccess;
     try {
-      final fromStore = await _storage.read(key: _kAccess);
-      if (_nonEmpty(fromStore)) return fromStore;
+      final map = await _readProtected();
+      _cachedAccess = map?['accessToken'];
+      _cachedRefresh = map?['refreshToken'];
+      if (_nonEmpty(_cachedAccess)) return _cachedAccess;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('SecureActivationTokenStore: read access failed — $e');
@@ -98,9 +93,12 @@ class SecureActivationTokenStore {
     if (_debugFallback && kDebugMode && _nonEmpty(_debugRefresh)) {
       return _debugRefresh;
     }
+    if (_nonEmpty(_cachedRefresh)) return _cachedRefresh;
     try {
-      final fromStore = await _storage.read(key: _kRefresh);
-      if (_nonEmpty(fromStore)) return fromStore;
+      final map = await _readProtected();
+      _cachedAccess = map?['accessToken'];
+      _cachedRefresh = map?['refreshToken'];
+      if (_nonEmpty(_cachedRefresh)) return _cachedRefresh;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('SecureActivationTokenStore: read refresh failed — $e');
@@ -113,9 +111,11 @@ class SecureActivationTokenStore {
     _debugAccess = null;
     _debugRefresh = null;
     _debugFallback = false;
+    _cachedAccess = null;
+    _cachedRefresh = null;
     try {
-      await _storage.delete(key: _kAccess);
-      await _storage.delete(key: _kRefresh);
+      final file = await _tokenFile();
+      if (file.existsSync()) await file.delete();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('SecureActivationTokenStore: clear failed — $e');
@@ -126,7 +126,6 @@ class SecureActivationTokenStore {
 
   Future<bool> hasTokens() async => hasValidTokenPair();
 
-  /// Both access and refresh tokens must be present (refresh may be rotated later).
   Future<bool> hasValidTokenPair() async {
     final access = await readAccessToken();
     final refresh = await readRefreshToken();
@@ -135,6 +134,65 @@ class SecureActivationTokenStore {
 
   static bool _nonEmpty(String? value) =>
       value != null && value.trim().isNotEmpty;
+
+  Future<File> _tokenFile() async {
+    final dir = await getApplicationSupportDirectory();
+    await Directory(dir.path).create(recursive: true);
+    return File(p.join(dir.path, _fileName));
+  }
+
+  Future<void> _writeProtected(Map<String, String> tokens) async {
+    final plaintext = Uint8List.fromList(utf8.encode(jsonEncode(tokens)));
+    final bytes = WindowsDpapi.isAvailable
+        ? WindowsDpapi.protect(plaintext)
+        : _aesProtect(plaintext);
+    final file = await _tokenFile();
+    await file.writeAsBytes(bytes, flush: true);
+  }
+
+  Future<Map<String, String>?> _readProtected() async {
+    final file = await _tokenFile();
+    if (!file.existsSync()) return null;
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) return null;
+    final plaintext = WindowsDpapi.isAvailable
+        ? WindowsDpapi.unprotect(Uint8List.fromList(bytes))
+        : _aesUnprotect(Uint8List.fromList(bytes));
+    final json = jsonDecode(utf8.decode(plaintext));
+    if (json is! Map) return null;
+    return {
+      'accessToken': '${json['accessToken'] ?? ''}',
+      'refreshToken': '${json['refreshToken'] ?? ''}',
+    };
+  }
+
+  static Uint8List _aesKey() {
+    final material =
+        'pos-system-activation-v1|${Platform.localHostname}|${Platform.operatingSystem}';
+    return Uint8List.fromList(sha256.convert(utf8.encode(material)).bytes);
+  }
+
+  static Uint8List _aesProtect(Uint8List plaintext) {
+    final key = aes.Key(_aesKey());
+    final iv = aes.IV.fromSecureRandom(16);
+    final encrypter = aes.Encrypter(aes.AES(key, mode: aes.AESMode.cbc));
+    final encrypted = encrypter.encryptBytes(plaintext, iv: iv);
+    return Uint8List.fromList([...iv.bytes, ...encrypted.bytes]);
+  }
+
+  static Uint8List _aesUnprotect(Uint8List blob) {
+    if (blob.length < 17) {
+      throw StateError('Encrypted token file is too short.');
+    }
+    final key = aes.Key(_aesKey());
+    final iv = aes.IV(blob.sublist(0, 16));
+    final encrypter = aes.Encrypter(aes.AES(key, mode: aes.AESMode.cbc));
+    final decrypted = encrypter.decryptBytes(
+      aes.Encrypted(blob.sublist(16)),
+      iv: iv,
+    );
+    return Uint8List.fromList(decrypted);
+  }
 
   Future<File?> _debugCacheFile() async {
     if (!kDebugMode) return null;
@@ -179,21 +237,9 @@ class SecureActivationTokenStore {
         _debugAccess = a;
         _debugRefresh = r;
         _debugFallback = true;
-        if (kDebugMode) {
-          debugPrint(
-            'SecureActivationTokenStore: restored tokens from debug cache',
-          );
-        }
         try {
-          await _storage.write(key: _kAccess, value: a!);
-          await _storage.write(key: _kRefresh, value: r!);
-          _debugFallback = false;
-          _debugAccess = null;
-          _debugRefresh = null;
-          await _deleteDebugCacheFile();
-        } catch (_) {
-          // Keep debug cache + memory for this session.
-        }
+          await saveTokens(accessToken: a!, refreshToken: r!);
+        } catch (_) {}
       }
       return access ? a : r;
     } catch (e) {

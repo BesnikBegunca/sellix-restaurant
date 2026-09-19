@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import '../config/api_config.dart';
 import '../l10n/tr.dart';
 
-const String _kFallbackUrl = 'http://127.0.0.1:3000';
+const String _kFallbackUrl = kSellixWebBaseUrl;
 const String _kEnvVar = 'POS_API_BASE_URL';
 const String _kConfigFile = 'app_config.json';
 
@@ -19,7 +20,7 @@ enum ApiConfigSource {
   /// `release/app_config.json` in the project tree (debug / profile only).
   releaseDevFile,
 
-  /// `http://127.0.0.1:3000` when nothing else matched (debug operations only).
+  /// SelliX production URL when nothing else matched.
   fallback,
 }
 
@@ -27,7 +28,7 @@ enum ApiConfigSource {
 ///   1. `app_config.json` beside the executable (+ macOS bundle parent)
 ///   2. `POS_API_BASE_URL`
 ///   3. `release/app_config.json` (debug / profile only — not release builds)
-///   4. localhost fallback (debug operations only; blocked in release)
+///   4. SelliX production URL (`https://sellixweb-production.up.railway.app`)
 class RuntimeConfigService {
   RuntimeConfigService._();
   static final RuntimeConfigService instance = RuntimeConfigService._();
@@ -93,14 +94,13 @@ class RuntimeConfigService {
       case ApiConfigSource.releaseDevFile:
         return 'app_config.json';
       case ApiConfigSource.fallback:
-        return 'fallback_localhost';
+        return 'sellix_production';
     }
   }
 
   bool get isLocalhost => isLocalhostUrl(_apiBaseUrl);
 
-  bool get isBlockedInRelease =>
-      kReleaseMode && (isUsingFallback || isLocalhost);
+  bool get isBlockedInRelease => kReleaseMode && isLocalhost;
 
   String getApiBaseUrl() => _apiBaseUrl;
 

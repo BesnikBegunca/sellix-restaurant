@@ -12,7 +12,10 @@ import 'navigation/app_route_observer.dart';
 import 'screens/login_screen.dart';
 import 'services/activation_service.dart';
 import 'services/activation_state_controller.dart';
+import 'services/api_client.dart';
+import 'services/background_sync_service.dart';
 import 'services/license_gate_service.dart';
+import 'services/runtime_config_service.dart';
 import 'services/app_language_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_mode_controller.dart';
@@ -34,6 +37,10 @@ void main() async {
   }
   await AppLanguageService.instance.load();
   await ThemeModeController.instance.load();
+
+  await RuntimeConfigService.instance.load();
+  ApiClient.instance.configureBaseUrl(RuntimeConfigService.instance.apiBaseUrl);
+  await BackgroundSyncService.instance.initialize();
 
   // Restore activation from SQLite metadata + secure token store (survives hot restart).
   final activationRestored = await ActivationService.instance
@@ -60,6 +67,9 @@ void main() async {
         !activationState.serverRevoked &&
         !LicenseGateService.instance.isBlocked) {
       activationState.setActivated(false);
+    } else if (ActivationService.instance.isActivated &&
+        !LicenseGateService.instance.isBlocked) {
+      BackgroundSyncService.instance.start();
     }
   }
 

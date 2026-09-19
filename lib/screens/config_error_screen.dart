@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../services/runtime_config_service.dart';
 import '../theme/app_colors.dart';
-import 'developer_login_screen.dart';
 import '../l10n/tr.dart';
 
 /// Full-screen blocker when release mode has no valid production API URL.
@@ -139,16 +138,6 @@ class ConfigErrorScreen extends StatelessWidget {
                       onPressed: () => _showInstructions(context),
                       child: Text(tr.shikoUdhezimet),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const DeveloperLoginScreen(),
-                      ),
-                    ),
-                    icon: const Icon(Icons.engineering_outlined),
-                    label: const Text('Developer access / Hyrje developer'),
                   ),
                 ],
               ),

@@ -20,7 +20,6 @@ import '../widgets/num_key_body.dart';
 // (HoverInteraction might not exist in this project version.)
 
 import 'manager_dashboard_screen.dart';
-import 'developer_login_screen.dart';
 import 'table_selection_screen.dart';
 import 'waiter_selection_screen.dart';
 import '../l10n/tr.dart';
@@ -436,21 +435,6 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
                               ),
                             const SizedBox(height: 28),
                             _clockDisplay(),
-                            const SizedBox(height: 12),
-                            TextButton.icon(
-                              onPressed: () => _pushRoute(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const DeveloperLoginScreen(),
-                                ),
-                              ),
-                              icon: const Icon(Icons.engineering_outlined),
-                              label: Text(
-                                _language.t(
-                                  'Developer access / Hyrje developer',
-                                  'Developer access',
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),

@@ -1,11 +1,28 @@
+/// Production SelliX web — licenses, owner portal, and sales sync.
+const String kSellixWebBaseUrl =
+    'https://sellixweb-production.up.railway.app';
+
 /// Localhost fallback kept for reference only — not used at runtime.
 ///
 /// The active base URL is resolved by [RuntimeConfigService] from
 /// `app_config.json` beside the executable, the `POS_API_BASE_URL` env var,
-/// or this fallback, and applied via [ApiClient.configureBaseUrl] at startup.
-const String kApiBaseUrl = 'http://127.0.0.1:3000';
+/// or [kSellixWebBaseUrl].
+const String kApiBaseUrl = kSellixWebBaseUrl;
 
-// ── Endpoint paths (relative to [kApiBaseUrl]) ────────────────────────────
+const String kHeaderLicenseKey = 'x-license-key';
+
+// ── SelliX web endpoints ──────────────────────────────────────────────────
+
+/// POST {licenseKey, deviceId, deviceName?} → business + license
+const String kEndpointLicenseActivate = '/api/license/activate';
+
+/// POST {licenseKey, deviceId} → business + license (must already be bound)
+const String kEndpointLicenseCheck = '/api/license/check';
+
+/// POST {deviceId, sales: [...]} — owner-portal takings + table totals
+const String kEndpointSalesSync = '/api/sales/sync';
+
+// ── Legacy NestJS paths (unused against SelliX web) ───────────────────────
 
 /// POST {activationKey} → [ActivationValidateResponse]
 const String kEndpointValidateKey = '/activation/validate-key';

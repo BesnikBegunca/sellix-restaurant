@@ -2,22 +2,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/activation_validate_response.dart';
+import '../models/sellix_license.dart';
 import '../manager/manager_data.dart';
 import '../services/activation_error_message.dart';
 import '../services/activation_service.dart';
 import '../services/background_sync_service.dart';
-import '../services/device_transfer_exception.dart';
 import '../services/local_tenant_data_service.dart';
-import 'developer_login_screen.dart';
 import '../theme/app_colors.dart';
 import '../widgets/open_tables_activation_dialog.dart';
 import '../widgets/gg_header.dart';
 import '../models/tenant_activation_gate_result.dart';
 import '../l10n/tr.dart';
 
-/// First-run screen shown when the device has not yet been activated.
-///
-/// Flow: validate activation key → confirm business/branch → activate desktop.
+/// First-run screen: enter the SelliX business key, preview data, continue.
 class ActivationScreen extends StatefulWidget {
   const ActivationScreen({super.key});
 
@@ -27,11 +24,9 @@ class ActivationScreen extends StatefulWidget {
 
 class _ActivationScreenState extends State<ActivationScreen> {
   final _keyController = TextEditingController();
-  final _branchController = TextEditingController();
 
   bool _validating = false;
   bool _activating = false;
-  bool _transferPending = false;
   String? _error;
   ActivationValidateResponse? _validated;
 
@@ -40,7 +35,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
   @override
   void dispose() {
     _keyController.dispose();
-    _branchController.dispose();
     super.dispose();
   }
 
@@ -63,9 +57,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
       setState(() {
         _validated = result;
         _validating = false;
-        if (result.branchCode != null && result.branchCode!.isNotEmpty) {
-          _branchController.text = result.branchCode!;
-        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -78,20 +69,14 @@ class _ActivationScreenState extends State<ActivationScreen> {
 
   Future<void> _activate() async {
     final key = _keyController.text.trim();
-    final branch = _branchController.text.trim();
     if (key.isEmpty) {
       setState(() => _error = tr.juLutemVendosniCelesinAktivizimit);
       return;
     }
     if (_validated == null) {
       setState(
-        () => _error =
-            tr.pariVerifikoniCelesinButoninVerifikoCelesin,
+        () => _error = tr.pariVerifikoniCelesinButoninVerifikoCelesin,
       );
-      return;
-    }
-    if (branch.isEmpty) {
-      setState(() => _error = tr.juLutemVendosniKodinDeges);
       return;
     }
 
@@ -107,25 +92,18 @@ class _ActivationScreenState extends State<ActivationScreen> {
 
     setState(() {
       _activating = true;
-      _transferPending = false;
       _error = null;
     });
     try {
       await ActivationService.instance.activateDesktop(
         activationKey: key,
-        branchCode: branch,
+        branchCode: _validated!.branchCode ?? 'MAIN',
         businessName: _validated!.businessName,
+        business: _validated!.business,
+        license: _validated!.license,
       );
       await ManagerData.instance.reload();
-      // [ActivationStateController] → [PosSystemApp] home becomes [LoginScreen].
-    } on DeviceTransferRequiredException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _activating = false;
-        _transferPending = true;
-        _error = null;
-      });
-      await _showTransferPendingDialog(isDuplicate: e.isDuplicate);
+      BackgroundSyncService.instance.start();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -186,35 +164,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
     return true;
   }
 
-  Future<void> _showTransferPendingDialog({required bool isDuplicate}) async {
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: Text(tr.kerkohetAprovimSuperadmin),
-        content: Text(
-          isDuplicate
-              ? tr.kerkesaEkzistonEshtePritjeAprovimit
-              : tr.kjoLicenceEshtePerdorurParePajisje + tr.kerkesaTransferimUDerguaSuperadmin + tr.pasAprovimitProvoAktiviziminPerseri,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(tr.rregull),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _activate();
-            },
-            child: Text(tr.provoPerseri),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _resetLocalActivation() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -245,7 +194,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
       _validated = null;
       _error = null;
       _keyController.clear();
-      _branchController.clear();
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -263,7 +211,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
       body: Center(
         child: SingleChildScrollView(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
+            constraints: const BoxConstraints(maxWidth: 480),
             child: Card(
               margin: const EdgeInsets.all(24),
               child: Padding(
@@ -285,7 +233,9 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      tr.verifikoniCelesinKonfirmoniBiznesinPastajAktivizoni,
+                      'Shkruani çelësin e biznesit nga paneli i administratorit. '
+                      'Nëse kategoria është restorant, shfaqen të dhënat e biznesit '
+                      'dhe pastaj klikoni Vazhdo.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -293,25 +243,15 @@ class _ActivationScreenState extends State<ActivationScreen> {
                         height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    const _LocalModeBanner(),
                     const SizedBox(height: 24),
-                    _DeveloperModeCard(
-                      enabled: !_busy,
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const DeveloperLoginScreen(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
                     TextField(
                       controller: _keyController,
                       enabled: inputsEnabled,
+                      textCapitalization: TextCapitalization.characters,
                       decoration: InputDecoration(
                         labelText: tr.celesiAktivizimit,
-                        hintText: tr.pShPosXxxxXxxxXxxx,
-                        prefixIcon: Icon(Icons.vpn_key_rounded),
+                        hintText: 'SLX-XXXXX-XXXXX-XXXXX-XXXXX',
+                        prefixIcon: const Icon(Icons.vpn_key_rounded),
                       ),
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _busy ? null : _validateKey(),
@@ -329,44 +269,9 @@ class _ActivationScreenState extends State<ActivationScreen> {
                     ),
                     if (_validated != null) ...[
                       const SizedBox(height: 16),
-                      _ValidationSummaryCard(validation: _validated!),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _branchController,
-                        enabled: inputsEnabled,
-                        decoration: InputDecoration(
-                          labelText: tr.kodiDeges,
-                          hintText: tr.pShMainPaneliAdmin,
-                          prefixIcon: Icon(Icons.business_rounded),
-                        ),
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _busy ? null : _activate(),
-                      ),
+                      _BusinessPreviewCard(validation: _validated!),
                     ],
                     const SizedBox(height: 24),
-                    if (_transferPending) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.mutedOrange.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppColors.mutedOrange.withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: Text(
-                          tr.kerkesaTransferimUDerguaSuperadmin + tr.pasAprovimitProvoAktiviziminPerseri,
-                          style: TextStyle(
-                            color: AppColors.mutedOrange,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
                     if (_error != null) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -402,7 +307,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
                                   color: AppColors.white,
                                 ),
                               )
-                            : const Text('Aktivizo terminalin'),
+                            : const Text('Vazhdo'),
                       ),
                     if (kDebugMode) ...[
                       const SizedBox(height: 20),
@@ -422,98 +327,16 @@ class _ActivationScreenState extends State<ActivationScreen> {
   }
 }
 
-class _LocalModeBanner extends StatelessWidget {
-  const _LocalModeBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.deepForestGreen.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        'Local mode: no external API or internet connection is required.',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 12, color: AppColors.darkGreenText),
-      ),
-    );
-  }
-}
-
-class _DeveloperModeCard extends StatelessWidget {
-  const _DeveloperModeCard({required this.enabled, required this.onPressed});
-
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.primaryGreen,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: enabled ? onPressed : null,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(
-                  Icons.engineering_rounded,
-                  color: AppColors.white,
-                  size: 25,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Developer mode',
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      'Gjenero kod licence offline',
-                      style: TextStyle(color: Color(0xFFDCEBE1), fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: AppColors.white,
-                size: 17,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ValidationSummaryCard extends StatelessWidget {
-  const _ValidationSummaryCard({required this.validation});
+class _BusinessPreviewCard extends StatelessWidget {
+  const _BusinessPreviewCard({required this.validation});
 
   final ActivationValidateResponse validation;
 
   @override
   Widget build(BuildContext context) {
+    final business = validation.business ?? const SellixBusinessProfile();
+    final license = validation.license;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -533,20 +356,34 @@ class _ValidationSummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          _row(tr.biznesi, validation.businessName ?? '—'),
-          _row('Dega', validation.branchName ?? '—'),
-          _row(tr.licenca, validation.licenseStatus ?? '—'),
-          if (validation.licenseExpiresAt != null)
-            _row('Skadon', validation.licenseExpiresAt!),
+          _row(tr.biznesi, business.name.isEmpty ? (validation.businessName ?? '—') : business.name),
+          _row('NUI', business.nui),
+          _row('Sektori', business.sector),
+          _row('Adresa', business.formattedAddress),
+          _row('Telefoni', business.phone),
+          _row('Email', business.email),
+          _row('Kontakti', business.contactPerson),
+          _row('Nr. fiskal', business.fiscalNumber),
+          _row('Nr. TVSH', business.vatNumber),
+          _row(tr.licenca, license?.status ?? validation.licenseStatus ?? '—'),
+          if ((license?.expiresAt ?? validation.licenseExpiresAt) != null)
+            _row('Skadon', license?.expiresAt ?? validation.licenseExpiresAt!),
+          if (license != null && license.seats > 0)
+            _row(
+              'Pajisje',
+              '${license.devicesUsed} / ${license.seats}',
+            ),
         ],
       ),
     );
   }
 
   Widget _row(String label, String value) {
+    if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 2,

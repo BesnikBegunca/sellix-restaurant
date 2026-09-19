@@ -108,7 +108,7 @@ class DatabaseService {
     final path = join(dbPath, 'pos_system.db');
     return openDatabase(
       path,
-      version: 27,
+      version: 28,
       onCreate: DatabaseSchema.create,
       onUpgrade: DatabaseSchema.upgrade,
       onOpen: (db) async {
@@ -1445,6 +1445,40 @@ class DatabaseService {
     });
     _scheduleSyncAfterLocalMutation();
     return result;
+  }
+
+  /// Closed sales not yet posted to SelliX `POST /api/sales/sync`.
+  Future<List<Map<String, dynamic>>> fetchUnsyncedPortalSales({
+    int limit = 200,
+  }) async {
+    final db = await database;
+    try {
+      return await db.query(
+        'sales',
+        where: 'COALESCE(portalSynced, 0) = 0 AND uuid IS NOT NULL AND uuid != \'\'',
+        orderBy: 'id ASC',
+        limit: limit,
+      );
+    } catch (_) {
+      return await db.query(
+        'sales',
+        where: 'uuid IS NOT NULL AND uuid != \'\'',
+        orderBy: 'id ASC',
+        limit: limit,
+      );
+    }
+  }
+
+  Future<void> markPortalSalesSynced(List<String> saleUuids) async {
+    if (saleUuids.isEmpty) return;
+    final db = await database;
+    final placeholders = List.filled(saleUuids.length, '?').join(',');
+    try {
+      await db.rawUpdate(
+        'UPDATE sales SET portalSynced = 1 WHERE uuid IN ($placeholders)',
+        saleUuids,
+      );
+    } catch (_) {}
   }
 
   /// Returns all sale_lines for a single sale, ordered by insertion order.

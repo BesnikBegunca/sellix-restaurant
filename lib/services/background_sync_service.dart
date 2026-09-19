@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -11,6 +10,7 @@ import 'license_gate_service.dart';
 import 'api_client.dart';
 import 'connectivity_service.dart';
 import 'database_service.dart';
+import 'portal_sales_sync_service.dart';
 import 'pull_sync_apply_service.dart';
 import 'runtime_config_service.dart';
 import 'sync_backoff_policy.dart';
@@ -173,161 +173,22 @@ class BackgroundSyncService {
     _isSyncing = true;
     _lastBatchSettled = 0;
     SyncStatusService.instance.setSyncingPush(true);
-    final pushStartedAt = DateTime.now();
     final stopwatch = Stopwatch()..start();
     try {
-      final pending = await _sync.getPendingOutboxEvents(
-        limit: _defaultBatchLimit,
-      );
-      _pendingCount = pending.length;
-
-      if (pending.isEmpty) {
-        _backoff.reset();
-        _cancelScheduledRetry();
-        if (kDebugMode) debugPrint('BackgroundSyncService: no pending events');
-        // ignore: avoid_print
-        print('[SyncDiag] triggerSyncNow: outbox is empty — nothing to push');
-        return;
-      }
-
-      // Map outbox rows to pos_api SyncPushEventDto (no extra DB columns).
-      final events = <Map<String, dynamic>>[];
-      for (final row in pending) {
-        events.add(await _buildSyncPushEvent(row));
-      }
-
-      // ignore: avoid_print
-      print(
-        '[SyncDiag] sync started pending=${pending.length} '
-        'force=$force at=${pushStartedAt.toIso8601String()}',
-      );
-      for (final ev in events) {
-        final type = ev['entityType'];
-        final entityUuid = ev['entityUuid'];
-        if (type == 'sales' || type == 'sale_lines') {
-          // ignore: avoid_print
-          print(
-            '[SyncDiag] POST /sync/push queued entityType=$type '
-            'entityUuid=$entityUuid',
-          );
-        }
-      }
-
-      if (kDebugMode) {
-        debugPrint('BackgroundSyncService: push batch size=${events.length}');
-      }
-
-      final body = {'events': events};
-
-      Response<Map<String, dynamic>> response;
-      try {
-        response = await ApiClient.instance.post<Map<String, dynamic>>(
-          kEndpointSyncPush,
-          data: body,
-        );
-      } on DioException catch (e) {
-        if (await _handleLicenseSuspended(e)) return;
-        if (e.response?.statusCode == 401) {
-          // Access token expired — attempt one token refresh then retry.
-          await _handleSyncUnauthorized();
-          response = await ApiClient.instance.post<Map<String, dynamic>>(
-            kEndpointSyncPush,
-            data: body,
-          );
-        } else {
-          rethrow;
-        }
-      }
-
-      // Strict parsing — returns null if any field is missing or wrong type.
-      final parsed = _parseSyncPushResponse(response.data);
-      if (parsed == null) {
-        _recordFailureAndSchedule(
-          'Push: malformed server response',
-        );
-        if (kDebugMode) {
-          debugPrint(
-            'BackgroundSyncService: malformed response — batch failed, no events marked',
-          );
-        }
-        return;
-      }
-
-      // TEMP [SyncDiag] — log complete API response.
-      // ignore: avoid_print
-      print(
-        '[SyncDiag] syncPushResponse: '
-        'accepted=${parsed.accepted.length} '
-        'duplicates=${parsed.duplicates.length} '
-        'rejected=${parsed.rejected.length}',
-      );
-      if (parsed.accepted.isNotEmpty) {
-        // ignore: avoid_print
-        print('[SyncDiag] accepted uuids=${parsed.accepted}');
-      }
-      if (parsed.rejected.isNotEmpty) {
-        for (final r in parsed.rejected) {
-          // ignore: avoid_print
-          print('[SyncDiag] REJECTED uuid=${r.uuid} reason=${r.reason}');
-        }
-      }
-
-      // Apply outbox state changes only after full parse succeeds.
-      for (final uuid in [...parsed.accepted, ...parsed.duplicates]) {
-        await _sync.markOutboxEventSynced(uuid);
-      }
-      for (final item in parsed.rejected) {
-        await _sync.markOutboxEventFailed(item.uuid, item.reason);
-      }
-
-      final settled = parsed.accepted.length + parsed.duplicates.length;
-      _lastBatchSettled = settled;
-      _pendingCount = (_pendingCount - settled).clamp(0, _pendingCount);
+      await PortalSalesSyncService.instance.triggerNow();
       _backoff.reset();
       _cancelScheduledRetry();
-
-      final nowIso = DateTime.now().toIso8601String();
-      await DatabaseService.instance.setAppMeta('sync_last_push_at', nowIso);
-      await DatabaseService.instance.setAppMeta('sync_last_success_at', nowIso);
+      await DatabaseService.instance.setAppMeta(
+        'sync_last_push_at',
+        DateTime.now().toUtc().toIso8601String(),
+      );
       await DatabaseService.instance.setAppMeta('sync_last_error', '');
-
-      stopwatch.stop();
-      // ignore: avoid_print
-      print(
-        '[SyncDiag] POST /sync/push success latencyMs=${stopwatch.elapsedMilliseconds} '
-        'accepted=${parsed.accepted.length} '
-        'duplicates=${parsed.duplicates.length} '
-        'rejected=${parsed.rejected.length}',
+      await DatabaseService.instance.setAppMeta(
+        'sync_last_success_at',
+        DateTime.now().toUtc().toIso8601String(),
       );
-      for (final ev in events) {
-        final eventUuid = ev['uuid'] as String?;
-        if (eventUuid == null) continue;
-        final type = ev['entityType'];
-        if (type != 'sales' && type != 'sale_lines') continue;
-        final entityUuid = ev['entityUuid'];
-        if (parsed.accepted.contains(eventUuid) ||
-            parsed.duplicates.contains(eventUuid)) {
-          // ignore: avoid_print
-          print(
-            '[SyncDiag] POST /sync/push success entityType=$type '
-            'entityUuid=$entityUuid',
-          );
-        }
-      }
-      await refreshPendingCount();
-      // ignore: avoid_print
-      print(
-        '[SyncDiag] sync completed latencyMs=${stopwatch.elapsedMilliseconds} '
-        'remainingPending=$_pendingCount',
-      );
-
       if (kDebugMode) {
-        debugPrint(
-          'BackgroundSyncService: push complete — '
-          'accepted=${parsed.accepted.length} '
-          'duplicates=${parsed.duplicates.length} '
-          'rejected=${parsed.rejected.length}',
-        );
+        debugPrint('BackgroundSyncService: portal sales sync finished');
       }
     } on DioException catch (e) {
       if (await _handleLicenseSuspended(e)) return;
@@ -372,6 +233,11 @@ class BackgroundSyncService {
   /// The pull cursor is persisted only after a successful SQLite commit so
   /// any failure leaves the cursor unchanged and the same batch is retried.
   Future<void> pullSyncNow({bool force = false}) async {
+    // SelliX web has no catalogue pull — the owner portal is fed by sales sync.
+  }
+
+  // ignore: unused_element
+  Future<void> _legacyPullSyncNow({bool force = false}) async {
     if (_isApiConfigBlocked()) {
       await _markApiConfigBlocked();
       return;
