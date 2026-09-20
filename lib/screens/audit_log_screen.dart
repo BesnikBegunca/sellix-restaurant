@@ -4,12 +4,12 @@ import 'package:printing/printing.dart';
 import '../features/audit_log/widgets/audit_category_tabs.dart';
 import '../features/audit_log/widgets/audit_empty_state.dart';
 import '../features/audit_log/widgets/audit_error_card.dart';
-import '../features/audit_log/widgets/audit_kpi_card.dart';
 import '../features/audit_log/widgets/audit_kpi_row.dart';
 import '../features/audit_log/widgets/audit_log_card.dart';
 import '../manager/manager_data.dart';
 import '../services/audit_log_pdf.dart';
 import '../services/audit_log_service.dart';
+import '../shared/widgets/panel_layout.dart';
 import '../theme/app_colors.dart';
 import '../l10n/tr.dart';
 
@@ -230,32 +230,11 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
   // ── header ─────────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Regjistri i Auditit',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.darkGreenText,
-                  height: 1.1,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                tr.gjurmoGjithaAktivitetetSistemit,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.lightGreenText,
-                ),
-              ),
-            ],
-          ),
-        ),
+    return PanelHeader(
+      icon: Icons.security_outlined,
+      title: 'Regjistri i auditit',
+      subtitle: tr.gjurmoGjithaAktivitetetSistemit,
+      actions: [
         OutlinedButton.icon(
           onPressed: (_exportingPdf || _logs.isEmpty) ? null : _exportPdf,
           icon: _exportingPdf
@@ -269,19 +248,6 @@ class _AuditLogPanelState extends State<AuditLogPanel> {
                 )
               : const Icon(Icons.download_outlined, size: 16),
           label: const Text('Eksporto PDF'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.darkGreenText,
-            side: BorderSide(color: AppColors.lightGreenBorder),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
         ),
       ],
     );

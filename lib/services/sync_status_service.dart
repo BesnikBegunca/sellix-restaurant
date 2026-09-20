@@ -104,8 +104,8 @@ class SyncStatusService extends ChangeNotifier {
     deviceId    = act.serverDeviceId;
 
     final db = DatabaseService.instance;
-    pendingOutboxCount = await db.getPendingOutboxCount();
-    failedOutboxCount  = await db.getFailedOutboxCount();
+    pendingOutboxCount = await db.countUnsyncedPortalSales();
+    failedOutboxCount = 0;
 
     lastPushAt    = await db.getAppMeta('sync_last_push_at');
     lastPullAt    = await db.getAppMeta('sync_last_pull_at');

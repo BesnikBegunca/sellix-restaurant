@@ -36,7 +36,7 @@ class _WaiterGridCardState extends State<WaiterGridCard> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _hovered

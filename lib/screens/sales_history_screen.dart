@@ -3,15 +3,14 @@ import 'package:printing/printing.dart';
 
 import '../features/sales_history/models/sales_models.dart';
 import '../features/sales_history/widgets/sale_card.dart';
-import '../features/sales_history/widgets/sh_category_chart.dart';
 import '../features/sales_history/widgets/sh_kpi_row.dart';
 import '../features/sales_history/widgets/sh_refund_dialog.dart';
 import '../features/sales_history/widgets/sh_filters_card.dart';
-import '../features/sales_history/widgets/sh_top_products_card.dart';
 import '../manager/manager_data.dart';
 import '../services/database_service.dart';
 import '../services/sale_receipt_service.dart';
 import '../services/sales_history_pdf.dart';
+import '../shared/widgets/panel_layout.dart';
 import '../theme/app_colors.dart';
 import '../l10n/tr.dart';
 
@@ -354,33 +353,11 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
   // ── header ─────────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Historiku i Shitjeve',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.darkGreenText,
-                  height: 1.1,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Analitika e detajuar e shitjeve dhe historiku',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.lightGreenText,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
+    return PanelHeader(
+      icon: Icons.history_outlined,
+      title: 'Historiku i shitjeve',
+      subtitle: 'Analitika e detajuar e shitjeve dhe historiku i porosive.',
+      actions: [
         OutlinedButton.icon(
           onPressed: _exportingPdf ? null : _exportPdf,
           icon: _exportingPdf
@@ -394,19 +371,6 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
                 )
               : const Icon(Icons.download_outlined, size: 16),
           label: const Text('Eksporto PDF'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.darkGreenText,
-            side: BorderSide(color: AppColors.lightGreenBorder),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
         ),
       ],
     );

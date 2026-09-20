@@ -9,7 +9,7 @@ import 'connectivity_service.dart';
 import 'database_service.dart';
 import 'license_gate_service.dart';
 
-/// Pushes closed sales to SelliX web `POST /api/sales/sync` (owner portal).
+/// Pushes Printo + Paguaj + live table occupancy to SelliX web.
 class PortalSalesSyncService {
   PortalSalesSyncService._();
   static final PortalSalesSyncService instance = PortalSalesSyncService._();
@@ -47,26 +47,17 @@ class PortalSalesSyncService {
     final pending = await DatabaseService.instance.fetchUnsyncedPortalSales(
       limit: _batchLimit,
     );
-    if (pending.isEmpty) return;
-
-    final saleIds = pending
-        .map((row) => row['id'] as int?)
-        .whereType<int>()
-        .toList();
-    final lines = await DatabaseService.instance.fetchSaleLinesForSales(saleIds);
-    final linesBySale = <int, List<Map<String, dynamic>>>{};
-    for (final line in lines) {
-      final saleId = line['saleId'] as int?;
-      if (saleId == null) continue;
-      (linesBySale[saleId] ??= []).add(line);
-    }
+    final tables = await DatabaseService.instance.fetchPortalTableSnapshot();
 
     final payload = <Map<String, dynamic>>[];
     for (final row in pending) {
-      final mapped = _mapSale(row, linesBySale[row['id'] as int?] ?? const []);
+      final mapped = _mapInvoice(row);
       if (mapped != null) payload.add(mapped);
     }
-    if (payload.isEmpty) return;
+    if (payload.isEmpty && tables.isEmpty) {
+      await DatabaseService.instance.settlePortalSyncedOutbox();
+      return;
+    }
 
     try {
       final response = await ApiClient.instance.post<Map<String, dynamic>>(
@@ -75,6 +66,7 @@ class PortalSalesSyncService {
           'licenseKey': normalizeSellixLicenseKey(key),
           'deviceId': deviceId,
           'sales': payload,
+          'tables': tables,
         },
         options: Options(
           headers: {kHeaderLicenseKey: normalizeSellixLicenseKey(key)},
@@ -109,10 +101,11 @@ class PortalSalesSyncService {
       if (acceptedUids.isNotEmpty) {
         await DatabaseService.instance.markPortalSalesSynced(acceptedUids);
       }
+      await DatabaseService.instance.settlePortalSyncedOutbox();
       if (kDebugMode) {
         debugPrint(
           'PortalSalesSync: accepted=${acceptedUids.length} '
-          'rejected=${rejectedUids.length}',
+          'rejected=${rejectedUids.length} tables=${tables.length}',
         );
       }
     } on DioException catch (e) {
@@ -122,30 +115,29 @@ class PortalSalesSyncService {
     }
   }
 
-  Map<String, dynamic>? _mapSale(
-    Map<String, dynamic> row,
-    List<Map<String, dynamic>> lines,
-  ) {
-    final uuid = (row['uuid'] as String?)?.trim();
+  Map<String, dynamic>? _mapInvoice(Map<String, dynamic> row) {
+    final uuid = (row['saleUid'] as String?)?.trim();
     if (uuid == null || uuid.isEmpty) return null;
 
-    final soldAtRaw =
-        (row['timestamp'] as String?) ?? (row['createdAt'] as String?);
-    final soldAtDt = parseStoredSaleTimestamp(soldAtRaw);
+    final soldAtDt = parseStoredSaleTimestamp(row['soldAtRaw'] as String?);
     if (soldAtDt == null) return null;
 
     final tableName = (row['tableName'] as String?)?.trim() ?? '';
     final waiter = (row['waiterName'] as String?)?.trim() ?? '';
     final orderNumber = row['orderNumber'];
     final items = <Map<String, dynamic>>[];
-    for (final line in lines) {
-      items.add({
-        'name': (line['productName'] as String?)?.trim() ?? '',
-        'quantity': line['quantity'] ?? 1,
-        'unitPrice': line['productPrice'] ?? 0,
-        'total': line['lineTotal'] ?? 0,
-        'category': (line['categoryName'] as String?) ?? '',
-      });
+    final rawItems = row['items'];
+    if (rawItems is List) {
+      for (final line in rawItems) {
+        if (line is! Map) continue;
+        items.add({
+          'name': (line['productName'] as String?)?.trim() ?? '',
+          'quantity': line['qty'] ?? line['quantity'] ?? 1,
+          'unitPrice': line['productPrice'] ?? 0,
+          'total': line['lineTotal'] ?? 0,
+          'category': (line['categoryName'] as String?) ?? '',
+        });
+      }
     }
 
     return {
@@ -155,6 +147,7 @@ class PortalSalesSyncService {
       'tax': 0,
       'discount': 0,
       'paymentMethod': 'cash',
+      'status': (row['status'] as String?)?.trim() ?? 'paid',
       if (tableName.isNotEmpty) 'tableName': tableName,
       if (orderNumber != null) 'receiptNo': '$orderNumber',
       if (waiter.isNotEmpty) 'staffName': waiter,

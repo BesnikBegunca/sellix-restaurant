@@ -49,60 +49,82 @@ Future<String?> showImageSourcePicker(
     context: context,
     useRootNavigator: false,
     builder: (ctx) {
-      final w = _assetDialogWidth(ctx).clamp(320.0, 420.0);
       return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-        child: SizedBox(
-          width: w,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    'Zgjidh burimin e fotos',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 17,
-                      color: AppColors.darkGreenText,
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        Icons.photo_outlined,
+                        color: AppColors.primaryGreen,
+                        size: 20,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Zgjidh burimin e fotos',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 17,
+                              color: AppColors.darkGreenText,
+                            ),
+                          ),
+                          Text(
+                            'Asetat e aplikacionit ose një skedar nga kompjuteri.',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: AppColors.lightGreenText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                ListTile(
-                  leading: Icon(
-                    Icons.photo_library_outlined,
-                    color: AppColors.primaryGreen,
-                  ),
-                  title: const Text('Nga asetat e aplikacionit'),
-                  subtitle: Text(tr.fotoParakonfighuruara),
+                const SizedBox(height: 18),
+                _SourceTile(
+                  icon: Icons.photo_library_outlined,
+                  title: 'Nga asetat e aplikacionit',
+                  subtitle: tr.fotoParakonfighuruara,
                   onTap: () => Navigator.pop(ctx, 'assets'),
                 ),
-                ListTile(
-                  leading: Icon(
-                    Icons.upload_file_outlined,
-                    color: AppColors.primaryGreen,
-                  ),
-                  title: const Text('Ngarko nga kompjuteri'),
-                  subtitle: const Text('PNG, JPG, WEBP…'),
+                const SizedBox(height: 8),
+                _SourceTile(
+                  icon: Icons.upload_file_outlined,
+                  title: 'Ngarko nga kompjuteri',
+                  subtitle: 'PNG, JPG, WEBP…',
                   onTap: () => Navigator.pop(ctx, 'pc'),
                 ),
-                if (current != null && current.isNotEmpty)
-                  ListTile(
-                    leading: Icon(
-                      Icons.hide_image_outlined,
-                      color: AppColors.negativeText,
-                    ),
-                    title: Text(
-                      'Hiq foton',
-                      style: TextStyle(color: AppColors.negativeText),
-                    ),
+                if (current != null && current.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _SourceTile(
+                    icon: Icons.hide_image_outlined,
+                    title: 'Hiq foton',
+                    subtitle: 'Produkti mbetet pa imazh.',
+                    danger: true,
                     onTap: () => Navigator.pop(ctx, 'clear'),
                   ),
+                ],
+                const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -126,6 +148,96 @@ Future<String?> showImageSourcePicker(
   return pickAndCopyImageFromPC();
 }
 
+class _SourceTile extends StatefulWidget {
+  const _SourceTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  State<_SourceTile> createState() => _SourceTileState();
+}
+
+class _SourceTileState extends State<_SourceTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = widget.danger ? AppColors.negativeText : AppColors.primaryGreen;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: _hover
+                ? accent.withValues(alpha: 0.08)
+                : AppColors.lightGreenBg.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: _hover
+                  ? accent.withValues(alpha: 0.35)
+                  : AppColors.lightGreenBorder,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(widget.icon, color: accent, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: widget.danger
+                            ? AppColors.negativeText
+                            : AppColors.darkGreenText,
+                      ),
+                    ),
+                    Text(
+                      widget.subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.lightGreenText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: accent),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 Future<String?> showAssetPicker(BuildContext context, String? current) async {
   final assets = await loadImageAssets();
   if (!context.mounted) return null;
@@ -142,7 +254,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
       ];
 
       return Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
         clipBehavior: Clip.antiAlias,
         child: SizedBox(
@@ -152,17 +264,43 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 12, 8),
+                padding: const EdgeInsets.fromLTRB(22, 20, 12, 8),
                 child: Row(
                   children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        Icons.collections_outlined,
+                        color: AppColors.primaryGreen,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        'Zgjidh foton',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.darkGreenText,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Zgjidh foton',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.darkGreenText,
+                            ),
+                          ),
+                          Text(
+                            trf.photosInAssets(items.length - 1),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.lightGreenText,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     IconButton(
@@ -174,17 +312,7 @@ Future<String?> showAssetPicker(BuildContext context, String? current) async {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  trf.photosInAssets(items.length - 1),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.lightGreenText,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Divider(height: 1, color: AppColors.lightGreenBorder),
               Expanded(
                 child: assets.isEmpty

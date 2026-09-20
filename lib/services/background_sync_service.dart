@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../config/api_config.dart';
-import '../repositories/sync_repository.dart';
 import 'activation_service.dart';
 import 'api_enforcement_parser.dart';
 import 'license_gate_service.dart';
@@ -24,7 +23,6 @@ class BackgroundSyncService {
 
   static const int _defaultBatchLimit = 100;
 
-  final SyncRepository _sync = SyncRepository.instance;
   final SyncBackoffPolicy _backoff = SyncBackoffPolicy();
 
   StreamSubscription<ConnectivityStatus>? _connectivitySub;
@@ -109,10 +107,9 @@ class BackgroundSyncService {
     await triggerSyncNow(force: true);
   }
 
-  /// Refreshes [pendingCount] from SQLite (no network).
+  /// Refreshes [pendingCount] from unsynced portal sales (no network).
   Future<void> refreshPendingCount() async {
-    final pending = await _sync.getPendingOutboxEvents(limit: 1000);
-    _pendingCount = pending.length;
+    _pendingCount = await DatabaseService.instance.countUnsyncedPortalSales();
   }
 
   /// Uploads pending outbox events to POST /sync/push and marks each

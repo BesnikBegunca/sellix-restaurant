@@ -412,12 +412,16 @@ class PanelColumns extends StatelessWidget {
     required this.right,
     this.breakpoint = 900,
     this.gap = 16,
+    this.leftFlex = 1,
+    this.rightFlex = 1,
   });
 
   final Widget left;
   final Widget right;
   final double breakpoint;
   final double gap;
+  final int leftFlex;
+  final int rightFlex;
 
   @override
   Widget build(BuildContext context) {
@@ -436,9 +440,9 @@ class PanelColumns extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: left),
+            Expanded(flex: leftFlex, child: left),
             SizedBox(width: gap),
-            Expanded(child: right),
+            Expanded(flex: rightFlex, child: right),
           ],
         );
       },

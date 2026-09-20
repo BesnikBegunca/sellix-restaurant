@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ import '../services/printer_settings_store.dart';
 import '../services/receipt_printer.dart';
 import '../services/receipt_text.dart';
 import '../services/app_language_service.dart';
+import '../services/portal_sales_sync_service.dart';
 import '../l10n/tr.dart';
 
 class PosOrderScreen extends StatefulWidget {
@@ -214,6 +216,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           lines: combined,
           orderNumber: _activeOrderNumber > 0 ? _activeOrderNumber : null,
         );
+        unawaited(PortalSalesSyncService.instance.triggerNow());
         // ignore: avoid_print
         print(
           '[SyncDiag] recordSaleWithLines saleId=${payResult.saleId} '
@@ -343,6 +346,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         },
       );
       await data.clearTable(widget.tableNumber, widget.waiterName);
+      unawaited(PortalSalesSyncService.instance.triggerNow());
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
         if (shouldRecordSale && !printOk) {
@@ -415,6 +419,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       orderNumber: _activeOrderNumber,
       lines: _toCurrentLines(_lines),
     );
+    unawaited(PortalSalesSyncService.instance.triggerNow());
 
     // Printo kuponin termik / POS80 (tekst i formatum per POS80).
     try {

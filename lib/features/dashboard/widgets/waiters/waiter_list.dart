@@ -33,18 +33,26 @@ class WaiterList extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(48),
         decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
+          color: scheme.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.lightGreenBorder),
+          border: Border.all(color: scheme.outlineVariant),
         ),
         child: Column(
           children: [
-            Icon(
-              Icons.badge_outlined,
-              size: 48,
-              color: AppColors.lightGreenBorder,
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.lightGreenBg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                Icons.badge_outlined,
+                size: 30,
+                color: AppColors.lightGreenText,
+              ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               tr.nukKaKamariereEnde,
               style: TextStyle(
@@ -53,9 +61,9 @@ class WaiterList extends StatelessWidget {
                 color: AppColors.mediumGreenText,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Add a waiter using the form above.',
+              'Shto kamarierin e parë me formularin sipër.',
               style: TextStyle(fontSize: 13, color: AppColors.lightGreenText),
             ),
           ],
@@ -63,14 +71,21 @@ class WaiterList extends StatelessWidget {
       );
     }
 
-    return GridView.builder(
+    return LayoutBuilder(
+      builder: (context, c) {
+        final columns = c.maxWidth >= 1180
+            ? 3
+            : c.maxWidth >= 640
+            ? 2
+            : 1;
+        return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 4.5,
+        childAspectRatio: columns == 1 ? 5.4 : 4.2,
       ),
       itemCount: waiters.length,
       itemBuilder: (context, i) {
@@ -89,6 +104,8 @@ class WaiterList extends StatelessWidget {
               : null,
           salary: salary,
           onDelete: () => onRemove(i),
+        );
+      },
         );
       },
     );

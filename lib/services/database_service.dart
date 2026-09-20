@@ -120,6 +120,7 @@ class DatabaseService {
         } catch (_) {}
         await DatabaseSchema.ensureShiftsSnapshotColumn(db);
         await DatabaseSchema.ensureSalesOrderMetadataColumns(db);
+        await DatabaseSchema.ensureKitchenPrintsPortalSynced(db);
         await DatabaseSchema.ensureSalesCloseMetadataColumns(db);
         await DatabaseSchema.ensureActivationArchiveTables(db);
         await DatabaseSchema.ensureDefaultMenuPresent(db);
@@ -521,6 +522,10 @@ class DatabaseService {
     for (final l in lines) {
       total += (l['lineTotal'] as num).toDouble();
     }
+    final portalSaleUid = await resolvePaymentSaleUuid(
+      tableId: tableId,
+      waiterName: waiterName,
+    );
     final printId = await db.transaction<int>((txn) async {
       final printId = await txn.insert('kitchen_prints', {
         'tableId': tableId,
@@ -532,6 +537,8 @@ class DatabaseService {
         'uuid': DatabaseSchema.generateUuid(),
         'createdAt': printedAt,
         'updatedAt': printedAt,
+        'portalSynced': 0,
+        'portalSaleUid': portalSaleUid,
         ...scope,
         ...syncStatus(),
       });
@@ -1281,16 +1288,35 @@ class DatabaseService {
     return rows.first['id'] as int?;
   }
 
-  /// Resolves or creates a stable sale UUID for the current payment attempt.
+  /// Stable UUID for this open table invoice (shared by Printo and Paguaj).
   Future<String> resolvePaymentSaleUuid({
     required int tableId,
     required String waiterName,
   }) async {
     final pending = await getPendingPaymentSaleUuid(tableId, waiterName);
-    if (pending != null && pending.isNotEmpty) {
-      final existingId = await fetchSaleIdByUuid(pending);
-      if (existingId != null) return pending;
-    }
+    if (pending != null && pending.isNotEmpty) return pending;
+    try {
+      final db = await database;
+      final rows = await db.query(
+        'kitchen_prints',
+        columns: ['portalSaleUid', 'uuid'],
+        where: 'tableId = ? AND waiterName = ?',
+        whereArgs: [tableId, waiterName],
+        orderBy: 'id DESC',
+        limit: 1,
+      );
+      if (rows.isNotEmpty) {
+        final portalUid = (rows.first['portalSaleUid'] as String?)?.trim();
+        final printUuid = (rows.first['uuid'] as String?)?.trim();
+        final reuse = (portalUid != null && portalUid.isNotEmpty)
+            ? portalUid
+            : printUuid;
+        if (reuse != null && reuse.isNotEmpty) {
+          await setPendingPaymentSaleUuid(tableId, waiterName, reuse);
+          return reuse;
+        }
+      }
+    } catch (_) {}
     final saleUuid = DatabaseSchema.generateUuid();
     await setPendingPaymentSaleUuid(tableId, waiterName, saleUuid);
     return saleUuid;
@@ -1335,6 +1361,11 @@ class DatabaseService {
           saleUuid: saleUuid,
           txn: txn,
         );
+        await _markTablePrintsPortalSynced(
+          tableId: tableId,
+          waiterName: waiterName,
+          txn: txn,
+        );
         return SaleInsertResult(
           saleId: saleId,
           saleUuid: saleUuid,
@@ -1361,6 +1392,7 @@ class DatabaseService {
           if (tableName != null && tableName.trim().isNotEmpty)
             'tableName': tableName.trim(),
           'uuid': saleUuid,
+          'portalSynced': 0,
           ...scope,
           ...syncStatus(),
           ...ts,
@@ -1437,6 +1469,11 @@ class DatabaseService {
         saleUuid: saleUuid,
         txn: txn,
       );
+      await _markTablePrintsPortalSynced(
+        tableId: tableId,
+        waiterName: waiterName,
+        txn: txn,
+      );
       return SaleInsertResult(
         saleId: saleId,
         saleUuid: saleUuid,
@@ -1447,26 +1484,256 @@ class DatabaseService {
     return result;
   }
 
-  /// Closed sales not yet posted to SelliX `POST /api/sales/sync`.
+  /// Open invoices not yet posted (or not yet updated) on SelliX web.
+  ///
+  /// Printo and Paguaj share one [saleUid] so print-then-pay upserts once.
   Future<List<Map<String, dynamic>>> fetchUnsyncedPortalSales({
     int limit = 200,
   }) async {
     final db = await database;
+    final invoices = <Map<String, dynamic>>[];
+    final usedUids = <String>{};
+    final paidTableIds = <int>{};
+
+    List<Map<String, dynamic>> sales = const [];
     try {
-      return await db.query(
+      sales = await db.query(
         'sales',
-        where: 'COALESCE(portalSynced, 0) = 0 AND uuid IS NOT NULL AND uuid != \'\'',
+        where:
+            "COALESCE(portalSynced, 0) = 0 AND uuid IS NOT NULL AND TRIM(uuid) != ''",
         orderBy: 'id ASC',
         limit: limit,
+      );
+    } catch (_) {}
+
+    if (sales.isNotEmpty) {
+      final saleIds = sales
+          .map((row) => (row['id'] as num?)?.toInt())
+          .whereType<int>()
+          .toList();
+      final lines = await fetchSaleLinesForSales(saleIds);
+      final linesBySale = <int, List<Map<String, dynamic>>>{};
+      for (final line in lines) {
+        final saleId = (line['saleId'] as num?)?.toInt();
+        if (saleId == null) continue;
+        (linesBySale[saleId] ??= []).add(line);
+      }
+      for (final row in sales) {
+        final uuid = (row['uuid'] as String?)?.trim() ?? '';
+        if (uuid.isEmpty) continue;
+        usedUids.add(uuid);
+        final tableId = (row['tableId'] as num?)?.toInt();
+        if (tableId != null && tableId > 0) paidTableIds.add(tableId);
+        invoices.add(
+          _portalInvoiceFromSale(
+            row,
+            linesBySale[(row['id'] as num?)?.toInt() ?? -1] ?? const [],
+          ),
+        );
+      }
+    }
+
+    if (invoices.length >= limit) return invoices;
+
+    final occupiedIds = <int>{};
+    try {
+      final occ = await db.query(
+        'tables',
+        columns: ['id'],
+        where: 'COALESCE(occupied, 0) = 1',
+      );
+      for (final row in occ) {
+        final id = (row['id'] as num?)?.toInt();
+        if (id != null && id > 0) occupiedIds.add(id);
+      }
+    } catch (_) {}
+
+    List<Map<String, dynamic>> prints = const [];
+    try {
+      prints = await db.query(
+        'kitchen_prints',
+        where:
+            "COALESCE(portalSynced, 0) = 0 AND uuid IS NOT NULL AND TRIM(uuid) != ''",
+        orderBy: 'id ASC',
       );
     } catch (_) {
-      return await db.query(
-        'sales',
-        where: 'uuid IS NOT NULL AND uuid != \'\'',
-        orderBy: 'id ASC',
-        limit: limit,
-      );
+      return invoices;
     }
+
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    for (final row in prints) {
+      final portalUid = (row['portalSaleUid'] as String?)?.trim();
+      final ownUid = (row['uuid'] as String?)?.trim() ?? '';
+      final uid =
+          (portalUid != null && portalUid.isNotEmpty) ? portalUid : ownUid;
+      if (uid.isEmpty || usedUids.contains(uid)) continue;
+      final tableId = (row['tableId'] as num?)?.toInt();
+      if (tableId != null && paidTableIds.contains(tableId)) continue;
+      if (tableId != null && tableId > 0 && !occupiedIds.contains(tableId)) {
+        continue;
+      }
+      (grouped[uid] ??= []).add(row);
+    }
+
+    for (final uid in grouped.keys) {
+      if (invoices.length >= limit) break;
+      final paidLocally = await fetchSaleIdByUuid(uid);
+      if (paidLocally != null) continue;
+      final sample = grouped[uid]!.first;
+      final tableId = (sample['tableId'] as num?)?.toInt();
+      if (tableId != null && tableId > 0 && !occupiedIds.contains(tableId)) {
+        continue;
+      }
+      List<Map<String, dynamic>> allPrints;
+      try {
+        allPrints = await db.query(
+          'kitchen_prints',
+          where: 'portalSaleUid = ? OR uuid = ?',
+          whereArgs: [uid, uid],
+          orderBy: 'id ASC',
+        );
+      } catch (_) {
+        allPrints = grouped[uid]!;
+      }
+      if (allPrints.isEmpty) allPrints = grouped[uid]!;
+      final printIds = allPrints
+          .map((row) => (row['id'] as num?)?.toInt())
+          .whereType<int>()
+          .toList();
+      final lines = await fetchKitchenPrintLinesForPrints(printIds);
+      invoices.add(_portalInvoiceFromPrints(uid, allPrints, lines));
+      usedUids.add(uid);
+    }
+
+    return invoices;
+  }
+
+  /// Current till floor plan for SelliX web (occupied flag + printed total).
+  Future<List<Map<String, dynamic>>> fetchPortalTableSnapshot() async {
+    final db = await database;
+    List<Map<String, dynamic>> rows = const [];
+    try {
+      rows = await db.query('tables', orderBy: 'id ASC');
+    } catch (_) {
+      return const [];
+    }
+    final snapshot = <Map<String, dynamic>>[];
+    for (final row in rows) {
+      final id = (row['id'] as num?)?.toInt() ?? 0;
+      if (id <= 0) continue;
+      final occupied = ((row['occupied'] as num?)?.toInt() ?? 0) == 1;
+      snapshot.add({
+        'tableName': 'Tavolina $id',
+        'occupied': occupied,
+        'status': occupied ? 'open' : 'free',
+        'total': occupied
+            ? ((row['currentTotal'] as num?)?.toDouble() ?? 0)
+            : 0,
+        'staffName': occupied
+            ? ((row['assignedWaiterName'] as String?)?.trim() ?? '')
+            : '',
+      });
+    }
+    return snapshot;
+  }
+
+  Map<String, dynamic> _portalInvoiceFromSale(
+    Map<String, dynamic> row,
+    List<Map<String, dynamic>> lines,
+  ) {
+    final tableName = (row['tableName'] as String?)?.trim() ?? '';
+    final tableId = (row['tableId'] as num?)?.toInt();
+    return {
+      'saleUid': (row['uuid'] as String?)?.trim() ?? '',
+      'soldAtRaw':
+          (row['timestamp'] as String?) ?? (row['createdAt'] as String?),
+      'total': row['total'] ?? 0,
+      'tableName': tableName.isNotEmpty
+          ? tableName
+          : (tableId != null && tableId > 0 ? 'Tavolina $tableId' : ''),
+      'orderNumber': row['orderNumber'],
+      'waiterName': (row['waiterName'] as String?)?.trim() ?? '',
+      'status': 'paid',
+      'closeTable': true,
+      'tableOccupied': false,
+      'items': [
+        for (final line in lines)
+          {
+            'productName': (line['productName'] as String?)?.trim() ?? '',
+            'qty': line['quantity'] ?? line['qty'] ?? 1,
+            'productPrice': line['productPrice'] ?? 0,
+            'lineTotal': line['lineTotal'] ?? 0,
+            'categoryName': (line['categoryName'] as String?) ?? '',
+          },
+      ],
+    };
+  }
+
+  Map<String, dynamic> _portalInvoiceFromPrints(
+    String saleUid,
+    List<Map<String, dynamic>> prints,
+    List<Map<String, dynamic>> lines,
+  ) {
+    var total = 0.0;
+    int? tableId;
+    var waiter = '';
+    Object? orderNumber;
+    String? soldAtRaw;
+    for (final row in prints) {
+      total += (row['total'] as num?)?.toDouble() ?? 0;
+      tableId = (row['tableId'] as num?)?.toInt() ?? tableId;
+      final w = (row['waiterName'] as String?)?.trim() ?? '';
+      if (w.isNotEmpty) waiter = w;
+      orderNumber = row['orderNumber'] ?? orderNumber;
+      soldAtRaw =
+          (row['printedAt'] as String?) ??
+          (row['createdAt'] as String?) ??
+          soldAtRaw;
+    }
+    return {
+      'saleUid': saleUid,
+      'soldAtRaw': soldAtRaw,
+      'total': total,
+      'tableName': tableId != null && tableId > 0 ? 'Tavolina $tableId' : '',
+      'orderNumber': orderNumber,
+      'waiterName': waiter,
+      'status': 'open',
+      'closeTable': false,
+      'tableOccupied': true,
+      'items': _mergePortalPrintLines(lines),
+    };
+  }
+
+  List<Map<String, dynamic>> _mergePortalPrintLines(
+    List<Map<String, dynamic>> lines,
+  ) {
+    final merged = <String, Map<String, dynamic>>{};
+    for (final line in lines) {
+      final name = (line['productName'] as String?)?.trim() ?? '';
+      final productId = '${line['productId'] ?? ''}';
+      final key = '$productId|$name';
+      final qty =
+          (line['qty'] as num?)?.toInt() ??
+          (line['quantity'] as num?)?.toInt() ??
+          1;
+      final price = (line['productPrice'] as num?)?.toDouble() ?? 0;
+      final lineTotal = (line['lineTotal'] as num?)?.toDouble() ?? qty * price;
+      final existing = merged[key];
+      if (existing == null) {
+        merged[key] = {
+          'productName': name,
+          'qty': qty,
+          'productPrice': price,
+          'lineTotal': lineTotal,
+          'categoryName': (line['categoryName'] as String?) ?? '',
+        };
+      } else {
+        existing['qty'] = (existing['qty'] as int) + qty;
+        existing['lineTotal'] =
+            (existing['lineTotal'] as double) + lineTotal;
+      }
+    }
+    return merged.values.toList();
   }
 
   Future<void> markPortalSalesSynced(List<String> saleUuids) async {
@@ -1479,6 +1746,32 @@ class DatabaseService {
         saleUuids,
       );
     } catch (_) {}
+    try {
+      await db.rawUpdate(
+        'UPDATE kitchen_prints SET portalSynced = 1 WHERE uuid IN ($placeholders)',
+        saleUuids,
+      );
+    } catch (_) {}
+    try {
+      await db.rawUpdate(
+        'UPDATE kitchen_prints SET portalSynced = 1 WHERE portalSaleUid IN ($placeholders)',
+        saleUuids,
+      );
+    } catch (_) {}
+  }
+
+  /// Batch-fetches kitchen print lines whose printId is in [printIds].
+  Future<List<Map<String, dynamic>>> fetchKitchenPrintLinesForPrints(
+    List<int> printIds,
+  ) async {
+    if (printIds.isEmpty) return [];
+    final db = await database;
+    final placeholders = List.filled(printIds.length, '?').join(',');
+    return db.rawQuery(
+      'SELECT * FROM kitchen_print_lines WHERE printId IN ($placeholders) '
+      'ORDER BY printId ASC, id ASC',
+      printIds,
+    );
   }
 
   /// Returns all sale_lines for a single sale, ordered by insertion order.
@@ -2481,12 +2774,106 @@ class DatabaseService {
   // ─────────────────────── OUTBOX DIAGNOSTICS ──────────────────────────────
 
   Future<int> getPendingOutboxCount() async {
+    return countUnsyncedPortalSales();
+  }
+
+  /// Invoices not yet accepted by SelliX web `POST /api/sales/sync`.
+  Future<int> countUnsyncedPortalSales() async {
     final db = await database;
-    final rows = await db.rawQuery(
-      'SELECT COUNT(*) AS cnt FROM outbox WHERE syncStatus = ?',
-      [DatabaseSchema.kSyncStatusPending],
-    );
-    return Sqflite.firstIntValue(rows) ?? 0;
+    var pending = 0;
+    try {
+      final sales = await db.rawQuery(
+        '''
+        SELECT COUNT(*) AS cnt FROM sales
+        WHERE COALESCE(portalSynced, 0) = 0
+          AND uuid IS NOT NULL AND TRIM(uuid) != ''
+        ''',
+      );
+      pending += Sqflite.firstIntValue(sales) ?? 0;
+    } catch (_) {}
+    try {
+      final prints = await db.rawQuery(
+        '''
+        SELECT COUNT(*) AS cnt FROM kitchen_prints
+        WHERE COALESCE(portalSynced, 0) = 0
+          AND uuid IS NOT NULL AND TRIM(uuid) != ''
+        ''',
+      );
+      pending += Sqflite.firstIntValue(prints) ?? 0;
+    } catch (_) {}
+    return pending;
+  }
+
+  /// SelliX web only receives sales. Drain NestJS leftover outbox rows so the
+  /// status chip does not stay on "pritje" forever while the portal is in sync.
+  Future<int> settlePortalSyncedOutbox() async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    final patch = <String, Object?>{
+      'syncStatus': DatabaseSchema.kOutboxSyncSynced,
+      'lastSyncedAt': now,
+      'updatedAt': now,
+      'lastError': null,
+    };
+    const open = "syncStatus IN ('pending', 'failed')";
+    var settled = 0;
+    try {
+      settled += await db.update(
+        'outbox',
+        patch,
+        where: '''
+          $open AND REPLACE(LOWER(TRIM(entityType)), '-', '_')
+          NOT IN ('sales', 'sale_lines', 'kitchen_prints', 'kitchen_print_lines')
+        ''',
+      );
+      settled += await db.update(
+        'outbox',
+        patch,
+        where: '''
+          $open AND REPLACE(LOWER(TRIM(entityType)), '-', '_') = 'sales'
+          AND entityUuid IN (
+            SELECT uuid FROM sales WHERE COALESCE(portalSynced, 0) = 1
+          )
+        ''',
+      );
+      settled += await db.update(
+        'outbox',
+        patch,
+        where: '''
+          $open AND REPLACE(LOWER(TRIM(entityType)), '-', '_') = 'sale_lines'
+          AND entityUuid IN (
+            SELECT sl.uuid FROM sale_lines sl
+            INNER JOIN sales s ON s.id = sl.saleId
+            WHERE COALESCE(s.portalSynced, 0) = 1
+          )
+        ''',
+      );
+      settled += await db.update(
+        'outbox',
+        patch,
+        where: '''
+          $open AND REPLACE(LOWER(TRIM(entityType)), '-', '_') = 'kitchen_prints'
+          AND entityUuid IN (
+            SELECT uuid FROM kitchen_prints WHERE COALESCE(portalSynced, 0) = 1
+          )
+        ''',
+      );
+      settled += await db.update(
+        'outbox',
+        patch,
+        where: '''
+          $open AND REPLACE(LOWER(TRIM(entityType)), '-', '_') = 'kitchen_print_lines'
+          AND entityUuid IN (
+            SELECT kpl.uuid FROM kitchen_print_lines kpl
+            INNER JOIN kitchen_prints kp ON kp.id = kpl.printId
+            WHERE COALESCE(kp.portalSynced, 0) = 1
+          )
+        ''',
+      );
+    } catch (e) {
+      debugPrint('[Sync] settlePortalSyncedOutbox failed: $e');
+    }
+    return settled;
   }
 
   Future<int> getFailedOutboxCount() async {
@@ -3190,6 +3577,21 @@ class DatabaseService {
         saleUuid: saleUuid,
       );
     }
+  }
+
+  Future<void> _markTablePrintsPortalSynced({
+    required int tableId,
+    required String waiterName,
+    required Transaction txn,
+  }) async {
+    try {
+      await txn.update(
+        'kitchen_prints',
+        {'portalSynced': 1},
+        where: 'tableId = ? AND waiterName = ?',
+        whereArgs: [tableId, waiterName],
+      );
+    } catch (_) {}
   }
 
   Future<bool> _hasOutboxEventForEntity({

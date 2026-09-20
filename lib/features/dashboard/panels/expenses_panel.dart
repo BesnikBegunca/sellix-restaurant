@@ -426,69 +426,118 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(tr.shtoShpenzimRroge),
-      content: SizedBox(
-        width: 480,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            PanelField(
-              label: tr.lloji,
-              child: InputDecorator(
-                decoration: inputDeco(tr.lloji),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selType,
-                    isExpanded: true,
-                    items: [
-                      DropdownMenuItem(
-                        value: 'Shpenzim',
-                        child: Text('Shpenzim'),
-                      ),
-                      DropdownMenuItem(value: tr.rroge, child: Text(tr.rroge)),
-                      DropdownMenuItem(value: 'Bonus', child: Text('Bonus')),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) setState(() => _selType = v);
-                    },
+    final scheme = Theme.of(context).colorScheme;
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppColors.softRed.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.receipt_long_outlined,
+                      color: AppColors.softRed,
+                    ),
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            PanelField(
-              label: tr.pershkrimi2,
-              child: TextField(
-                controller: _descCtrl,
-                decoration: inputDeco('p.sh. Furnizim me pije'),
-              ),
-            ),
-            const SizedBox(height: 14),
-            PanelField(
-              label: tr.shuma,
-              child: TextField(
-                controller: _amtCtrl,
-                decoration: inputDeco('0.00'),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tr.shtoShpenzimRroge,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          'Regjistro një kosto operative ose pagesë stafi.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 22),
+              PanelField(
+                label: tr.lloji,
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selType,
+                  isExpanded: true,
+                  decoration: inputDeco(tr.lloji),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'Shpenzim',
+                      child: Text('Shpenzim'),
+                    ),
+                    DropdownMenuItem(value: tr.rroge, child: Text(tr.rroge)),
+                    DropdownMenuItem(value: 'Bonus', child: Text('Bonus')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setState(() => _selType = v);
+                  },
+                ),
+              ),
+              const SizedBox(height: 14),
+              PanelField(
+                label: tr.pershkrimi2,
+                child: TextField(
+                  controller: _descCtrl,
+                  decoration: inputDeco('p.sh. Furnizim me pije'),
+                ),
+              ),
+              const SizedBox(height: 14),
+              PanelField(
+                label: tr.shuma,
+                child: TextField(
+                  controller: _amtCtrl,
+                  decoration: inputDeco('0.00', prefix: '€ '),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(tr.anulo),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: _submit,
+                    icon: const Icon(Icons.check_rounded, size: 18),
+                    label: const Text('Ruaj'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(tr.anulo),
-        ),
-        FilledButton(onPressed: _submit, child: const Text('Ruaj')),
-      ],
     );
   }
 }

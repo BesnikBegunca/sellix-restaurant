@@ -555,6 +555,56 @@ class DatabaseSchema {
     } catch (_) {}
   }
 
+  /// Kolona për sinkronin e portalit: PRINTO dhe PAGUAJ ndajnë të njëjtin saleUid.
+  static const String kKitchenPrintsPortalCutoverKey =
+      'kitchen_prints_portal_cutover';
+
+  static Future<void> ensureKitchenPrintsPortalSynced(Database db) async {
+    try {
+      final cols = await db.rawQuery('PRAGMA table_info(kitchen_prints)');
+      if (cols.isEmpty) return;
+      final names = {
+        for (final r in cols)
+          if (r['name'] != null) r['name'] as String,
+      };
+      if (!names.contains('portalSynced')) {
+        await db.execute(
+          'ALTER TABLE kitchen_prints ADD COLUMN portalSynced INTEGER NOT NULL DEFAULT 0',
+        );
+      }
+      if (!names.contains('portalSaleUid')) {
+        await db.execute(
+          'ALTER TABLE kitchen_prints ADD COLUMN portalSaleUid TEXT',
+        );
+      }
+    } catch (_) {}
+    try {
+      final cutover = await db.query(
+        'app_meta',
+        where: 'key = ?',
+        whereArgs: [kKitchenPrintsPortalCutoverKey],
+        limit: 1,
+      );
+      if (cutover.isEmpty) {
+        // Mos i dërgo printimet/pagesat e vjetra si faturë të reja në web.
+        try {
+          await db.rawUpdate(
+            'UPDATE kitchen_prints SET portalSynced = 1 WHERE COALESCE(portalSynced, 0) = 0',
+          );
+        } catch (_) {}
+        try {
+          await db.rawUpdate(
+            'UPDATE sales SET portalSynced = 1 WHERE COALESCE(portalSynced, 0) = 0',
+          );
+        } catch (_) {}
+        await db.insert('app_meta', {
+          'key': kKitchenPrintsPortalCutoverKey,
+          'value': '1',
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      }
+    } catch (_) {}
+  }
+
   /// Kolonat [status] / [closeReason] / [closedAt] për mbyllje të sigurt gjatë aktivizimit.
   static Future<void> ensureSalesCloseMetadataColumns(Database db) async {
     try {
@@ -813,13 +863,15 @@ class DatabaseSchema {
     ''');
     await db.execute('''
       CREATE TABLE IF NOT EXISTS kitchen_prints (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        tableId      INTEGER NOT NULL,
-        waiterName   TEXT    NOT NULL,
-        orderNumber  INTEGER NOT NULL,
-        total        REAL    NOT NULL,
-        printedAt    TEXT    NOT NULL,
-        shiftId      INTEGER
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        tableId       INTEGER NOT NULL,
+        waiterName    TEXT    NOT NULL,
+        orderNumber   INTEGER NOT NULL,
+        total         REAL    NOT NULL,
+        printedAt     TEXT    NOT NULL,
+        shiftId       INTEGER,
+        portalSynced  INTEGER NOT NULL DEFAULT 0,
+        portalSaleUid TEXT
       )
     ''');
     await db.execute('''
@@ -1041,6 +1093,7 @@ class DatabaseSchema {
 
     // ── v24: sales order metadata (mobile sync) ─────────────────────────────
     await ensureSalesOrderMetadataColumns(db);
+    await ensureKitchenPrintsPortalSynced(db);
     // v27: activation archive + sale close metadata
     await ensureSalesCloseMetadataColumns(db);
     await ensureActivationArchiveTables(db);
@@ -1167,6 +1220,7 @@ class DatabaseSchema {
     } catch (_) {}
     // v24: idempotent guard for DBs that reached v23 before these ALTERs shipped.
     await ensureSalesOrderMetadataColumns(db);
+    await ensureKitchenPrintsPortalSynced(db);
     try {
       await db.execute("ALTER TABLE expenses ADD COLUMN shiftId INTEGER");
     } catch (_) {}
@@ -1329,6 +1383,7 @@ class DatabaseSchema {
   static Future<void> create(Database db, int version) async {
     await ensureTables(db);
     await ensureSalesOrderMetadataColumns(db);
+    await ensureKitchenPrintsPortalSynced(db);
     await ensureSalesCloseMetadataColumns(db);
     await ensureActivationArchiveTables(db);
 

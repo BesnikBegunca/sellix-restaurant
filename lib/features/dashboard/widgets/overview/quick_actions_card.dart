@@ -81,7 +81,7 @@ class _ActionRowState extends State<_ActionRow> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
           decoration: BoxDecoration(
-            color: _hovered ? AppColors.lightGreenBg : const Color(0xFFF4F7F4),
+            color: _hovered ? AppColors.lightGreenBg : AppColors.lightGreenBg.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _hovered

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -16,6 +17,7 @@ import '../repositories/shift_repository.dart';
 import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
 import '../services/license_gate_service.dart';
+import '../services/portal_sales_sync_service.dart';
 import '../l10n/tr.dart';
 export '../models/pos_models.dart';
 

@@ -246,6 +246,7 @@ extension TablesMethods on ManagerData {
       );
     }).toList();
     _notify();
+    unawaited(PortalSalesSyncService.instance.triggerNow());
   }
 
   Future<void> addCashierTable() async {

@@ -12,7 +12,6 @@ import '../services/admin_session_service.dart';
 import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
 import '../services/app_language_service.dart';
-import '../theme/app_colors.dart';
 import '../features/dashboard/panels/shift_panel.dart';
 import '../features/dashboard/panels/waiters_panel.dart';
 import '../features/dashboard/panels/managers_panel.dart';
@@ -259,7 +258,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       child: Stack(
         children: [
           Scaffold(
-            backgroundColor: scheme.surface,
+            backgroundColor: scheme.surfaceContainerLowest,
             body: Row(
               children: [
                 ClipRect(

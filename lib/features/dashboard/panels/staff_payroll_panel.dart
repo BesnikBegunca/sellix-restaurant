@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
-import '../../../theme/app_theme.dart';
 import '../../../theme/app_colors.dart';
-import '../../../shared/widgets/dashboard_helpers.dart';
+import '../../../shared/widgets/panel_layout.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/staff/payroll_summary_row.dart';
 import '../widgets/staff/waiter_payroll_detail.dart';
@@ -108,12 +107,14 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(child: sectionTitle('Pagat & Avans')),
+        PanelHeader(
+          icon: Icons.payments_outlined,
+          title: 'Pagat & Avans',
+          subtitle: 'Menaxho pagat dhe avanset e stafit sipas muajit.',
+          actions: [
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                color: scheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: scheme.outlineVariant),
               ),
@@ -135,7 +136,7 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
                     constraints: const BoxConstraints(),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       '${_monthNames[_viewMonth.month - 1]} ${_viewMonth.year}',
                       style: TextStyle(
@@ -164,188 +165,124 @@ class _StaffPayrollPanelState extends State<StaffPayrollPanel> {
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          'Menaxho pagat dhe avanset e stafit sipas muajit.',
-          style: TextStyle(fontSize: 14, color: AppColors.lightGreenText),
-        ),
-        const SizedBox(height: 24),
-
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: StatCard(
-                  icon: Icons.account_balance_wallet_outlined,
-                  title: tr.pagesaGjithsej,
-                  value: '${totalGross.toStringAsFixed(0)}€',
-                  accentColor: AppColors.primaryGreen,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  icon: Icons.money_off_outlined,
-                  title: tr.avanseGjithsej,
-                  value: '${totalAdv.toStringAsFixed(0)}€',
-                  accentColor: AppColors.softRed,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  icon: Icons.people_outline,
-                  title: tr.numriStafit,
-                  value: '$staffCount',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatCard(
-                  icon: Icons.check_circle_outline,
-                  title: tr.pagesaNeto,
-                  value: '${totalNet.toStringAsFixed(0)}€',
-                  accentColor: totalNet >= 0
-                      ? AppColors.primaryGreen
-                      : AppColors.softRed,
-                ),
-              ),
-            ],
-          ),
+        PanelStatRow(
+          cards: [
+            StatCard(
+              icon: Icons.account_balance_wallet_outlined,
+              title: tr.pagesaGjithsej,
+              value: '${totalGross.toStringAsFixed(0)}€',
+              accentColor: AppColors.primaryGreen,
+            ),
+            StatCard(
+              icon: Icons.money_off_outlined,
+              title: tr.avanseGjithsej,
+              value: '${totalAdv.toStringAsFixed(0)}€',
+              accentColor: AppColors.softRed,
+            ),
+            StatCard(
+              icon: Icons.people_outline,
+              title: tr.numriStafit,
+              value: '$staffCount',
+            ),
+            StatCard(
+              icon: Icons.check_circle_outline,
+              title: tr.pagesaNeto,
+              value: '${totalNet.toStringAsFixed(0)}€',
+              accentColor: totalNet >= 0
+                  ? AppColors.primaryGreen
+                  : AppColors.softRed,
+            ),
+          ],
         ),
         const SizedBox(height: 20),
-
         if (m.waiters.isEmpty)
           _buildEmptyState()
         else
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
+          PanelColumns(
+            breakpoint: 980,
+            leftFlex: 7,
+            rightFlex: 4,
+            left: PanelCard(
+              icon: Icons.badge_outlined,
+              title: 'Paga e stafit',
+              subtitle: 'Hap një kamarier për detaje dhe avans.',
+              child: Column(
+                children: [
+                  for (int i = 0; i < m.waiters.length; i++) ...[
+                    if (i > 0)
+                      Divider(height: 1, color: AppColors.lightGreenBorder),
+                    WaiterSummaryCard(
+                      waiter: m.waiters[i],
+                      m: m,
+                      viewMonth: _viewMonth,
+                      onTap: () =>
+                          setState(() => _selectedWaiter = m.waiters[i]),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            right: PanelCard(
+              icon: Icons.summarize_outlined,
+              title: tr.permbledhjaMujore,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: scheme.outlineVariant),
-                      boxShadow: AppTheme.cardShadow(context),
+                      color: AppColors.lightGreenBg,
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Paga e Stafit',
+                          tr.pagesaGjithsej,
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.darkGreenText,
+                            fontSize: 13,
+                            color: AppColors.mediumGreenText,
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        for (int i = 0; i < m.waiters.length; i++) ...[
-                          if (i > 0)
-                            Divider(
-                              height: 1,
-                              color: AppColors.lightGreenBorder,
-                            ),
-                          WaiterSummaryCard(
-                            waiter: m.waiters[i],
-                            m: m,
-                            viewMonth: _viewMonth,
-                            onTap: () =>
-                                setState(() => _selectedWaiter = m.waiters[i]),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-
-                SizedBox(
-                  width: 320,
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: scheme.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: scheme.outlineVariant),
-                      boxShadow: AppTheme.cardShadow(context),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                        const SizedBox(height: 6),
                         Text(
-                          tr.permbledhjaMujore,
+                          '${totalGross.toStringAsFixed(0)}€',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.darkGreenText,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryGreen,
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: AppColors.lightGreenBg,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                tr.pagesaGjithsej,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.mediumGreenText,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '${totalGross.toStringAsFixed(0)}€',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.primaryGreen,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        PayrollSummaryRow(
-                          label: tr.pagaMesatare,
-                          value: '${avgSalary.toStringAsFixed(2)}€',
-                        ),
-                        Divider(height: 24, color: AppColors.lightGreenBorder),
-                        PayrollSummaryRow(
-                          label: tr.brutoLarte,
-                          value: '${maxGross.toStringAsFixed(2)}€',
-                        ),
-                        Divider(height: 24, color: AppColors.lightGreenBorder),
-                        PayrollSummaryRow(
-                          label: tr.avanseGjithsej,
-                          value: '-${totalAdv.toStringAsFixed(2)}€',
-                          valueColor: totalAdv > 0
-                              ? AppColors.softRed
-                              : AppColors.mediumGreenText,
-                        ),
-                        Divider(height: 24, color: AppColors.lightGreenBorder),
-                        PayrollSummaryRow(
-                          label: tr.numriStafit,
-                          value: '$staffCount',
-                          bold: true,
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  PayrollSummaryRow(
+                    label: tr.pagaMesatare,
+                    value: '${avgSalary.toStringAsFixed(2)}€',
+                  ),
+                  Divider(height: 24, color: AppColors.lightGreenBorder),
+                  PayrollSummaryRow(
+                    label: tr.brutoLarte,
+                    value: '${maxGross.toStringAsFixed(2)}€',
+                  ),
+                  Divider(height: 24, color: AppColors.lightGreenBorder),
+                  PayrollSummaryRow(
+                    label: tr.avanseGjithsej,
+                    value: '-${totalAdv.toStringAsFixed(2)}€',
+                    valueColor: totalAdv > 0
+                        ? AppColors.softRed
+                        : AppColors.mediumGreenText,
+                  ),
+                  Divider(height: 24, color: AppColors.lightGreenBorder),
+                  PayrollSummaryRow(
+                    label: tr.numriStafit,
+                    value: '$staffCount',
+                    bold: true,
+                  ),
+                ],
+              ),
             ),
           ),
       ],

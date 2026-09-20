@@ -138,63 +138,44 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
         ),
         const SizedBox(height: 20),
 
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.person_outline,
-                size: 22,
-                color: AppColors.primaryGreen,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Kamarieri',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: waiters.isEmpty
-                    ? Text(
-                        tr.nukKaKamariereRegjistruar,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.lightGreenText,
+        PanelCard(
+          icon: Icons.person_outline,
+          title: 'Kamarieri',
+          subtitle: 'Shiko tavolinat e një kamarieri.',
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+          child: waiters.isEmpty
+              ? Text(
+                  tr.nukKaKamariereRegjistruar,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.lightGreenText,
+                  ),
+                )
+              : DropdownButtonFormField<String>(
+                  key: ValueKey(_tableViewWaiter),
+                  initialValue:
+                      _tableViewWaiter != null &&
+                          waiters.any((w) => w.name == _tableViewWaiter)
+                      ? _tableViewWaiter
+                      : null,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    hintText: 'Zgjidh kamarierin',
+                    prefixIcon: Icon(
+                      Icons.badge_outlined,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  items: waiters
+                      .map(
+                        (w) => DropdownMenuItem(
+                          value: w.name,
+                          child: Text(w.name),
                         ),
                       )
-                    : DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value:
-                              _tableViewWaiter != null &&
-                                  waiters.any((w) => w.name == _tableViewWaiter)
-                              ? _tableViewWaiter
-                              : null,
-                          isExpanded: true,
-                          hint: const Text('Zgjidh kamarierin'),
-                          borderRadius: BorderRadius.circular(12),
-                          items: waiters
-                              .map(
-                                (w) => DropdownMenuItem(
-                                  value: w.name,
-                                  child: Text(w.name),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: waiters.isEmpty ? null : _onWaiterSelected,
-                        ),
-                      ),
-              ),
-            ],
-          ),
+                      .toList(),
+                  onChanged: waiters.isEmpty ? null : _onWaiterSelected,
+                ),
         ),
         const SizedBox(height: 20),
 
@@ -369,26 +350,13 @@ class _TablesConfigPanelState extends State<TablesConfigPanel> {
         ),
         const SizedBox(height: 20),
 
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: scheme.outlineVariant),
-            boxShadow: AppTheme.cardShadow(context),
-          ),
+        PanelCard(
+          icon: Icons.tune_rounded,
+          title: tr.konfigurimiPlanimetrise,
+          subtitle: 'Sa tavolina ka salla dhe sa shfaqen për rresht.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                tr.konfigurimiPlanimetrise,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              const SizedBox(height: 18),
               Row(
                 children: [
                   Text(

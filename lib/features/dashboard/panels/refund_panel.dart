@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
-import '../../../models/pos_models.dart';
 import '../../../services/database_service.dart';
 import '../../../shared/widgets/panel_layout.dart';
 import '../../../theme/app_colors.dart';
@@ -203,7 +202,6 @@ class _RefundPanelState extends State<RefundPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final waiters = widget.m.waiters;
 
     return Column(
@@ -231,91 +229,60 @@ class _RefundPanelState extends State<RefundPanel> {
           ],
         ),
         const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.person_outline,
-                size: 22,
-                color: AppColors.primaryGreen,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Kamarieri',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: waiters.isEmpty
-                    ? Text(
-                        tr.nukKaKamariereRegjistruar,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.lightGreenText,
+        PanelCard(
+          icon: Icons.person_outline,
+          title: 'Kamarieri',
+          subtitle: 'Filtro printimet e turnit aktual.',
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+          child: waiters.isEmpty
+              ? Text(
+                  tr.nukKaKamariereRegjistruar,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.lightGreenText,
+                  ),
+                )
+              : DropdownButtonFormField<String>(
+                  key: ValueKey(_selectedWaiter),
+                  initialValue:
+                      _selectedWaiter != null &&
+                          waiters.any((w) => w.name == _selectedWaiter)
+                      ? _selectedWaiter
+                      : null,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    hintText: 'Zgjidh kamarierin',
+                    prefixIcon: Icon(
+                      Icons.badge_outlined,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  items: waiters
+                      .map(
+                        (w) => DropdownMenuItem(
+                          value: w.name,
+                          child: Text(w.name),
                         ),
                       )
-                    : DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value:
-                              _selectedWaiter != null &&
-                                  waiters.any((w) => w.name == _selectedWaiter)
-                              ? _selectedWaiter
-                              : null,
-                          isExpanded: true,
-                          hint: const Text('Zgjidh kamarierin'),
-                          borderRadius: BorderRadius.circular(12),
-                          items: waiters
-                              .map(
-                                (w) => DropdownMenuItem(
-                                  value: w.name,
-                                  child: Text(w.name),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: waiters.isEmpty
-                              ? null
-                              : (v) {
-                                  setState(() => _selectedWaiter = v);
-                                  _loadOrders();
-                                },
-                        ),
-                      ),
-              ),
-            ],
-          ),
+                      .toList(),
+                  onChanged: waiters.isEmpty
+                      ? null
+                      : (v) {
+                          setState(() => _selectedWaiter = v);
+                          _loadOrders();
+                        },
+                ),
         ),
         const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: scheme.outlineVariant),
-          ),
+        PanelCard(
+          icon: Icons.print_outlined,
+          title: _selectedWaiter == null
+              ? 'Printimet'
+              : 'PRINTO — $_selectedWaiter',
+          subtitle: 'Çdo shtypje PRINTO shfaqet si rresht i veçantë.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                _selectedWaiter == null
-                    ? 'Printimet'
-                    : 'PRINTO — $_selectedWaiter',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkGreenText,
-                ),
-              ),
-              const SizedBox(height: 16),
               if (_loading)
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 48),
