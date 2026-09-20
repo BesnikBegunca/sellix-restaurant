@@ -346,15 +346,6 @@ class ActivationService {
     }
   }
 
-  /// Clears local activation only (does not call SuperAdmin revoke API).
-  ///
-  /// Does NOT delete local sales or SQLite business data.
-  Future<void> resetLocalActivation() async {
-    ActivationStateController.instance.clearServerRevoked();
-    await revokeActivation();
-    ActivationStateController.instance.setActivated(false);
-  }
-
   /// Attempts `PATCH /devices/:id/revoke` on the server.
   ///
   /// Returns `true` if the server confirmed revoke. Returns `false` when skipped
@@ -444,11 +435,27 @@ class ActivationService {
     return kDefaultServerRevokeMessage;
   }
 
+  /// Reason string from the last `POST /api/license/check` (`null` when the
+  /// license answered valid). Read by [LicenseHeartbeatService] to pace polls.
+  String? _lastCheckReason;
+  String? get lastCheckReason => _lastCheckReason;
+
+  /// When the license row is alive but this device is no longer registered
+  /// (`not_activated`), re-bind the stored key silently instead of dropping
+  /// the operator on the activation screen. Flip to `false` to disable.
+  static const bool kSelfHealReactivation = true;
+
   /// POST /api/license/check. Network errors keep the last good result for
   /// [kOfflineGrace]; explicit revoked/expired answers block immediately.
-  Future<bool> verifyActivation() async {
+  ///
+  /// A revoked, expired or suspended license **blocks the gate** — it no
+  /// longer wipes the activation — so the stored key survives and the next
+  /// successful check unblocks the app with no re-activation and no restart.
+  /// Pass [force] to run even while the gate is blocked (the license
+  /// heartbeat and the manual retry button do).
+  Future<bool> verifyActivation({bool force = false}) async {
     if (!_activated) return false;
-    if (LicenseGateService.instance.isBlocked) return false;
+    if (!force && LicenseGateService.instance.isBlocked) return false;
 
     final key = await storedLicenseKey();
     if (key == null || !isSellixLicenseKey(key)) {
@@ -461,46 +468,114 @@ class ActivationService {
     final deviceId =
         _serverDeviceId ?? await DatabaseService.instance.syncDeviceId();
 
+    final SellixLicenseResponse result;
     try {
-      final result = await SellixLicenseClient.instance.check(
+      result = await SellixLicenseClient.instance.check(
         licenseKey: key,
         deviceId: deviceId,
       );
-      if (!isRestaurantSector(result.business.sector)) {
-        await LicenseGateService.instance.block(
-          code: LicenseBlockCode.businessSuspended,
-          message: sellixLicenseReasonMessage('not_restaurant'),
-        );
-        return false;
-      }
-      await _cacheSuccessfulCheck(result);
-      await LicenseGateService.instance.unblock();
-      return !LicenseGateService.instance.isBlocked;
     } on SellixLicenseException catch (e) {
-      if (e.reason == 'network') {
+      _lastCheckReason = e.reason;
+      return _applyFailedCheck(e, key: key, deviceId: deviceId);
+    } catch (_) {
+      _lastCheckReason = 'network';
+      return _allowOfflineGrace();
+    }
+
+    _lastCheckReason = null;
+    return _applyValidCheck(result);
+  }
+
+  /// Stores a valid `/license/check` answer and lifts any active block.
+  Future<bool> _applyValidCheck(SellixLicenseResponse result) async {
+    if (!isRestaurantSector(result.business.sector)) {
+      await LicenseGateService.instance.block(
+        code: LicenseBlockCode.businessSuspended,
+        message: sellixLicenseReasonMessage('not_restaurant'),
+      );
+      return false;
+    }
+    // Writes the fresh expiry through ActivationLicenseController, so an
+    // extension granted in the portal lands on the badge on this very tick.
+    await _cacheSuccessfulCheck(result);
+    await LicenseGateService.instance.unblock();
+    return !LicenseGateService.instance.isBlocked;
+  }
+
+  Future<bool> _applyFailedCheck(
+    SellixLicenseException e, {
+    required String key,
+    required String deviceId,
+  }) async {
+    switch (e.reason) {
+      // Transient: keep serving from the offline grace window.
+      case 'network':
+      case 'seat_limit':
+      case 'rate_limited':
         return _allowOfflineGrace();
-      }
-      if (e.reason == 'expired') {
+
+      case 'expired':
         await LicenseGateService.instance.block(
           code: LicenseBlockCode.licenseExpired,
           message: sellixLicenseReasonMessage('expired'),
         );
         return false;
-      }
-      if (e.reason == 'revoked' || e.reason == 'not_found' || e.reason == 'not_activated') {
-        await handleRevokedByServer(reason: sellixLicenseReasonMessage(e.reason));
+
+      case 'revoked':
+        await LicenseGateService.instance.block(
+          code: LicenseBlockCode.licenseRevoked,
+          message: sellixLicenseReasonMessage('revoked'),
+        );
         return false;
-      }
-      if (e.reason == 'seat_limit' || e.reason == 'rate_limited') {
-        return _allowOfflineGrace();
-      }
-      await LicenseGateService.instance.block(
-        code: LicenseBlockCode.licenseSuspended,
-        message: sellixLicenseReasonMessage(e.reason),
+
+      case 'not_activated':
+        if (kSelfHealReactivation &&
+            await _trySilentReactivation(key: key, deviceId: deviceId)) {
+          return !LicenseGateService.instance.isBlocked;
+        }
+        await LicenseGateService.instance.block(
+          code: LicenseBlockCode.deviceSuspended,
+          message: sellixLicenseReasonMessage('not_activated'),
+        );
+        return false;
+
+      default:
+        await LicenseGateService.instance.block(
+          code: LicenseBlockCode.licenseSuspended,
+          message: sellixLicenseReasonMessage(e.reason),
+        );
+        return false;
+    }
+  }
+
+  /// Re-binds the stored key to this device after the server dropped it.
+  /// Returns `true` when the device is serving again.
+  Future<bool> _trySilentReactivation({
+    required String key,
+    required String deviceId,
+  }) async {
+    try {
+      final result = await SellixLicenseClient.instance.activate(
+        licenseKey: key,
+        deviceId: deviceId,
+        deviceName: _detectHostname(),
       );
+      if (!isRestaurantSector(result.business.sector)) return false;
+      await _cacheSuccessfulCheck(result);
+      await LicenseGateService.instance.unblock();
+      _lastCheckReason = null;
+      if (kDebugMode) {
+        debugPrint('ActivationService: device re-bound to the stored key');
+      }
+      return true;
+    } on SellixLicenseException catch (e) {
+      _lastCheckReason = e.reason;
+      if (kDebugMode) {
+        debugPrint('ActivationService: silent re-activation failed (${e.reason})');
+      }
       return false;
     } catch (_) {
-      return _allowOfflineGrace();
+      return false;
     }
   }
 
@@ -546,7 +621,7 @@ class ActivationService {
   /// Refreshes license expiry from API (verify) for UI badge without reinstall.
   Future<void> syncLicenseExpiryFromApiIfActivated() async {
     if (!_activated) return;
-    await verifyActivation();
+    await verifyActivation(force: true);
   }
 
   /// Parses `licenseExpiresAt` from activation API JSON (string or ISO-like).
@@ -838,6 +913,8 @@ class ActivationService {
       kMetaLastCheckAt,
       DateTime.now().toUtc().toIso8601String(),
     );
+    // A fresh activation answers whatever the gate was blocking on.
+    await LicenseGateService.instance.unblock();
   }
 
   static String _businessIdFor(SellixBusinessProfile business, String key) {

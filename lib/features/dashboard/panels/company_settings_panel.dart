@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../manager/manager_data.dart';
 import '../../../services/printer_settings_store.dart';
 import '../../../services/windows_printers_service.dart';
+import '../../../services/activation_license_controller.dart';
 import '../../../services/activation_service.dart';
 import '../../../models/sellix_license.dart';
 import '../../../services/app_language_service.dart';
@@ -540,6 +541,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _liveExpiryRow(),
           TextField(
             controller: _licenseKeyCtrl,
             decoration: inputDeco(
@@ -644,6 +646,23 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         fontWeight: FontWeight.w600,
         color: AppColors.mediumGreenText,
       ),
+    );
+  }
+
+  /// Days left, straight off [ActivationLicenseController] — the license
+  /// heartbeat writes each new expiry there, so an extension granted in the
+  /// portal moves this number without a refresh or a restart.
+  Widget _liveExpiryRow() {
+    return ListenableBuilder(
+      listenable: ActivationLicenseController.instance,
+      builder: (context, _) {
+        final days = ActivationLicenseController.instance.daysRemaining;
+        if (days == null) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _licensedRow(tr.diteTeMbetura, '$days'),
+        );
+      },
     );
   }
 

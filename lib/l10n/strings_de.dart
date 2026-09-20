@@ -76,8 +76,6 @@ const Map<String, String> kDe = {
   'dhenatAktivizimitNukJaneVlefshme': 'Die Aktivierungsdaten sind ungültig.',
   'dhenatLokaleShitjeveMbetenPaprekuraN':
       'Die lokalen Verkaufsdaten bleiben unberührt.\\n\\n',
-  'dhenatLokaleShitjeveNukPreken':
-      'Die lokalen Verkaufsdaten werden nicht verändert.',
   'dhenatOperativeLokaleMundJeneBiznes':
       'Die lokalen Betriebsdaten könnten zu einem anderen Betrieb gehören. ',
   'dite': 'Tage',
@@ -248,6 +246,15 @@ const Map<String, String> kDe = {
       'Die Lizenz ist abgelaufen. Kontaktieren Sie Ihren Administrator zur Verlängerung.',
   'licencaNukUGjetKontrolloniCelesin':
       'Lizenz nicht gefunden. Prüfen Sie den Aktivierungsschlüssel.',
+  'licencaRevokuarKontaktoSellix':
+      'Die Lizenz wurde widerrufen. Kontaktieren Sie SelliX.',
+  'licencaKontrollohetAutomatikisht':
+      'Die automatische Prüfung läuft. Sobald die Lizenz wieder aktiviert '
+      'ist, läuft die App von selbst weiter.',
+  'licencaRiaktivizua':
+      'Die Lizenz wurde wieder aktiviert. Sie können weiterarbeiten.',
+  'poKontrollohetLicenca': 'Lizenz wird geprüft…',
+  'diteTeMbetura': 'Verbleibende Tage',
   'licencaUVazhduaLokalishtKlientiDuhet':
       'Die Lizenz wurde lokal verlängert. Der Kunde muss den neuen Schlüssel eingeben.',
   'lidhjaServerinDeshtoiCertifikatePavlefshme':
@@ -380,7 +387,6 @@ const Map<String, String> kDe = {
   'pastrimiDhenaveLokaleDeshtoiAktivizimiU':
       'Das Löschen der lokalen Daten ist fehlgeschlagen. Aktivierung abgebrochen.\\n',
   'pastroOutboxPambeshtetur': 'Nicht unterstützte Outbox leeren',
-  'perdorniSuperadmin': 'verwenden Sie SuperAdmin.',
   'perdorues': 'Benutzer',
   'perdoruesit': 'Benutzer',
   'performuesiDites': 'Bester des Tages',
@@ -433,8 +439,6 @@ const Map<String, String> kDe = {
   'rifreskoPrinteret': 'Drucker aktualisieren',
   'riperseritPinRi': 'Neue PIN wiederholen',
   'riprovoGjitha': 'Alle erneut versuchen',
-  'rivendosVetemAktiviziminLokalCaktivizimServer':
-      'Setzt nur die lokale Aktivierung zurück. Für eine serverseitige Deaktivierung ',
   'rregull': 'OK',
   'rrezikRuajVetemTestimMundShfaqen':
       'Risiko: „Nur zum Testen behalten“ kann Daten von ',
@@ -574,8 +578,6 @@ const Map<String, String> kDe = {
       '1. Erstellen Sie die Datei app_config.json im selben Ordner wie die Anwendungsdatei (pos_system.exe).',
   'configStep2':
       'Oder setzen Sie die Umgebungsvariable POS_API_BASE_URL auf dieselbe URL sowie die API-URL.',
-  'localDeactivateExplainer':
-      'Dies deaktiviert nur diese lokale Installation. Die lokalen Verkaufsdaten bleiben unberührt.\n\nUm das Gerät auf dem Server zu sperren, verwenden Sie SuperAdmin (PATCH /devices/:id/revoke).',
   'tenantCleanupRequired':
       'Aus Sicherheitsgründen müssen die lokalen Daten gelöscht werden, bevor der neue Betrieb aktiviert wird.',
   'releaseCleanupMandatory':
@@ -583,8 +585,6 @@ const Map<String, String> kDe = {
   'shiftClosedSummaryNotPrinted':
       'Die Schicht wurde geschlossen, aber die Übersicht wurde nicht gedruckt. Senden Sie sie erneut aus dem Verkaufsverlauf.',
   'deleteOnlyThisPrintExplainer': 'nicht die anderen Drucke desselben Tisches.',
-  'fshinTokenatMetadataSinkronizimit':
-      'Löscht die Tokens und die Sync-Metadaten.',
   'data': 'DATUM',
   'kategoria': 'KATEGORIE',
   'shumaHeader': 'BETRAG',

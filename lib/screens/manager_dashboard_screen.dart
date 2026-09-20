@@ -13,8 +13,7 @@ import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
 import '../services/app_language_service.dart';
 import '../features/dashboard/panels/shift_panel.dart';
-import '../features/dashboard/panels/waiters_panel.dart';
-import '../features/dashboard/panels/managers_panel.dart';
+import '../features/dashboard/panels/staff_panel.dart';
 import '../features/dashboard/panels/expenses_panel.dart';
 import '../features/dashboard/panels/profits_panel.dart';
 import '../features/dashboard/panels/top_employee_panel.dart';
@@ -34,8 +33,7 @@ import '../l10n/tr.dart';
 List<String> get _kSectionTitles => [
   tr.permbledhje,
   tr.gjendjaTurnit,
-  tr.kamarieret,
-  tr.menaxheret,
+  AppLanguageService.instance.t('Stafi', 'Staff'),
   tr.shpenzime,
   tr.fitime,
   tr.shitjet,
@@ -313,30 +311,28 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       case 1:
         return ShiftPanel(m: _m);
       case 2:
-        return WaitersPanel(m: _m);
+        return StaffPanel(m: _m);
       case 3:
-        return ManagersPanel(m: _m);
-      case 4:
         return ExpensesPanel(m: _m);
-      case 5:
+      case 4:
         return ProfitsPanel(m: _m);
-      case 6:
+      case 5:
         return SalesDailyPanel(m: _m);
-      case 7:
+      case 6:
         return TopEmployeePanel(m: _m);
-      case 8:
+      case 7:
         return MenuPanel(m: _m);
-      case 9:
+      case 8:
         return TablesConfigPanel(m: _m);
-      case 10:
+      case 9:
         return CompanySettingsPanel(m: _m);
-      case 11:
+      case 10:
         return StaffPayrollPanel(m: _m);
-      case 12:
+      case 11:
         return RefundPanel(m: _m);
-      case 13:
+      case 12:
         return const SalesHistoryPanel();
-      case 14:
+      case 13:
         return const AuditLogPanel();
       default:
         return const SizedBox.shrink();

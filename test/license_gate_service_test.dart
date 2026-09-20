@@ -6,6 +6,7 @@ import 'package:pos_system/config/api_config.dart';
 import 'package:pos_system/services/api_enforcement_parser.dart';
 import 'package:pos_system/services/database_service.dart';
 import 'package:pos_system/services/license_gate_service.dart';
+import 'package:pos_system/services/license_heartbeat_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -125,6 +126,68 @@ void main() {
         ),
         '',
       );
+    });
+
+    test('fires onUnblocked so sync resumes without a restart', () async {
+      await DatabaseService.instance.database;
+      var blockedCalls = 0;
+      var unblockedCalls = 0;
+      LicenseGateService.instance.onBlocked = () => blockedCalls++;
+      LicenseGateService.instance.onUnblocked = () => unblockedCalls++;
+      addTearDown(() {
+        LicenseGateService.instance.onBlocked = null;
+        LicenseGateService.instance.onUnblocked = null;
+      });
+
+      await LicenseGateService.instance.block(
+        code: LicenseBlockCode.licenseRevoked,
+      );
+      expect(blockedCalls, 1);
+      expect(unblockedCalls, 0);
+
+      await LicenseGateService.instance.unblock();
+      expect(unblockedCalls, 1);
+
+      // Already clear — no spurious resume.
+      await LicenseGateService.instance.unblock();
+      expect(unblockedCalls, 1);
+    });
+  });
+
+  group('revoked license', () {
+    test('LICENSE_REVOKED from the API blocks and names SelliX', () async {
+      await DatabaseService.instance.database;
+      final error = DioException(
+        requestOptions: RequestOptions(path: kEndpointVerifyActivation),
+        response: Response(
+          requestOptions: RequestOptions(path: kEndpointVerifyActivation),
+          statusCode: 403,
+          data: {'code': ApiEnforcementCodes.licenseRevoked},
+        ),
+        type: DioExceptionType.badResponse,
+      );
+      expect(
+        await LicenseGateService.instance.handleDioException(error),
+        isTrue,
+      );
+      expect(LicenseGateService.instance.code, LicenseBlockCode.licenseRevoked);
+      expect(LicenseGateService.instance.message, contains('SelliX'));
+    });
+
+    test('heartbeat polls faster while the app is blocked', () async {
+      await DatabaseService.instance.database;
+      final heartbeat = LicenseHeartbeatService.instance;
+      addTearDown(heartbeat.debugReset);
+
+      expect(heartbeat.nextInterval(), LicenseHeartbeatService.kActiveInterval);
+
+      await LicenseGateService.instance.block(
+        code: LicenseBlockCode.licenseRevoked,
+      );
+      expect(heartbeat.nextInterval(), LicenseHeartbeatService.kBlockedInterval);
+
+      await LicenseGateService.instance.unblock();
+      expect(heartbeat.nextInterval(), LicenseHeartbeatService.kActiveInterval);
     });
   });
 }

@@ -77,8 +77,6 @@ const Map<String, String> kFr = {
       'Les données d\'activation ne sont pas valides.',
   'dhenatLokaleShitjeveMbetenPaprekuraN':
       'Les données de ventes locales restent intactes.\\n\\n',
-  'dhenatLokaleShitjeveNukPreken':
-      'Les données de ventes locales ne sont pas affectées.',
   'dhenatOperativeLokaleMundJeneBiznes':
       'Les données d\'exploitation locales peuvent appartenir à une autre entreprise. ',
   'dite': 'Jours',
@@ -245,6 +243,15 @@ const Map<String, String> kFr = {
       'La licence a expiré. Contactez votre administrateur pour la renouveler.',
   'licencaNukUGjetKontrolloniCelesin':
       'Licence introuvable. Vérifiez la clé d\'activation.',
+  'licencaRevokuarKontaktoSellix':
+      'La licence a été révoquée. Contactez SelliX.',
+  'licencaKontrollohetAutomatikisht':
+      'La vérification automatique est active. Dès que la licence est '
+      'réactivée, l\'application reprend d\'elle-même.',
+  'licencaRiaktivizua':
+      'La licence a été réactivée. Vous pouvez reprendre le travail.',
+  'poKontrollohetLicenca': 'Vérification de la licence…',
+  'diteTeMbetura': 'Jours restants',
   'licencaUVazhduaLokalishtKlientiDuhet':
       'La licence a été prolongée localement. Le client doit saisir la nouvelle clé.',
   'lidhjaServerinDeshtoiCertifikatePavlefshme':
@@ -377,7 +384,6 @@ const Map<String, String> kFr = {
   'pastrimiDhenaveLokaleDeshtoiAktivizimiU':
       'L\'effacement des données locales a échoué. Activation interrompue.\\n',
   'pastroOutboxPambeshtetur': 'Vider l\'outbox non pris en charge',
-  'perdorniSuperadmin': 'utilisez SuperAdmin.',
   'perdorues': 'Utilisateurs',
   'perdoruesit': 'Utilisateurs',
   'performuesiDites': 'Performeur du jour',
@@ -433,8 +439,6 @@ const Map<String, String> kFr = {
   'rifreskoPrinteret': 'Actualiser les imprimantes',
   'riperseritPinRi': 'Répétez le nouveau PIN',
   'riprovoGjitha': 'Tout réessayer',
-  'rivendosVetemAktiviziminLokalCaktivizimServer':
-      'Réinitialise uniquement l\'activation locale. Pour une désactivation côté serveur, ',
   'rregull': 'OK',
   'rrezikRuajVetemTestimMundShfaqen':
       'Risque : « Conserver pour test uniquement » peut afficher des données provenant ',
@@ -573,8 +577,6 @@ const Map<String, String> kFr = {
       '1. Créez le fichier app_config.json dans le même dossier que l\'exécutable de l\'application (pos_system.exe).',
   'configStep2':
       'Ou définissez la variable d\'environnement POS_API_BASE_URL sur la même URL, ainsi que l\'URL de l\'API.',
-  'localDeactivateExplainer':
-      'Cela désactive uniquement cette installation locale. Les données de ventes locales restent intactes.\n\nPour bloquer l\'appareil sur le serveur, utilisez SuperAdmin (PATCH /devices/:id/revoke).',
   'tenantCleanupRequired':
       'Par sécurité, les données locales doivent être effacées avant l\'activation de la nouvelle entreprise.',
   'releaseCleanupMandatory':
@@ -583,8 +585,6 @@ const Map<String, String> kFr = {
       'Le service a été clôturé, mais le résumé n\'a pas été imprimé. Renvoyez-le depuis l\'historique des ventes.',
   'deleteOnlyThisPrintExplainer':
       'pas les autres impressions de la même table.',
-  'fshinTokenatMetadataSinkronizimit':
-      'Efface les jetons et les métadonnées de synchronisation.',
   'data': 'DATE',
   'kategoria': 'CATÉGORIE',
   'shumaHeader': 'MONTANT',

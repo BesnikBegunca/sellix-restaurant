@@ -76,8 +76,6 @@ const Map<String, String> kIt = {
   'dhenatAktivizimitNukJaneVlefshme': 'I dati di attivazione non sono validi.',
   'dhenatLokaleShitjeveMbetenPaprekuraN':
       'I dati di vendita locali restano intatti.\\n\\n',
-  'dhenatLokaleShitjeveNukPreken':
-      'I dati di vendita locali non vengono toccati.',
   'dhenatOperativeLokaleMundJeneBiznes':
       'I dati operativi locali potrebbero appartenere a un\'altra attività. ',
   'dite': 'Giorni',
@@ -241,6 +239,15 @@ const Map<String, String> kIt = {
       'La licenza è scaduta. Contatta l\'amministratore per il rinnovo.',
   'licencaNukUGjetKontrolloniCelesin':
       'Licenza non trovata. Controlla la chiave di attivazione.',
+  'licencaRevokuarKontaktoSellix':
+      'La licenza è stata revocata. Contatta SelliX.',
+  'licencaKontrollohetAutomatikisht':
+      'Il controllo automatico è attivo. Appena la licenza viene riattivata, '
+      'l\'app riprende da sola.',
+  'licencaRiaktivizua':
+      'La licenza è stata riattivata. Puoi continuare a lavorare.',
+  'poKontrollohetLicenca': 'Controllo della licenza…',
+  'diteTeMbetura': 'Giorni rimanenti',
   'licencaUVazhduaLokalishtKlientiDuhet':
       'La licenza è stata prolungata localmente. Il cliente deve inserire la nuova chiave.',
   'lidhjaServerinDeshtoiCertifikatePavlefshme':
@@ -371,7 +378,6 @@ const Map<String, String> kIt = {
   'pastrimiDhenaveLokaleDeshtoiAktivizimiU':
       'La pulizia dei dati locali è fallita. Attivazione interrotta.\\n',
   'pastroOutboxPambeshtetur': 'Svuota outbox non supportato',
-  'perdorniSuperadmin': 'usa SuperAdmin.',
   'perdorues': 'Utenti',
   'perdoruesit': 'Utenti',
   'performuesiDites': 'Migliore della giornata',
@@ -422,8 +428,6 @@ const Map<String, String> kIt = {
   'rifreskoPrinteret': 'Aggiorna stampanti',
   'riperseritPinRi': 'Ripeti il nuovo PIN',
   'riprovoGjitha': 'Riprova tutto',
-  'rivendosVetemAktiviziminLokalCaktivizimServer':
-      'Reimposta solo l\'attivazione locale. Per la disattivazione lato server, ',
   'rregull': 'OK',
   'rrezikRuajVetemTestimMundShfaqen':
       'Rischio: "Conserva solo per test" potrebbe mostrare dati di ',
@@ -561,8 +565,6 @@ const Map<String, String> kIt = {
       '1. Crea il file app_config.json nella stessa cartella dell\'eseguibile dell\'applicazione (pos_system.exe).',
   'configStep2':
       'Oppure imposta la variabile d\'ambiente POS_API_BASE_URL sullo stesso URL, e l\'URL dell\'API.',
-  'localDeactivateExplainer':
-      'Questo disattiva solo questa installazione locale. I dati di vendita locali restano intatti.\n\nPer bloccare il dispositivo sul server, usa SuperAdmin (PATCH /devices/:id/revoke).',
   'tenantCleanupRequired':
       'Per sicurezza, i dati locali devono essere cancellati prima di attivare la nuova attività.',
   'releaseCleanupMandatory':
@@ -570,8 +572,6 @@ const Map<String, String> kIt = {
   'shiftClosedSummaryNotPrinted':
       'Il turno è stato chiuso, ma il riepilogo non è stato stampato. Invialo di nuovo dalla Cronologia vendite.',
   'deleteOnlyThisPrintExplainer': 'non le altre stampe dello stesso tavolo.',
-  'fshinTokenatMetadataSinkronizimit':
-      'Cancella i token e i metadati di sincronizzazione.',
   'data': 'DATA',
   'kategoria': 'CATEGORIA',
   'shumaHeader': 'IMPORTO',

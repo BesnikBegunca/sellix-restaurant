@@ -74,7 +74,6 @@ const Map<String, String> kEn = {
   'dhenatAktivizimitNukJaneVlefshme': 'The activation data is not valid.',
   'dhenatLokaleShitjeveMbetenPaprekuraN':
       'Local sales data remains untouched.\\n\\n',
-  'dhenatLokaleShitjeveNukPreken': 'Local sales data is not affected.',
   'dhenatOperativeLokaleMundJeneBiznes':
       'Local operating data may belong to a different business. ',
   'dite': 'Days',
@@ -236,6 +235,14 @@ const Map<String, String> kEn = {
       'The licence has expired. Contact your administrator to renew.',
   'licencaNukUGjetKontrolloniCelesin':
       'Licence not found. Check the activation key.',
+  'licencaRevokuarKontaktoSellix':
+      'The licence has been revoked. Contact SelliX.',
+  'licencaKontrollohetAutomatikisht':
+      'Automatic checking is on. The moment the licence is reactivated, '
+      'the app continues on its own.',
+  'licencaRiaktivizua': 'The licence was reactivated. You can keep working.',
+  'poKontrollohetLicenca': 'Checking the licence…',
+  'diteTeMbetura': 'Days remaining',
   'licencaUVazhduaLokalishtKlientiDuhet':
       'The licence was extended locally. The client must enter the new key.',
   'lidhjaServerinDeshtoiCertifikatePavlefshme':
@@ -363,7 +370,6 @@ const Map<String, String> kEn = {
   'pastrimiDhenaveLokaleDeshtoiAktivizimiU':
       'Clearing the local data failed. Activation stopped.\\n',
   'pastroOutboxPambeshtetur': 'Clear unsupported outbox',
-  'perdorniSuperadmin': 'use SuperAdmin.',
   'perdorues': 'Users',
   'perdoruesit': 'Users',
   'performuesiDites': 'Performer of the day',
@@ -413,8 +419,6 @@ const Map<String, String> kEn = {
   'rifreskoPrinteret': 'Refresh printers',
   'riperseritPinRi': 'Repeat the new PIN',
   'riprovoGjitha': 'Retry all',
-  'rivendosVetemAktiviziminLokalCaktivizimServer':
-      'Resets only the local activation. For server-side deactivation, ',
   'rregull': 'OK',
   'rrezikRuajVetemTestimMundShfaqen':
       'Risk: "Keep for testing only" may show data from ',
@@ -551,8 +555,6 @@ const Map<String, String> kEn = {
       '1. Create the app_config.json file in the same folder as the application executable (pos_system.exe).',
   'configStep2':
       'Or set the POS_API_BASE_URL environment variable to the same URL, and the API URL.',
-  'localDeactivateExplainer':
-      'This deactivates only this local installation. Local sales data remains untouched.\n\nTo block the device on the server, use SuperAdmin (PATCH /devices/:id/revoke).',
   'tenantCleanupRequired':
       'For safety, the local data must be cleared before the new business is activated.',
   'releaseCleanupMandatory':
@@ -560,7 +562,6 @@ const Map<String, String> kEn = {
   'shiftClosedSummaryNotPrinted':
       'The shift was closed, but the summary was not printed. Resend it from the Sales history.',
   'deleteOnlyThisPrintExplainer': 'not the other prints of the same table.',
-  'fshinTokenatMetadataSinkronizimit': 'Clears the tokens and sync metadata.',
   'data': 'DATE',
   'kategoria': 'CATEGORY',
   'shumaHeader': 'AMOUNT',

@@ -43,7 +43,6 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
   bool _exportingSupportBundle = false;
   bool _clearing = false;
   bool _cleaningUnsupported = false;
-  bool _resetting = false;
   bool _tenantDataWarning = false;
   String? _businessName;
   String? _lastBusinessId;
@@ -204,42 +203,6 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
-  }
-
-  Future<void> _resetLocalActivation() async {
-    if (_resetting) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Rivendos aktivizimin lokal?'),
-        content: Text(tr.localDeactivateExplainer),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr.anulo),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.softRed),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Rivendos'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    setState(() => _resetting = true);
-    try {
-      BackgroundSyncService.instance.stop();
-      SyncStatusService.instance.stop();
-      await ActivationService.instance.resetLocalActivation();
-    } finally {
-      if (mounted) setState(() => _resetting = false);
-    }
-
-    if (!mounted) return;
-    Navigator.of(context).pop();
   }
 
   Future<void> _clearErrors() async {
@@ -418,8 +381,6 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
                     _buildUnsupportedOutboxCleanup(),
                     const SizedBox(height: 12),
                     _buildSupportBundleExport(),
-                    const SizedBox(height: 12),
-                    _buildResetSection(),
                   ],
                 ),
               ),
@@ -841,44 +802,6 @@ class _SyncDiagnosticsDialogState extends State<_SyncDiagnosticsDialog> {
         minimumSize: const Size(double.infinity, 44),
         side: BorderSide(color: AppColors.lightGreenBorder),
       ),
-    );
-  }
-
-  Widget _buildResetSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Divider(color: AppColors.lightGreenBorder, height: 1),
-        const SizedBox(height: 12),
-        Text(
-          tr.rivendosVetemAktiviziminLokalCaktivizimServer + tr.perdorniSuperadmin,
-          style: TextStyle(
-            fontSize: 12,
-            height: 1.4,
-            color: AppColors.lightGreenText,
-          ),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: (_resetting || !_status.isActivated)
-              ? null
-              : _resetLocalActivation,
-          icon: _resetting
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.restart_alt_outlined, size: 16),
-          label: Text(
-            _resetting ? 'Duke rivendosur…' : 'Rivendos aktivizimin lokal',
-          ),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.mediumGreenText,
-            side: BorderSide(color: AppColors.lightGreenBorder),
-          ),
-        ),
-      ],
     );
   }
 

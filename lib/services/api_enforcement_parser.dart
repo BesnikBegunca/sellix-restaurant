@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 abstract final class ApiEnforcementCodes {
   static const licenseExpired = 'LICENSE_EXPIRED';
   static const licenseSuspended = 'LICENSE_SUSPENDED';
+  static const licenseRevoked = 'LICENSE_REVOKED';
   static const businessSuspended = 'BUSINESS_SUSPENDED';
   static const deviceSuspended = 'DEVICE_SUSPENDED';
   static const deviceRevoked = 'DEVICE_REVOKED';
@@ -49,6 +50,7 @@ class ApiEnforcementParser {
     switch (code) {
       case ApiEnforcementCodes.licenseExpired:
       case ApiEnforcementCodes.licenseSuspended:
+      case ApiEnforcementCodes.licenseRevoked:
       case ApiEnforcementCodes.businessSuspended:
       case ApiEnforcementCodes.deviceSuspended:
         return ApiEnforcementAction.blockLicense;

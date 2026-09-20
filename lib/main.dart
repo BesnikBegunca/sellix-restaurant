@@ -15,6 +15,7 @@ import 'services/activation_state_controller.dart';
 import 'services/api_client.dart';
 import 'services/background_sync_service.dart';
 import 'services/license_gate_service.dart';
+import 'services/license_heartbeat_service.dart';
 import 'services/runtime_config_service.dart';
 import 'services/app_language_service.dart';
 import 'theme/app_theme.dart';
@@ -55,13 +56,17 @@ void main() async {
     );
   }
 
+  // A block must cut the app off live; lifting it must resume it live.
+  LicenseGateService.instance.onBlocked = BackgroundSyncService.instance.stop;
+  LicenseGateService.instance.onUnblocked = BackgroundSyncService.instance.start;
+
   if (ActivationService.instance.isActivated) {
     await LicenseGateService.instance.loadPersistedState();
     await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
 
-    if (!LicenseGateService.instance.isBlocked) {
-      await ActivationService.instance.verifyActivation();
-    }
+    // Runs even when the gate is blocked: a license re-activated in the portal
+    // clears the block on the next beat instead of waiting for a restart.
+    await ActivationService.instance.verifyActivation(force: true);
 
     if (!ActivationService.instance.isActivated &&
         !activationState.serverRevoked &&
@@ -70,6 +75,10 @@ void main() async {
     } else if (ActivationService.instance.isActivated &&
         !LicenseGateService.instance.isBlocked) {
       BackgroundSyncService.instance.start();
+    }
+
+    if (ActivationService.instance.isActivated) {
+      LicenseHeartbeatService.instance.start(checkImmediately: false);
     }
   }
 

@@ -77,7 +77,6 @@ const Map<String, String> kSq = {
       'Të dhënat e aktivizimit nuk janë të vlefshme.',
   'dhenatLokaleShitjeveMbetenPaprekuraN':
       'Të dhënat lokale të shitjeve mbeten të paprekura.\\n\\n',
-  'dhenatLokaleShitjeveNukPreken': 'Të dhënat lokale të shitjeve nuk preken.',
   'dhenatOperativeLokaleMundJeneBiznes':
       'Të dhënat operative lokale mund të jenë nga një biznes tjetër. ',
   'dite': 'Ditë',
@@ -240,6 +239,14 @@ const Map<String, String> kSq = {
       'Licenca ka skaduar. Kontaktoni administratorin për rinovim.',
   'licencaNukUGjetKontrolloniCelesin':
       'Licenca nuk u gjet. Kontrolloni çelësin e aktivizimit.',
+  'licencaRevokuarKontaktoSellix':
+      'Licenca është revokuar. Kontaktoni SelliX.',
+  'licencaKontrollohetAutomatikisht':
+      'Kontrolli automatik është aktiv. Sapo licenca të riaktivizohet, '
+      'aplikacioni vazhdon vetvetiu.',
+  'licencaRiaktivizua': 'Licenca u riaktivizua. Mund të vazhdoni punën.',
+  'poKontrollohetLicenca': 'Po kontrollohet licenca…',
+  'diteTeMbetura': 'Ditë të mbetura',
   'licencaUVazhduaLokalishtKlientiDuhet':
       'Licenca u vazhdua lokalisht. Klienti duhet ta vendosë key-n e ri.',
   'lidhjaServerinDeshtoiCertifikatePavlefshme':
@@ -370,7 +377,6 @@ const Map<String, String> kSq = {
   'pastrimiDhenaveLokaleDeshtoiAktivizimiU':
       'Pastrimi i të dhënave lokale dështoi. Aktivizimi u ndal.\\n',
   'pastroOutboxPambeshtetur': 'Pastro outbox të pambështetur',
-  'perdorniSuperadmin': 'përdorni SuperAdmin.',
   'perdorues': 'Përdorues',
   'perdoruesit': 'Përdoruesit',
   'performuesiDites': 'Performuesi i ditës',
@@ -421,8 +427,6 @@ const Map<String, String> kSq = {
   'rifreskoPrinteret': 'Rifresko printerët',
   'riperseritPinRi': 'Ripërsërit PIN-in e ri',
   'riprovoGjitha': 'Riprovo të gjitha',
-  'rivendosVetemAktiviziminLokalCaktivizimServer':
-      'Rivendos vetëm aktivizimin lokal. Për çaktivizim server-side, ',
   'rregull': 'Në rregull',
   'rrezikRuajVetemTestimMundShfaqen':
       'Rrezik: "Ruaj vetëm për testim" mund të shfaqen të dhëna të ',
@@ -561,8 +565,6 @@ const Map<String, String> kSq = {
       '1. Krijoni skedarin app_config.json në të njëjtin folder ku ndodhet ekzekutuesi i aplikacionit (pos_system.exe).',
   'configStep2':
       'Ose vendosni variablin e mjedisit POS_API_BASE_URL me të njëjtin URL, dhe URL-në e API-së.',
-  'localDeactivateExplainer':
-      'Kjo e çaktivizon vetëm këtë instalim lokal. Të dhënat lokale të shitjeve mbeten të paprekura.\n\nPër ta bllokuar pajisjen në server, përdorni SuperAdmin (PATCH /devices/:id/revoke).',
   'tenantCleanupRequired':
       'Për siguri, duhet të pastrohen të dhënat lokale para se të aktivizohet biznesi i ri.',
   'releaseCleanupMandatory':
@@ -571,8 +573,6 @@ const Map<String, String> kSq = {
       'Shift-i u mbyll, por përmbledhja nuk u printua. Ridërgojeni nga Historiku i shitjeve.',
   'deleteOnlyThisPrintExplainer':
       'jo printimet e tjera të së njëjtës tavolinë.',
-  'fshinTokenatMetadataSinkronizimit':
-      'Fshin token-at dhe metadata e sinkronizimit.',
   'data': 'DATA',
   'kategoria': 'KATEGORIA',
   'shumaHeader': 'SHUMA',

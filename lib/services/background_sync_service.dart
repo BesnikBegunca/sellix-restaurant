@@ -396,8 +396,19 @@ class BackgroundSyncService {
   }
 
   /// Returns `true` when sync should stop because the tenant is suspended.
+  ///
+  /// Only an explicit `DEVICE_REVOKED` / `INVALID_REFRESH_TOKEN` code drops the
+  /// activation. A bare 401 — which is also what a revoked license key looks
+  /// like on the sales endpoint — blocks the gate instead, so the till stops
+  /// live but keeps its key and resumes the moment
+  /// [LicenseHeartbeatService] sees the license valid again.
   Future<bool> _handleLicenseSuspended(DioException error) async {
-    if (ApiEnforcementParser.requiresDeviceRevoke(error)) {
+    final apiCode = ApiEnforcementParser.codeFromData(error.response?.data);
+    final explicitDeviceRevoke =
+        apiCode == ApiEnforcementCodes.deviceRevoked ||
+        apiCode == ApiEnforcementCodes.invalidRefreshToken;
+
+    if (explicitDeviceRevoke) {
       stop();
       SyncStatusService.instance.stop();
       await ActivationService.instance.handleRevokedByServer(
@@ -405,8 +416,18 @@ class BackgroundSyncService {
       );
       return true;
     }
-    if (!ApiEnforcementParser.requiresLicenseBlock(error)) return false;
-    await LicenseGateService.instance.handleDioException(error);
+
+    final unauthorized = error.response?.statusCode == 401;
+    if (!ApiEnforcementParser.requiresLicenseBlock(error) && !unauthorized) {
+      return false;
+    }
+
+    if (!await LicenseGateService.instance.handleDioException(error)) {
+      await LicenseGateService.instance.block(
+        code: LicenseBlockCode.licenseSuspended,
+        message: ApiEnforcementParser.messageFromData(error.response?.data),
+      );
+    }
     stop();
     _recordFailureAndSchedule('License suspended — sync paused');
     if (kDebugMode) {

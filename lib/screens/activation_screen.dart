@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/activation_validate_response.dart';
@@ -7,6 +6,7 @@ import '../manager/manager_data.dart';
 import '../services/activation_error_message.dart';
 import '../services/activation_service.dart';
 import '../services/background_sync_service.dart';
+import '../services/license_heartbeat_service.dart';
 import '../services/local_tenant_data_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/open_tables_activation_dialog.dart';
@@ -104,6 +104,7 @@ class _ActivationScreenState extends State<ActivationScreen> {
       );
       await ManagerData.instance.reload();
       BackgroundSyncService.instance.start();
+      LicenseHeartbeatService.instance.start(checkImmediately: false);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -162,44 +163,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
     }
 
     return true;
-  }
-
-  Future<void> _resetLocalActivation() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Rivendos aktivizimin lokal?'),
-        content: Text(
-          '${tr.fshinTokenatMetadataSinkronizimit} '
-          '${tr.dhenatLokaleShitjeveNukPreken}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(tr.anulo),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Rivendos'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
-    BackgroundSyncService.instance.stop();
-    await ActivationService.instance.resetLocalActivation();
-    if (!mounted) return;
-    setState(() {
-      _validated = null;
-      _error = null;
-      _keyController.clear();
-    });
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aktivizimi lokal u rivendos.')),
-      );
-    }
   }
 
   @override
@@ -309,13 +272,6 @@ class _ActivationScreenState extends State<ActivationScreen> {
                               )
                             : const Text('Vazhdo'),
                       ),
-                    if (kDebugMode) ...[
-                      const SizedBox(height: 20),
-                      TextButton(
-                        onPressed: _busy ? null : _resetLocalActivation,
-                        child: const Text('Rivendos aktivizimin lokal'),
-                      ),
-                    ],
                   ],
                 ),
               ),

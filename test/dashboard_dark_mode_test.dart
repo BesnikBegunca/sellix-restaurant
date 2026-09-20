@@ -3,8 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:pos_system/features/dashboard/panels/company_settings_panel.dart';
-import 'package:pos_system/features/dashboard/panels/managers_panel.dart';
-import 'package:pos_system/features/dashboard/panels/waiters_panel.dart';
+import 'package:pos_system/features/dashboard/panels/staff_panel.dart';
 import 'package:pos_system/manager/manager_data.dart';
 import 'package:pos_system/services/app_language_service.dart';
 import 'package:pos_system/theme/app_theme.dart';
@@ -57,7 +56,7 @@ void main() {
     AppLanguageService.instance.debugSetLanguage(AppLanguage.albanian);
   });
 
-  testWidgets('managers panel paints dark surfaces in dark mode', (
+  testWidgets('staff panel paints dark surfaces in dark mode', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1600, 1200);
@@ -65,7 +64,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      host(ManagersPanel(m: ManagerData.instance), dark: true),
+      host(StaffPanel(m: ManagerData.instance), dark: true),
     );
     await tester.pump();
 
@@ -90,7 +89,7 @@ void main() {
     expect(dark, isEmpty, reason: 'dark text $dark painted on dark surfaces');
   });
 
-  testWidgets('waiters panel paints dark surfaces in dark mode', (
+  testWidgets('staff panel paints dark surfaces for the roster too', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(1600, 1200);
@@ -98,7 +97,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      host(WaitersPanel(m: ManagerData.instance), dark: true),
+      host(StaffPanel(m: ManagerData.instance), dark: true),
     );
     await tester.pump();
 
@@ -114,7 +113,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      host(ManagersPanel(m: ManagerData.instance), dark: false),
+      host(StaffPanel(m: ManagerData.instance), dark: false),
     );
     await tester.pump();
 
@@ -155,10 +154,10 @@ void main() {
     // Wide: the name field and the button share a row.
     tester.view.physicalSize = const Size(1600, 1200);
     await tester.pumpWidget(
-      host(ManagersPanel(m: ManagerData.instance), dark: false),
+      host(StaffPanel(m: ManagerData.instance), dark: false),
     );
     await tester.pump();
-    final wideButton = tester.getTopLeft(find.text('Shto Menaxher'));
+    final wideButton = tester.getTopLeft(find.text('Shto anëtar').last);
     final wideField = tester.getTopLeft(find.byType(TextField).first);
     expect(
       wideButton.dy,
@@ -169,10 +168,10 @@ void main() {
     // Narrow: everything stacks, so the button drops well below the field.
     tester.view.physicalSize = const Size(700, 1600);
     await tester.pumpWidget(
-      host(ManagersPanel(m: ManagerData.instance), dark: false),
+      host(StaffPanel(m: ManagerData.instance), dark: false),
     );
     await tester.pump();
-    final narrowButton = tester.getTopLeft(find.text('Shto Menaxher'));
+    final narrowButton = tester.getTopLeft(find.text('Shto anëtar').last);
     final narrowField = tester.getTopLeft(find.byType(TextField).first);
     expect(
       narrowButton.dy,

@@ -9,6 +9,7 @@ import '../l10n/tr.dart';
 enum LicenseBlockCode {
   licenseExpired,
   licenseSuspended,
+  licenseRevoked,
   businessSuspended,
   deviceSuspended,
 }
@@ -32,6 +33,9 @@ class LicenseGateService extends ChangeNotifier {
 
   /// Wired from [main] to stop sync without circular imports.
   void Function()? onBlocked;
+
+  /// Wired from [main] to resume sync the instant the block clears.
+  void Function()? onUnblocked;
 
   bool _blocked = false;
   LicenseBlockCode? _code;
@@ -110,6 +114,8 @@ class LicenseGateService extends ChangeNotifier {
     await clearPersistedStateQuietly();
     notifyListeners();
     await ActivationLicenseController.instance.reloadFromStorage();
+    onUnblocked?.call();
+    if (kDebugMode) debugPrint('LicenseGateService: unblocked — app resumed');
   }
 
   void enforceOrThrow() {
@@ -173,6 +179,8 @@ class LicenseGateService extends ChangeNotifier {
         return LicenseBlockCode.licenseExpired;
       case ApiEnforcementCodes.licenseSuspended:
         return LicenseBlockCode.licenseSuspended;
+      case ApiEnforcementCodes.licenseRevoked:
+        return LicenseBlockCode.licenseRevoked;
       case ApiEnforcementCodes.businessSuspended:
         return LicenseBlockCode.businessSuspended;
       case ApiEnforcementCodes.deviceSuspended:
@@ -193,7 +201,9 @@ class LicenseGateService extends ChangeNotifier {
   static String _defaultMessageForCode(LicenseBlockCode? code) {
     switch (code) {
       case LicenseBlockCode.licenseExpired:
-        return 'Licenca ka skaduar. Kontaktoni administratorin.';
+        return tr.licencaKaSkaduarKontaktoniAdministratorinRinovim;
+      case LicenseBlockCode.licenseRevoked:
+        return tr.licencaRevokuarKontaktoSellix;
       case LicenseBlockCode.licenseSuspended:
         return tr.licencaEshtePezulluarKontaktoniAdministratorin;
       case LicenseBlockCode.businessSuspended:

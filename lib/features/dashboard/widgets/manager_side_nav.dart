@@ -36,16 +36,10 @@ class ManagerSideNav extends StatelessWidget {
       en: 'Shift',
     ),
     (
-      icon: Icons.badge_outlined,
-      sel: Icons.badge,
-      sq: tr.kamarieret,
-      en: 'Waiters',
-    ),
-    (
-      icon: Icons.supervisor_account_outlined,
-      sel: Icons.supervisor_account,
-      sq: tr.menaxheret,
-      en: 'Managers',
+      icon: Icons.groups_2_outlined,
+      sel: Icons.groups_2,
+      sq: 'Stafi',
+      en: 'Staff',
     ),
     (
       icon: Icons.table_rows_outlined,

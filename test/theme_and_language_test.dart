@@ -151,8 +151,7 @@ void main() {
     test('the nav labels are translated in all four catalog languages', () {
       const navLabels = [
         'Overview',
-        'Waiters',
-        'Managers',
+        'Staff',
         'Expenses',
         'Profits',
         'Sales',

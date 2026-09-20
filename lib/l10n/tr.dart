@@ -207,10 +207,6 @@ class Tr {
   String get dhenatLokaleShitjeveMbetenPaprekuraN =>
       trKey('dhenatLokaleShitjeveMbetenPaprekuraN');
 
-  /// sq: Të dhënat lokale të shitjeve nuk preken.
-  String get dhenatLokaleShitjeveNukPreken =>
-      trKey('dhenatLokaleShitjeveNukPreken');
-
   /// sq: Të dhënat operative lokale mund të jenë nga një biznes tjetër.
   String get dhenatOperativeLokaleMundJeneBiznes =>
       trKey('dhenatOperativeLokaleMundJeneBiznes');
@@ -637,6 +633,23 @@ class Tr {
   String get licencaNukUGjetKontrolloniCelesin =>
       trKey('licencaNukUGjetKontrolloniCelesin');
 
+  /// sq: Licenca është revokuar. Kontaktoni SelliX.
+  String get licencaRevokuarKontaktoSellix =>
+      trKey('licencaRevokuarKontaktoSellix');
+
+  /// sq: Kontrolli automatik është aktiv. Sapo licenca të riaktivizohet, aplikacioni vazhdon vetvetiu.
+  String get licencaKontrollohetAutomatikisht =>
+      trKey('licencaKontrollohetAutomatikisht');
+
+  /// sq: Licenca u riaktivizua. Mund të vazhdoni punën.
+  String get licencaRiaktivizua => trKey('licencaRiaktivizua');
+
+  /// sq: Po kontrollohet licenca…
+  String get poKontrollohetLicenca => trKey('poKontrollohetLicenca');
+
+  /// sq: Ditë të mbetura
+  String get diteTeMbetura => trKey('diteTeMbetura');
+
   /// sq: Licenca u vazhdua lokalisht. Klienti duhet ta vendosë key-n e ri.
   String get licencaUVazhduaLokalishtKlientiDuhet =>
       trKey('licencaUVazhduaLokalishtKlientiDuhet');
@@ -972,9 +985,6 @@ class Tr {
   /// sq: Pastro outbox të pambështetur
   String get pastroOutboxPambeshtetur => trKey('pastroOutboxPambeshtetur');
 
-  /// sq: përdorni SuperAdmin.
-  String get perdorniSuperadmin => trKey('perdorniSuperadmin');
-
   /// sq: Përdorues
   String get perdorues => trKey('perdorues');
 
@@ -1118,10 +1128,6 @@ class Tr {
 
   /// sq: Riprovo të gjitha
   String get riprovoGjitha => trKey('riprovoGjitha');
-
-  /// sq: Rivendos vetëm aktivizimin lokal. Për çaktivizim server-side,
-  String get rivendosVetemAktiviziminLokalCaktivizimServer =>
-      trKey('rivendosVetemAktiviziminLokalCaktivizimServer');
 
   /// sq: Në rregull
   String get rregull => trKey('rregull');
@@ -1472,9 +1478,6 @@ class Tr {
   /// sq: Ose vendosni variablin e mjedisit POS_API_BASE_URL me të njëjtin UR...
   String get configStep2 => trKey('configStep2');
 
-  /// sq: Kjo e çaktivizon vetëm këtë instalim lokal. Të dhënat lokale të shi...
-  String get localDeactivateExplainer => trKey('localDeactivateExplainer');
-
   /// sq: Për siguri, duhet të pastrohen të dhënat lokale para se të aktivizo...
   String get tenantCleanupRequired => trKey('tenantCleanupRequired');
 
@@ -1488,10 +1491,6 @@ class Tr {
   /// sq: jo printimet e tjera të së njëjtës tavolinë.
   String get deleteOnlyThisPrintExplainer =>
       trKey('deleteOnlyThisPrintExplainer');
-
-  /// sq: Fshin token-at dhe metadata e sinkronizimit.
-  String get fshinTokenatMetadataSinkronizimit =>
-      trKey('fshinTokenatMetadataSinkronizimit');
 
   /// sq: DATA
   String get data => trKey('data');

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
+import '../../../services/app_language_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/dashboard/app_card.dart';
 import '../../../widgets/dashboard/kpi_card.dart';
@@ -71,7 +72,7 @@ class OverviewPanel extends StatelessWidget {
                     value: _euro(m.revenueToday),
                     subtitle: tr.shitjetDitesAktuale,
                     icon: Icons.point_of_sale_outlined,
-                    onTap: () => onNavigate(6),
+                    onTap: () => onNavigate(5),
                   ),
                 ),
                 SizedBox(
@@ -82,7 +83,7 @@ class OverviewPanel extends StatelessWidget {
                     subtitle: tr.pasShpenzimeve,
                     icon: Icons.trending_up,
                     accentColor: AppColors.warmGold,
-                    onTap: () => onNavigate(5),
+                    onTap: () => onNavigate(4),
                   ),
                 ),
                 SizedBox(
@@ -95,7 +96,7 @@ class OverviewPanel extends StatelessWidget {
                         : trf.occupiedTables(occupied),
                     icon: Icons.account_balance_wallet_outlined,
                     accentColor: AppColors.infoBlue,
-                    onTap: () => onNavigate(9),
+                    onTap: () => onNavigate(8),
                   ),
                 ),
                 SizedBox(
@@ -117,7 +118,7 @@ class OverviewPanel extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             _OpsSnapshotCard(
-              waiters: m.waiters.length,
+              waiters: m.waiters.length + m.managers.length,
               expenses: m.totalExpenses,
               weekProfit: m.profitThisWeek,
               freeTables: freeTables,
@@ -275,8 +276,8 @@ class _OpsSnapshotCard extends StatelessWidget {
             children: [
               _MiniMetric(
                 width: itemW,
-                icon: Icons.people_outline,
-                label: tr.kamariere,
+                icon: Icons.groups_2_outlined,
+                label: AppLanguageService.instance.t('Stafi', 'Staff'),
                 value: '$waiters',
                 hint: tr.stafRegjistruar,
                 onTap: () => onNavigate(2),
@@ -288,7 +289,7 @@ class _OpsSnapshotCard extends StatelessWidget {
                 value: '${expenses.toStringAsFixed(0)}€',
                 hint: tr.totaliShpenzimeve,
                 accent: AppColors.softRed,
-                onTap: () => onNavigate(4),
+                onTap: () => onNavigate(3),
               ),
               _MiniMetric(
                 width: itemW,
@@ -297,7 +298,7 @@ class _OpsSnapshotCard extends StatelessWidget {
                 value: '${weekProfit.toStringAsFixed(0)}€',
                 hint: tr.k7DitetFundit,
                 accent: AppColors.warmGold,
-                onTap: () => onNavigate(5),
+                onTap: () => onNavigate(4),
               ),
               _MiniMetric(
                 width: itemW,
@@ -305,7 +306,7 @@ class _OpsSnapshotCard extends StatelessWidget {
                 label: tr.tavolina,
                 value: '$freeTables lira',
                 hint: trf.occupiedWithPct(occupied, int.parse(occPct)),
-                onTap: () => onNavigate(9),
+                onTap: () => onNavigate(8),
               ),
               _MiniMetric(
                 width: itemW,
@@ -313,7 +314,7 @@ class _OpsSnapshotCard extends StatelessWidget {
                 label: tr.menu,
                 value: '$products produkte',
                 hint: trf.categoriesCount(categories),
-                onTap: () => onNavigate(8),
+                onTap: () => onNavigate(7),
               ),
               _MiniMetric(
                 width: itemW,
@@ -324,7 +325,7 @@ class _OpsSnapshotCard extends StatelessWidget {
                     ? 'Nuk ka shitje ende'
                     : '${topSales.toStringAsFixed(0)}€',
                 accent: AppColors.warmGold,
-                onTap: () => onNavigate(7),
+                onTap: () => onNavigate(6),
               ),
             ],
           );
