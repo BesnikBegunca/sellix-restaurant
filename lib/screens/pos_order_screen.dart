@@ -660,8 +660,15 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           onPay: _payTable,
                           isPaying: _isPaying,
                           isSendingOrder: _isSendingOrder,
+                          // Me totalet e fshehura, kamarieri sheh vetëm shumën
+                          // e artikujve që po i shënon tani, jo totalin e tavolinës.
                           showTotal:
-                              !ManagerData.instance.hideWaiterTableTotals,
+                              !ManagerData.instance.hideWaiterTableTotals ||
+                              _lines.isNotEmpty,
+                          totalLabel:
+                              ManagerData.instance.hideWaiterTableTotals
+                              ? 'Porosia aktuale'
+                              : 'Totali',
                         ),
                       ),
                     ],

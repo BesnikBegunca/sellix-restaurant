@@ -21,6 +21,7 @@ class OrderPanel extends StatelessWidget {
     this.isPaying = false,
     this.isSendingOrder = false,
     this.showTotal = true,
+    this.totalLabel = 'Totali',
   });
 
   final int tableNumber;
@@ -36,6 +37,9 @@ class OrderPanel extends StatelessWidget {
   final bool isPaying;
   final bool isSendingOrder;
   final bool showTotal;
+
+  /// Etiketa e shumës (p.sh. 'Totali' ose 'Porosia aktuale').
+  final String totalLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +132,7 @@ class OrderPanel extends StatelessWidget {
                   top: BorderSide(color: AppColors.borderSubtle(0.1)),
                 ),
               ),
-              child: _moneyRow('Totali', total, large: true),
+              child: _moneyRow(totalLabel, total, large: true),
             ),
           ],
           const SizedBox(height: 24),

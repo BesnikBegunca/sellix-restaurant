@@ -54,8 +54,8 @@ class PermissionsPanel extends StatelessWidget {
                   'Hide each table total',
                 ),
                 description: lang.t(
-                  'Kamarieri nuk e sheh shumën në kartën e tavolinës, as te porosia.',
-                  'Waiters will not see the amount on a table card or in the order.',
+                  'Kamarieri nuk e sheh totalin e tavolinës (në kartë, te porosia, as pas pagesës). E sheh vetëm shumën e artikujve që po i shënon momentalisht.',
+                  'Waiters will not see the table total (on the card, in the order or after payment). They only see the amount of the items they are entering right now.',
                 ),
                 value: m.hideWaiterTableTotals,
                 onChanged: (v) =>
