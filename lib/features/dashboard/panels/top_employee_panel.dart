@@ -23,7 +23,8 @@ class TopEmployeePanel extends StatelessWidget {
           PanelHeader(
             icon: Icons.emoji_events_outlined,
             title: tr.realizimiSipasPunetoreve,
-            subtitle: tr.statistikatShitjeveSipasPunonjesve,
+            subtitle:
+                'Renditet sipas PRINTO — jo sipas pagesës. Çdo printim e rrit totalin.',
           ),
           Center(
             child: Column(
@@ -74,7 +75,8 @@ class TopEmployeePanel extends StatelessWidget {
         PanelHeader(
           icon: Icons.emoji_events_outlined,
           title: tr.realizimiSipasPunetoreve,
-          subtitle: tr.statistikatShitjeveSipasPunonjesve,
+          subtitle:
+              'Renditet sipas PRINTO — jo sipas pagesës. Çdo printim e rrit totalin.',
         ),
 
         Container(

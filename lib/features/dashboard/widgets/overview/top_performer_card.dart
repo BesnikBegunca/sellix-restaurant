@@ -14,18 +14,8 @@ class TopPerformerCard extends StatelessWidget {
     final top = m.topEmployee;
     final hasData = top.key != '—' && top.value > 0;
 
-    final today = DateTime.now();
-    final todayStart = DateTime(today.year, today.month, today.day);
-    final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
     final topOrders = hasData
-        ? m.salesHistory
-              .where(
-                (s) =>
-                    s.waiterName == top.key &&
-                    !s.timestamp.isBefore(todayStart) &&
-                    !s.timestamp.isAfter(todayEnd),
-              )
-              .length
+        ? (m.waiterPrintCounts[top.key] ?? 0)
         : 0;
 
     return AppCard(
@@ -121,7 +111,7 @@ class TopPerformerCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Porosi sot',
+                            'PRINTO',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.lightGreenText,

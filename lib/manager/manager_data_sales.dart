@@ -215,13 +215,13 @@ extension SalesMethods on ManagerData {
   }
 
   List<MapEntry<String, double>> get employeeSalesSorted {
-    final entries = waiterSales.entries.toList()
+    final entries = waiterPrintTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return entries;
   }
 
   MapEntry<String, double> get topEmployee {
-    if (waiterSales.isEmpty) return const MapEntry('—', 0.0);
-    return waiterSales.entries.reduce((a, b) => a.value >= b.value ? a : b);
+    if (waiterPrintTotals.isEmpty) return const MapEntry('—', 0.0);
+    return waiterPrintTotals.entries.reduce((a, b) => a.value >= b.value ? a : b);
   }
 }

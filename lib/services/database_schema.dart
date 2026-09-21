@@ -711,6 +711,42 @@ class DatabaseSchema {
     } catch (_) {}
   }
 
+  static Future<void> ensureShiftsPortalSynced(Database db) async {
+    try {
+      final cols = await db.rawQuery('PRAGMA table_info(shifts)');
+      if (cols.isEmpty) return;
+      final names = {
+        for (final r in cols)
+          if (r['name'] != null) r['name'] as String,
+      };
+      if (!names.contains('portalSynced')) {
+        await db.execute(
+          'ALTER TABLE shifts ADD COLUMN portalSynced INTEGER NOT NULL DEFAULT 0',
+        );
+      }
+    } catch (_) {}
+  }
+
+  static Future<void> ensurePortalShiftEvents(Database db) async {
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS portal_shift_events (
+          uuid TEXT PRIMARY KEY,
+          shiftUuid TEXT NOT NULL DEFAULT '',
+          kind TEXT NOT NULL,
+          openedAt TEXT NOT NULL,
+          eventAt TEXT NOT NULL,
+          closedBy TEXT NOT NULL DEFAULT '',
+          totalSales REAL NOT NULL DEFAULT 0,
+          paidTotal REAL NOT NULL DEFAULT 0,
+          openTotal REAL NOT NULL DEFAULT 0,
+          snapshotJson TEXT,
+          portalSynced INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+    } catch (_) {}
+  }
+
   /// Ensures every table exists. Safe to call on any existing database because
   /// every statement uses CREATE TABLE IF NOT EXISTS.
   static Future<void> ensureTables(Database db) async {
@@ -1094,6 +1130,8 @@ class DatabaseSchema {
     // ── v24: sales order metadata (mobile sync) ─────────────────────────────
     await ensureSalesOrderMetadataColumns(db);
     await ensureKitchenPrintsPortalSynced(db);
+    await ensureShiftsPortalSynced(db);
+    await ensurePortalShiftEvents(db);
     // v27: activation archive + sale close metadata
     await ensureSalesCloseMetadataColumns(db);
     await ensureActivationArchiveTables(db);
@@ -1221,6 +1259,8 @@ class DatabaseSchema {
     // v24: idempotent guard for DBs that reached v23 before these ALTERs shipped.
     await ensureSalesOrderMetadataColumns(db);
     await ensureKitchenPrintsPortalSynced(db);
+    await ensureShiftsPortalSynced(db);
+    await ensurePortalShiftEvents(db);
     try {
       await db.execute("ALTER TABLE expenses ADD COLUMN shiftId INTEGER");
     } catch (_) {}
@@ -1384,6 +1424,8 @@ class DatabaseSchema {
     await ensureTables(db);
     await ensureSalesOrderMetadataColumns(db);
     await ensureKitchenPrintsPortalSynced(db);
+    await ensureShiftsPortalSynced(db);
+    await ensurePortalShiftEvents(db);
     await ensureSalesCloseMetadataColumns(db);
     await ensureActivationArchiveTables(db);
 

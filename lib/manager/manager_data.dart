@@ -18,6 +18,7 @@ import '../services/audit_log_service.dart';
 import '../services/database_service.dart';
 import '../services/license_gate_service.dart';
 import '../services/portal_sales_sync_service.dart';
+import '../services/portal_shifts_sync_service.dart';
 import '../l10n/tr.dart';
 export '../models/pos_models.dart';
 
@@ -96,7 +97,12 @@ class ManagerData extends ChangeNotifier {
   Map<String, Set<String>> _workedDays = {};
 
   /// Sales per waiter accumulated since last shift close (waiterName → total).
+  /// Paid invoices only — not used for Top punëtor.
   Map<String, double> waiterSales = {};
+
+  /// PRINTO totals for Top punëtor (each kitchen print, not Paguaj).
+  Map<String, double> waiterPrintTotals = {};
+  Map<String, int> waiterPrintCounts = {};
 
   int tableCount = 15;
   int tablesPerRow = 6;
@@ -170,6 +176,7 @@ class ManagerData extends ChangeNotifier {
 
     // Sales → rebuild waiterSales map (current shift only)
     await _reloadSales();
+    await _reloadPrintTotals();
 
     // Salaries + advances
     _salaries = await SalaryRepository.instance.fetchAllSalaries();
@@ -305,6 +312,21 @@ class ManagerData extends ChangeNotifier {
     }
   }
 
+  /// Rebuilds Top punëtor from PRINTO rows of the open shift (not Paguaj).
+  Future<void> _reloadPrintTotals() async {
+    try {
+      final stats = await DatabaseService.instance.fetchKitchenPrintStatsByWaiter(
+        shiftId: _currentShiftId,
+      );
+      waiterPrintTotals = stats.totals;
+      waiterPrintCounts = stats.counts;
+    } catch (e, st) {
+      debugPrint('_reloadPrintTotals failed: $e\n$st');
+      waiterPrintTotals = {};
+      waiterPrintCounts = {};
+    }
+  }
+
   /// Loads or auto-creates the open shift record in the [shifts] table.
   /// Sets [_currentShiftId] so every subsequent sale is linked to this shift.
   Future<void> _ensureOpenShift() async {
@@ -397,6 +419,8 @@ class ManagerData extends ChangeNotifier {
     );
     AuditLogService.instance.logShiftOpened(shiftId: _currentShiftId!);
     waiterSales = {};
+    waiterPrintTotals = {};
+    waiterPrintCounts = {};
     notifyListeners();
   }
 
@@ -523,6 +547,8 @@ class ManagerData extends ChangeNotifier {
       await db.clearAllCurrentOrdersAndResetTables();
       await db.resetOrderNumberCountersForNewShift();
       waiterSales = {};
+      waiterPrintTotals = {};
+      waiterPrintCounts = {};
       await _reloadTablesFromDb();
       _cashierTables = _cashierTables
           .map(
@@ -537,6 +563,8 @@ class ManagerData extends ChangeNotifier {
           .toList();
       await _reloadSales();
       notifyListeners();
+      unawaited(PortalSalesSyncService.instance.triggerNow());
+      unawaited(PortalShiftsSyncService.instance.triggerNow());
     } catch (e, st) {
       debugPrint('closeShift failed: $e\n$st');
       rethrow;

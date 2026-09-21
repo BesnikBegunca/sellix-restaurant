@@ -246,10 +246,10 @@ class _MenuPanelState extends State<MenuPanel> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         PanelHeader(
-          icon: Icons.menu_book_outlined,
+          icon: Icons.local_bar_rounded,
           title: tr.menu,
           subtitle:
-              'Shto produkte me foto, çmim dhe kategori — ashtu siç shfaqen në POS.',
+              'Shto pije me foto dhe çmim. Ashtu siç shfaqen te kamarieri në POS.',
         ),
         PanelStatRow(
           cards: [
@@ -271,7 +271,7 @@ class _MenuPanelState extends State<MenuPanel> {
           ],
         ),
         const SizedBox(height: 20),
-        _ComposerCard(
+        _DrinkStudio(
           cats: cats,
           catValue: catValue,
           imagePath: _newProductImage,
@@ -403,8 +403,8 @@ class StatLite extends StatelessWidget {
   }
 }
 
-class _ComposerCard extends StatelessWidget {
-  const _ComposerCard({
+class _DrinkStudio extends StatelessWidget {
+  const _DrinkStudio({
     required this.cats,
     required this.catValue,
     required this.imagePath,
@@ -428,153 +428,190 @@ class _ComposerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PanelCard(
-      icon: Icons.add_photo_alternate_outlined,
-      title: tr.shtoPijeRe,
-      subtitle: tr.plotesoInformacioninPersonalizoFoton,
-      child: LayoutBuilder(
-        builder: (context, c) {
-          final compact = c.maxWidth < 760;
-          final photo = _PhotoWell(imagePath: imagePath, onTap: onPickImage);
-          final form = Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Kategoria',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(26, 20, 26, 18),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0xFF183126), Color(0xFF234B36)],
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final cat in cats)
-                    ChoiceChip(
-                      label: Text(cat.name),
-                      selected: cat.id == catValue,
-                      avatar: Icon(cat.icon, size: 16),
-                      onSelected: (_) => onCategoryChanged(cat.id),
-                      showCheckmark: false,
-                      selectedColor: AppColors.primaryGreen.withValues(
-                        alpha: 0.16,
-                      ),
-                      labelStyle: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: cat.id == catValue
-                            ? AppColors.primaryGreen
-                            : AppColors.mediumGreenText,
-                      ),
-                      side: BorderSide(
-                        color: cat.id == catValue
-                            ? AppColors.primaryGreen.withValues(alpha: 0.45)
-                            : Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (compact) ...[
-                PanelField(
-                  label: 'Emri i produktit',
-                  child: TextField(
-                    controller: nameCtrl,
-                    decoration: inputDeco('p.sh. Espresso, Cola, Mojito'),
-                    textInputAction: TextInputAction.next,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.local_bar_rounded,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(height: 12),
-                PanelField(
-                  label: tr.cmimi,
-                  child: TextField(
-                    controller: priceCtrl,
-                    decoration: inputDeco('0.00', prefix: '€ '),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Pije e re',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      Text(
+                        'Vendos foton, emrin dhe çmimin — pastaj shtohet direkt në POS.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.78),
+                        ),
+                      ),
                     ],
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => onSubmit(),
                   ),
                 ),
-              ] else
-                PanelFormRow(
-                  fields: [
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final compact = c.maxWidth < 780;
+                final photo = _PhotoWell(
+                  imagePath: imagePath,
+                  onTap: onPickImage,
+                );
+                final form = Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                     PanelField(
-                      label: 'Emri i produktit',
-                      flex: 5,
+                      label: 'Emri i pijes',
                       child: TextField(
                         controller: nameCtrl,
-                        decoration: inputDeco('p.sh. Espresso, Cola, Mojito'),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        decoration: inputDeco('p.sh. Espresso, Mojito, Heineken'),
                         textInputAction: TextInputAction.next,
                       ),
                     ),
-                    PanelField(
-                      label: tr.cmimi,
-                      flex: 2,
-                      child: TextField(
-                        controller: priceCtrl,
-                        decoration: inputDeco('0.00', prefix: '€ '),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
+                    const SizedBox(height: 14),
+                    PanelFormRow(
+                      breakpoint: 560,
+                      fields: [
+                        PanelField(
+                          label: tr.cmimi,
+                          flex: 2,
+                          child: TextField(
+                            controller: priceCtrl,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            decoration: inputDeco('0.00', prefix: '€ '),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[\d.,]'),
+                              ),
+                            ],
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => onSubmit(),
+                          ),
                         ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                        ],
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => onSubmit(),
+                        PanelField(
+                          label: 'Kategoria',
+                          flex: 3,
+                          child: DropdownButtonFormField<String>(
+                            key: ValueKey(catValue),
+                            initialValue: catValue,
+                            isExpanded: true,
+                            decoration: inputDeco('Zgjidh kategorinë'),
+                            borderRadius: BorderRadius.circular(12),
+                            items: [
+                              for (final cat in cats)
+                                DropdownMenuItem(
+                                  value: cat.id,
+                                  child: Row(
+                                    children: [
+                                      Icon(cat.icon, size: 18),
+                                      const SizedBox(width: 10),
+                                      Flexible(
+                                        child: Text(
+                                          cat.name,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                            onChanged: (id) {
+                              if (id != null) onCategoryChanged(id);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (error != null) ...[
+                      const SizedBox(height: 14),
+                      PanelErrorBanner(message: error!),
+                    ],
+                    const SizedBox(height: 18),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FilledButton.icon(
+                        onPressed: onSubmit,
+                        icon: const Icon(Icons.add_rounded, size: 20),
+                        label: Text(tr.shtoPijenMenu),
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(220, 52),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                        ),
                       ),
                     ),
                   ],
-                ),
-              if (error != null) ...[
-                const SizedBox(height: 14),
-                PanelErrorBanner(message: error!),
-              ],
-              const SizedBox(height: 18),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: FilledButton.icon(
-                  onPressed: onSubmit,
-                  icon: const Icon(Icons.add_rounded, size: 20),
-                  label: Text(tr.shtoPijenMenu),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
+                );
 
-          if (compact) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                photo,
-                const SizedBox(height: 20),
-                form,
-              ],
-            );
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              photo,
-              const SizedBox(width: 24),
-              Expanded(child: form),
-            ],
-          );
-        },
+                if (compact) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [photo, const SizedBox(height: 20), form],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    photo,
+                    const SizedBox(width: 28),
+                    Expanded(child: form),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -596,6 +633,7 @@ class _PhotoWellState extends State<_PhotoWell> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final hasImage = widget.imagePath != null && widget.imagePath!.isNotEmpty;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
@@ -603,22 +641,22 @@ class _PhotoWellState extends State<_PhotoWell> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 188,
-          height: 220,
+          duration: const Duration(milliseconds: 160),
+          width: 220,
+          height: 240,
           decoration: BoxDecoration(
-            color: AppColors.lightGreenBg.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(18),
+            color: const Color(0xFF183126).withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
               color: _hover
                   ? AppColors.primaryGreen
-                  : AppColors.primaryGreen.withValues(alpha: 0.28),
-              width: _hover ? 1.6 : 1,
+                  : AppColors.primaryGreen.withValues(alpha: 0.35),
+              width: _hover ? 2 : 1.4,
             ),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(17),
-            child: widget.imagePath != null
+            borderRadius: BorderRadius.circular(20),
+            child: hasImage
                 ? Stack(
                     fit: StackFit.expand,
                     children: [
@@ -627,20 +665,23 @@ class _PhotoWellState extends State<_PhotoWell> {
                         fit: BoxFit.cover,
                         placeholder: () => const _PhotoPlaceholder(),
                       ),
-                      if (_hover)
-                        ColoredBox(
-                          color: Colors.black.withValues(alpha: 0.38),
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 140),
+                        opacity: _hover ? 1 : 0,
+                        child: ColoredBox(
+                          color: Colors.black.withValues(alpha: 0.42),
                           child: Center(
                             child: Text(
                               'Ndrysho foton',
                               style: TextStyle(
                                 color: scheme.onPrimary,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 13,
+                                fontSize: 14,
                               ),
                             ),
                           ),
                         ),
+                      ),
                     ],
                   )
                 : const _PhotoPlaceholder(),
@@ -660,31 +701,31 @@ class _PhotoPlaceholder extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
-          width: 48,
-          height: 48,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(14),
+            color: AppColors.primaryGreen,
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Icon(
+          child: const Icon(
             Icons.add_a_photo_outlined,
-            color: AppColors.primaryGreen,
-            size: 22,
+            color: Colors.white,
+            size: 24,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Text(
-          'Shto foto',
+          'Shto foton e pijes',
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
             color: AppColors.primaryGreen,
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 4),
         Text(
-          'Opsionale · PNG, JPG',
-          style: TextStyle(fontSize: 11, color: AppColors.lightGreenText),
+          'Kliko këtu · PNG, JPG, WEBP',
+          style: TextStyle(fontSize: 12, color: AppColors.lightGreenText),
         ),
       ],
     );
@@ -775,8 +816,8 @@ class _CategoryTile extends StatelessWidget {
           color: over
               ? AppColors.primaryGreen.withValues(alpha: 0.10)
               : selected
-              ? AppColors.primaryGreen.withValues(alpha: 0.12)
-              : AppColors.lightGreenBg.withValues(alpha: 0.45),
+              ? const Color(0xFF183126)
+              : scheme.surfaceContainerHighest.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(12),
           child: InkWell(
             onTap: onTap,
@@ -789,7 +830,7 @@ class _CategoryTile extends StatelessWidget {
                     category.icon,
                     size: 18,
                     color: selected
-                        ? AppColors.primaryGreen
+                        ? Colors.white
                         : scheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 10),
@@ -802,7 +843,7 @@ class _CategoryTile extends StatelessWidget {
                         fontSize: 13.5,
                         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                         color: selected
-                            ? AppColors.primaryGreen
+                            ? Colors.white
                             : scheme.onSurface,
                       ),
                     ),
@@ -813,7 +854,9 @@ class _CategoryTile extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: scheme.surface,
+                      color: selected
+                          ? Colors.white.withValues(alpha: 0.16)
+                          : scheme.surface,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -821,7 +864,9 @@ class _CategoryTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: scheme.onSurfaceVariant,
+                        color: selected
+                            ? Colors.white
+                            : scheme.onSurfaceVariant,
                       ),
                     ),
                   ),

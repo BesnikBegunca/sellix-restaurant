@@ -1,6 +1,11 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../../../manager/manager_data.dart';
 import '../../../theme/app_theme.dart';
+import '../../../services/database_service.dart';
+import '../../../services/portal_shifts_sync_service.dart';
 import '../../../services/receipt_printer.dart';
 import '../../../theme/app_colors.dart';
 import '../../../shared/widgets/panel_layout.dart';
@@ -40,6 +45,20 @@ class ShiftPanel extends StatelessWidget {
       summaryOpen: report.grandOpen,
       reportTime: report.generatedAt,
     );
+
+    try {
+      final open = await DatabaseService.instance.fetchOpenShift();
+      await DatabaseService.instance.insertPortalShiftPrint(
+        shiftUuid: (open?['uuid'] as String?)?.trim() ?? '',
+        openedAt: m.shiftOpenedAt ?? report.generatedAt,
+        printedAt: report.generatedAt,
+        totalSales: report.grandTotal,
+        paidTotal: report.grandPaid,
+        openTotal: report.grandOpen,
+        snapshotJson: jsonEncode(report.toJson()),
+      );
+      unawaited(PortalShiftsSyncService.instance.triggerNow());
+    } catch (_) {}
 
     if (context.mounted) {
       messenger.showSnackBar(

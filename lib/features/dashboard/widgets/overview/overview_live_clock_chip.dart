@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../../theme/app_colors.dart';
-
 class OverviewLiveClockChip extends StatefulWidget {
   const OverviewLiveClockChip({super.key});
 
@@ -30,7 +28,6 @@ class _OverviewLiveClockChipState extends State<OverviewLiveClockChip> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final now = DateTime.now();
     final hour = now.hour;
     final amPm = hour >= 12 ? 'PM' : 'AM';
@@ -43,38 +40,31 @@ class _OverviewLiveClockChipState extends State<OverviewLiveClockChip> {
         '${displayHour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} $amPm';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
+        color: Colors.white.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.lightGreenBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Ora Aktuale',
+            'Ora aktuale',
             style: TextStyle(
-              fontSize: 12,
-              color: AppColors.lightGreenText,
-              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              color: Colors.white.withValues(alpha: 0.72),
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             t,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkGreenText,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
               height: 1.0,
             ),
           ),

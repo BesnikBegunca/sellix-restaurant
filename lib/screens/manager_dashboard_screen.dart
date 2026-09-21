@@ -280,11 +280,11 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                       ),
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(32),
+                          padding: const EdgeInsets.fromLTRB(28, 24, 28, 40),
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 1440),
+                              constraints: const BoxConstraints(maxWidth: 1520),
                               child: _buildSection(),
                             ),
                           ),

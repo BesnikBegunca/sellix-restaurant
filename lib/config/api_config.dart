@@ -22,6 +22,9 @@ const String kEndpointLicenseCheck = '/api/license/check';
 /// POST {deviceId, sales: [...]} — owner-portal takings + table totals
 const String kEndpointSalesSync = '/api/sales/sync';
 
+/// POST {deviceId, shifts: [...]} — closed/printed gjendja rows for the portal
+const String kEndpointShiftsSync = '/api/shifts/sync';
+
 // ── Legacy NestJS paths (unused against SelliX web) ───────────────────────
 
 /// POST {activationKey} → [ActivationValidateResponse]

@@ -141,9 +141,9 @@ class CategoryProductTable extends StatelessWidget {
                         itemCount: products.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: cols,
-                          mainAxisSpacing: 14,
-                          crossAxisSpacing: 14,
-                          childAspectRatio: 0.78,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.82,
                         ),
                         itemBuilder: (context, i) {
                           final p = products[i];
@@ -263,36 +263,43 @@ class _ProductCardState extends State<_ProductCard> {
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
+        child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
         decoration: BoxDecoration(
           color: scheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: _hover
-                ? AppColors.primaryGreen.withValues(alpha: 0.45)
+                ? AppColors.primaryGreen.withValues(alpha: 0.5)
                 : scheme.outlineVariant,
           ),
           boxShadow: _hover
               ? [
                   BoxShadow(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.10),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    color: AppColors.primaryGreen.withValues(alpha: 0.14),
+                    blurRadius: 22,
+                    offset: const Offset(0, 10),
                   ),
                 ]
-              : null,
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
+              flex: 7,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(15),
+                      top: Radius.circular(19),
                     ),
                     child: p.imagePath != null
                         ? productImage(
@@ -301,6 +308,55 @@ class _ProductCardState extends State<_ProductCard> {
                             placeholder: _thumbPlaceholder,
                           )
                         : _thumbPlaceholder(),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(12, 28, 12, 10),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0x00000000), Color(0xCC15241C)],
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              p.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              '${p.price.toStringAsFixed(2)}€',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   if (_hover)
                     Positioned(
@@ -326,49 +382,40 @@ class _ProductCardState extends State<_ProductCard> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(10, 8, 8, 10),
+              child: Row(
                 children: [
-                  Text(
-                    p.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.onSurface,
+                  Icon(
+                    Icons.touch_app_outlined,
+                    size: 14,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Ndrysho',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        '${p.price.toStringAsFixed(2)}€',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                      const Spacer(),
-                      _MiniIcon(
-                        icon: Icons.edit_outlined,
-                        tooltip: tr.ndrysho,
-                        color: AppColors.primaryGreen,
-                        onTap: widget.onEdit,
-                      ),
-                      if (widget.canDelete) ...[
-                        const SizedBox(width: 2),
-                        _MiniIcon(
-                          icon: Icons.delete_outline_rounded,
-                          tooltip: tr.fshi,
-                          color: AppColors.negativeText,
-                          onTap: widget.onDelete,
-                        ),
-                      ],
-                    ],
+                  _MiniIcon(
+                    icon: Icons.edit_outlined,
+                    tooltip: tr.ndrysho,
+                    color: AppColors.primaryGreen,
+                    onTap: widget.onEdit,
                   ),
+                  if (widget.canDelete) ...[
+                    const SizedBox(width: 2),
+                    _MiniIcon(
+                      icon: Icons.delete_outline_rounded,
+                      tooltip: tr.fshi,
+                      color: AppColors.negativeText,
+                      onTap: widget.onDelete,
+                    ),
+                  ],
                 ],
               ),
             ),

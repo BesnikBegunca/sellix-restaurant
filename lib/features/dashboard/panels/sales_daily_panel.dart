@@ -132,8 +132,7 @@ class _SalesDailyPanelState extends State<SalesDailyPanel> {
         PanelHeader(
           icon: Icons.point_of_sale_outlined,
           title: tr.shitjet,
-          subtitle:
-              tr.cdoRreshtMbylljeGjendjeTotaliEshte + tr.hapjaDeriMbylljenGjendjes,
+          subtitle: 'Mbylljet e gjendjes, me totalin e çdo turni.',
         ),
         LayoutBuilder(
           builder: (context, constraints) {

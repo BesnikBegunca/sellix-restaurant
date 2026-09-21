@@ -119,6 +119,8 @@ class DatabaseService {
           await db.execute('PRAGMA journal_mode = WAL');
         } catch (_) {}
         await DatabaseSchema.ensureShiftsSnapshotColumn(db);
+        await DatabaseSchema.ensureShiftsPortalSynced(db);
+        await DatabaseSchema.ensurePortalShiftEvents(db);
         await DatabaseSchema.ensureSalesOrderMetadataColumns(db);
         await DatabaseSchema.ensureKitchenPrintsPortalSynced(db);
         await DatabaseSchema.ensureSalesCloseMetadataColumns(db);
@@ -578,6 +580,31 @@ class DatabaseService {
       _scheduleSyncAfterLocalMutation();
     }
     return printId;
+  }
+
+  /// Totals and PRINTO counts per waiter for the current shift (survives Paguaj).
+  Future<({Map<String, double> totals, Map<String, int> counts})>
+      fetchKitchenPrintStatsByWaiter({int? shiftId}) async {
+    final db = await database;
+    final rows = shiftId == null
+        ? await db.rawQuery(
+            'SELECT waiterName, SUM(total) AS total, COUNT(*) AS cnt '
+            'FROM kitchen_prints GROUP BY waiterName',
+          )
+        : await db.rawQuery(
+            'SELECT waiterName, SUM(total) AS total, COUNT(*) AS cnt '
+            'FROM kitchen_prints WHERE shiftId = ? GROUP BY waiterName',
+            [shiftId],
+          );
+    final totals = <String, double>{};
+    final counts = <String, int>{};
+    for (final row in rows) {
+      final name = (row['waiterName'] as String?)?.trim() ?? '';
+      if (name.isEmpty) continue;
+      totals[name] = (row['total'] as num?)?.toDouble() ?? 0;
+      counts[name] = (row['cnt'] as num?)?.toInt() ?? 0;
+    }
+    return (totals: totals, counts: counts);
   }
 
   Future<List<Map<String, dynamic>>> fetchKitchenPrintsForWaiter(
@@ -2186,6 +2213,7 @@ class DatabaseService {
   }) async {
     final db = await database;
     await DatabaseSchema.ensureShiftsSnapshotColumn(db);
+    await DatabaseSchema.ensureShiftsPortalSynced(db);
     final row = <String, Object?>{
       'closedAt': DatabaseSchema.toSyncUtcIso(closedAt),
       'closedBy': closedBy,
@@ -2194,6 +2222,7 @@ class DatabaseService {
       'totalExpenses': totalExpenses,
       'netProfit': netProfit,
       'status': 'closed',
+      'portalSynced': 0,
     };
     if (snapshotJson != null) {
       row['snapshotJson'] = snapshotJson;
@@ -2267,6 +2296,112 @@ class DatabaseService {
       where: "status = 'closed' AND closedAt IS NOT NULL",
       orderBy: 'closedAt DESC',
     );
+  }
+
+  Future<void> insertPortalShiftPrint({
+    required String shiftUuid,
+    required DateTime openedAt,
+    required DateTime printedAt,
+    required double totalSales,
+    required double paidTotal,
+    required double openTotal,
+    String? snapshotJson,
+  }) async {
+    final db = await database;
+    await DatabaseSchema.ensurePortalShiftEvents(db);
+    await db.insert(
+      'portal_shift_events',
+      {
+        'uuid': DatabaseSchema.generateUuid(),
+        'shiftUuid': shiftUuid,
+        'kind': 'printed',
+        'openedAt': DatabaseSchema.toSyncUtcIso(openedAt),
+        'eventAt': DatabaseSchema.toSyncUtcIso(printedAt),
+        'totalSales': totalSales,
+        'paidTotal': paidTotal,
+        'openTotal': openTotal,
+        'snapshotJson': snapshotJson,
+        'portalSynced': 0,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUnsyncedPortalShifts({
+    int limit = 200,
+  }) async {
+    final db = await database;
+    await DatabaseSchema.ensureShiftsPortalSynced(db);
+    await DatabaseSchema.ensurePortalShiftEvents(db);
+    final out = <Map<String, dynamic>>[];
+
+    List<Map<String, dynamic>> closed = const [];
+    try {
+      closed = await db.query(
+        'shifts',
+        where: '''
+          status = 'closed'
+          AND closedAt IS NOT NULL
+          AND COALESCE(portalSynced, 0) = 0
+        ''',
+        orderBy: 'closedAt DESC',
+        limit: limit,
+      );
+    } catch (_) {}
+
+    for (final row in closed) {
+      var uuid = (row['uuid'] as String?)?.trim() ?? '';
+      if (uuid.isEmpty) {
+        uuid = DatabaseSchema.generateUuid();
+        try {
+          await db.update(
+            'shifts',
+            {'uuid': uuid},
+            where: 'id = ?',
+            whereArgs: [row['id']],
+          );
+        } catch (_) {}
+      }
+      out.add({
+        ...row,
+        'uuid': uuid,
+        'kind': 'closed',
+        'eventAt': row['closedAt'],
+      });
+    }
+
+    if (out.length < limit) {
+      try {
+        final prints = await db.query(
+          'portal_shift_events',
+          where: "COALESCE(portalSynced, 0) = 0",
+          orderBy: 'eventAt DESC',
+          limit: limit - out.length,
+        );
+        for (final row in prints) {
+          out.add({...row, 'kind': 'printed'});
+        }
+      } catch (_) {}
+    }
+    return out;
+  }
+
+  Future<void> markPortalShiftsSynced(List<String> eventUids) async {
+    if (eventUids.isEmpty) return;
+    final db = await database;
+    final placeholders = List.filled(eventUids.length, '?').join(',');
+    try {
+      await db.rawUpdate(
+        'UPDATE shifts SET portalSynced = 1 WHERE uuid IN ($placeholders)',
+        eventUids,
+      );
+    } catch (_) {}
+    try {
+      await db.rawUpdate(
+        'UPDATE portal_shift_events SET portalSynced = 1 WHERE uuid IN ($placeholders)',
+        eventUids,
+      );
+    } catch (_) {}
   }
 
   // ─────────────────────── SALE ADJUSTMENTS ─────────────────────────────────

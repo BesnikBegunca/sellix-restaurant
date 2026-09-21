@@ -48,11 +48,13 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
         '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}';
 
     return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      height: 72,
+      padding: const EdgeInsets.symmetric(horizontal: 28),
       decoration: BoxDecoration(
-        color: scheme.surface,
-        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+        color: scheme.surface.withValues(alpha: 0.92),
+        border: Border(
+          bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+        ),
       ),
       child: Row(
         children: [
@@ -64,8 +66,9 @@ class _ManagerTopBarState extends State<ManagerTopBar> {
                 Text(
                   widget.sectionTitle,
                   style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
                     color: scheme.onSurface,
                     height: 1.2,
                   ),

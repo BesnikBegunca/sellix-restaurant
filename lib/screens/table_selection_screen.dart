@@ -10,6 +10,7 @@ import '../widgets/gg_header.dart';
 import '../widgets/hover_interaction.dart';
 import 'pos_order_screen.dart';
 import '../services/app_language_service.dart';
+import '../services/waiter_always_open.dart';
 import '../l10n/tr.dart';
 
 class TableSelectionScreen extends StatefulWidget {
@@ -195,6 +196,15 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                     total: total,
                     occupied: occupied,
                     waiterName: widget.waiterName,
+                    alwaysOpen: WaiterAlwaysOpen.instance.isEnabled(
+                      widget.waiterName,
+                    ),
+                    onAlwaysOpenChanged: (v) => setState(
+                      () => WaiterAlwaysOpen.instance.setEnabled(
+                        widget.waiterName,
+                        v,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Expanded(
@@ -254,11 +264,15 @@ class _TableScreenHeaderRow extends StatelessWidget {
     required this.total,
     required this.occupied,
     required this.waiterName,
+    required this.alwaysOpen,
+    required this.onAlwaysOpenChanged,
   });
 
   final double total;
   final int occupied;
   final String waiterName;
+  final bool alwaysOpen;
+  final ValueChanged<bool> onAlwaysOpenChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +317,61 @@ class _TableScreenHeaderRow extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(width: 12),
+        _AlwaysOpenToggle(value: alwaysOpen, onChanged: onAlwaysOpenChanged),
       ],
+    );
+  }
+}
+
+/// "Always open": pas faturës kthehet te tavolinat, jo te login-i.
+class _AlwaysOpenToggle extends StatelessWidget {
+  const _AlwaysOpenToggle({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: value ? AppColors.lightGreenBg : AppColors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => onChanged(!value),
+        child: Container(
+          padding: const EdgeInsets.only(left: 12, right: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: value
+                  ? AppColors.borderEmphasized(0.3)
+                  : AppColors.borderSubtle(0.15),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Always open',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: value
+                      ? AppColors.primaryGreen
+                      : AppColors.lightGreenText,
+                ),
+              ),
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                activeThumbColor: AppColors.white,
+                activeTrackColor: AppColors.primaryGreen,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

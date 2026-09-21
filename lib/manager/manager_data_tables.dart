@@ -102,13 +102,18 @@ extension TablesMethods on ManagerData {
         'lineTotal': lineTotal,
       };
     }).toList();
-    return DatabaseService.instance.insertKitchenPrint(
+    final printId = await DatabaseService.instance.insertKitchenPrint(
       tableId: tableId,
       waiterName: waiterName,
       orderNumber: orderNumber,
       lines: lineMaps,
       shiftId: _currentShiftId,
     );
+    if (printId > 0) {
+      await _reloadPrintTotals();
+      _notify();
+    }
+    return printId;
   }
 
   List<CurrentOrderLine> _subtractPrintLines(
@@ -213,6 +218,7 @@ extension TablesMethods on ManagerData {
         'reason': tr.printoVetemUFshiMenaxheri,
       },
     );
+    await _reloadPrintTotals();
     _notify();
   }
 
@@ -233,7 +239,7 @@ extension TablesMethods on ManagerData {
     await DatabaseService.instance.clearCurrentOrder(
       tableId,
       waiterName,
-      clearPrintHistory: true,
+      clearPrintHistory: false,
     );
     _cashierTables = _cashierTables.map((t) {
       if (t.id != tableId) return t;

@@ -184,45 +184,56 @@ class _WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tr.permbledhjeDites,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.lightGreenText,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  company,
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.darkGreenText,
-                    height: 1.15,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                StatusBadge(
-                  label: shiftOpen ? 'Turni hapur' : 'Turni mbyllur',
-                  variant: shiftOpen
-                      ? StatusBadgeVariant.success
-                      : StatusBadgeVariant.neutral,
-                ),
-              ],
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [Color(0xFF15241C), Color(0xFF234B36)],
           ),
-          const OverviewLiveClockChip(),
-        ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr.permbledhjeDites,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.7),
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    company,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1.1,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  StatusBadge(
+                    label: shiftOpen ? 'Turni hapur' : 'Turni mbyllur',
+                    variant: shiftOpen
+                        ? StatusBadgeVariant.success
+                        : StatusBadgeVariant.neutral,
+                  ),
+                ],
+              ),
+            ),
+            const OverviewLiveClockChip(),
+          ],
+        ),
       ),
     );
   }

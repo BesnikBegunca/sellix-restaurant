@@ -20,6 +20,7 @@ import '../services/receipt_printer.dart';
 import '../services/receipt_text.dart';
 import '../services/app_language_service.dart';
 import '../services/portal_sales_sync_service.dart';
+import '../services/waiter_always_open.dart';
 import '../l10n/tr.dart';
 
 class PosOrderScreen extends StatefulWidget {
@@ -74,6 +75,16 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     ManagerData.instance.removeListener(_onMenuChanged);
     _language.removeListener(_onLanguageChanged);
     super.dispose();
+  }
+
+  /// Pas PRINTO / pagesës: "Always open" → te tavolinat; përndryshe → login.
+  void _returnAfterFinish() {
+    final nav = Navigator.of(context);
+    if (WaiterAlwaysOpen.instance.isEnabled(widget.waiterName)) {
+      nav.pop();
+    } else {
+      nav.popUntil((route) => route.isFirst);
+    }
   }
 
   double get _total => _lines.fold(0, (s, l) => s + l.product.price * l.qty);
@@ -348,7 +359,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       await data.clearTable(widget.tableNumber, widget.waiterName);
       unawaited(PortalSalesSyncService.instance.triggerNow());
       if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        _returnAfterFinish();
         if (shouldRecordSale && !printOk) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -518,7 +529,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
       },
     );
     if (mounted) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      _returnAfterFinish();
     }
   }
 

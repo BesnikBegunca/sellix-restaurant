@@ -87,6 +87,9 @@ class _RefundPanelState extends State<RefundPanel> {
           printId,
         );
         if (rawLines.isEmpty) continue;
+        if (!widget.m.cashierTables.any((t) => t.id == tableId && t.occupied)) {
+          continue;
+        }
 
         final lineRows = rawLines.map((r) {
           return SaleLineRow(

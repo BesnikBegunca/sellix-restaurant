@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_colors.dart';
+import '../../../theme/app_theme.dart';
 import '../../../services/app_language_service.dart';
 import '../../../widgets/gg_header.dart';
 import '../../../l10n/tr.dart';
@@ -106,6 +106,13 @@ class ManagerSideNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Theme(
+      data: AppTheme.dark(),
+      child: Builder(builder: (context) => _buildRail(context)),
+    );
+  }
+
+  Widget _buildRail(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ListenableBuilder(
       listenable: AppLanguageService.instance,
@@ -115,8 +122,8 @@ class ManagerSideNav extends StatelessWidget {
         width: expanded ? 256 : 80,
         clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
-          color: scheme.surface,
-          border: Border(right: BorderSide(color: scheme.outlineVariant)),
+          color: const Color(0xFF101A16),
+          border: Border(right: BorderSide(color: scheme.outline.withValues(alpha: 0.35))),
         ),
         child: ClipRect(
           child: Column(
@@ -234,7 +241,7 @@ class ManagerSideNav extends StatelessWidget {
                             child: Icon(
                               Icons.logout,
                               size: 20,
-                              color: AppColors.mediumGreenText,
+                              color: scheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -275,6 +282,7 @@ class _ToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return IconButton(
       tooltip: expanded ? tr.mbyll : 'Hap',
       onPressed: onPressed,
@@ -284,7 +292,7 @@ class _ToggleButton extends StatelessWidget {
       icon: Icon(
         expanded ? Icons.keyboard_double_arrow_left : Icons.menu,
         size: 20,
-        color: AppColors.mediumGreenText,
+        color: scheme.onSurfaceVariant,
       ),
     );
   }
@@ -310,7 +318,7 @@ class _SideNavItemState extends State<_SideNavItem> {
             height: 44,
             decoration: BoxDecoration(
               color: showBg
-                  ? scheme.primary.withValues(alpha: 0.12)
+                  ? scheme.primary.withValues(alpha: 0.18)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),

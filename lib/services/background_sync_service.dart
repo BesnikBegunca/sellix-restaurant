@@ -10,6 +10,7 @@ import 'api_client.dart';
 import 'connectivity_service.dart';
 import 'database_service.dart';
 import 'portal_sales_sync_service.dart';
+import 'portal_shifts_sync_service.dart';
 import 'pull_sync_apply_service.dart';
 import 'runtime_config_service.dart';
 import 'sync_backoff_policy.dart';
@@ -173,6 +174,7 @@ class BackgroundSyncService {
     final stopwatch = Stopwatch()..start();
     try {
       await PortalSalesSyncService.instance.triggerNow();
+      await PortalShiftsSyncService.instance.triggerNow();
       _backoff.reset();
       _cancelScheduledRetry();
       await DatabaseService.instance.setAppMeta(
