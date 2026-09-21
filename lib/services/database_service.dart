@@ -2002,6 +2002,37 @@ class DatabaseService {
     await db.update('company', map, where: 'id = 1');
   }
 
+  /// Hide waiter-facing table totals. Pass only the fields you want to change.
+  Future<void> updateWaiterVisibilitySettings({
+    bool? hideWaiterGrandTotal,
+    bool? hideWaiterTableTotals,
+  }) async {
+    final db = await database;
+    final map = <String, Object?>{};
+    if (hideWaiterGrandTotal != null) {
+      map['hideWaiterGrandTotal'] = hideWaiterGrandTotal ? 1 : 0;
+    }
+    if (hideWaiterTableTotals != null) {
+      map['hideWaiterTableTotals'] = hideWaiterTableTotals ? 1 : 0;
+    }
+    if (map.isEmpty) return;
+    try {
+      await db.update('company', map, where: 'id = 1');
+    } catch (_) {
+      try {
+        await db.execute(
+          "ALTER TABLE company ADD COLUMN hideWaiterGrandTotal INTEGER NOT NULL DEFAULT 0",
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          "ALTER TABLE company ADD COLUMN hideWaiterTableTotals INTEGER NOT NULL DEFAULT 0",
+        );
+      } catch (_) {}
+      await db.update('company', map, where: 'id = 1');
+    }
+  }
+
   Future<void> updateAdminPin(String hash, String salt, {String? pinView}) async {
     final db = await database;
     final now = DateTime.now().toIso8601String();

@@ -325,7 +325,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                         color: AppColors.lightGreenText,
                       ),
                     ),
-                    if (tableTotal > 0) ...[
+                    if (tableTotal > 0 &&
+                        !data.hideWaiterTableTotals) ...[
                       const SizedBox(height: 12),
                       Text(
                         '${tableTotal.toStringAsFixed(2)}€',
@@ -659,6 +660,8 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           onPay: _payTable,
                           isPaying: _isPaying,
                           isSendingOrder: _isSendingOrder,
+                          showTotal:
+                              !ManagerData.instance.hideWaiterTableTotals,
                         ),
                       ),
                     ],

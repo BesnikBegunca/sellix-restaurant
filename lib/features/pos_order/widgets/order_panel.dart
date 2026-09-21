@@ -20,6 +20,7 @@ class OrderPanel extends StatelessWidget {
     this.canPay = false,
     this.isPaying = false,
     this.isSendingOrder = false,
+    this.showTotal = true,
   });
 
   final int tableNumber;
@@ -34,6 +35,7 @@ class OrderPanel extends StatelessWidget {
   final VoidCallback onPay;
   final bool isPaying;
   final bool isSendingOrder;
+  final bool showTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -117,16 +119,18 @@ class OrderPanel extends StatelessWidget {
                     },
                   ),
           ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.only(top: 16),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: AppColors.borderSubtle(0.1)),
+          if (showTotal) ...[
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.only(top: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: AppColors.borderSubtle(0.1)),
+                ),
               ),
+              child: _moneyRow('Totali', total, large: true),
             ),
-            child: _moneyRow('Totali', total, large: true),
-          ),
+          ],
           const SizedBox(height: 24),
           SendOrderButton(
             enabled: !empty && !isSendingOrder && !isPaying,

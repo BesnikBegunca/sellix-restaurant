@@ -84,6 +84,12 @@ class ManagerSideNav extends StatelessWidget {
       en: 'Settings',
     ),
     (
+      icon: Icons.lock_outline,
+      sel: Icons.lock,
+      sq: 'Permissions',
+      en: 'Permissions',
+    ),
+    (
       icon: Icons.payments_outlined,
       sel: Icons.payments,
       sq: 'Pagat',

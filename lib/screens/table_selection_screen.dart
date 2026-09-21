@@ -195,6 +195,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                   _TableScreenHeaderRow(
                     total: total,
                     occupied: occupied,
+                    showGrandTotal: !_m.hideWaiterGrandTotal,
                     waiterName: widget.waiterName,
                     alwaysOpen: WaiterAlwaysOpen.instance.isEnabled(
                       widget.waiterName,
@@ -228,6 +229,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                             final t = tables[i];
                             return _TableCard(
                               table: t,
+                              showTableTotal: !_m.hideWaiterTableTotals,
                               onTap: () {
                                 final orderNo = t.occupied
                                     ? (t.currentOrderNumber ?? 1)
@@ -263,6 +265,7 @@ class _TableScreenHeaderRow extends StatelessWidget {
   const _TableScreenHeaderRow({
     required this.total,
     required this.occupied,
+    required this.showGrandTotal,
     required this.waiterName,
     required this.alwaysOpen,
     required this.onAlwaysOpenChanged,
@@ -270,6 +273,7 @@ class _TableScreenHeaderRow extends StatelessWidget {
 
   final double total;
   final int occupied;
+  final bool showGrandTotal;
   final String waiterName;
   final bool alwaysOpen;
   final ValueChanged<bool> onAlwaysOpenChanged;
@@ -283,36 +287,38 @@ class _TableScreenHeaderRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tr.totaliGjithaTavolinave,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.lightGreenText,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${total.toStringAsFixed(2)}€',
+              if (showGrandTotal) ...[
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        tr.totaliGjithaTavolinave,
                         style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.darkGreenText,
-                          height: 1.1,
+                          fontSize: 14,
+                          color: AppColors.lightGreenText,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${total.toStringAsFixed(2)}€',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.darkGreenText,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
+              ],
               _OccupiedCountBadge(occupied: occupied),
             ],
           ),
@@ -471,10 +477,15 @@ class _AddTableCardState extends State<_AddTableCard> {
 }
 
 class _TableCard extends StatefulWidget {
-  const _TableCard({required this.table, required this.onTap});
+  const _TableCard({
+    required this.table,
+    required this.onTap,
+    this.showTableTotal = true,
+  });
 
   final TableInfo table;
   final VoidCallback onTap;
+  final bool showTableTotal;
 
   @override
   State<_TableCard> createState() => _TableCardState();
@@ -549,7 +560,9 @@ class _TableCardState extends State<_TableCard> {
                     const SizedBox(height: 8),
                     Container(height: 1, color: AppColors.borderSubtle(0.1)),
                     const SizedBox(height: 8),
-                    if (o && widget.table.currentTotal != null) ...[
+                    if (o &&
+                        widget.showTableTotal &&
+                        widget.table.currentTotal != null) ...[
                       Text(
                         'Totali aktual',
                         style: TextStyle(
@@ -570,7 +583,15 @@ class _TableCardState extends State<_TableCard> {
                           ),
                         ),
                       ),
-                    ] else
+                    ] else if (o && !widget.showTableTotal)
+                      Text(
+                        'Porosi aktive',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.lightGreenText,
+                        ),
+                      )
+                    else
                       Text(
                         'Nuk ka porosi aktive',
                         style: TextStyle(

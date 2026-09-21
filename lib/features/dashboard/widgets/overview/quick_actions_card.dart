@@ -40,7 +40,7 @@ class QuickActionsCard extends StatelessWidget {
             icon: Icons.history_outlined,
             label: tr.historikuShitjeve,
             hint: tr.faturaRimbursime,
-            onTap: () => onNavigate(12),
+            onTap: () => onNavigate(13),
           ),
         ],
       ),

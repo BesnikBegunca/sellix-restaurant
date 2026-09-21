@@ -66,6 +66,12 @@ class ManagerData extends ChangeNotifier {
   String? businessAddress;
   String? businessPhone;
 
+  /// When true, waiters do not see the sum of all tables.
+  bool hideWaiterGrandTotal = false;
+
+  /// When true, waiters do not see each table's current total.
+  bool hideWaiterTableTotals = false;
+
   // ── shift ──────────────────────────────────────────────────────────────────
 
   bool shiftOpen = false;
@@ -144,6 +150,10 @@ class ManagerData extends ChangeNotifier {
       receiptFooter     = (company['receiptFooter']  as String?) ?? tr.juFaleminderit;
       businessAddress   = company['businessAddress'] as String?;
       businessPhone     = company['businessPhone']   as String?;
+      hideWaiterGrandTotal =
+          ((company['hideWaiterGrandTotal'] as int?) ?? 0) == 1;
+      hideWaiterTableTotals =
+          ((company['hideWaiterTableTotals'] as int?) ?? 0) == 1;
       _adminPinHash     = company['adminPinHash']    as String?;
       _adminPinSalt     = company['adminPinSalt']    as String?;
     }
@@ -396,6 +406,24 @@ class ManagerData extends ChangeNotifier {
       receiptFooter:     receiptFooter,
       businessAddress:   businessAddress,
       businessPhone:     businessPhone,
+    );
+    notifyListeners();
+  }
+
+  /// Persist waiter-facing total visibility. Pass only the fields to change.
+  Future<void> saveWaiterVisibilitySettings({
+    bool? hideWaiterGrandTotal,
+    bool? hideWaiterTableTotals,
+  }) async {
+    if (hideWaiterGrandTotal != null) {
+      this.hideWaiterGrandTotal = hideWaiterGrandTotal;
+    }
+    if (hideWaiterTableTotals != null) {
+      this.hideWaiterTableTotals = hideWaiterTableTotals;
+    }
+    await DatabaseService.instance.updateWaiterVisibilitySettings(
+      hideWaiterGrandTotal: hideWaiterGrandTotal,
+      hideWaiterTableTotals: hideWaiterTableTotals,
     );
     notifyListeners();
   }

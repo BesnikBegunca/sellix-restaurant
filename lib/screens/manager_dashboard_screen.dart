@@ -22,6 +22,7 @@ import '../features/dashboard/panels/tables_config_panel.dart';
 import '../features/dashboard/panels/staff_payroll_panel.dart';
 import '../features/dashboard/panels/overview_panel.dart';
 import '../features/dashboard/panels/company_settings_panel.dart';
+import '../features/dashboard/panels/permissions_panel.dart';
 import '../features/dashboard/panels/refund_panel.dart';
 import '../features/dashboard/panels/sales_daily_panel.dart';
 import '../features/dashboard/widgets/manager_side_nav.dart';
@@ -41,6 +42,7 @@ List<String> get _kSectionTitles => [
   tr.menu,
   tr.tavolinat,
   tr.cilesimet,
+  AppLanguageService.instance.t('Permissions', 'Permissions'),
   tr.pagatAvans,
   tr.refund,
   tr.historikuShitjeve,
@@ -327,12 +329,14 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
       case 9:
         return CompanySettingsPanel(m: _m);
       case 10:
-        return StaffPayrollPanel(m: _m);
+        return PermissionsPanel(m: _m);
       case 11:
-        return RefundPanel(m: _m);
+        return StaffPayrollPanel(m: _m);
       case 12:
-        return const SalesHistoryPanel();
+        return RefundPanel(m: _m);
       case 13:
+        return const SalesHistoryPanel();
+      case 14:
         return const AuditLogPanel();
       default:
         return const SizedBox.shrink();
