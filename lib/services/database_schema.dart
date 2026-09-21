@@ -851,7 +851,8 @@ class DatabaseSchema {
         adminPinUpdatedAt  TEXT,
         adminPinView       TEXT,
         hideWaiterGrandTotal INTEGER NOT NULL DEFAULT 0,
-        hideWaiterTableTotals INTEGER NOT NULL DEFAULT 0
+        hideWaiterTableTotals INTEGER NOT NULL DEFAULT 0,
+        productNameScale INTEGER NOT NULL DEFAULT 0
       )
     ''');
     await db.execute('''
@@ -1377,6 +1378,11 @@ class DatabaseSchema {
     try {
       await db.execute(
         "ALTER TABLE company ADD COLUMN hideWaiterTableTotals INTEGER NOT NULL DEFAULT 0",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE company ADD COLUMN productNameScale INTEGER NOT NULL DEFAULT 0",
       );
     } catch (_) {}
     // v16: clear plaintext from waiters.pin

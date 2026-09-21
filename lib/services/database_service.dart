@@ -2033,6 +2033,29 @@ class DatabaseService {
     }
   }
 
+  Future<void> updateProductNameScale(int scale) async {
+    final db = await database;
+    final value = scale.clamp(0, 2);
+    try {
+      await db.update(
+        'company',
+        {'productNameScale': value},
+        where: 'id = 1',
+      );
+    } catch (_) {
+      try {
+        await db.execute(
+          "ALTER TABLE company ADD COLUMN productNameScale INTEGER NOT NULL DEFAULT 0",
+        );
+      } catch (_) {}
+      await db.update(
+        'company',
+        {'productNameScale': value},
+        where: 'id = 1',
+      );
+    }
+  }
+
   Future<void> updateAdminPin(String hash, String salt, {String? pinView}) async {
     final db = await database;
     final now = DateTime.now().toIso8601String();

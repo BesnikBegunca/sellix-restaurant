@@ -241,6 +241,8 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
         PanelColumns(left: _businessCard(), right: _languageCard()),
         const SizedBox(height: 16),
         _themeCard(),
+        const SizedBox(height: 16),
+        _productNameCard(),
 
         const SizedBox(height: 28),
         PanelSectionLabel(text: _language.t('Printimi', 'Printing')),
@@ -379,6 +381,81 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           ),
         );
       },
+    );
+  }
+
+  Widget _productNameCard() {
+    return SettingsCard(
+      icon: Icons.text_fields_rounded,
+      title: _language.t('Emri i produktit', 'Product name'),
+      subtitle: _language.t(
+        'Sa i madh shfaqet emri në kartën e produktit te kamarieri.',
+        'How large the product name appears on waiter tiles.',
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _fieldLabel(
+            _language.t('Madhësia e emrit', 'Name size'),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _nameScaleChip(
+                  0,
+                  _language.t('Normale', 'Normal'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _nameScaleChip(
+                  1,
+                  _language.t('E madhe', 'Large'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _nameScaleChip(
+                  2,
+                  _language.t('Shumë e madhe', 'Extra large'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _nameScaleChip(int scale, String label) {
+    final selected = widget.m.productNameScale == scale;
+    return GestureDetector(
+      onTap: () => widget.m.saveProductNameScale(scale),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.lightGreenBg : AppColors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected
+                ? AppColors.primaryGreen
+                : AppColors.lightGreenBorder,
+            width: selected ? 1.6 : 1,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: scale == 0 ? 13 : (scale == 1 ? 15 : 17),
+            fontWeight: FontWeight.w700,
+            color: selected ? AppColors.primaryGreen : AppColors.darkGreenText,
+          ),
+        ),
+      ),
     );
   }
 

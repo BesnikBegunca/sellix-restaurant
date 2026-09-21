@@ -72,6 +72,9 @@ class ManagerData extends ChangeNotifier {
   /// When true, waiters do not see each table's current total.
   bool hideWaiterTableTotals = false;
 
+  /// 0 = normal, 1 = large, 2 = extra large — POS product-name card.
+  int productNameScale = 0;
+
   // ── shift ──────────────────────────────────────────────────────────────────
 
   bool shiftOpen = false;
@@ -154,6 +157,8 @@ class ManagerData extends ChangeNotifier {
           ((company['hideWaiterGrandTotal'] as int?) ?? 0) == 1;
       hideWaiterTableTotals =
           ((company['hideWaiterTableTotals'] as int?) ?? 0) == 1;
+      productNameScale =
+          ((company['productNameScale'] as int?) ?? 0).clamp(0, 2);
       _adminPinHash     = company['adminPinHash']    as String?;
       _adminPinSalt     = company['adminPinSalt']    as String?;
     }
@@ -425,6 +430,12 @@ class ManagerData extends ChangeNotifier {
       hideWaiterGrandTotal: hideWaiterGrandTotal,
       hideWaiterTableTotals: hideWaiterTableTotals,
     );
+    notifyListeners();
+  }
+
+  Future<void> saveProductNameScale(int scale) async {
+    productNameScale = scale.clamp(0, 2);
+    await DatabaseService.instance.updateProductNameScale(productNameScale);
     notifyListeners();
   }
 

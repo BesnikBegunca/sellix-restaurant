@@ -96,4 +96,49 @@ abstract final class PosGrid {
       childAspectRatio: childAspectRatio,
     );
   }
+
+  /// Taller product cards when the admin enlarges product names.
+  static double productAspectRatioFor(int nameScale) {
+    return switch (nameScale.clamp(0, 2)) {
+      1 => 1.22,
+      2 => 1.02,
+      _ => childAspectRatio,
+    };
+  }
+
+  static int resolveProductCrossAxisCount({
+    required int itemCount,
+    required double width,
+    required double height,
+    required int nameScale,
+    int startColumns = crossAxisCount,
+    int minColumns = 2,
+    int maxColumns = 12,
+  }) {
+    if (itemCount <= 0) return startColumns.clamp(minColumns, maxColumns);
+    final ratio = productAspectRatioFor(nameScale);
+    var columns = startColumns.clamp(minColumns, maxColumns);
+    while (columns < itemCount && columns < maxColumns) {
+      final rows = (itemCount / columns).ceil();
+      final cellW = (width - (columns - 1) * spacing) / columns;
+      final cellH = cellW / ratio;
+      final needed = rows * cellH + (rows - 1) * spacing;
+      if (needed <= height) break;
+      columns++;
+    }
+    return columns;
+  }
+
+  static SliverGridDelegateWithFixedCrossAxisCount productDelegateFor(
+    int columns, {
+    required int nameScale,
+  }) {
+    final c = columns.clamp(2, 12);
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: c,
+      crossAxisSpacing: spacing,
+      mainAxisSpacing: spacing,
+      childAspectRatio: productAspectRatioFor(nameScale),
+    );
+  }
 }

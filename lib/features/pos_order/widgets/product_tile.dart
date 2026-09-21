@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../manager/manager_data.dart';
 import '../../../models/mock_data.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/image_utils.dart';
@@ -21,6 +22,11 @@ class _ProductTileState extends State<ProductTile> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final scale = ManagerData.instance.productNameScale.clamp(0, 2);
+    final nameSize = const [16.0, 20.0, 24.0][scale];
+    final nameLines = const [2, 3, 4][scale];
+    final imageH = const [100.0, 70.0, 48.0][scale];
+    final pad = const [24.0, 18.0, 14.0][scale];
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -30,7 +36,7 @@ class _ProductTileState extends State<ProductTile> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           transform: Matrix4.translationValues(0, _hover ? -4 : 0, 0),
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(pad),
           decoration: BoxDecoration(
             color: scheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(20),
@@ -64,7 +70,7 @@ class _ProductTileState extends State<ProductTile> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      height: 100,
+                      height: imageH,
                       child: Center(
                         child: widget.product.imagePath != null
                             ? productImage(
@@ -90,11 +96,12 @@ class _ProductTileState extends State<ProductTile> {
                             children: [
                               Text(
                                 widget.product.name,
-                                maxLines: 2,
+                                maxLines: nameLines,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: nameSize,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.15,
                                   color: scheme.onSurface,
                                 ),
                               ),

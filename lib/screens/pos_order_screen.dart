@@ -614,11 +614,15 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                 Expanded(
                                   child: LayoutBuilder(
                                     builder: (context, gridConstraints) {
+                                      final nameScale = ManagerData
+                                          .instance
+                                          .productNameScale;
                                       final columns =
-                                          PosGrid.resolveCrossAxisCount(
+                                          PosGrid.resolveProductCrossAxisCount(
                                             itemCount: products.length,
                                             width: gridConstraints.maxWidth,
                                             height: gridConstraints.maxHeight,
+                                            nameScale: nameScale,
                                           );
                                       return GridView.builder(
                                         physics:
@@ -626,8 +630,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                         padding: const EdgeInsets.only(
                                           bottom: 16,
                                         ),
-                                        gridDelegate: PosGrid.delegateFor(
+                                        gridDelegate:
+                                            PosGrid.productDelegateFor(
                                           columns,
+                                          nameScale: nameScale,
                                         ),
                                         itemCount: products.length,
                                         itemBuilder: (context, i) {
