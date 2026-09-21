@@ -1,17 +1,17 @@
-; Inno Setup script for POS System - Flutter Desktop
+; Inno Setup script for SelliX - Flutter Desktop
 ; Requires Inno Setup 6.x — https://jrsoftware.org/isinfo.php
 ;
 ; BEFORE building this installer:
-;   1. Run: .\scripts\sync_windows_app_icon.ps1  (app_icon.png -> app_icon.ico)
-;   2. Run: flutter build windows --release
+;   1. Run: .\scripts\sync_windows_app_icon.ps1
+;   2. Run: flutter build windows --release --no-tree-shake-icons
 ;   3. Copy release\app_config.example.json to release\app_config.json
 ;   4. Run: .\scripts\prepare_windows_release.ps1
 ;   5. Open this file in Inno Setup Compiler and click Build → Compile
 
-#define AppName      "POS System"
+#define AppName      "SelliX"
 #define AppVersion   "1.0.0"
-#define AppPublisher "Your Company Name"
-#define AppExeName   "pos_system.exe"
+#define AppPublisher "Sellix Software Inc."
+#define AppExeName   "SelliX.exe"
 #define ReleaseDir   "..\..\build\windows\x64\runner\Release"
 #define ConfigDir    "..\..\release"
 #define AppIcon      "..\..\assets\images\app_icon.ico"
@@ -21,12 +21,13 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 SetupIconFile={#AppIcon}
-UninstallDisplayIcon={#AppIcon}
+UninstallDisplayIcon={app}\{#AppExeName}
 AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
+UsePreviousAppDir=no
 OutputDir={#ConfigDir}\installer_output
-OutputBaseFilename=POSSystemSetup_{#AppVersion}
+OutputBaseFilename=SelliXSetup_{#AppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64compatible

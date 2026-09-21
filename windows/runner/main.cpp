@@ -28,7 +28,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // Borderless fullscreen on the default monitor (covers taskbar); origin/size ignored.
   Win32Window::Point origin(0, 0);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"POS System", origin, size)) {
+  if (!window.Create(L"SelliX", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
