@@ -40,26 +40,30 @@ class LicenseSuspendedScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.darkGreenText,
+                      // Çelësi i ri e mban titullin/nënshtitullin brenda formës —
+                      // koka e ekranit shfaqet vetëm për skadim/pezullim.
+                      if (!gate.needsReplacementKey) ...[
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.darkGreenText,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        reason,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.45,
-                          color: AppColors.charcoalText,
+                        const SizedBox(height: 8),
+                        Text(
+                          reason,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.45,
+                            color: AppColors.charcoalText,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
+                      ],
                       const ActivationKeyForm(
                         showLogo: false,
                         title: 'Çelësi i ri',
