@@ -1656,6 +1656,12 @@ class DatabaseService {
       if (tableId != null && tableId > 0 && !occupiedIds.contains(tableId)) {
         continue;
       }
+      // Only THIS sync's new prints — so web can notify +5€ not the running 16€.
+      final unsyncedPrints = grouped[uid]!;
+      var printDelta = 0.0;
+      for (final row in unsyncedPrints) {
+        printDelta += (row['total'] as num?)?.toDouble() ?? 0;
+      }
       List<Map<String, dynamic>> allPrints;
       try {
         allPrints = await db.query(
@@ -1665,15 +1671,22 @@ class DatabaseService {
           orderBy: 'id ASC',
         );
       } catch (_) {
-        allPrints = grouped[uid]!;
+        allPrints = unsyncedPrints;
       }
-      if (allPrints.isEmpty) allPrints = grouped[uid]!;
+      if (allPrints.isEmpty) allPrints = unsyncedPrints;
       final printIds = allPrints
           .map((row) => (row['id'] as num?)?.toInt())
           .whereType<int>()
           .toList();
       final lines = await fetchKitchenPrintLinesForPrints(printIds);
-      invoices.add(_portalInvoiceFromPrints(effectiveUid, allPrints, lines));
+      invoices.add(
+        _portalInvoiceFromPrints(
+          effectiveUid,
+          allPrints,
+          lines,
+          printDelta: printDelta,
+        ),
+      );
       usedUids.add(effectiveUid);
     }
 
@@ -1744,8 +1757,9 @@ class DatabaseService {
   Map<String, dynamic> _portalInvoiceFromPrints(
     String saleUid,
     List<Map<String, dynamic>> prints,
-    List<Map<String, dynamic>> lines,
-  ) {
+    List<Map<String, dynamic>> lines, {
+    double? printDelta,
+  }) {
     var total = 0.0;
     int? tableId;
     var waiter = '';
@@ -1762,10 +1776,13 @@ class DatabaseService {
           (row['createdAt'] as String?) ??
           soldAtRaw;
     }
+    final delta = printDelta ?? total;
     return {
       'saleUid': saleUid,
       'soldAtRaw': soldAtRaw,
       'total': total,
+      // Only the newly printed slice this sync (not the running table total).
+      'printDelta': delta,
       'tableName': tableId != null && tableId > 0 ? 'Tavolina $tableId' : '',
       'orderNumber': orderNumber,
       'waiterName': waiter,

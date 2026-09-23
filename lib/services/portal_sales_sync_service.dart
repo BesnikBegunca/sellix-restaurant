@@ -186,6 +186,7 @@ class PortalSalesSyncService {
       'discount': 0,
       'paymentMethod': 'cash',
       'status': (row['status'] as String?)?.trim() ?? 'paid',
+      if (row['printDelta'] != null) 'printDelta': row['printDelta'],
       if (tableName.isNotEmpty) 'tableName': tableName,
       if (orderNumber != null) 'receiptNo': '$orderNumber',
       if (waiter.isNotEmpty) 'staffName': waiter,
