@@ -871,6 +871,7 @@ class DatabaseSchema {
         adminPinView       TEXT,
         hideWaiterGrandTotal INTEGER NOT NULL DEFAULT 0,
         hideWaiterTableTotals INTEGER NOT NULL DEFAULT 0,
+        blockWaiterPay INTEGER NOT NULL DEFAULT 0,
         productNameScale INTEGER NOT NULL DEFAULT 0,
         productImageScale INTEGER NOT NULL DEFAULT 0,
         productPriceScale INTEGER NOT NULL DEFAULT 0
@@ -1401,6 +1402,11 @@ class DatabaseSchema {
     try {
       await db.execute(
         "ALTER TABLE company ADD COLUMN hideWaiterTableTotals INTEGER NOT NULL DEFAULT 0",
+      );
+    } catch (_) {}
+    try {
+      await db.execute(
+        "ALTER TABLE company ADD COLUMN blockWaiterPay INTEGER NOT NULL DEFAULT 0",
       );
     } catch (_) {}
     try {

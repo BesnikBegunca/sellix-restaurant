@@ -21,6 +21,7 @@ class OrderPanel extends StatelessWidget {
     this.isPaying = false,
     this.isSendingOrder = false,
     this.showTotal = true,
+    this.showPayButton = true,
     this.totalLabel = 'Totali',
   });
 
@@ -37,6 +38,7 @@ class OrderPanel extends StatelessWidget {
   final bool isPaying;
   final bool isSendingOrder;
   final bool showTotal;
+  final bool showPayButton;
 
   /// Etiketa e shumës (p.sh. 'Totali' ose 'Porosia aktuale').
   final String totalLabel;
@@ -141,12 +143,14 @@ class OrderPanel extends StatelessWidget {
             isSending: isSendingOrder,
             onSend: onSend,
           ),
-          const SizedBox(height: 10),
-          PayButton(
-            enabled: canPay && !isPaying && !isSendingOrder,
-            onPay: onPay,
-            isPaying: isPaying,
-          ),
+          if (showPayButton) ...[
+            const SizedBox(height: 10),
+            PayButton(
+              enabled: canPay && !isPaying && !isSendingOrder,
+              onPay: onPay,
+              isPaying: isPaying,
+            ),
+          ],
         ],
       ),
     );

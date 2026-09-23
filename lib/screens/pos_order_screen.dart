@@ -99,6 +99,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   /// Paguaj: tavolinë e zënë (pas PRINTO) ose artikuj të rinj në listë.
   bool get _canPay {
+    if (ManagerData.instance.blockWaiterPay) return false;
     final table = _tableInfo;
     return (table?.occupied ?? false) || _lines.isNotEmpty;
   }
@@ -170,7 +171,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   }
 
   Future<void> _payTable() async {
-    if (!_canPay || _isSendingOrder) return;
+    if (!_canPay || _isSendingOrder || ManagerData.instance.blockWaiterPay) {
+      return;
+    }
     if (_isPaying) {
       AuditLogService.instance.logDuplicatePaymentBlocked(
         tableId: widget.tableNumber,
@@ -681,6 +684,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           lines: _lines,
                           total: _displayTotal,
                           canPay: _canPay,
+                          showPayButton: !ManagerData.instance.blockWaiterPay,
                           onDelta: _deltaQty,
                           onSend: _sendOrder,
                           onPay: _payTable,

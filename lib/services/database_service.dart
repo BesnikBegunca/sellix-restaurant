@@ -2115,6 +2115,7 @@ class DatabaseService {
   Future<void> updateWaiterVisibilitySettings({
     bool? hideWaiterGrandTotal,
     bool? hideWaiterTableTotals,
+    bool? blockWaiterPay,
   }) async {
     final db = await database;
     final map = <String, Object?>{};
@@ -2123,6 +2124,9 @@ class DatabaseService {
     }
     if (hideWaiterTableTotals != null) {
       map['hideWaiterTableTotals'] = hideWaiterTableTotals ? 1 : 0;
+    }
+    if (blockWaiterPay != null) {
+      map['blockWaiterPay'] = blockWaiterPay ? 1 : 0;
     }
     if (map.isEmpty) return;
     try {
@@ -2136,6 +2140,11 @@ class DatabaseService {
       try {
         await db.execute(
           "ALTER TABLE company ADD COLUMN hideWaiterTableTotals INTEGER NOT NULL DEFAULT 0",
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          "ALTER TABLE company ADD COLUMN blockWaiterPay INTEGER NOT NULL DEFAULT 0",
         );
       } catch (_) {}
       await db.update('company', map, where: 'id = 1');

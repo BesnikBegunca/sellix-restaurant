@@ -76,6 +76,9 @@ class ManagerData extends ChangeNotifier {
   /// When true, waiters do not see each table's current total.
   bool hideWaiterTableTotals = false;
 
+  /// When true, waiters cannot see or use PAGUAJ.
+  bool blockWaiterPay = false;
+
   /// 0 = normal, 1 = large, 2 = extra large — POS product tile.
   int productNameScale = 0;
   int productImageScale = 0;
@@ -170,6 +173,7 @@ class ManagerData extends ChangeNotifier {
           ((company['hideWaiterGrandTotal'] as int?) ?? 0) == 1;
       hideWaiterTableTotals =
           ((company['hideWaiterTableTotals'] as int?) ?? 0) == 1;
+      blockWaiterPay = ((company['blockWaiterPay'] as int?) ?? 0) == 1;
       productNameScale =
           ((company['productNameScale'] as int?) ?? 0).clamp(0, 2);
       productImageScale =
@@ -436,6 +440,7 @@ class ManagerData extends ChangeNotifier {
   Future<void> saveWaiterVisibilitySettings({
     bool? hideWaiterGrandTotal,
     bool? hideWaiterTableTotals,
+    bool? blockWaiterPay,
   }) async {
     if (hideWaiterGrandTotal != null) {
       this.hideWaiterGrandTotal = hideWaiterGrandTotal;
@@ -443,9 +448,13 @@ class ManagerData extends ChangeNotifier {
     if (hideWaiterTableTotals != null) {
       this.hideWaiterTableTotals = hideWaiterTableTotals;
     }
+    if (blockWaiterPay != null) {
+      this.blockWaiterPay = blockWaiterPay;
+    }
     await DatabaseService.instance.updateWaiterVisibilitySettings(
       hideWaiterGrandTotal: hideWaiterGrandTotal,
       hideWaiterTableTotals: hideWaiterTableTotals,
+      blockWaiterPay: blockWaiterPay,
     );
     notifyListeners();
   }

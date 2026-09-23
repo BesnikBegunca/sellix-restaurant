@@ -21,8 +21,8 @@ class PermissionsPanel extends StatelessWidget {
           icon: Icons.lock_outline_rounded,
           title: lang.t('Permissions', 'Permissions'),
           subtitle: lang.t(
-            'Çfarë sheh kamarieri në ekranin e tavolinave. Menaxheri i sheh gjithmonë totalet.',
-            'What waiters see on the tables screen. Managers always see totals.',
+            'Çfarë sheh dhe çfarë mund të bëjë kamarieri. Menaxheri nuk kufizohet.',
+            'What waiters see and can do. Managers are not limited.',
           ),
         ),
         SettingsCard(
@@ -62,6 +62,28 @@ class PermissionsPanel extends StatelessWidget {
                     m.saveWaiterVisibilitySettings(hideWaiterTableTotals: v),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        SettingsCard(
+          icon: Icons.payments_outlined,
+          title: lang.t('Butoni PAGUAJ', 'PAY button'),
+          subtitle: lang.t(
+            'Blloko pagesën nga kamarieri. PRINTO mbetet.',
+            'Block waiter payments. PRINT stays available.',
+          ),
+          child: SettingsCheckTile(
+            label: lang.t(
+              'Blloko komplet butonin PAGUAJ',
+              'Completely block the PAY button',
+            ),
+            description: lang.t(
+              'Kamarieri nuk e sheh PAGUAJ dhe nuk mund të paguajë. Mund vetëm të printojë.',
+              'Waiters will not see PAY and cannot take payment. They can only print.',
+            ),
+            value: m.blockWaiterPay,
+            onChanged: (v) =>
+                m.saveWaiterVisibilitySettings(blockWaiterPay: v),
           ),
         ),
       ],
