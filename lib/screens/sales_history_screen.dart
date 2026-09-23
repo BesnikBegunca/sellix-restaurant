@@ -70,10 +70,8 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
     final now = DateTime.now();
     switch (_dateFilter) {
       case SHDateFilter.today:
-        return DateTimeRange(
-          start: _startOfDay(now),
-          end: _endOfDay(now),
-        );
+        // «Sot» = gjendja e hapur (vazhdon pas 00:00 deri sa mbyllet).
+        return null;
       case SHDateFilter.thisWeek:
         final monday = now.subtract(Duration(days: now.weekday - 1));
         return DateTimeRange(start: _startOfDay(monday), end: _endOfDay(now));
@@ -143,7 +141,14 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
       // Filter the in-memory sales history first (fast, no DB round-trip).
       final allSales = ManagerData.instance.salesHistory;
       final filtered = allSales.where((s) {
-        if (range != null &&
+        if (_dateFilter == SHDateFilter.today) {
+          if (!ManagerData.instance.isInOpenShift(
+            at: s.timestamp,
+            shiftId: s.shiftId,
+          )) {
+            return false;
+          }
+        } else if (range != null &&
             (s.timestamp.isBefore(range.start) ||
                 s.timestamp.isAfter(range.end))) {
           return false;

@@ -402,7 +402,8 @@ const Map<String, String> kSq = {
   'porosiGjithsej': 'Porosi Gjithsej',
   'porosia': 'Porosia',
   'porosiaMesatare': 'Porosia mesatare',
-  'porositeArdhuratDites': 'Porositë dhe të ardhurat e ditës.',
+  'porositeArdhuratDites':
+      'Porositë dhe të ardhurat e gjendjes (deri sa të mbyllet).',
   'posSystem': 'POS System',
   'poshte': 'Poshtë',
   'printeri': 'Printeri',
@@ -456,7 +457,8 @@ const Map<String, String> kSq = {
   'shitjeGjithsej': 'Shitje Gjithsej',
   'shitjet': 'Shitjet',
   'shitjet7Diteve': 'Shitjet e 7 ditëve',
-  'shitjetDitesAktuale': 'Shitjet e ditës aktuale',
+  'shitjetDitesAktuale':
+      'Shitjet e gjendjes së hapur (jo mesnata)',
   'shitjetDoShfaqenKetuPasiRegjistroni':
       'Shitjet do të shfaqen këtu pasi të regjistroni shitjet e para.',
   'shitjetSipasMbylljesGjendjes': 'Shitjet sipas mbylljes së gjendjes',

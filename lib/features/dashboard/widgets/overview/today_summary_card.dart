@@ -15,17 +15,7 @@ class TodaySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
-    final todayStart = DateTime(today.year, today.month, today.day);
-    final todayEnd = DateTime(today.year, today.month, today.day, 23, 59, 59);
-
-    final todaySales = m.salesHistory
-        .where(
-          (s) =>
-              !s.timestamp.isBefore(todayStart) &&
-              !s.timestamp.isAfter(todayEnd),
-        )
-        .toList();
+    final todaySales = m.salesToday;
 
     final totalOrders = todaySales.length;
     final totalRevenue = m.revenueToday;

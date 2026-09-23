@@ -1093,10 +1093,21 @@ class ManagerData extends ChangeNotifier {
   static DateTime _endOfDay(DateTime d) =>
       DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
 
-  double get revenueToday {
-    final now = DateTime.now();
-    return revenueInRange(_startOfDay(now), _endOfDay(now));
+  /// «Sot» operativ: gjendja e hapur, jo mesnata. Pas mbylljes niset 00.
+  bool isInOpenShift({DateTime? at, int? shiftId}) {
+    if (_currentShiftId != null && shiftId != null) {
+      return shiftId == _currentShiftId;
+    }
+    final t = at ?? DateTime.now();
+    final start = shiftOpenedAt ?? _startOfDay(t);
+    return !t.isBefore(start);
   }
+
+  List<SaleRow> get salesToday => _salesHistory
+      .where((s) => isInOpenShift(at: s.timestamp, shiftId: s.shiftId))
+      .toList();
+
+  double get revenueToday => salesToday.fold<double>(0, (sum, s) => sum + s.total);
 
   double get revenueThisWeek {
     final now = DateTime.now();
@@ -1109,10 +1120,9 @@ class ManagerData extends ChangeNotifier {
     return revenueInRange(DateTime(now.year, now.month, 1), _endOfDay(now));
   }
 
-  double get expensesToday {
-    final now = DateTime.now();
-    return expensesInRange(_startOfDay(now), _endOfDay(now));
-  }
+  double get expensesToday => _expenses
+      .where((e) => isInOpenShift(at: e.date, shiftId: e.shiftId))
+      .fold<double>(0, (sum, e) => sum + e.amount);
 
   double get expensesThisWeek {
     final now = DateTime.now();
