@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 
@@ -51,6 +52,7 @@ class ActivationService {
   static const String kMetaLicenseKey = 'activation_license_key';
   static const String kMetaBusinessJson = 'activation_business_json';
   static const String kMetaLastCheckAt = 'license_last_check_at';
+  static const String kMetaOfferAdminPin = 'offer_admin_pin_on_next_login';
 
   static const Duration kOfflineGrace = Duration(days: 7);
 
@@ -66,8 +68,10 @@ class ActivationService {
   String? _serverDeviceId;
   bool _activated = false;
   bool _handlingRevoke = false;
+  bool _offerAdminPinOnNextLogin = false;
 
   bool get isActivated => _activated;
+  bool get offerAdminPinOnNextLogin => _offerAdminPinOnNextLogin;
   String? get businessId => _businessId;
   String? get branchId => _branchId;
   String? get serverDeviceId => _serverDeviceId;
@@ -146,6 +150,7 @@ class ActivationService {
 
     if (!completedOk) {
       _activated = false;
+      _offerAdminPinOnNextLogin = false;
       if (kDebugMode) debugPrint('[Activation]   final activated=false');
       return false;
     }
@@ -186,6 +191,16 @@ class ActivationService {
 
     if (kDebugMode) debugPrint('[Activation]   final activated=true');
     await ActivationLicenseController.instance.reloadFromStorage();
+    final offer = await db.getAppMeta(kMetaOfferAdminPin);
+    _offerAdminPinOnNextLogin = offer == '1';
+    return true;
+  }
+
+  /// First PIN after a new activation should offer to become the admin PIN.
+  bool takeOfferAdminPinOnNextLogin() {
+    if (!_offerAdminPinOnNextLogin) return false;
+    _offerAdminPinOnNextLogin = false;
+    unawaited(DatabaseService.instance.setAppMeta(kMetaOfferAdminPin, ''));
     return true;
   }
 
@@ -521,10 +536,18 @@ class ActivationService {
         );
         return false;
 
+      case 'suspended':
+        await LicenseGateService.instance.block(
+          code: LicenseBlockCode.licenseSuspended,
+          message: sellixLicenseReasonMessage('suspended'),
+        );
+        return false;
+
       case 'revoked':
+      case 'not_found':
         await LicenseGateService.instance.block(
           code: LicenseBlockCode.licenseRevoked,
-          message: sellixLicenseReasonMessage('revoked'),
+          message: sellixLicenseReasonMessage(e.reason),
         );
         return false;
 
@@ -805,6 +828,7 @@ class ActivationService {
     _businessId = null;
     _branchId = null;
     _serverDeviceId = null;
+    _offerAdminPinOnNextLogin = false;
 
     final db = DatabaseService.instance;
 
@@ -819,6 +843,7 @@ class ActivationService {
     await db.setAppMeta(_kBranchId, '');
     await db.setAppMeta(_kDeviceId, '');
     await db.setAppMeta(_kLicenseExpiresAt, '');
+    await db.setAppMeta(kMetaOfferAdminPin, '');
 
     await LicenseGateService.instance.clearForRevocation();
     ActivationLicenseController.instance.clearInMemory();
@@ -915,6 +940,8 @@ class ActivationService {
     );
     // A fresh activation answers whatever the gate was blocking on.
     await LicenseGateService.instance.unblock();
+    _offerAdminPinOnNextLogin = true;
+    await db.setAppMeta(kMetaOfferAdminPin, '1');
   }
 
   static String _businessIdFor(SellixBusinessProfile business, String key) {

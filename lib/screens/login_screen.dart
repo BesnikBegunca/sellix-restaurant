@@ -246,6 +246,19 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     if (!_pinConfirmEnabled) return;
     final pin = _pinController.text;
 
+    if (ActivationService.instance.takeOfferAdminPinOnNextLogin()) {
+      _pinController.clear();
+      _showAdminPinSetupDialog(
+        pin,
+        onCancel: () => unawaited(_continuePinLogin(pin)),
+      );
+      return;
+    }
+
+    await _continuePinLogin(pin);
+  }
+
+  Future<void> _continuePinLogin(String pin) async {
     if (ManagerData.instance.loginMode == 'NAMEMODE') {
       // NAMEMODE: PIN field is admin-only.
       if (!ManagerData.instance.hasAnyManagerLogin) {
@@ -330,7 +343,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     _schedulePinFocus();
   }
 
-  void _showAdminPinSetupDialog(String pin) {
+  void _showAdminPinSetupDialog(String pin, {VoidCallback? onCancel}) {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -341,7 +354,10 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onCancel?.call();
+            },
             child: Text(tr.anulo),
           ),
           TextButton(

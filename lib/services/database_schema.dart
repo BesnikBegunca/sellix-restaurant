@@ -128,6 +128,7 @@ class DatabaseSchema {
     'global_order_number',
     'global_order_number_date',
     'waiter_order_counters',
+    'offer_admin_pin_on_next_login',
   ];
 
   // ── Activated tenant IDs (updated by ActivationService at startup) ─────────

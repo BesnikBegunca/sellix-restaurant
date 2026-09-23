@@ -134,8 +134,8 @@ class LocalTenantDataService {
   Future<OpenTablesSummary> getOpenTablesSummary() =>
       DatabaseService.instance.getOpenTablesSummary();
 
-  /// Wipes tenant-owned SQLite tables; preserves printer/company settings and
-  /// immutable [audit_logs].
+  /// Wipes tenant-owned SQLite tables; preserves printer/company settings
+  /// (except the leftover administrator PIN) and immutable [audit_logs].
   Future<void> clearLocalBusinessData({bool skipOpenTableCheck = false}) async {
     await DatabaseService.instance.clearLocalBusinessData(
       skipOpenTableCheck: skipOpenTableCheck,

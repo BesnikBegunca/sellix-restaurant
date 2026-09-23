@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../manager/manager_data.dart';
+import '../services/activation_service.dart';
 import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
 import '../services/app_language_service.dart';
@@ -229,7 +230,8 @@ class _WaiterSelectionScreenState extends State<WaiterSelectionScreen> {
 
                       Navigator.of(dialogCtx).pop();
 
-                      if (!ManagerData.instance.hasAnyManagerLogin) {
+                      if (ActivationService.instance.takeOfferAdminPinOnNextLogin() ||
+                          !ManagerData.instance.hasAnyManagerLogin) {
                         if (!mounted) return;
                         _showAdminPinSetupDialog(pin);
                         return;

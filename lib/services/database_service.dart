@@ -3001,9 +3001,10 @@ class DatabaseService {
 
   /// Deletes local business/operational data for a new tenant activation.
   ///
-  /// Preserves [company] (printer/admin settings), [shift] singleton row,
+  /// Preserves [company] printer/receipt settings, [shift] singleton row,
   /// [audit_logs] (immutable audit trail), [audit_device_id], and
-  /// activation-related [app_meta] keys.
+  /// activation-related [app_meta] keys. Clears the leftover administrator PIN
+  /// so the first login PIN can offer to become the new admin PIN.
   ///
   /// When [skipOpenTableCheck] is false, throws if open tables remain.
   /// Always archives sales/orders locally before deleting tenant data.
@@ -3028,6 +3029,15 @@ class DatabaseService {
           'closedAt': null,
         },
         where: 'id = 1',
+      );
+      await txn.execute(
+        'UPDATE company SET '
+        'adminPinHash = NULL, '
+        'adminPinSalt = NULL, '
+        'adminPinCreatedAt = NULL, '
+        'adminPinUpdatedAt = NULL, '
+        'adminPinView = NULL '
+        'WHERE id = 1',
       );
     });
     for (final key in DatabaseSchema.tenantResetAppMetaKeys) {

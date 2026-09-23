@@ -44,6 +44,18 @@ class LicenseGateService extends ChangeNotifier {
 
   bool get isBlocked => _blocked;
   LicenseBlockCode? get code => _code;
+
+  /// New key was issued — the stored key is dead. Operator must paste the new one.
+  bool get needsReplacementKey =>
+      _blocked && _code == LicenseBlockCode.licenseRevoked;
+
+  /// Same key stays. Web extend / unsuspend brings the app back automatically.
+  bool get waitsForWebRestore =>
+      _blocked &&
+      (_code == LicenseBlockCode.licenseExpired ||
+          _code == LicenseBlockCode.licenseSuspended ||
+          _code == LicenseBlockCode.businessSuspended ||
+          _code == LicenseBlockCode.deviceSuspended);
   String? get message => _message;
   String? get reason => _message;
   DateTime? get blockedAt => _blockedAt;

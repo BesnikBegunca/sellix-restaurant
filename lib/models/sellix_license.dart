@@ -198,9 +198,14 @@ String sellixLicenseReasonMessage(String? reason) {
       return 'Çelësi nuk u gjet. Kontrolloni që ta keni shkruar saktë, '
           'ose që administratori të mos e ketë rigjeneruar.';
     case 'revoked':
-      return 'Licenca është revokuar. Kontaktoni SelliX.';
+      return 'Çelësi i vjetër nuk vlen më (p.sh. u lëshua një i ri). '
+          'Vendosni çelësin e ri këtu — nuk është pezullim.';
     case 'expired':
-      return 'Licenca ka skaduar. Kontaktoni administratorin për rinovim.';
+      return 'Licenca ka skaduar. Bëni extend nga webi — '
+          'nuk duhet çelës i ri. App-i kthehet vetë.';
+    case 'suspended':
+      return 'Licenca është pezulluar. Kur ta vazhdoni nga webi, '
+          'app-i kthehet vetë. Nuk duhet çelës i ri.';
     case 'seat_limit':
       return 'Të gjitha pajisjet e lejuara janë në përdorim. '
           'Administratori duhet të lirojë një pajisje te Businesses → Devices.';

@@ -19,6 +19,7 @@ class TodaySummaryCard extends StatelessWidget {
 
     final totalOrders = todaySales.length;
     final totalRevenue = m.revenueToday;
+    final yesterdayRevenue = m.revenueYesterday;
     final avgOrder = totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
 
     final hourCounts = <int, int>{};
@@ -53,6 +54,13 @@ class TodaySummaryCard extends StatelessWidget {
             value: '${totalRevenue.toStringAsFixed(2)}€',
             bold: true,
             valueColor: AppColors.primaryGreen,
+          ),
+          const SizedBox(height: 12),
+          _SummaryRow(
+            label: 'Dje',
+            value: '${yesterdayRevenue.toStringAsFixed(2)}€',
+            bold: true,
+            valueColor: AppColors.warmGold,
           ),
         ],
       ),

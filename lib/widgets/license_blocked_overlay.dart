@@ -20,7 +20,13 @@ class LicenseBlockedOverlay extends StatelessWidget {
             child,
             if (blocked) ...[
               const ModalBarrier(dismissible: false, color: Colors.black54),
-              const Positioned.fill(child: LicenseSuspendedScreen()),
+              Positioned.fill(
+                child: Navigator(
+                  onGenerateRoute: (_) => MaterialPageRoute<void>(
+                    builder: (_) => const LicenseSuspendedScreen(),
+                  ),
+                ),
+              ),
             ],
           ],
         );

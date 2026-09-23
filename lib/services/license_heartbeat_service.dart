@@ -121,7 +121,13 @@ class LicenseHeartbeatService extends ChangeNotifier {
       _inFlight = false;
       _lastCheckAt = DateTime.now();
       if (ok) _lastOkAt = _lastCheckAt;
-      _reschedule();
+      // New key: stored key is dead — stop polling. Expire/pezullim: keep
+      // checking so a web extend / unsuspend restores the app automatically.
+      if (LicenseGateService.instance.needsReplacementKey) {
+        stop();
+      } else {
+        _reschedule();
+      }
       notifyListeners();
     }
     return ok;

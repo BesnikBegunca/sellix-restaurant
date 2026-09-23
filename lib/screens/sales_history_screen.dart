@@ -72,6 +72,9 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
       case SHDateFilter.today:
         // «Sot» = gjendja e hapur (vazhdon pas 00:00 deri sa mbyllet).
         return null;
+      case SHDateFilter.yesterday:
+        // «Dje» = gjendja e fundit e mbyllur.
+        return null;
       case SHDateFilter.thisWeek:
         final monday = now.subtract(Duration(days: now.weekday - 1));
         return DateTimeRange(start: _startOfDay(monday), end: _endOfDay(now));
@@ -91,6 +94,8 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
     switch (_dateFilter) {
       case SHDateFilter.today:
         return 'Sot';
+      case SHDateFilter.yesterday:
+        return 'Dje';
       case SHDateFilter.thisWeek:
         return tr.kjoJave;
       case SHDateFilter.thisMonth:
@@ -143,6 +148,13 @@ class _SalesHistoryPanelState extends State<SalesHistoryPanel> {
       final filtered = allSales.where((s) {
         if (_dateFilter == SHDateFilter.today) {
           if (!ManagerData.instance.isInOpenShift(
+            at: s.timestamp,
+            shiftId: s.shiftId,
+          )) {
+            return false;
+          }
+        } else if (_dateFilter == SHDateFilter.yesterday) {
+          if (!ManagerData.instance.isInLastClosedShift(
             at: s.timestamp,
             shiftId: s.shiftId,
           )) {

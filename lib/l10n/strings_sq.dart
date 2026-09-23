@@ -231,16 +231,16 @@ const Map<String, String> kSq = {
   'licencaEshteEndePezulluarKontaktoniAdministratorin':
       'Licenca është ende pezulluar. Kontaktoni administratorin.',
   'licencaEshtePezulluarKontaktoniAdministratorin':
-      'Licenca është pezulluar. Kontaktoni administratorin.',
+      'Licenca është pezulluar. Kur ta vazhdoni nga webi, app-i kthehet vetë.',
   'licencaEshtePezulluarOseKaSkaduar':
       'Licenca është pezulluar ose ka skaduar.',
   'licencaJuajSkadon1Dite': 'Licenca juaj skadon: 1 ditë',
   'licencaKaSkaduarKontaktoniAdministratorinRinovim':
-      'Licenca ka skaduar. Kontaktoni administratorin për rinovim.',
+      'Licenca ka skaduar. Bëni extend nga webi — app-i kthehet vetë, pa çelës të ri.',
   'licencaNukUGjetKontrolloniCelesin':
       'Licenca nuk u gjet. Kontrolloni çelësin e aktivizimit.',
   'licencaRevokuarKontaktoSellix':
-      'Licenca është revokuar. Kontaktoni SelliX.',
+      'Çelësi i vjetër nuk vlen më. Vendosni çelësin e ri — nuk është pezullim.',
   'licencaKontrollohetAutomatikisht':
       'Kontrolli automatik është aktiv. Sapo licenca të riaktivizohet, '
       'aplikacioni vazhdon vetvetiu.',
@@ -518,7 +518,7 @@ const Map<String, String> kSq = {
   'turni': 'Turni',
   'urlAktuale': 'URL aktuale',
   'urlApi': 'dhe URL-në e API-së.',
-  'vazhdoLicencen': 'Vazhdo licencën',
+  'vazhdoLicencen': 'Vendos çelësin e ri',
   'vazhduarAktiviziminDuhetTMbyllni':
       'Për të vazhduar aktivizimin duhet t\\\'i mbyllni.',
   'vendosPasswordHapurDiagnostikenSinkronizimit':

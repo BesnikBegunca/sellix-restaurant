@@ -99,7 +99,12 @@ class _PosSystemAppState extends State<PosSystemApp> {
         await LicenseGateService.instance.loadPersistedState();
         await LicenseGateService.instance.checkAndBlockIfLocallyExpired();
 
-        await ActivationService.instance.verifyActivation(force: true);
+        await ActivationService.instance
+            .verifyActivation(force: true)
+            .timeout(const Duration(seconds: 10), onTimeout: () {
+          debugPrint('[Activation] verify timed out — continuing');
+          return ActivationService.instance.isActivated;
+        });
 
         if (!ActivationService.instance.isActivated &&
             !activationState.serverRevoked &&
@@ -111,7 +116,12 @@ class _PosSystemAppState extends State<PosSystemApp> {
         }
 
         if (ActivationService.instance.isActivated) {
-          LicenseHeartbeatService.instance.start(checkImmediately: false);
+          // Expired / pezulluar: heartbeat pret extend/vazhdim nga webi.
+          // New key: overlay kërkon çelësin e ri; heartbeat ndalet vetë.
+          LicenseHeartbeatService.instance.start(
+            checkImmediately:
+                LicenseGateService.instance.waitsForWebRestore,
+          );
         }
       }
     } catch (e, st) {

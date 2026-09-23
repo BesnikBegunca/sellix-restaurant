@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
+import '../features/dashboard/operational_period.dart';
 import '../models/mock_data.dart';
 import '../models/pos_models.dart';
 import '../models/sale_insert_result.dart';
@@ -101,6 +102,12 @@ class ManagerData extends ChangeNotifier {
   /// Null only during the brief window before [_init] completes.
   int? _currentShiftId;
   int? get currentShiftId => _currentShiftId;
+
+  /// Last closed gjendje — «Dje» until the next close replaces it.
+  int? _lastClosedShiftId;
+  DateTime? _lastClosedOpenedAt;
+  DateTime? _lastClosedClosedAt;
+  int? get lastClosedShiftId => _lastClosedShiftId;
 
   bool _shiftClosingInProgress = false;
   bool get isShiftClosing => _shiftClosingInProgress;
@@ -378,6 +385,25 @@ class ManagerData extends ChangeNotifier {
           await ShiftRepository.instance.insertShiftRecord(openedAt: now);
       shiftOpenedAt = now;
     }
+    await _loadLastClosedShift();
+  }
+
+  Future<void> _loadLastClosedShift() async {
+    final closed = await ShiftRepository.instance.fetchClosedShifts();
+    if (closed.isEmpty) {
+      _lastClosedShiftId = null;
+      _lastClosedOpenedAt = null;
+      _lastClosedClosedAt = null;
+      return;
+    }
+    final row = closed.first;
+    _lastClosedShiftId = (row['id'] as num).toInt();
+    final openedRaw = row['openedAt'] as String?;
+    final closedRaw = row['closedAt'] as String?;
+    _lastClosedOpenedAt =
+        openedRaw == null ? null : DateTime.tryParse(openedRaw);
+    _lastClosedClosedAt =
+        closedRaw == null ? null : DateTime.tryParse(closedRaw);
   }
 
   // ─────────────────────────── company ──────────────────────────────────────
@@ -613,6 +639,10 @@ class ManagerData extends ChangeNotifier {
         totalSales: shiftGrandTotal,
         totalExpenses: shiftExpensesTotal,
       );
+
+      _lastClosedShiftId = closingShiftId;
+      _lastClosedOpenedAt = shiftOpenedAt;
+      _lastClosedClosedAt = now;
 
       _currentShiftId =
           await ShiftRepository.instance.insertShiftRecord(openedAt: now);
@@ -1093,21 +1123,34 @@ class ManagerData extends ChangeNotifier {
   static DateTime _endOfDay(DateTime d) =>
       DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
 
+  OperationalPeriod get operationalPeriod => OperationalPeriod(
+        openShiftId: _currentShiftId,
+        lastClosedShiftId: _lastClosedShiftId,
+        openStartedAt: shiftOpenedAt,
+        lastClosedOpenedAt: _lastClosedOpenedAt,
+        lastClosedClosedAt: _lastClosedClosedAt,
+      );
+
   /// «Sot» operativ: gjendja e hapur, jo mesnata. Pas mbylljes niset 00.
-  bool isInOpenShift({DateTime? at, int? shiftId}) {
-    if (_currentShiftId != null && shiftId != null) {
-      return shiftId == _currentShiftId;
-    }
-    final t = at ?? DateTime.now();
-    final start = shiftOpenedAt ?? _startOfDay(t);
-    return !t.isBefore(start);
-  }
+  bool isInOpenShift({DateTime? at, int? shiftId}) =>
+      operationalPeriod.isSot(at: at, shiftId: shiftId);
+
+  /// «Dje»: gjendja e fundit e mbyllur (p.sh. 100€ pas mbylljes).
+  bool isInLastClosedShift({DateTime? at, int? shiftId}) =>
+      operationalPeriod.isDje(at: at, shiftId: shiftId);
 
   List<SaleRow> get salesToday => _salesHistory
       .where((s) => isInOpenShift(at: s.timestamp, shiftId: s.shiftId))
       .toList();
 
+  List<SaleRow> get salesYesterday => _salesHistory
+      .where((s) => isInLastClosedShift(at: s.timestamp, shiftId: s.shiftId))
+      .toList();
+
   double get revenueToday => salesToday.fold<double>(0, (sum, s) => sum + s.total);
+
+  double get revenueYesterday =>
+      salesYesterday.fold<double>(0, (sum, s) => sum + s.total);
 
   double get revenueThisWeek {
     final now = DateTime.now();
@@ -1124,6 +1167,10 @@ class ManagerData extends ChangeNotifier {
       .where((e) => isInOpenShift(at: e.date, shiftId: e.shiftId))
       .fold<double>(0, (sum, e) => sum + e.amount);
 
+  double get expensesYesterday => _expenses
+      .where((e) => isInLastClosedShift(at: e.date, shiftId: e.shiftId))
+      .fold<double>(0, (sum, e) => sum + e.amount);
+
   double get expensesThisWeek {
     final now = DateTime.now();
     final monday = now.subtract(Duration(days: now.weekday - 1));
@@ -1136,6 +1183,7 @@ class ManagerData extends ChangeNotifier {
   }
 
   double get profitToday => revenueToday - expensesToday;
+  double get profitYesterday => revenueYesterday - expensesYesterday;
   double get profitThisWeek => revenueThisWeek - expensesThisWeek;
   double get profitThisMonth => revenueThisMonth - expensesThisMonth;
 

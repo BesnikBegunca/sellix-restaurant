@@ -123,6 +123,31 @@ void main() {
       },
     );
 
+    test('clearLocalBusinessData clears leftover administrator PIN', () async {
+      await DatabaseService.instance.updateAdminPin('hash', 'salt', pinView: '1234');
+      final before = await DatabaseService.instance.database;
+      final beforeRow = await before.query(
+        'company',
+        columns: ['adminPinHash', 'adminPinSalt', 'adminPinView'],
+        where: 'id = 1',
+      );
+      expect(beforeRow.first['adminPinHash'], 'hash');
+
+      await DatabaseService.instance.clearLocalBusinessData(
+        skipOpenTableCheck: true,
+      );
+
+      final after = await DatabaseService.instance.database;
+      final afterRow = await after.query(
+        'company',
+        columns: ['adminPinHash', 'adminPinSalt', 'adminPinView'],
+        where: 'id = 1',
+      );
+      expect(afterRow.first['adminPinHash'], isNull);
+      expect(afterRow.first['adminPinSalt'], isNull);
+      expect(afterRow.first['adminPinView'], isNull);
+    });
+
     test('clearLocalBusinessData blocks when open tables remain', () async {
       await seedOpenOrder(tableId: 1, waiterName: 'Ana', total: 5.0);
 

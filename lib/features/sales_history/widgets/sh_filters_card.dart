@@ -48,7 +48,7 @@ class SHFiltersCard extends StatelessWidget {
       onTap: () => onDateFilterChanged(f),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: sel ? AppColors.primaryGreen : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
@@ -210,8 +210,9 @@ class SHFiltersCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _periodTab(SHDateFilter.today, 'Sot'),
-                    _periodTab(SHDateFilter.thisWeek, tr.jave),
-                    _periodTab(SHDateFilter.thisMonth, 'Muaj'),
+                    _periodTab(SHDateFilter.yesterday, 'Dje'),
+                    _periodTab(SHDateFilter.thisWeek, '1 javë'),
+                    _periodTab(SHDateFilter.thisMonth, '1 muaj'),
                     _periodTab(SHDateFilter.allTime, tr.gjitha),
                   ],
                 ),
