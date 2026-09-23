@@ -246,11 +246,17 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     if (!_pinConfirmEnabled) return;
     final pin = _pinController.text;
 
-    if (ActivationService.instance.takeOfferAdminPinOnNextLogin()) {
+    // The one-shot flag is consumed even when the dialog is dismissed, so it
+    // cannot be the only trigger: a device with no manager at all must be
+    // offered the setup every time a PIN is typed, until one exists.
+    final offered = ActivationService.instance.takeOfferAdminPinOnNextLogin();
+    if (offered || !ManagerData.instance.hasAnyManagerLogin) {
       _pinController.clear();
       _showAdminPinSetupDialog(
         pin,
-        onCancel: () => unawaited(_continuePinLogin(pin)),
+        onCancel: () => unawaited(
+          _continuePinLogin(pin, offerAdminSetup: false),
+        ),
       );
       return;
     }
@@ -258,10 +264,15 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     await _continuePinLogin(pin);
   }
 
-  Future<void> _continuePinLogin(String pin) async {
+  /// [offerAdminSetup] is false when the setup dialog was just dismissed —
+  /// re-opening it immediately would trap the user in the same question.
+  Future<void> _continuePinLogin(
+    String pin, {
+    bool offerAdminSetup = true,
+  }) async {
     if (ManagerData.instance.loginMode == 'NAMEMODE') {
       // NAMEMODE: PIN field is admin-only.
-      if (!ManagerData.instance.hasAnyManagerLogin) {
+      if (!ManagerData.instance.hasAnyManagerLogin && offerAdminSetup) {
         _pinController.clear();
         _showAdminPinSetupDialog(pin);
         return;
@@ -325,7 +336,7 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     _pinController.clear();
 
     // Unknown PIN — offer first-run admin setup if no PIN is stored yet.
-    if (!ManagerData.instance.hasAnyManagerLogin) {
+    if (!ManagerData.instance.hasAnyManagerLogin && offerAdminSetup) {
       _showAdminPinSetupDialog(pin);
       return;
     }

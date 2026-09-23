@@ -374,6 +374,28 @@ extension TablesMethods on ManagerData {
     return _mergeWaiterTables(_cashierTables, byTable);
   }
 
+  /// Gjendja e tavolinës [tableId] **vetëm për [waiterName]**.
+  ///
+  /// Rreshti te `tables` është i përbashkët për të gjithë kamarierët, prandaj
+  /// nuk mund të përdoret këtu: tavolina 1 e kamarierit A dhe tavolina 1 e
+  /// kamarierit B janë porosi të ndryshme. Burimi i vetëm i saktë është
+  /// `current_orders`, që mbahet me çelës (tableId, waiterName).
+  Future<TableInfo?> waiterTableInfo(int tableId, String waiterName) async {
+    if (waiterName.isEmpty) return null;
+    final row = await DatabaseService.instance.fetchCurrentOrderMeta(
+      tableId,
+      waiterName,
+    );
+    if (row == null) return null;
+    return TableInfo(
+      id: tableId,
+      occupied: true,
+      currentTotal: (row['currentTotal'] as num?)?.toDouble() ?? 0,
+      assignedWaiterName: row['waiterName'] as String?,
+      currentOrderNumber: (row['orderNumber'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   /// Pamje e menjëhershme nga cache — pa lexim DB (për UI që nuk duhet të bllokohet).
   List<TableInfo> cachedTablesForWaiter(String waiterName) {
     if (_cashierTables.isEmpty) _ensureInMemoryDefaultTables();

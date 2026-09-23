@@ -20,6 +20,7 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
   if (release) {
     return showDialog<TenantConflictDialogChoice>(
       context: context,
+      useRootNavigator: false,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: Text(tr.biznesTjeterUZbulua),
@@ -48,6 +49,9 @@ Future<TenantConflictDialogChoice?> showTenantDataConflictDialog(
 
   return showDialog<TenantConflictDialogChoice>(
     context: context,
+    // Shown from inside LicenseBlockedOverlay's nested Navigator: the root
+    // navigator sits under that overlay, so the dialog would be invisible.
+    useRootNavigator: false,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
       title: Text(tr.biznesTjeterUZbulua),

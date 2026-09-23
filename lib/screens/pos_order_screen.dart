@@ -49,6 +49,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   bool _isPaying = false;
   bool _isSendingOrder = false;
 
+  /// Porosia e hapur e KETIJ kamarieri për këtë tavolinë (jo e të tjerëve).
+  TableInfo? _waiterTable;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +59,21 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     ManagerData.instance.addListener(_onMenuChanged);
     _language.addListener(_onLanguageChanged);
     _loadPersistedOrder();
+    unawaited(_refreshWaiterTable());
+  }
+
+  /// Rifreskon gjendjen e tavolinës nga `current_orders` për këtë kamarier.
+  Future<void> _refreshWaiterTable() async {
+    try {
+      final info = await ManagerData.instance.waiterTableInfo(
+        widget.tableNumber,
+        widget.waiterName,
+      );
+      if (!mounted) return;
+      setState(() => _waiterTable = info);
+    } catch (e, st) {
+      debugPrint('PosOrderScreen._refreshWaiterTable: $e\n$st');
+    }
   }
 
   void _onMenuChanged() {
@@ -65,6 +83,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     } else {
       setState(() {});
     }
+    unawaited(_refreshWaiterTable());
   }
 
   void _onLanguageChanged() {
@@ -90,12 +109,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   double get _total => _lines.fold(0, (s, l) => s + l.product.price * l.qty);
 
-  TableInfo? get _tableInfo {
-    for (final t in ManagerData.instance.cashierTables) {
-      if (t.id == widget.tableNumber) return t;
-    }
-    return null;
-  }
+  /// Kurrë nga [ManagerData.cashierTables]: ai rresht është i përbashkët për
+  /// të gjithë kamarierët dhe do të shfaqte totalin e kamarierit tjetër.
+  TableInfo? get _tableInfo => _waiterTable;
 
   /// Paguaj: tavolinë e zënë (pas PRINTO) ose artikuj të rinj në listë.
   bool get _canPay {

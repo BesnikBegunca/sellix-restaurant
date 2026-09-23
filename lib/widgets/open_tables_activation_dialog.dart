@@ -16,6 +16,9 @@ Future<bool?> showOpenTablesActivationDialog(
 
   return showDialog<bool>(
     context: context,
+    // Shown from inside LicenseBlockedOverlay's nested Navigator: the root
+    // navigator sits under that overlay, so the dialog would be invisible.
+    useRootNavigator: false,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
       title: Text(tr.keniTavolinaHapura),
