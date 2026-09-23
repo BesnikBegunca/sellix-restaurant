@@ -251,7 +251,6 @@ class ActivationService {
     String? businessName,
     SellixBusinessProfile? business,
     SellixLicenseInfo? license,
-    bool liftUi = true,
   }) async {
     _assertProductionApiConfig();
     final key = normalizeSellixLicenseKey(activationKey);
@@ -288,15 +287,8 @@ class ActivationService {
       licenseKey: key,
       business: profile,
       license: licenseInfo,
-      liftUi: liftUi,
     );
     return response;
-  }
-
-  /// Leaves activation screen / license overlay after the admin-PIN prompt.
-  Future<void> completeActivationUi() async {
-    ActivationStateController.instance.setActivated(true);
-    await LicenseGateService.instance.unblock();
   }
 
   /// Submits POST /licenses/request-transfer to ask SuperAdmin to move the
@@ -879,7 +871,6 @@ class ActivationService {
     String? licenseKey,
     SellixBusinessProfile? business,
     SellixLicenseInfo? license,
-    bool liftUi = true,
   }) async {
     final db = DatabaseService.instance;
     final previousId = await db.getAppMeta(_kBusinessId);
@@ -929,9 +920,7 @@ class ActivationService {
       businessId: r.businessId,
       branchId: r.branchId,
     );
-    if (liftUi) {
-      ActivationStateController.instance.setActivated(true);
-    }
+    ActivationStateController.instance.setActivated(true);
 
     await LocalTenantDataService.instance.recordActivatedTenant(
       businessId: r.businessId,
@@ -948,11 +937,10 @@ class ActivationService {
       kMetaLastCheckAt,
       DateTime.now().toUtc().toIso8601String(),
     );
+    // A fresh activation answers whatever the gate was blocking on.
+    await LicenseGateService.instance.unblock();
     _offerAdminPinOnNextLogin = true;
     await db.setAppMeta(kMetaOfferAdminPin, '1');
-    if (liftUi) {
-      await LicenseGateService.instance.unblock();
-    }
   }
 
   static String _businessIdFor(SellixBusinessProfile business, String key) {

@@ -14,7 +14,6 @@ import '../widgets/gg_header.dart';
 import '../widgets/hover_card_button.dart';
 import '../widgets/hover_interaction.dart';
 import '../navigation/app_route_observer.dart';
-import '../widgets/admin_pin_setup_dialog.dart';
 import '../widgets/num_key_body.dart';
 
 // Reuse hover widgets already defined in `hover_interaction.dart`.
@@ -61,23 +60,6 @@ class _LoginScreenState extends State<LoginScreen> with RouteAware {
     unawaited(_warmLicenseExpiryCache());
     _pinFocus.addListener(_onPinFocusChanged);
     _schedulePinFocus();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_offerAdminPinIfNeeded());
-    });
-  }
-
-  Future<void> _offerAdminPinIfNeeded() async {
-    if (!mounted) return;
-    if (!ActivationService.instance.offerAdminPinOnNextLogin) return;
-    if (ManagerData.instance.hasAnyManagerLogin) return;
-    final set = await showAdminPinSetupDialog(context);
-    if (!mounted || !set) return;
-    AuditLogService.instance.logManagerLogin();
-    _pushRoute(
-      MaterialPageRoute<void>(
-        builder: (_) => const ManagerDashboardScreen(),
-      ),
-    );
   }
 
   @override
