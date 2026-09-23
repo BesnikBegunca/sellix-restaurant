@@ -747,6 +747,25 @@ class DatabaseSchema {
     } catch (_) {}
   }
 
+  /// Invoices the manager deleted or refunded on this till. They are pushed to
+  /// SelliX web as status=void so the amount comes off the bar there too.
+  static Future<void> ensurePortalVoidEvents(Database db) async {
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS portal_void_events (
+          uuid TEXT PRIMARY KEY,
+          tableName TEXT NOT NULL DEFAULT '',
+          waiterName TEXT NOT NULL DEFAULT '',
+          total REAL NOT NULL DEFAULT 0,
+          soldAt TEXT NOT NULL,
+          reason TEXT NOT NULL DEFAULT '',
+          portalSynced INTEGER NOT NULL DEFAULT 0,
+          createdAt TEXT NOT NULL
+        )
+      ''');
+    } catch (_) {}
+  }
+
   /// Ensures every table exists. Safe to call on any existing database because
   /// every statement uses CREATE TABLE IF NOT EXISTS.
   static Future<void> ensureTables(Database db) async {
@@ -1137,6 +1156,7 @@ class DatabaseSchema {
     await ensureKitchenPrintsPortalSynced(db);
     await ensureShiftsPortalSynced(db);
     await ensurePortalShiftEvents(db);
+    await ensurePortalVoidEvents(db);
     // v27: activation archive + sale close metadata
     await ensureSalesCloseMetadataColumns(db);
     await ensureActivationArchiveTables(db);
@@ -1266,6 +1286,7 @@ class DatabaseSchema {
     await ensureKitchenPrintsPortalSynced(db);
     await ensureShiftsPortalSynced(db);
     await ensurePortalShiftEvents(db);
+    await ensurePortalVoidEvents(db);
     try {
       await db.execute("ALTER TABLE expenses ADD COLUMN shiftId INTEGER");
     } catch (_) {}
@@ -1456,6 +1477,7 @@ class DatabaseSchema {
     await ensureKitchenPrintsPortalSynced(db);
     await ensureShiftsPortalSynced(db);
     await ensurePortalShiftEvents(db);
+    await ensurePortalVoidEvents(db);
     await ensureSalesCloseMetadataColumns(db);
     await ensureActivationArchiveTables(db);
 

@@ -121,6 +121,7 @@ class DatabaseService {
         await DatabaseSchema.ensureShiftsSnapshotColumn(db);
         await DatabaseSchema.ensureShiftsPortalSynced(db);
         await DatabaseSchema.ensurePortalShiftEvents(db);
+        await DatabaseSchema.ensurePortalVoidEvents(db);
         await DatabaseSchema.ensureSalesOrderMetadataColumns(db);
         await DatabaseSchema.ensureKitchenPrintsPortalSynced(db);
         await DatabaseSchema.ensureSalesCloseMetadataColumns(db);
@@ -657,6 +658,21 @@ class DatabaseService {
   }) async {
     final db = await database;
     final meta = await fetchKitchenPrintById(printId);
+    if (meta != null) {
+      // The print carries the uid the portal knows this invoice by.
+      final portalUid = (meta['portalSaleUid'] as String?)?.trim();
+      final ownUid = (meta['uuid'] as String?)?.trim() ?? '';
+      final uid = (portalUid != null && portalUid.isNotEmpty) ? portalUid : ownUid;
+      final tableId = (meta['tableId'] as num?)?.toInt() ?? 0;
+      await queuePortalVoid(
+        saleUid: uid,
+        tableName: tableId > 0 ? 'Tavolina $tableId' : '',
+        waiterName: (meta['waiterName'] as String?) ?? '',
+        total: (meta['total'] as num?)?.toDouble() ?? 0,
+        soldAt: (meta['printedAt'] as String?) ?? (meta['createdAt'] as String?),
+        reason: 'print_deleted',
+      );
+    }
     await db.transaction((txn) async {
       if (queueSyncDelete && meta != null) {
         await _queuePrintedOrderOutbox(
@@ -1792,6 +1808,70 @@ class DatabaseService {
     return merged.values.toList();
   }
 
+  /// Queues "this invoice no longer counts" for SelliX web. Called when the
+  /// manager deletes a print (Refund) or a sale in the desktop dashboard: the
+  /// row is gone locally, so without this the web would keep the amount.
+  Future<void> queuePortalVoid({
+    required String saleUid,
+    String tableName = '',
+    String waiterName = '',
+    double total = 0,
+    String? soldAt,
+    String reason = '',
+  }) async {
+    final uid = saleUid.trim();
+    if (uid.isEmpty) return;
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    try {
+      await db.insert(
+        'portal_void_events',
+        {
+          'uuid': uid,
+          'tableName': tableName.trim(),
+          'waiterName': waiterName.trim(),
+          'total': total,
+          'soldAt': soldAt ?? now,
+          'reason': reason,
+          'portalSynced': 0,
+          'createdAt': now,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (_) {
+      return;
+    }
+    _scheduleSyncAfterLocalMutation();
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUnsyncedPortalVoids({
+    int limit = 200,
+  }) async {
+    final db = await database;
+    try {
+      return await db.query(
+        'portal_void_events',
+        where: 'COALESCE(portalSynced, 0) = 0',
+        orderBy: 'createdAt ASC',
+        limit: limit,
+      );
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> markPortalVoidsSynced(List<String> uuids) async {
+    if (uuids.isEmpty) return;
+    final db = await database;
+    final placeholders = List.filled(uuids.length, '?').join(',');
+    try {
+      await db.rawUpdate(
+        'UPDATE portal_void_events SET portalSynced = 1 WHERE uuid IN ($placeholders)',
+        uuids,
+      );
+    } catch (_) {}
+  }
+
   Future<void> markPortalSalesSynced(List<String> saleUuids) async {
     if (saleUuids.isEmpty) return;
     final db = await database;
@@ -2402,6 +2482,7 @@ class DatabaseService {
   }) async {
     final db = await database;
     await DatabaseSchema.ensurePortalShiftEvents(db);
+    await DatabaseSchema.ensurePortalVoidEvents(db);
     await db.insert(
       'portal_shift_events',
       {
@@ -2426,6 +2507,7 @@ class DatabaseService {
     final db = await database;
     await DatabaseSchema.ensureShiftsPortalSynced(db);
     await DatabaseSchema.ensurePortalShiftEvents(db);
+    await DatabaseSchema.ensurePortalVoidEvents(db);
     final out = <Map<String, dynamic>>[];
 
     List<Map<String, dynamic>> closed = const [];
@@ -2540,6 +2622,27 @@ class DatabaseService {
   /// Deletes a sale and all related lines and adjustments (manager void).
   Future<void> deleteSaleById(int saleId) async {
     final db = await database;
+    final existing = await db.query(
+      'sales',
+      where: 'id = ?',
+      whereArgs: [saleId],
+      limit: 1,
+    );
+    if (existing.isNotEmpty) {
+      final row = existing.first;
+      final tableId = (row['tableId'] as num?)?.toInt() ?? 0;
+      final tableName = (row['tableName'] as String?)?.trim() ?? '';
+      await queuePortalVoid(
+        saleUid: (row['uuid'] as String?) ?? '',
+        tableName: tableName.isNotEmpty
+            ? tableName
+            : (tableId > 0 ? 'Tavolina $tableId' : ''),
+        waiterName: (row['waiterName'] as String?) ?? '',
+        total: (row['total'] as num?)?.toDouble() ?? 0,
+        soldAt: (row['timestamp'] as String?) ?? (row['createdAt'] as String?),
+        reason: 'sale_deleted',
+      );
+    }
     await db.transaction((txn) async {
       await txn.delete(
         'sale_adjustments',

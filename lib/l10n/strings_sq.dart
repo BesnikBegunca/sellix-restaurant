@@ -409,7 +409,7 @@ const Map<String, String> kSq = {
   'printeriWindowsFaturatPos': 'Printeri i Windows për faturat POS.',
   'printimDrejtperdrejteRekomanduar':
       'Printim i drejtpërdrejtë (i rekomanduar).',
-  'printimeTurniAktual': 'Printime (turni aktual)',
+  'printimeTurniAktual': 'Porosi (turni aktual)',
   'printimiDeshtoiKontrolloniPrinterin':
       'Printimi dështoi. Kontrolloni printerin.',
   'printoVetemUFshiMenaxheri': 'PRINTO i vetëm u fshi nga menaxheri',
@@ -420,7 +420,7 @@ const Map<String, String> kSq = {
   'raportPermbledhesMenaxheri': 'Raport përmbledhës menaxheri',
   'realizimiSipasPunetoreve': 'Realizimi sipas punëtorëve',
   'receiptFooterText': 'Receipt footer text',
-  'refundPorositePrintuara': 'Refund — Porositë e Printuara',
+  'refundPorositePrintuara': 'Refund — Të gjitha porositë',
   'regjistroKosto': 'Regjistro një kosto',
   'ridergoKuponin': 'Ridërgo kuponin',
   'ridergojeniHistorikuShitjeve': 'Ridërgojeni nga Historiku i shitjeve.',
@@ -484,7 +484,7 @@ const Map<String, String> kSq = {
   'shuma': 'Shuma (€)',
   'shumaDuhetJete0': 'Shuma duhet të jetë > 0',
   'shumaFatures': 'Shuma e Faturës',
-  'shumaPrintimeve': 'Shuma e printimeve',
+  'shumaPrintimeve': 'Shuma e porosive',
   'shumePerpjekjeProvoniPerseriPasPak':
       'Shumë përpjekje. Provoni përsëri pas pak.',
   'siguriDuhetPastrohenDhenatLokalePara':

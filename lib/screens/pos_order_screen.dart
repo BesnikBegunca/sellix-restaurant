@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../features/pos_order/pay_print_total_rule.dart';
 import '../features/pos_order/widgets/cart_line.dart';
 import '../features/pos_order/widgets/category_tile.dart';
 import '../features/pos_order/widgets/order_panel.dart';
@@ -219,10 +220,12 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         // ignore: avoid_print
         print('[SyncDiag] resolvedSaleUuid=$saleUuid');
 
-        // PAGUAJ pa PRINTO: artikujt e rinj hyjnë në totalin e kamarierit
-        // (i njëjti rresht si PRINTO). Tavolinë e hapur pa artikuj të rinj
-        // nuk shtohet sërish — ajo llogari u numërua kur u printua.
-        if (_lines.isNotEmpty) {
+        // Porosi e re + PAGUAJ → total. Tavolinë e hapur (e printuar) → jo.
+        if (shouldAddPaymentToPrintTotal(
+          tableOccupied: _tableInfo?.occupied ?? false,
+          hasPrintedOrderLines: persisted.isNotEmpty,
+          hasUnprintedCartLines: _lines.isNotEmpty,
+        )) {
           final printOrderNumber = await data.nextWaiterOrderNumber(
             widget.waiterName,
           );

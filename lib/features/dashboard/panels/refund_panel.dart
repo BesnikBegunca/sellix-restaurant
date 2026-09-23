@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../manager/manager_data.dart';
+import '../../../models/pos_models.dart';
 import '../../../services/database_service.dart';
 import '../../../shared/widgets/panel_layout.dart';
 import '../../../theme/app_colors.dart';
@@ -9,7 +10,7 @@ import '../../sales_history/widgets/sale_card.dart';
 import '../widgets/stat_card.dart';
 import '../../../l10n/tr.dart';
 
-/// Çdo shtypje **PRINTO** = një rresht i veçantë (jo totali i bashkuar i tavolinës).
+/// Të gjitha porositë e turnit: PRINTO dhe PAGUAJ direkte (jo vetëm tavolina e hapur).
 class RefundPanel extends StatefulWidget {
   const RefundPanel({super.key, required this.m});
 
@@ -21,9 +22,15 @@ class RefundPanel extends StatefulWidget {
 
 class _RefundPanelState extends State<RefundPanel> {
   String? _selectedWaiter;
-  final Set<int> _expandedPrintIds = {};
+  final Set<String> _expandedKeys = {};
   bool _loading = false;
   List<SaleWithLines> _orders = [];
+
+  String _rowKey(SaleWithLines order) {
+    final printId = order.kitchenPrintId;
+    if (printId != null) return 'p:$printId';
+    return 's:${order.sale.dbId ?? 0}';
+  }
 
   @override
   void initState() {
@@ -73,6 +80,7 @@ class _RefundPanelState extends State<RefundPanel> {
         shiftId: widget.m.currentShiftId,
       );
 
+      final coveredSaleUids = <String>{};
       final orders = <SaleWithLines>[];
       for (final meta in prints) {
         final printId = (meta['id'] as num).toInt();
@@ -82,14 +90,19 @@ class _RefundPanelState extends State<RefundPanel> {
         final printedAt =
             DateTime.tryParse(meta['printedAt'] as String? ?? '') ??
             DateTime.now();
+        final portalUid = (meta['portalSaleUid'] as String?)?.trim();
+        final printUuid = (meta['uuid'] as String?)?.trim();
+        if (portalUid != null && portalUid.isNotEmpty) {
+          coveredSaleUids.add(portalUid);
+        }
+        if (printUuid != null && printUuid.isNotEmpty) {
+          coveredSaleUids.add(printUuid);
+        }
 
         final rawLines = await DatabaseService.instance.fetchKitchenPrintLines(
           printId,
         );
         if (rawLines.isEmpty) continue;
-        if (!widget.m.cashierTables.any((t) => t.id == tableId && t.occupied)) {
-          continue;
-        }
 
         final lineRows = rawLines.map((r) {
           return SaleLineRow(
@@ -122,12 +135,55 @@ class _RefundPanelState extends State<RefundPanel> {
         );
       }
 
+      // PAGUAJ direkte pa rresht PRINTO — shtohet si porosi e veçantë.
+      final allSales = await DatabaseService.instance.fetchSales();
+      final shiftId = widget.m.currentShiftId;
+      final extraSales = <Map<String, dynamic>>[];
+      for (final row in allSales) {
+        final name = (row['waiterName'] as String?)?.trim() ?? '';
+        if (name != waiter) continue;
+        if (shiftId != null && (row['shiftId'] as num?)?.toInt() != shiftId) {
+          continue;
+        }
+        final uuid = (row['uuid'] as String?)?.trim() ?? '';
+        if (uuid.isNotEmpty && coveredSaleUids.contains(uuid)) continue;
+        extraSales.add(row);
+      }
+
+      if (extraSales.isNotEmpty) {
+        final extraIds = extraSales
+            .map((row) => (row['id'] as num?)?.toInt())
+            .whereType<int>()
+            .toList();
+        final rawExtraLines = extraIds.isEmpty
+            ? const <Map<String, dynamic>>[]
+            : await DatabaseService.instance.fetchSaleLinesForSales(extraIds);
+        final linesBySale = <int, List<SaleLineRow>>{};
+        for (final row in rawExtraLines) {
+          final line = SaleLineRow.fromMap(row);
+          (linesBySale[line.saleId] ??= []).add(line);
+        }
+        for (final row in extraSales) {
+          final sale = SaleRow.fromMap(row);
+          final saleId = sale.dbId;
+          if (saleId == null) continue;
+          orders.add(
+            SaleWithLines(
+              sale: sale,
+              lines: linesBySale[saleId] ?? const [],
+            ),
+          );
+        }
+      }
+
+      orders.sort((a, b) => b.sale.timestamp.compareTo(a.sale.timestamp));
+
       if (mounted) {
         setState(() {
           _orders = orders;
           _loading = false;
-          _expandedPrintIds.removeWhere(
-            (id) => !orders.any((o) => o.kitchenPrintId == id),
+          _expandedKeys.removeWhere(
+            (key) => !orders.any((o) => _rowKey(o) == key),
           );
         });
       }
@@ -141,21 +197,25 @@ class _RefundPanelState extends State<RefundPanel> {
 
   Future<void> _confirmDelete(SaleWithLines order) async {
     final printId = order.kitchenPrintId;
-    if (printId == null) return;
-    final orderNo = order.sale.dbId ?? 0;
+    final saleId = order.sale.dbId;
+    if (printId == null && saleId == null) return;
+    final orderNo = order.sale.orderNumber ?? order.sale.dbId ?? 0;
+    final isPrint = printId != null;
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(tr.fshiKetePrintim),
+        title: Text(isPrint ? tr.fshiKetePrintim : tr.fshiPorosine),
         content: SizedBox(
           width: 400,
           child: Text(
             'Order #${orderNo.toString().padLeft(3, '0')} · '
             'Tavolina ${order.sale.tableId} · '
             '${order.sale.total.toStringAsFixed(2)}€\n\n' +
-            trf.deleteOnlyThisPrint(order.sale.total.toStringAsFixed(2)) +
-                tr.deleteOnlyThisPrintExplainer,
+            (isPrint
+                ? trf.deleteOnlyThisPrint(order.sale.total.toStringAsFixed(2)) +
+                    tr.deleteOnlyThisPrintExplainer
+                : 'Fshihet kjo pagesë direkte PAGUAJ nga refund-i dhe totali.'),
           ),
         ),
         actions: [
@@ -177,12 +237,18 @@ class _RefundPanelState extends State<RefundPanel> {
     if (ok != true || !mounted) return;
 
     try {
-      await widget.m.voidKitchenPrint(printId);
+      if (printId != null) {
+        await widget.m.voidKitchenPrint(printId);
+      } else if (saleId != null) {
+        await widget.m.voidSale(saleId: saleId);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Printimi ${order.sale.total.toStringAsFixed(2)}€ u fshi.',
+              isPrint
+                  ? 'Printimi ${order.sale.total.toStringAsFixed(2)}€ u fshi.'
+                  : 'Pagesa ${order.sale.total.toStringAsFixed(2)}€ u fshi.',
             ),
             backgroundColor: AppColors.primaryGreen,
             behavior: SnackBarBehavior.floating,
@@ -214,7 +280,7 @@ class _RefundPanelState extends State<RefundPanel> {
           icon: Icons.undo_outlined,
           title: tr.refundPorositePrintuara,
           subtitle:
-              tr.cdoShtypjePrintoShfaqetVecmasP + tr.fshirjaHeqVetemAtePrintimTavolina,
+              'PRINTO dhe PAGUAJ direkte. Çdo porosi e turnit shfaqet këtu.',
         ),
         PanelStatRow(
           cards: [
@@ -235,7 +301,7 @@ class _RefundPanelState extends State<RefundPanel> {
         PanelCard(
           icon: Icons.person_outline,
           title: 'Kamarieri',
-          subtitle: 'Filtro printimet e turnit aktual.',
+          subtitle: 'Filtro porositë e turnit aktual.',
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
           child: waiters.isEmpty
               ? Text(
@@ -280,9 +346,9 @@ class _RefundPanelState extends State<RefundPanel> {
         PanelCard(
           icon: Icons.print_outlined,
           title: _selectedWaiter == null
-              ? 'Printimet'
-              : 'PRINTO — $_selectedWaiter',
-          subtitle: 'Çdo shtypje PRINTO shfaqet si rresht i veçantë.',
+              ? 'Porositë'
+              : 'Porositë — $_selectedWaiter',
+          subtitle: 'PRINTO dhe PAGUAJ direkte, edhe pasi tavolina lirohet.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -306,8 +372,7 @@ class _RefundPanelState extends State<RefundPanel> {
                   padding: const EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: Text(
-                      trf.noPrintsForWaiter(_selectedWaiter ?? '') +
-                          tr.cdoShtypjePrintoKrijonRreshtRi,
+                      'Nuk ka porosi për ${_selectedWaiter ?? ''} në këtë turn.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.lightGreenText),
                     ),
@@ -321,9 +386,11 @@ class _RefundPanelState extends State<RefundPanel> {
                   separatorBuilder: (_, __) => const SizedBox(height: 4),
                   itemBuilder: (context, i) {
                     final order = _orders[i];
-                    final printId = order.kitchenPrintId!;
-                    final orderNo = order.sale.dbId ?? 0;
-                    final expanded = _expandedPrintIds.contains(printId);
+                    final key = _rowKey(order);
+                    final orderNo =
+                        order.sale.orderNumber ?? order.sale.dbId ?? 0;
+                    final expanded = _expandedKeys.contains(key);
+                    final isDirectPay = order.kitchenPrintId == null;
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -343,6 +410,7 @@ class _RefundPanelState extends State<RefundPanel> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
+                                  '${isDirectPay ? 'PAGUAJ' : 'PRINTO'} · '
                                   'Order #${orderNo.toString().padLeft(3, '0')} · '
                                   '${order.sale.total.toStringAsFixed(2)}€ · T${order.sale.tableId}',
                                   style: TextStyle(
@@ -361,9 +429,9 @@ class _RefundPanelState extends State<RefundPanel> {
                           onToggle: () {
                             setState(() {
                               if (expanded) {
-                                _expandedPrintIds.remove(printId);
+                                _expandedKeys.remove(key);
                               } else {
-                                _expandedPrintIds.add(printId);
+                                _expandedKeys.add(key);
                               }
                             });
                           },
