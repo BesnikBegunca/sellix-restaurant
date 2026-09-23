@@ -231,12 +231,12 @@ const Map<String, String> kSq = {
   'licencaEshteEndePezulluarKontaktoniAdministratorin':
       'Licenca është ende pezulluar. Kontaktoni administratorin.',
   'licencaEshtePezulluarKontaktoniAdministratorin':
-      'Licenca është pezulluar. Kur ta vazhdoni nga webi, app-i kthehet vetë.',
+      'Licenca është pezulluar. Vendosni çelësin për ta vazhduar.',
   'licencaEshtePezulluarOseKaSkaduar':
       'Licenca është pezulluar ose ka skaduar.',
   'licencaJuajSkadon1Dite': 'Licenca juaj skadon: 1 ditë',
   'licencaKaSkaduarKontaktoniAdministratorinRinovim':
-      'Licenca ka skaduar. Bëni extend nga webi — app-i kthehet vetë, pa çelës të ri.',
+      'Licenca ka skaduar. Vendosni çelësin për ta vazhduar.',
   'licencaNukUGjetKontrolloniCelesin':
       'Licenca nuk u gjet. Kontrolloni çelësin e aktivizimit.',
   'licencaRevokuarKontaktoSellix':

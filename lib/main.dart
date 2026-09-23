@@ -90,8 +90,10 @@ class _PosSystemAppState extends State<PosSystemApp> {
         );
       }
 
-      LicenseGateService.instance.onBlocked =
-          BackgroundSyncService.instance.stop;
+      LicenseGateService.instance.onBlocked = () {
+        BackgroundSyncService.instance.stop();
+        LicenseHeartbeatService.instance.stop();
+      };
       LicenseGateService.instance.onUnblocked =
           BackgroundSyncService.instance.start;
 
@@ -115,13 +117,9 @@ class _PosSystemAppState extends State<PosSystemApp> {
           BackgroundSyncService.instance.start();
         }
 
-        if (ActivationService.instance.isActivated) {
-          // Expired / pezulluar: heartbeat pret extend/vazhdim nga webi.
-          // New key: overlay kërkon çelësin e ri; heartbeat ndalet vetë.
-          LicenseHeartbeatService.instance.start(
-            checkImmediately:
-                LicenseGateService.instance.waitsForWebRestore,
-          );
+        if (ActivationService.instance.isActivated &&
+            !LicenseGateService.instance.isBlocked) {
+          LicenseHeartbeatService.instance.start(checkImmediately: false);
         }
       }
     } catch (e, st) {

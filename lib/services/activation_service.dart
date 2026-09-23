@@ -464,10 +464,9 @@ class ActivationService {
   /// [kOfflineGrace]; explicit revoked/expired answers block immediately.
   ///
   /// A revoked, expired or suspended license **blocks the gate** — it no
-  /// longer wipes the activation — so the stored key survives and the next
-  /// successful check unblocks the app with no re-activation and no restart.
-  /// Pass [force] to run even while the gate is blocked (the license
-  /// heartbeat and the manual retry button do).
+  /// longer wipes the activation — so the stored key survives until the
+  /// operator enters a key on the blocked screen.
+  /// Pass [force] to run even while the gate is blocked.
   Future<bool> verifyActivation({bool force = false}) async {
     if (!_activated) return false;
     if (!force && LicenseGateService.instance.isBlocked) return false;

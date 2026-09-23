@@ -201,11 +201,9 @@ String sellixLicenseReasonMessage(String? reason) {
       return 'Çelësi i vjetër nuk vlen më (p.sh. u lëshua një i ri). '
           'Vendosni çelësin e ri këtu — nuk është pezullim.';
     case 'expired':
-      return 'Licenca ka skaduar. Bëni extend nga webi — '
-          'nuk duhet çelës i ri. App-i kthehet vetë.';
+      return 'Licenca ka skaduar. Vendosni çelësin për ta vazhduar.';
     case 'suspended':
-      return 'Licenca është pezulluar. Kur ta vazhdoni nga webi, '
-          'app-i kthehet vetë. Nuk duhet çelës i ri.';
+      return 'Licenca është pezulluar. Vendosni çelësin për ta vazhduar.';
     case 'seat_limit':
       return 'Të gjitha pajisjet e lejuara janë në përdorim. '
           'Administratori duhet të lirojë një pajisje te Businesses → Devices.';

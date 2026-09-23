@@ -13,8 +13,6 @@ import 'license_gate_service.dart';
 ///
 /// * revoked / expired / suspended → [LicenseGateService] blocks within
 ///   seconds and [LicenseBlockedOverlay] covers the whole app;
-/// * re-activated or extended → the next tick lifts the block and writes the
-///   new expiry, so work continues with no restart and no key re-entry;
 /// * offline → falls back to the locally stored expiry, so a license that runs
 ///   out with no connection still stops the app on time.
 class LicenseHeartbeatService extends ChangeNotifier {
@@ -23,9 +21,6 @@ class LicenseHeartbeatService extends ChangeNotifier {
 
   /// Cadence while the license is healthy.
   static const Duration kActiveInterval = Duration(seconds: 15);
-
-  /// Cadence while the app is blocked — a re-activation must land fast.
-  static const Duration kBlockedInterval = Duration(seconds: 8);
 
   /// Cadence after a network failure (cheap retry, no hammering).
   static const Duration kOfflineInterval = Duration(seconds: 30);
@@ -57,10 +52,8 @@ class LicenseHeartbeatService extends ChangeNotifier {
 
   /// Starts polling. Safe to call twice.
   ///
-  /// Keeps running while the gate is blocked — that is what makes a
-  /// re-activation resume the app on its own. Pass
-  /// [checkImmediately] `false` when the caller has just run a check itself
-  /// (startup, first activation) so the first beat waits out the interval.
+  /// Pass [checkImmediately] `false` when the caller has just run a check
+  /// itself (startup, first activation) so the first beat waits out the interval.
   void start({bool checkImmediately = true}) {
     if (_running) return;
     _running = true;
@@ -89,8 +82,8 @@ class LicenseHeartbeatService extends ChangeNotifier {
 
   /// Runs one license check now.
   ///
-  /// Returns `true` when the license is serving. [manual] lets the blocked
-  /// screen's retry button run a check even if the heartbeat was stopped.
+  /// Returns `true` when the license is serving. [manual] runs a check even
+  /// if the heartbeat was stopped.
   Future<bool> checkNow({bool manual = false}) async {
     if (!_running && !manual) return false;
     if (_inFlight) return false;
@@ -121,9 +114,7 @@ class LicenseHeartbeatService extends ChangeNotifier {
       _inFlight = false;
       _lastCheckAt = DateTime.now();
       if (ok) _lastOkAt = _lastCheckAt;
-      // New key: stored key is dead — stop polling. Expire/pezullim: keep
-      // checking so a web extend / unsuspend restores the app automatically.
-      if (LicenseGateService.instance.needsReplacementKey) {
+      if (LicenseGateService.instance.isBlocked) {
         stop();
       } else {
         _reschedule();
@@ -140,12 +131,11 @@ class LicenseHeartbeatService extends ChangeNotifier {
     _timer = Timer(_interval, () => unawaited(checkNow()));
   }
 
-  /// Cadence for the next beat: fast while blocked, slow while throttled.
+  /// Cadence for the next beat: slow while throttled or offline.
   @visibleForTesting
   Duration nextInterval() {
     final reason = ActivationService.instance.lastCheckReason;
     if (reason == 'rate_limited') return kThrottledInterval;
-    if (LicenseGateService.instance.isBlocked) return kBlockedInterval;
     if (reason == 'network') return kOfflineInterval;
     return kActiveInterval;
   }

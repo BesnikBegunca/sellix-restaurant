@@ -171,23 +171,25 @@ void main() {
         isTrue,
       );
       expect(LicenseGateService.instance.code, LicenseBlockCode.licenseRevoked);
-      expect(LicenseGateService.instance.message, contains('SelliX'));
+      expect(
+        LicenseGateService.instance.message,
+        contains('çelësin e ri'),
+      );
     });
 
-    test('heartbeat polls faster while the app is blocked', () async {
+    test('heartbeat stops when the app is blocked', () async {
       await DatabaseService.instance.database;
       final heartbeat = LicenseHeartbeatService.instance;
       addTearDown(heartbeat.debugReset);
 
-      expect(heartbeat.nextInterval(), LicenseHeartbeatService.kActiveInterval);
+      heartbeat.start(checkImmediately: false);
+      expect(heartbeat.isRunning, isTrue);
 
       await LicenseGateService.instance.block(
         code: LicenseBlockCode.licenseRevoked,
       );
-      expect(heartbeat.nextInterval(), LicenseHeartbeatService.kBlockedInterval);
-
-      await LicenseGateService.instance.unblock();
-      expect(heartbeat.nextInterval(), LicenseHeartbeatService.kActiveInterval);
+      await heartbeat.checkNow();
+      expect(heartbeat.isRunning, isFalse);
     });
   });
 }
