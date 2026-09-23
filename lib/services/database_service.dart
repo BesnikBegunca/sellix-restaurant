@@ -3082,11 +3082,16 @@ class DatabaseService {
       'stock_movements',
     ];
     for (final table in tables) {
-      final rows = await db.rawQuery(
-        'SELECT 1 FROM $table WHERE businessId = ? LIMIT 1',
-        [businessId],
-      );
-      if (rows.isNotEmpty) return true;
+      try {
+        final rows = await db.rawQuery(
+          'SELECT 1 FROM "$table" WHERE businessId = ? LIMIT 1',
+          [businessId],
+        );
+        if (rows.isNotEmpty) return true;
+      } catch (_) {
+        // Table missing or not tenant-scoped on this schema version — skip it
+        // rather than aborting activation.
+      }
     }
     return false;
   }
@@ -3097,23 +3102,24 @@ class DatabaseService {
   /// prior tenants and must not block wipe or diagnostics.
   Future<bool> hasLocalDataForOtherBusiness(String businessId) async {
     final db = await database;
-    for (final table in DatabaseSchema.tenantForeignDataCheckTables) {
-      final rows = await db.rawQuery(
-        'SELECT 1 FROM $table '
-        'WHERE businessId IS NOT NULL AND businessId != ? '
-        'LIMIT 1',
-        [businessId],
-      );
-      if (rows.isNotEmpty) return true;
-    }
-    for (final table in ['inventory_items', 'stock_movements']) {
-      final rows = await db.rawQuery(
-        'SELECT 1 FROM $table '
-        'WHERE businessId IS NOT NULL AND businessId != ? '
-        'LIMIT 1',
-        [businessId],
-      );
-      if (rows.isNotEmpty) return true;
+    final tables = [
+      ...DatabaseSchema.tenantForeignDataCheckTables,
+      'inventory_items',
+      'stock_movements',
+    ];
+    for (final table in tables) {
+      try {
+        final rows = await db.rawQuery(
+          'SELECT 1 FROM "$table" '
+          'WHERE businessId IS NOT NULL AND businessId != ? '
+          'LIMIT 1',
+          [businessId],
+        );
+        if (rows.isNotEmpty) return true;
+      } catch (_) {
+        // Table missing or not tenant-scoped on this schema version — skip it
+        // rather than aborting activation.
+      }
     }
     return false;
   }

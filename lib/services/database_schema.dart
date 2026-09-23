@@ -112,9 +112,10 @@ class DatabaseSchema {
 
   /// Scoped tables checked for "rows from another business" during activation.
   /// [audit_logs] is excluded — immutable forensic history is preserved on wipe.
+  /// [managers] is excluded — local-only table, it carries no businessId column.
   static const List<String> tenantForeignDataCheckTables = <String>[
     'sales', 'sale_lines', 'sale_adjustments', 'expenses', 'shifts',
-    'products', 'categories', 'waiters', 'managers', 'waiter_salaries', 'advances',
+    'products', 'categories', 'waiters', 'waiter_salaries', 'advances',
     'waiter_worked_days', 'current_orders', 'current_order_lines',
     'kitchen_prints', 'kitchen_print_lines',
   ];
