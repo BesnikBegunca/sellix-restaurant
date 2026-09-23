@@ -386,63 +386,95 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
 
   Widget _productNameCard() {
     return SettingsCard(
-      icon: Icons.text_fields_rounded,
-      title: _language.t('Emri i produktit', 'Product name'),
+      icon: Icons.grid_view_rounded,
+      title: _language.t('Karta e produktit', 'Product card'),
       subtitle: _language.t(
-        'Sa i madh shfaqet emri në kartën e produktit te kamarieri.',
-        'How large the product name appears on waiter tiles.',
+        'Madhësia e emrit, fotos dhe çmimit te kamarieri.',
+        'Name, photo and price size on waiter tiles.',
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _fieldLabel(
-            _language.t('Madhësia e emrit', 'Name size'),
+          _scaleRow(
+            _language.t('Emri', 'Name'),
+            widget.m.productNameScale,
+            (v) => widget.m.saveProductDisplayScales(name: v),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _nameScaleChip(
-                  0,
-                  _language.t('Normale', 'Normal'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _nameScaleChip(
-                  1,
-                  _language.t('E madhe', 'Large'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _nameScaleChip(
-                  2,
-                  _language.t('Shumë e madhe', 'Extra large'),
-                ),
-              ),
-            ],
+          const SizedBox(height: 16),
+          _scaleRow(
+            _language.t('Fotoja', 'Photo'),
+            widget.m.productImageScale,
+            (v) => widget.m.saveProductDisplayScales(image: v),
+          ),
+          const SizedBox(height: 16),
+          _scaleRow(
+            _language.t('Çmimi', 'Price'),
+            widget.m.productPriceScale,
+            (v) => widget.m.saveProductDisplayScales(price: v),
           ),
         ],
       ),
     );
   }
 
-  Widget _nameScaleChip(int scale, String label) {
-    final selected = widget.m.productNameScale == scale;
+  Widget _scaleRow(String label, int selected, ValueChanged<int> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _fieldLabel(label),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _nameScaleChip(
+                0,
+                _language.t('Normale', 'Normal'),
+                selected: selected,
+                onTap: onChanged,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _nameScaleChip(
+                1,
+                _language.t('E madhe', 'Large'),
+                selected: selected,
+                onTap: onChanged,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _nameScaleChip(
+                2,
+                _language.t('Shumë e madhe', 'Extra large'),
+                selected: selected,
+                onTap: onChanged,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _nameScaleChip(
+    int scale,
+    String label, {
+    required int selected,
+    required ValueChanged<int> onTap,
+  }) {
+    final isOn = selected == scale;
     return GestureDetector(
-      onTap: () => widget.m.saveProductNameScale(scale),
+      onTap: () => onTap(scale),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.lightGreenBg : AppColors.white,
+          color: isOn ? AppColors.lightGreenBg : AppColors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected
-                ? AppColors.primaryGreen
-                : AppColors.lightGreenBorder,
-            width: selected ? 1.6 : 1,
+            color: isOn ? AppColors.primaryGreen : AppColors.lightGreenBorder,
+            width: isOn ? 1.6 : 1,
           ),
         ),
         alignment: Alignment.center,
@@ -452,7 +484,7 @@ class _CompanySettingsPanelState extends State<CompanySettingsPanel> {
           style: TextStyle(
             fontSize: scale == 0 ? 13 : (scale == 1 ? 15 : 17),
             fontWeight: FontWeight.w700,
-            color: selected ? AppColors.primaryGreen : AppColors.darkGreenText,
+            color: isOn ? AppColors.primaryGreen : AppColors.darkGreenText,
           ),
         ),
       ),

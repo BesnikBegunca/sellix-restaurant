@@ -1316,12 +1316,19 @@ class DatabaseService {
   }
 
   /// Stable UUID for this open table invoice (shared by Printo and Paguaj).
+  ///
+  /// After Paguaj the old kitchen_prints still hold the paid sale's uid. Reusing
+  /// that uid makes portal sync skip the next Printo (local sale already exists)
+  /// so the web bar never counts the new open visit — mint a fresh uuid instead.
   Future<String> resolvePaymentSaleUuid({
     required int tableId,
     required String waiterName,
   }) async {
     final pending = await getPendingPaymentSaleUuid(tableId, waiterName);
-    if (pending != null && pending.isNotEmpty) return pending;
+    if (pending != null && pending.isNotEmpty) {
+      final existingSaleId = await fetchSaleIdByUuid(pending);
+      if (existingSaleId == null) return pending;
+    }
     try {
       final db = await database;
       final rows = await db.query(
@@ -1339,8 +1346,11 @@ class DatabaseService {
             ? portalUid
             : printUuid;
         if (reuse != null && reuse.isNotEmpty) {
-          await setPendingPaymentSaleUuid(tableId, waiterName, reuse);
-          return reuse;
+          final existingSaleId = await fetchSaleIdByUuid(reuse);
+          if (existingSaleId == null) {
+            await setPendingPaymentSaleUuid(tableId, waiterName, reuse);
+            return reuse;
+          }
         }
       }
     } catch (_) {}
@@ -1514,13 +1524,14 @@ class DatabaseService {
   /// Open invoices not yet posted (or not yet updated) on SelliX web.
   ///
   /// Printo and Paguaj share one [saleUid] so print-then-pay upserts once.
+  /// A paid sale still waiting to sync must not block a new open print on the
+  /// same table (next visit after Paguaj).
   Future<List<Map<String, dynamic>>> fetchUnsyncedPortalSales({
     int limit = 200,
   }) async {
     final db = await database;
     final invoices = <Map<String, dynamic>>[];
     final usedUids = <String>{};
-    final paidTableIds = <int>{};
 
     List<Map<String, dynamic>> sales = const [];
     try {
@@ -1549,8 +1560,6 @@ class DatabaseService {
         final uuid = (row['uuid'] as String?)?.trim() ?? '';
         if (uuid.isEmpty) continue;
         usedUids.add(uuid);
-        final tableId = (row['tableId'] as num?)?.toInt();
-        if (tableId != null && tableId > 0) paidTableIds.add(tableId);
         invoices.add(
           _portalInvoiceFromSale(
             row,
@@ -1593,9 +1602,8 @@ class DatabaseService {
       final ownUid = (row['uuid'] as String?)?.trim() ?? '';
       final uid =
           (portalUid != null && portalUid.isNotEmpty) ? portalUid : ownUid;
-      if (uid.isEmpty || usedUids.contains(uid)) continue;
+      if (uid.isEmpty) continue;
       final tableId = (row['tableId'] as num?)?.toInt();
-      if (tableId != null && paidTableIds.contains(tableId)) continue;
       if (tableId != null && tableId > 0 && !occupiedIds.contains(tableId)) {
         continue;
       }
@@ -1604,8 +1612,29 @@ class DatabaseService {
 
     for (final uid in grouped.keys) {
       if (invoices.length >= limit) break;
-      final paidLocally = await fetchSaleIdByUuid(uid);
-      if (paidLocally != null) continue;
+      var effectiveUid = uid;
+      final claimedBySale =
+          usedUids.contains(uid) || await fetchSaleIdByUuid(uid) != null;
+      if (claimedBySale) {
+        // Uid already belongs to a (paid) sale — re-key so this open visit
+        // syncs as its own invoice in the same batch.
+        effectiveUid = DatabaseSchema.generateUuid();
+        final sample = grouped[uid]!.first;
+        final tableId = (sample['tableId'] as num?)?.toInt();
+        final waiter = (sample['waiterName'] as String?)?.trim() ?? '';
+        try {
+          await db.update(
+            'kitchen_prints',
+            {'portalSaleUid': effectiveUid, 'portalSynced': 0},
+            where:
+                "COALESCE(portalSynced, 0) = 0 AND (portalSaleUid = ? OR uuid = ?)",
+            whereArgs: [uid, uid],
+          );
+        } catch (_) {}
+        if (tableId != null && tableId > 0 && waiter.isNotEmpty) {
+          await setPendingPaymentSaleUuid(tableId, waiter, effectiveUid);
+        }
+      }
       final sample = grouped[uid]!.first;
       final tableId = (sample['tableId'] as num?)?.toInt();
       if (tableId != null && tableId > 0 && !occupiedIds.contains(tableId)) {
@@ -1616,7 +1645,7 @@ class DatabaseService {
         allPrints = await db.query(
           'kitchen_prints',
           where: 'portalSaleUid = ? OR uuid = ?',
-          whereArgs: [uid, uid],
+          whereArgs: [effectiveUid, effectiveUid],
           orderBy: 'id ASC',
         );
       } catch (_) {
@@ -1628,8 +1657,8 @@ class DatabaseService {
           .whereType<int>()
           .toList();
       final lines = await fetchKitchenPrintLinesForPrints(printIds);
-      invoices.add(_portalInvoiceFromPrints(uid, allPrints, lines));
-      usedUids.add(uid);
+      invoices.add(_portalInvoiceFromPrints(effectiveUid, allPrints, lines));
+      usedUids.add(effectiveUid);
     }
 
     return invoices;
@@ -2033,26 +2062,36 @@ class DatabaseService {
     }
   }
 
-  Future<void> updateProductNameScale(int scale) async {
+  Future<void> updateProductDisplayScales({
+    int? name,
+    int? image,
+    int? price,
+  }) async {
     final db = await database;
-    final value = scale.clamp(0, 2);
+    final map = <String, Object?>{};
+    if (name != null) map['productNameScale'] = name.clamp(0, 2);
+    if (image != null) map['productImageScale'] = image.clamp(0, 2);
+    if (price != null) map['productPriceScale'] = price.clamp(0, 2);
+    if (map.isEmpty) return;
     try {
-      await db.update(
-        'company',
-        {'productNameScale': value},
-        where: 'id = 1',
-      );
+      await db.update('company', map, where: 'id = 1');
     } catch (_) {
       try {
         await db.execute(
           "ALTER TABLE company ADD COLUMN productNameScale INTEGER NOT NULL DEFAULT 0",
         );
       } catch (_) {}
-      await db.update(
-        'company',
-        {'productNameScale': value},
-        where: 'id = 1',
-      );
+      try {
+        await db.execute(
+          "ALTER TABLE company ADD COLUMN productImageScale INTEGER NOT NULL DEFAULT 0",
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          "ALTER TABLE company ADD COLUMN productPriceScale INTEGER NOT NULL DEFAULT 0",
+        );
+      } catch (_) {}
+      await db.update('company', map, where: 'id = 1');
     }
   }
 

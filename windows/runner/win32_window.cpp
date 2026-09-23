@@ -152,13 +152,26 @@ bool Win32Window::Create(const std::wstring& title,
   locked_height_ = monitor_rect.bottom - monitor_rect.top;
   size_locked_ = true;
 
-  // Borderless popup covering the entire monitor (including the taskbar).
-  const DWORD window_style = WS_POPUP;
+  if (locked_width_ < 200 || locked_height_ < 200) {
+    locked_x_ = 0;
+    locked_y_ = 0;
+    locked_width_ = static_cast<int>(size.width);
+    locked_height_ = static_cast<int>(size.height);
+  }
 
+  // Borderless popup covering the entire monitor (including the taskbar).
   HWND window = CreateWindowEx(
-      WS_EX_TOPMOST, window_class, title.c_str(), window_style, locked_x_,
+      WS_EX_TOPMOST, window_class, title.c_str(), WS_POPUP, locked_x_,
       locked_y_, locked_width_, locked_height_, nullptr, nullptr,
       GetModuleHandle(nullptr), this);
+
+  if (!window) {
+    size_locked_ = false;
+    window = CreateWindow(window_class, title.c_str(),
+                          WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                          CW_USEDEFAULT, CW_USEDEFAULT, 1280, 720, nullptr,
+                          nullptr, GetModuleHandle(nullptr), this);
+  }
 
   if (!window) {
     return false;
@@ -166,7 +179,6 @@ bool Win32Window::Create(const std::wstring& title,
 
   UpdateTheme(window);
 
-  // Stay hidden until Flutter's first frame (see FlutterWindow::Show).
   return OnCreate();
 }
 

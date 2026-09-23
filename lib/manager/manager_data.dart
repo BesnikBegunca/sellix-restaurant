@@ -34,7 +34,11 @@ part 'manager_data_tables.dart';
 /// calls [notifyListeners].
 class ManagerData extends ChangeNotifier {
   ManagerData._() {
-    _init();
+    _init().catchError((Object e, StackTrace st) {
+      debugPrint('ManagerData._init failed: $e\n$st');
+      isLoading = false;
+      notifyListeners();
+    });
   }
 
   static final ManagerData instance = ManagerData._();
@@ -72,8 +76,17 @@ class ManagerData extends ChangeNotifier {
   /// When true, waiters do not see each table's current total.
   bool hideWaiterTableTotals = false;
 
-  /// 0 = normal, 1 = large, 2 = extra large — POS product-name card.
+  /// 0 = normal, 1 = large, 2 = extra large — POS product tile.
   int productNameScale = 0;
+  int productImageScale = 0;
+  int productPriceScale = 0;
+
+  int get productTileScale {
+    var m = productNameScale;
+    if (productImageScale > m) m = productImageScale;
+    if (productPriceScale > m) m = productPriceScale;
+    return m.clamp(0, 2);
+  }
 
   // ── shift ──────────────────────────────────────────────────────────────────
 
@@ -159,6 +172,10 @@ class ManagerData extends ChangeNotifier {
           ((company['hideWaiterTableTotals'] as int?) ?? 0) == 1;
       productNameScale =
           ((company['productNameScale'] as int?) ?? 0).clamp(0, 2);
+      productImageScale =
+          ((company['productImageScale'] as int?) ?? 0).clamp(0, 2);
+      productPriceScale =
+          ((company['productPriceScale'] as int?) ?? 0).clamp(0, 2);
       _adminPinHash     = company['adminPinHash']    as String?;
       _adminPinSalt     = company['adminPinSalt']    as String?;
     }
@@ -433,9 +450,19 @@ class ManagerData extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveProductNameScale(int scale) async {
-    productNameScale = scale.clamp(0, 2);
-    await DatabaseService.instance.updateProductNameScale(productNameScale);
+  Future<void> saveProductDisplayScales({
+    int? name,
+    int? image,
+    int? price,
+  }) async {
+    if (name != null) productNameScale = name.clamp(0, 2);
+    if (image != null) productImageScale = image.clamp(0, 2);
+    if (price != null) productPriceScale = price.clamp(0, 2);
+    await DatabaseService.instance.updateProductDisplayScales(
+      name: name,
+      image: image,
+      price: price,
+    );
     notifyListeners();
   }
 

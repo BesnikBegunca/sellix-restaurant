@@ -218,6 +218,23 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
         );
         // ignore: avoid_print
         print('[SyncDiag] resolvedSaleUuid=$saleUuid');
+
+        // PAGUAJ pa PRINTO: artikujt e rinj hyjnë në totalin e kamarierit
+        // (i njëjti rresht si PRINTO). Tavolinë e hapur pa artikuj të rinj
+        // nuk shtohet sërish — ajo llogari u numërua kur u printua.
+        if (_lines.isNotEmpty) {
+          final printOrderNumber = await data.nextWaiterOrderNumber(
+            widget.waiterName,
+          );
+          _activeOrderNumber = printOrderNumber;
+          await data.recordKitchenPrint(
+            tableId: widget.tableNumber,
+            waiterName: widget.waiterName,
+            orderNumber: printOrderNumber,
+            lines: _toCurrentLines(_lines),
+          );
+        }
+
         payResult = await data.recordSaleWithLines(
           saleUuid: saleUuid,
           waiterName: widget.waiterName,
@@ -412,7 +429,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     final merged = _mergeLines(persisted, _toCurrentLines(_lines));
     final mergedTotal = _sumCurrentLines(merged);
 
-    ManagerData.instance.updateTableTotal(
+    await ManagerData.instance.updateTableTotal(
       widget.tableNumber,
       mergedTotal,
       widget.waiterName,
@@ -614,15 +631,15 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                 Expanded(
                                   child: LayoutBuilder(
                                     builder: (context, gridConstraints) {
-                                      final nameScale = ManagerData
+                                      final tileScale = ManagerData
                                           .instance
-                                          .productNameScale;
+                                          .productTileScale;
                                       final columns =
                                           PosGrid.resolveProductCrossAxisCount(
                                             itemCount: products.length,
                                             width: gridConstraints.maxWidth,
                                             height: gridConstraints.maxHeight,
-                                            nameScale: nameScale,
+                                            nameScale: tileScale,
                                           );
                                       return GridView.builder(
                                         physics:
@@ -633,7 +650,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                         gridDelegate:
                                             PosGrid.productDelegateFor(
                                           columns,
-                                          nameScale: nameScale,
+                                          nameScale: tileScale,
                                         ),
                                         itemCount: products.length,
                                         itemBuilder: (context, i) {

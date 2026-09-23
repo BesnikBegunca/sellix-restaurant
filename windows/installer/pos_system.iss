@@ -54,17 +54,19 @@ Source: "{#ConfigDir}\app_config.json"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; Start Menu shortcut
-Name: "{group}\{#AppName}";     Filename: "{app}\{#AppExeName}"
+Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
 Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 
 ; Desktop shortcut
-Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
 
 [Run]
-; Optional: launch after install
+; Hapet si përdoruesi, jo si Administrator i wizard-it — përndryshe Flutter
+; shpesh nuk shfaqet pas Finish.
 Filename: "{app}\{#AppExeName}"; \
   Description: "Launch {#AppName}"; \
-  Flags: nowait postinstall skipifsilent
+  WorkingDir: "{app}"; \
+  Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [UninstallDelete]
 ; Clean up app_config.json written by operator (not tracked by uninstaller otherwise)

@@ -22,11 +22,16 @@ class _ProductTileState extends State<ProductTile> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final scale = ManagerData.instance.productNameScale.clamp(0, 2);
-    final nameSize = const [16.0, 20.0, 24.0][scale];
-    final nameLines = const [2, 3, 4][scale];
-    final imageH = const [100.0, 70.0, 48.0][scale];
-    final pad = const [24.0, 18.0, 14.0][scale];
+    final m = ManagerData.instance;
+    final nameScale = m.productNameScale.clamp(0, 2);
+    final imageScale = m.productImageScale.clamp(0, 2);
+    final priceScale = m.productPriceScale.clamp(0, 2);
+    final nameSize = const [16.0, 20.0, 24.0][nameScale];
+    final nameLines = const [2, 3, 4][nameScale];
+    final imageH = const [88.0, 128.0, 168.0][imageScale];
+    final emojiSize = const [72.0, 104.0, 136.0][imageScale];
+    final priceSize = const [14.0, 18.0, 22.0][priceScale];
+    final pad = const [24.0, 18.0, 14.0][m.productTileScale];
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -81,7 +86,7 @@ class _ProductTileState extends State<ProductTile> {
                                 fit: BoxFit.contain,
                                 child: Text(
                                   widget.product.emoji,
-                                  style: const TextStyle(fontSize: 96),
+                                  style: TextStyle(fontSize: emojiSize),
                                 ),
                               ),
                       ),
@@ -109,7 +114,10 @@ class _ProductTileState extends State<ProductTile> {
                               Text(
                                 '${widget.product.price.toStringAsFixed(2)}€',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: priceSize,
+                                  fontWeight: priceScale > 0
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                   color: scheme.onSurfaceVariant,
                                 ),
                               ),
