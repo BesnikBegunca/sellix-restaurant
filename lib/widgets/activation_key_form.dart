@@ -11,6 +11,7 @@ import '../services/background_sync_service.dart';
 import '../services/license_heartbeat_service.dart';
 import '../services/local_tenant_data_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/admin_pin_setup_dialog.dart';
 import '../widgets/gg_header.dart';
 import '../widgets/open_tables_activation_dialog.dart';
 
@@ -107,6 +108,7 @@ class _ActivationKeyFormState extends State<ActivationKeyForm> {
       _activating = true;
       _error = null;
     });
+    var persisted = false;
     try {
       await ActivationService.instance.activateDesktop(
         activationKey: key,
@@ -114,16 +116,25 @@ class _ActivationKeyFormState extends State<ActivationKeyForm> {
         businessName: _validated!.businessName,
         business: _validated!.business,
         license: _validated!.license,
+        liftUi: false,
       );
+      persisted = true;
       await ManagerData.instance.reload();
-      BackgroundSyncService.instance.start();
-      LicenseHeartbeatService.instance.start(checkImmediately: false);
+      if (mounted) {
+        await showAdminPinSetupDialog(context);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _activating = false;
         _error = activationErrorMessage(e);
       });
+    } finally {
+      if (persisted) {
+        await ActivationService.instance.completeActivationUi();
+        BackgroundSyncService.instance.start();
+        LicenseHeartbeatService.instance.start(checkImmediately: false);
+      }
     }
   }
 
