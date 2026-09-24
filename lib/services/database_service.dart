@@ -1577,10 +1577,12 @@ class DatabaseService {
         final uuid = (row['uuid'] as String?)?.trim() ?? '';
         if (uuid.isEmpty) continue;
         usedUids.add(uuid);
+        final fiscal = await _saleMatchesFiscalCoupon(row);
         invoices.add(
           _portalInvoiceFromSale(
             row,
             linesBySale[(row['id'] as num?)?.toInt() ?? -1] ?? const [],
+            fiscalCoupon: fiscal,
           ),
         );
       }
@@ -1723,10 +1725,47 @@ class DatabaseService {
     return snapshot;
   }
 
+  /// True when a matching ATK fiscal coupon was issued for this sale (same
+  /// table / total / waiter, within a few minutes). Read-only — does not
+  /// change fiscal_coupons or ATK submission.
+  Future<bool> _saleMatchesFiscalCoupon(Map<String, dynamic> saleRow) async {
+    final tableId = (saleRow['tableId'] as num?)?.toInt();
+    final totalEuro = (saleRow['total'] as num?)?.toDouble() ?? 0;
+    if (tableId == null || tableId <= 0 || totalEuro <= 0) return false;
+    final totalCents = (totalEuro * 100).round();
+    final waiter = (saleRow['waiterName'] as String?)?.trim() ?? '';
+    final soldRaw =
+        (saleRow['timestamp'] as String?) ?? (saleRow['createdAt'] as String?);
+    final soldAt = soldRaw != null ? DateTime.tryParse(soldRaw) : null;
+
+    try {
+      final db = await database;
+      final rows = await db.query(
+        'fiscal_coupons',
+        columns: ['total', 'tableId', 'waiterName', 'issuedAt'],
+        where: 'tableId = ? AND total = ?',
+        whereArgs: [tableId, totalCents],
+        orderBy: 'id DESC',
+        limit: 8,
+      );
+      for (final row in rows) {
+        final w = (row['waiterName'] as String?)?.trim() ?? '';
+        if (waiter.isNotEmpty && w.isNotEmpty && waiter != w) continue;
+        if (soldAt == null) return true;
+        final issued = DateTime.tryParse((row['issuedAt'] as String?) ?? '');
+        if (issued == null) return true;
+        final delta = issued.difference(soldAt).inMinutes.abs();
+        if (delta <= 5) return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Map<String, dynamic> _portalInvoiceFromSale(
     Map<String, dynamic> row,
-    List<Map<String, dynamic>> lines,
-  ) {
+    List<Map<String, dynamic>> lines, {
+    bool fiscalCoupon = false,
+  }) {
     final tableName = (row['tableName'] as String?)?.trim() ?? '';
     final tableId = (row['tableId'] as num?)?.toInt();
     return {
@@ -1742,6 +1781,7 @@ class DatabaseService {
       'status': 'paid',
       'closeTable': true,
       'tableOccupied': false,
+      if (fiscalCoupon) 'fiscalCoupon': true,
       'items': [
         for (final line in lines)
           {

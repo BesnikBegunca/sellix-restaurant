@@ -141,6 +141,7 @@ class DatabaseSchema {
     'fiscal_pos_id',
     'fiscal_application_id',
     'fiscal_location',
+    'fiscal_fiscalization_no',
     'fiscal_tax_rate',
     'fiscal_prices_include_vat',
     'fiscal_private_key_pem',

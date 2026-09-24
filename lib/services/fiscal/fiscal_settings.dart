@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../database_service.dart';
 import 'fiscal_models.dart';
+import 'secure_fiscal_key_store.dart';
 
 /// Which ATK environment the coupons go to.
 enum FiscalEnvironment {
@@ -21,8 +22,8 @@ enum FiscalEnvironment {
 /// Everything the fiscal coupon needs that is not part of the order itself.
 ///
 /// [businessId], [branchId], [posId] and [applicationId] come from the ATK
-/// onboarding; [privateKeyPem] is produced by the ATK onboarder tool and must
-/// never leave this machine.
+/// onboarding; [privateKeyPem] is generated on this machine (in-app or by
+/// ATK's onboarder tool) and must never leave it.
 @immutable
 class FiscalSettings {
   const FiscalSettings({
@@ -33,6 +34,7 @@ class FiscalSettings {
     this.posId = 0,
     this.applicationId = 0,
     this.location = '',
+    this.fiscalizationNo = '',
     this.taxRate = FiscalTaxRate.e,
     this.pricesIncludeVat = true,
     this.privateKeyPem = '',
@@ -54,6 +56,10 @@ class FiscalSettings {
 
   /// City of the sale point, printed on the coupon.
   final String location;
+
+  /// Unique fiscalisation code the business gets from its own EDI account.
+  /// Used only during onboarding — it is not part of any coupon.
+  final String fiscalizationNo;
 
   /// Single VAT rate applied to every item.
   final FiscalTaxRate taxRate;
@@ -89,7 +95,7 @@ class FiscalSettings {
     if (posId <= 0) return 'Mungon ID e arkës (POS ID).';
     if (applicationId <= 0) return 'Mungon ID e aplikacionit (Application ID).';
     if (privateKeyPem.trim().isEmpty) {
-      return 'Mungon çelësi privat. Ekzekuto mjetin e onboarding-ut të ATK-së.';
+      return 'Mungon çelësi privat. Shtyp "Gjenero çelësin" te cilësimet fiskale.';
     }
     return null;
   }
@@ -102,6 +108,7 @@ class FiscalSettings {
     int? posId,
     int? applicationId,
     String? location,
+    String? fiscalizationNo,
     FiscalTaxRate? taxRate,
     bool? pricesIncludeVat,
     String? privateKeyPem,
@@ -117,6 +124,7 @@ class FiscalSettings {
       posId: posId ?? this.posId,
       applicationId: applicationId ?? this.applicationId,
       location: location ?? this.location,
+      fiscalizationNo: fiscalizationNo ?? this.fiscalizationNo,
       taxRate: taxRate ?? this.taxRate,
       pricesIncludeVat: pricesIncludeVat ?? this.pricesIncludeVat,
       privateKeyPem: privateKeyPem ?? this.privateKeyPem,
@@ -139,6 +147,7 @@ class FiscalSettingsStore extends ChangeNotifier {
   static const _kPosId = 'fiscal_pos_id';
   static const _kApplicationId = 'fiscal_application_id';
   static const _kLocation = 'fiscal_location';
+  static const _kFiscalizationNo = 'fiscal_fiscalization_no';
   static const _kTaxRate = 'fiscal_tax_rate';
   static const _kPricesIncludeVat = 'fiscal_prices_include_vat';
   static const _kPrivateKey = 'fiscal_private_key_pem';
@@ -156,6 +165,7 @@ class FiscalSettingsStore extends ChangeNotifier {
     _kPosId,
     _kApplicationId,
     _kLocation,
+    _kFiscalizationNo,
     _kTaxRate,
     _kPricesIncludeVat,
     _kPrivateKey,
@@ -179,10 +189,28 @@ class FiscalSettingsStore extends ChangeNotifier {
     final posId = await db.getAppMeta(_kPosId);
     final applicationId = await db.getAppMeta(_kApplicationId);
     final location = await db.getAppMeta(_kLocation);
+    final fiscalizationNo = await db.getAppMeta(_kFiscalizationNo);
     final taxRate = await db.getAppMeta(_kTaxRate);
     final includeVat = await db.getAppMeta(_kPricesIncludeVat);
-    final privateKey = await db.getAppMeta(_kPrivateKey);
-    final certificate = await db.getAppMeta(_kCertificate);
+    final keyStore = SecureFiscalKeyStore.instance;
+    var privateKey = await keyStore.readPrivateKey() ?? '';
+    var certificate = await keyStore.readCertificate() ?? '';
+
+    // One-time migration: earlier builds kept the key in app_meta plaintext.
+    if (privateKey.trim().isEmpty) {
+      final legacyKey = await db.getAppMeta(_kPrivateKey) ?? '';
+      final legacyCert = await db.getAppMeta(_kCertificate) ?? '';
+      if (legacyKey.trim().isNotEmpty) {
+        await keyStore.save(
+          privateKeyPem: legacyKey,
+          certificatePem: legacyCert,
+        );
+        await db.setAppMeta(_kPrivateKey, '');
+        await db.setAppMeta(_kCertificate, '');
+        privateKey = legacyKey;
+        certificate = legacyCert;
+      }
+    }
     final unit = await db.getAppMeta(_kUnit);
     final itemType = await db.getAppMeta(_kItemType);
 
@@ -194,11 +222,12 @@ class FiscalSettingsStore extends ChangeNotifier {
       posId: int.tryParse(posId ?? '') ?? 0,
       applicationId: int.tryParse(applicationId ?? '') ?? 0,
       location: location ?? '',
+      fiscalizationNo: fiscalizationNo ?? '',
       taxRate: FiscalTaxRate.fromCode(taxRate),
       // Default true: Kosovo menu prices include VAT.
       pricesIncludeVat: includeVat != '0',
-      privateKeyPem: privateKey ?? '',
-      certificatePem: certificate ?? '',
+      privateKeyPem: privateKey,
+      certificatePem: certificate,
       unit: (unit == null || unit.isEmpty) ? 'cope' : unit,
       itemType: (itemType == null || itemType.isEmpty) ? 'TT' : itemType,
     );
@@ -216,10 +245,14 @@ class FiscalSettingsStore extends ChangeNotifier {
     await db.setAppMeta(_kPosId, next.posId.toString());
     await db.setAppMeta(_kApplicationId, next.applicationId.toString());
     await db.setAppMeta(_kLocation, next.location);
+    await db.setAppMeta(_kFiscalizationNo, next.fiscalizationNo);
     await db.setAppMeta(_kTaxRate, next.taxRate.code);
     await db.setAppMeta(_kPricesIncludeVat, next.pricesIncludeVat ? '1' : '0');
-    await db.setAppMeta(_kPrivateKey, next.privateKeyPem);
-    await db.setAppMeta(_kCertificate, next.certificatePem);
+    // The signing key never goes into SQLite — OS-protected storage only.
+    await SecureFiscalKeyStore.instance.save(
+      privateKeyPem: next.privateKeyPem,
+      certificatePem: next.certificatePem,
+    );
     await db.setAppMeta(_kUnit, next.unit);
     await db.setAppMeta(_kItemType, next.itemType);
     _settings = next;

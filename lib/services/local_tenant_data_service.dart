@@ -8,6 +8,8 @@ import '../models/tenant_data_conflict.dart';
 import '../widgets/tenant_data_conflict_dialog.dart';
 import 'database_schema.dart';
 import 'database_service.dart';
+import 'fiscal/fiscal_settings.dart';
+import 'fiscal/secure_fiscal_key_store.dart';
 import '../l10n/tr.dart';
 
 /// Detects and clears local SQLite business data when the activated tenant changes.
@@ -140,6 +142,10 @@ class LocalTenantDataService {
     await DatabaseService.instance.clearLocalBusinessData(
       skipOpenTableCheck: skipOpenTableCheck,
     );
+    // The ATK signing key lives outside SQLite, so wiping the tenant tables
+    // does not touch it — a new business must never inherit it.
+    await SecureFiscalKeyStore.instance.clear();
+    await FiscalSettingsStore.instance.load();
     await ManagerData.instance.reload();
   }
 

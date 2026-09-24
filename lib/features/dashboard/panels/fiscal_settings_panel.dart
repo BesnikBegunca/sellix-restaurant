@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../services/fiscal/fiscal_models.dart';
+import '../../../services/fiscal/fiscal_onboarding.dart';
 import '../../../services/fiscal/fiscal_service.dart';
 import '../../../services/fiscal/fiscal_settings.dart';
 import '../../../services/fiscal/fiscal_signer.dart';
@@ -9,9 +10,9 @@ import '../../../theme/app_colors.dart';
 
 /// Configuration for ATK fiscalisation ("Kupon Fiskal").
 ///
-/// Everything here comes from the ATK onboarding: the identifiers from the SEF
-/// application and the EDI fiscalisation number, and the private key produced
-/// by ATK's onboarder tool.
+/// The identifiers come from the SEF certification (application id) and from
+/// the business's own EDI account (NUI, fiscalisation number). The signing key
+/// is generated here, in-app, and stored in OS-protected storage.
 class FiscalSettingsPanel extends StatefulWidget {
   const FiscalSettingsPanel({super.key});
 
@@ -25,6 +26,7 @@ class _FiscalSettingsPanelState extends State<FiscalSettingsPanel> {
   final _posId = TextEditingController();
   final _applicationId = TextEditingController();
   final _location = TextEditingController();
+  final _fiscalizationNo = TextEditingController();
   final _unit = TextEditingController();
   final _itemType = TextEditingController();
   final _privateKey = TextEditingController();
@@ -37,6 +39,7 @@ class _FiscalSettingsPanelState extends State<FiscalSettingsPanel> {
 
   bool _loading = true;
   bool _saving = false;
+  bool _generating = false;
   String? _keyStatus;
   bool _keyOk = false;
   int _pending = 0;
@@ -55,6 +58,7 @@ class _FiscalSettingsPanelState extends State<FiscalSettingsPanel> {
       _posId,
       _applicationId,
       _location,
+      _fiscalizationNo,
       _unit,
       _itemType,
       _privateKey,
@@ -78,6 +82,7 @@ class _FiscalSettingsPanelState extends State<FiscalSettingsPanel> {
       _applicationId.text =
           s.applicationId > 0 ? s.applicationId.toString() : '';
       _location.text = s.location;
+      _fiscalizationNo.text = s.fiscalizationNo;
       _unit.text = s.unit;
       _itemType.text = s.itemType;
       _privateKey.text = s.privateKeyPem;
@@ -128,6 +133,7 @@ class _FiscalSettingsPanelState extends State<FiscalSettingsPanel> {
       posId: int.tryParse(_posId.text.trim()) ?? 0,
       applicationId: int.tryParse(_applicationId.text.trim()) ?? 0,
       location: _location.text.trim(),
+      fiscalizationNo: _fiscalizationNo.text.trim(),
       taxRate: _taxRate,
       pricesIncludeVat: _pricesIncludeVat,
       privateKeyPem: _privateKey.text.trim(),
@@ -149,6 +155,101 @@ class _FiscalSettingsPanelState extends State<FiscalSettingsPanel> {
         backgroundColor:
             problem == null ? AppColors.primaryGreen : AppColors.negativeText,
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Runs ATK onboarding in-app: generates the key here, asks ATK to sign the
+  /// CSR, and stores both. The private key never leaves this machine.
+  Future<void> _generateKey() async {
+    final businessId = int.tryParse(_businessId.text.trim()) ?? 0;
+    final branchId = int.tryParse(_branchId.text.trim()) ?? 0;
+    final posId = int.tryParse(_posId.text.trim()) ?? 0;
+    final applicationId = int.tryParse(_applicationId.text.trim()) ?? 0;
+    final fiscalizationNo = _fiscalizationNo.text.trim();
+
+    final missing = <String>[
+      if (businessId <= 0) 'NUI i biznesit',
+      if (branchId <= 0) 'Branch ID',
+      if (posId <= 0) 'POS ID',
+      if (applicationId <= 0) 'Application ID',
+      if (fiscalizationNo.isEmpty) 'Numri i fiskalizimit',
+    ];
+    if (missing.isNotEmpty) {
+      _snack('Plotëso së pari: ${missing.join(', ')}', ok: false);
+      return;
+    }
+
+    if (_privateKey.text.trim().isNotEmpty && !await _confirmReplace()) return;
+
+    setState(() => _generating = true);
+    try {
+      final result = await FiscalOnboardingService.instance.onboard(
+        environment: _environment,
+        businessId: businessId,
+        fiscalizationNo: fiscalizationNo,
+        posId: posId,
+        branchId: branchId,
+        applicationId: applicationId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _privateKey.text = result.privateKeyPem;
+        _certificate.text = result.certificatePem;
+        _generating = false;
+      });
+      _validateKey();
+      await _save();
+      if (!mounted) return;
+      _snack(
+        'Çelësi u gjenerua dhe certifikata u nënshkrua nga ATK për '
+        '"${result.businessName}".',
+      );
+    } on FiscalOnboardingException catch (e) {
+      if (!mounted) return;
+      setState(() => _generating = false);
+      _snack('Onboarding-u dështoi — $e', ok: false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _generating = false);
+      _snack('Onboarding-u dështoi: $e', ok: false);
+    }
+  }
+
+  /// Replacing a key is not destructive to past coupons, but this till will
+  /// sign with the new one from now on — worth a confirmation.
+  Future<bool> _confirmReplace() async {
+    final replace = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ka tashmë një çelës'),
+        content: const Text(
+          'Gjenerimi i një çelësi të ri e zëvendëson atë ekzistues. Kuponët e '
+          'lëshuar më parë mbeten të vlefshëm, por kjo arkë do të nënshkruajë '
+          'me çelësin e ri.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Anulo'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Zëvendëso'),
+          ),
+        ],
+      ),
+    );
+    return replace == true;
+  }
+
+  void _snack(String message, {bool ok = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: ok ? AppColors.primaryGreen : AppColors.negativeText,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: ok ? 5 : 8),
       ),
     );
   }
@@ -252,6 +353,16 @@ class _FiscalSettingsPanelState extends State<FiscalSettingsPanel> {
               ),
               const SizedBox(height: 12),
               TextField(
+                controller: _fiscalizationNo,
+                decoration: const InputDecoration(
+                  labelText: 'Numri i fiskalizimit (nga EDI e biznesit)',
+                  helperText:
+                      'Vetëm për gjenerimin e çelësit; nuk shkon në kupon.',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
                 controller: _location,
                 decoration: const InputDecoration(
                   labelText: 'Vendi i pikës së shitjes (p.sh. Kacanik)',
@@ -324,9 +435,38 @@ class _FiscalSettingsPanelState extends State<FiscalSettingsPanel> {
           _card(
             title: 'Çelësi privat (PKI)',
             subtitle:
-                'Gjenerohet nga mjeti "onboarder" i ATK-së dhe nuk duhet të '
-                'largohet kurrë nga ky kompjuter.',
+                'Gjenerohet në këtë kompjuter dhe nuk largohet kurrë prej tij. '
+                'Ruhet i enkriptuar nga sistemi operativ, jo në bazën e të dhënave.',
             children: [
+              SizedBox(
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: _generating ? null : _generateKey,
+                  icon: _generating
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.vpn_key_outlined),
+                  label: Text(
+                    _generating
+                        ? 'Duke gjeneruar dhe duke kontaktuar ATK-në...'
+                        : 'Gjenero çelësin dhe merr certifikatën nga ATK',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Gjeneron çift çelësash ECDSA P-256 këtu, dërgon te ATK vetëm '
+                'CSR-në (çelësin publik) dhe ruan certifikatën e nënshkruar. '
+                'Zëvendëson mjetin onboarder.exe.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
               TextField(
                 controller: _privateKey,
                 maxLines: 6,
