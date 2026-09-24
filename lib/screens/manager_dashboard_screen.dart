@@ -12,6 +12,7 @@ import '../services/admin_session_service.dart';
 import '../services/audit_log_service.dart';
 import '../services/pin_rate_limiter.dart';
 import '../services/app_language_service.dart';
+import '../features/dashboard/panels/fiscal_settings_panel.dart';
 import '../features/dashboard/panels/shift_panel.dart';
 import '../features/dashboard/panels/staff_panel.dart';
 import '../features/dashboard/panels/expenses_panel.dart';
@@ -47,6 +48,7 @@ List<String> get _kSectionTitles => [
   tr.refund,
   tr.historikuShitjeve,
   tr.regjistriAuditit,
+  AppLanguageService.instance.t('Fiskalizimi', 'Fiscalisation'),
 ];
 
 final RegExp _pinDigits = RegExp(r'^\d+$');
@@ -338,6 +340,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         return const SalesHistoryPanel();
       case 14:
         return const AuditLogPanel();
+      case 15:
+        return const FiscalSettingsPanel();
       default:
         return const SizedBox.shrink();
     }

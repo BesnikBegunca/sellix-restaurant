@@ -20,6 +20,8 @@ import '../services/printer_settings_store.dart';
 import '../services/receipt_printer.dart';
 import '../services/receipt_text.dart';
 import '../services/app_language_service.dart';
+import '../services/fiscal/fiscal_service.dart';
+import '../services/fiscal/fiscal_settings.dart';
 import '../services/portal_sales_sync_service.dart';
 import '../services/waiter_always_open.dart';
 import '../l10n/tr.dart';
@@ -52,6 +54,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
   /// Porosia e hapur e KETIJ kamarieri për këtë tavolinë (jo e të tjerëve).
   TableInfo? _waiterTable;
 
+  bool _isIssuingFiscalCoupon = false;
+  FiscalSettings _fiscal = const FiscalSettings();
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +65,18 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     _language.addListener(_onLanguageChanged);
     _loadPersistedOrder();
     unawaited(_refreshWaiterTable());
+    unawaited(_loadFiscalSettings());
+  }
+
+  Future<void> _loadFiscalSettings() async {
+    try {
+      final store = FiscalSettingsStore.instance;
+      final settings = store.isLoaded ? store.settings : await store.load();
+      if (!mounted) return;
+      setState(() => _fiscal = settings);
+    } catch (e, st) {
+      debugPrint('PosOrderScreen._loadFiscalSettings: $e\n$st');
+    }
   }
 
   /// Rifreskon gjendjen e tavolinës nga `current_orders` për këtë kamarier.
@@ -124,6 +141,15 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     if (_lines.isNotEmpty) return _total;
     return _tableInfo?.currentTotal ?? 0;
   }
+
+  /// A coupon can be issued for new items **or** for a bill this waiter
+  /// printed earlier and has not settled — the customers are getting up from
+  /// the table and want their coupon, with nothing new to add.
+  ///
+  /// [_tableInfo] is this waiter's own open order, so another waiter's table 1
+  /// never enables the button here.
+  bool get _canIssueFiscalCoupon =>
+      _lines.isNotEmpty || (_tableInfo?.occupied ?? false);
 
   Future<void> _loadPersistedOrder() async {
     if (!mounted) return;
@@ -426,6 +452,250 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
     }
   }
 
+  // ── ATK fiscal coupon ───────────────────────────────────────────────────
+
+  /// Issues a fiscal coupon and settles the table.
+  ///
+  /// Same gesture as PRINTO — it acts on what the waiter has in the panel and
+  /// keeps the kitchen-print history — but it also records the sale, because a
+  /// fiscal coupon is the legal record of a completed sale.
+  ///
+  /// Two consequences follow from recording the sale, and both are deliberate:
+  ///
+  ///  * the coupon covers the **whole open bill** (already-printed lines merged
+  ///    with the new ones), not just the latest batch — the coupon total and
+  ///    the recorded sale must agree to the cent;
+  ///  * the table is cleared afterwards. Leaving it open would let PAGUAJ
+  ///    record the same items a second time: [resolvePaymentSaleUuid] hands out
+  ///    a fresh uuid once a sale exists for the old one, so the idempotency
+  ///    guard would not catch it.
+  Future<void> _issueFiscalCoupon() async {
+    if (!_canIssueFiscalCoupon ||
+        _isIssuingFiscalCoupon ||
+        _isSendingOrder ||
+        _isPaying) {
+      return;
+    }
+    setState(() => _isIssuingFiscalCoupon = true);
+    try {
+      final data = ManagerData.instance;
+      final persisted = await data.loadCurrentOrderLines(
+        widget.tableNumber,
+        widget.waiterName,
+      );
+      final combined = _mergeLines(persisted, _toCurrentLines(_lines));
+      final tableTotal = _sumCurrentLines(combined);
+
+      // Issued first: it throws on a misconfigured setup, and aborting here
+      // leaves the sale untouched. A network failure does not throw — the
+      // coupon is stored, printed and queued for retry.
+      final result = await FiscalService.instance.issueCoupon(
+        lines: combined,
+        operatorId: widget.waiterName,
+        tableId: widget.tableNumber,
+      );
+
+      // Same print-total rule as PAGUAJ, so reports do not double-count an
+      // open table that was already sent to the kitchen.
+      if (shouldAddPaymentToPrintTotal(
+        tableOccupied: _tableInfo?.occupied ?? false,
+        hasPrintedOrderLines: persisted.isNotEmpty,
+        hasUnprintedCartLines: _lines.isNotEmpty,
+      )) {
+        final printOrderNumber = await data.nextWaiterOrderNumber(
+          widget.waiterName,
+        );
+        _activeOrderNumber = printOrderNumber;
+        await data.recordKitchenPrint(
+          tableId: widget.tableNumber,
+          waiterName: widget.waiterName,
+          orderNumber: printOrderNumber,
+          lines: _toCurrentLines(_lines),
+        );
+      }
+
+      if (tableTotal > 0 && widget.waiterName.isNotEmpty) {
+        final saleUuid = await data.resolvePaymentSaleUuid(
+          tableId: widget.tableNumber,
+          waiterName: widget.waiterName,
+        );
+        await data.recordSaleWithLines(
+          saleUuid: saleUuid,
+          waiterName: widget.waiterName,
+          total: tableTotal,
+          tableId: widget.tableNumber,
+          tableName: 'Tavolina ${widget.tableNumber}',
+          lines: combined,
+          orderNumber: _activeOrderNumber > 0 ? _activeOrderNumber : null,
+        );
+        unawaited(PortalSalesSyncService.instance.triggerNow());
+      }
+
+      // The coupon exists and the sale is committed at this point; a printer
+      // failure must not hide either from the waiter.
+      try {
+        await ReceiptPrinter.printFiscalCoupon(
+          companyName: data.companyName ?? tr.posSystem,
+          waiterName: widget.waiterName,
+          tableNumber: widget.tableNumber,
+          lines: combined
+              .map((l) => ReceiptLine(product: l.product, qty: l.qty))
+              .toList(),
+          couponId: result.couponId,
+          verificationNo: result.verificationNo,
+          qrCode: result.qrCode,
+          total: result.totalEuro,
+          totalTax: result.totalTaxEuro,
+          totalNoTax: result.totalNoTaxEuro,
+          taxRateCode: _fiscal.taxRate.code,
+          taxRatePercent: _fiscal.taxRate.percent,
+          issuedAt: result.issuedAt,
+          businessId: _fiscal.businessId > 0
+              ? _fiscal.businessId.toString()
+              : null,
+          posId: _fiscal.posId > 0 ? _fiscal.posId.toString() : null,
+          transactionNo: result.transactionNo,
+          pendingSubmission: !result.accepted,
+        );
+      } catch (e, st) {
+        debugPrint('PosOrderScreen: fiscal coupon print failed: $e\n$st');
+      }
+
+      await data.clearTable(widget.tableNumber, widget.waiterName);
+
+      if (!mounted) return;
+      await _showFiscalCouponResult(result);
+      if (mounted) _returnAfterFinish();
+    } on FiscalNotConfiguredException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Kuponi fiskal: ${e.message}'),
+          backgroundColor: AppColors.negativeText,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Kuponi fiskal dështoi: $e'),
+          backgroundColor: AppColors.negativeText,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isIssuingFiscalCoupon = false);
+    }
+  }
+
+  Future<void> _showFiscalCouponResult(FiscalCouponResult result) {
+    final accepted = result.accepted;
+    return showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black.withValues(alpha: 0.2),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (ctx, anim, sec) {
+        final nav = Navigator.of(ctx);
+        Future.delayed(const Duration(milliseconds: 2200), () {
+          if (nav.canPop()) nav.pop();
+        });
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              constraints: const BoxConstraints(maxWidth: 420),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 40,
+                    offset: const Offset(0, 20),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: accepted
+                          ? AppColors.lightGreenBg
+                          : AppColors.lightGreenBg.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      accepted ? Icons.check : Icons.schedule_outlined,
+                      color: AppColors.primaryGreen,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    accepted ? 'Kuponi Fiskal u Leshua!' : 'Kuponi u Leshua',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.darkGreenText,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Nr. ${result.couponId}  ·  '
+                    '${result.totalEuro.toStringAsFixed(2)}€',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.lightGreenText,
+                    ),
+                  ),
+                  if (!accepted) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      'Nuk u dergua ende ne ATK — do te ridergohet '
+                      'automatikisht.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.mediumGreenText,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (ctx, anim, sec, child) {
+        final curved = CurvedAnimation(
+          parent: anim,
+          curve: Curves.easeOutCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _sendOrder() async {
     if (_lines.isEmpty || _isSendingOrder || _isPaying) return;
     _isSendingOrder = true;
@@ -704,6 +974,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           onDelta: _deltaQty,
                           onSend: _sendOrder,
                           onPay: _payTable,
+                          onIssueFiscalCoupon: _issueFiscalCoupon,
+                          canIssueFiscalCoupon: _canIssueFiscalCoupon,
+                          showFiscalCouponButton: _fiscal.enabled,
+                          isIssuingFiscalCoupon: _isIssuingFiscalCoupon,
                           isPaying: _isPaying,
                           isSendingOrder: _isSendingOrder,
                           // Me totalet e fshehura, kamarieri sheh vetëm shumën

@@ -126,6 +126,7 @@ class DatabaseService {
         await DatabaseSchema.ensureKitchenPrintsPortalSynced(db);
         await DatabaseSchema.ensureSalesCloseMetadataColumns(db);
         await DatabaseSchema.ensureActivationArchiveTables(db);
+        await DatabaseSchema.ensureFiscalCouponTable(db);
         await DatabaseSchema.ensureDefaultMenuPresent(db);
       },
     );
@@ -3142,6 +3143,81 @@ class DatabaseService {
       await db.rawQuery('SELECT COUNT(*) AS c FROM tables WHERE occupied = 1'),
     );
     return (occupied ?? 0) > 0;
+  }
+
+  // ─────────────────────────── FISCAL COUPONS ──────────────────────────────
+
+  /// Stores a signed coupon before it is submitted, so a network failure can
+  /// never lose a coupon the customer already holds.
+  Future<int> insertFiscalCoupon(Map<String, Object?> row) async {
+    final db = await database;
+    return db.insert('fiscal_coupons', row);
+  }
+
+  Future<void> markFiscalCouponSent(
+    int id, {
+    required String transactionNo,
+  }) async {
+    final db = await database;
+    await db.update(
+      'fiscal_coupons',
+      {
+        'status': 'sent',
+        'transactionNo': transactionNo,
+        'lastError': null,
+        'sentAt': DateTime.now().toIso8601String(),
+        'lastAttemptAt': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> markFiscalCouponFailed(int id, String error) async {
+    final db = await database;
+    await db.rawUpdate(
+      'UPDATE fiscal_coupons SET '
+      "status = 'pending', "
+      'lastError = ?, '
+      'retryCount = retryCount + 1, '
+      'lastAttemptAt = ? '
+      'WHERE id = ?',
+      [error, DateTime.now().toIso8601String(), id],
+    );
+  }
+
+  /// Oldest first — ATK expects coupon ids in issuing order.
+  Future<List<Map<String, dynamic>>> fetchPendingFiscalCoupons({
+    int limit = 25,
+  }) async {
+    final db = await database;
+    return db.query(
+      'fiscal_coupons',
+      where: "status != 'sent'",
+      orderBy: 'couponId ASC',
+      limit: limit,
+    );
+  }
+
+  Future<int> countPendingFiscalCoupons() async {
+    final db = await database;
+    return Sqflite.firstIntValue(
+          await db.rawQuery(
+            "SELECT COUNT(*) FROM fiscal_coupons WHERE status != 'sent'",
+          ),
+        ) ??
+        0;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchFiscalCoupons({
+    int limit = 100,
+  }) async {
+    final db = await database;
+    return db.query(
+      'fiscal_coupons',
+      orderBy: 'couponId DESC',
+      limit: limit,
+    );
   }
 
   // ─────────────────────── OUTBOX DIAGNOSTICS ──────────────────────────────

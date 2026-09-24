@@ -108,6 +108,7 @@ class DatabaseSchema {
     'categories',
     'shifts',
     'tables',
+    'fiscal_coupons',
   ];
 
   /// Scoped tables checked for "rows from another business" during activation.
@@ -130,6 +131,22 @@ class DatabaseSchema {
     'global_order_number_date',
     'waiter_order_counters',
     'offer_admin_pin_on_next_login',
+    // Fiscal identity and the ATK private key belong to one business only —
+    // a new tenant must never inherit them.
+    'fiscal_coupon_sequence',
+    'fiscal_enabled',
+    'fiscal_environment',
+    'fiscal_business_id',
+    'fiscal_branch_id',
+    'fiscal_pos_id',
+    'fiscal_application_id',
+    'fiscal_location',
+    'fiscal_tax_rate',
+    'fiscal_prices_include_vat',
+    'fiscal_private_key_pem',
+    'fiscal_certificate_pem',
+    'fiscal_unit',
+    'fiscal_item_type',
   ];
 
   // ── Activated tenant IDs (updated by ActivationService at startup) ─────────
@@ -1163,6 +1180,54 @@ class DatabaseSchema {
     // v27: activation archive + sale close metadata
     await ensureSalesCloseMetadataColumns(db);
     await ensureActivationArchiveTables(db);
+
+    // v28: ATK fiscal coupons
+    await ensureFiscalCouponTable(db);
+  }
+
+  /// Ledger of every fiscal coupon issued to ATK (idempotent).
+  ///
+  /// Kept out of [syncScopeTables] on purpose: a fiscal coupon belongs to the
+  /// tax authority and this device's POS ID, not to the cloud sync scope.
+  static Future<void> ensureFiscalCouponTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS fiscal_coupons (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        couponId       INTEGER NOT NULL,
+        verificationNo TEXT    NOT NULL,
+        businessId     INTEGER NOT NULL,
+        branchId       INTEGER NOT NULL,
+        posId          INTEGER NOT NULL,
+        tableId        INTEGER,
+        waiterName     TEXT,
+        couponType     INTEGER NOT NULL DEFAULT 1,
+        issuedAt       TEXT    NOT NULL,
+        total          INTEGER NOT NULL,
+        totalTax       INTEGER NOT NULL,
+        totalNoTax     INTEGER NOT NULL,
+        detailsBase64  TEXT    NOT NULL,
+        signature      TEXT    NOT NULL,
+        qrCode         TEXT    NOT NULL,
+        status         TEXT    NOT NULL DEFAULT 'pending',
+        transactionNo  TEXT,
+        lastError      TEXT,
+        retryCount     INTEGER NOT NULL DEFAULT 0,
+        lastAttemptAt  TEXT,
+        sentAt         TEXT
+      )
+    ''');
+    for (final idx in [
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_fiscal_coupon_no '
+          'ON fiscal_coupons(businessId, couponId)',
+      'CREATE INDEX IF NOT EXISTS idx_fiscal_coupon_status '
+          'ON fiscal_coupons(status)',
+      'CREATE INDEX IF NOT EXISTS idx_fiscal_coupon_issued '
+          'ON fiscal_coupons(issuedAt)',
+    ]) {
+      try {
+        await db.execute(idx);
+      } catch (_) {}
+    }
   }
 
   /// Creates [inventory_items] and [stock_movements] (idempotent).
@@ -1488,6 +1553,7 @@ class DatabaseSchema {
     await ensurePortalVoidEvents(db);
     await ensureSalesCloseMetadataColumns(db);
     await ensureActivationArchiveTables(db);
+    await ensureFiscalCouponTable(db);
 
     // Seed required singleton rows
     await db.insert('shift', {'id': 1, 'status': 'closed'});

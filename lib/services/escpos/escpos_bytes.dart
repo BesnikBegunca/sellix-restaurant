@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 /// Low-level ESC/POS byte builder.
@@ -146,6 +147,48 @@ class EscPosBytes {
   /// defaults for most 24V and 12V drawers.
   EscPosBytes drawerKick() {
     _buf.addAll([_esc, 0x70, 0x00, 0x19, 0xFA]);
+    return this;
+  }
+
+  /// GS ( k — QR code, printed with the current alignment.
+  ///
+  /// Used for the ATK fiscal coupon, whose QR carries the base64 citizen
+  /// coupon plus its signature (a few hundred characters), so the data is
+  /// sent as Latin-1 bytes and the module size is kept modest to fit the
+  /// paper width.
+  ///
+  /// [moduleSize] is 1–16 dots per module; [errorCorrection] is one of
+  /// 'L', 'M', 'Q', 'H'.
+  EscPosBytes qrCode(
+    String data, {
+    int moduleSize = 5,
+    String errorCorrection = 'M',
+  }) {
+    if (data.isEmpty) return this;
+    final payload = latin1.encode(data);
+    // GS ( k pL pH cn fn n1 n2 — select model 2.
+    _buf.addAll([_gs, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00]);
+    // GS ( k pL pH cn fn n — module size.
+    _buf.addAll([
+      _gs, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43,
+      moduleSize.clamp(1, 16),
+    ]);
+    // GS ( k pL pH cn fn n — error correction level.
+    const levels = {'L': 48, 'M': 49, 'Q': 50, 'H': 51};
+    _buf.addAll([
+      _gs, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45,
+      levels[errorCorrection.toUpperCase()] ?? 49,
+    ]);
+    // GS ( k pL pH cn fn m d1..dk — store the data in the symbol buffer.
+    final len = payload.length + 3;
+    _buf.addAll([
+      _gs, 0x28, 0x6B,
+      len & 0xFF, (len >> 8) & 0xFF,
+      0x31, 0x50, 0x30,
+    ]);
+    _buf.addAll(payload);
+    // GS ( k pL pH cn fn m — print the stored symbol.
+    _buf.addAll([_gs, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30]);
     return this;
   }
 

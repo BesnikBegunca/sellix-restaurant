@@ -8,6 +8,7 @@ import 'api_enforcement_parser.dart';
 import 'license_gate_service.dart';
 import 'api_client.dart';
 import 'connectivity_service.dart';
+import 'fiscal/fiscal_service.dart';
 import 'database_service.dart';
 import 'portal_sales_sync_service.dart';
 import 'portal_shifts_sync_service.dart';
@@ -612,6 +613,15 @@ class BackgroundSyncService {
     if (LicenseGateService.instance.isBlocked) return;
     if (!ActivationService.instance.isActivated) return;
     if (_isSyncing || _isPulling) return;
+
+    // Coupons ATK has not accepted yet ride the same idle tick. They go to a
+    // different host than the SelliX API, so a failure here must not stop the
+    // regular push below.
+    try {
+      await FiscalService.instance.retryPending();
+    } catch (e) {
+      debugPrint('BackgroundSyncService: fiscal retry failed — $e');
+    }
 
     await refreshPendingCount();
     if (_pendingCount <= 0) return;

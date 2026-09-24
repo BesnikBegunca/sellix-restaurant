@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/mock_data.dart';
 import '../../../theme/app_colors.dart';
 import 'cart_line.dart';
+import 'fiscal_coupon_button.dart';
 import 'order_line_row.dart';
 import 'pay_button.dart';
 import 'send_order_button.dart';
@@ -17,11 +18,15 @@ class OrderPanel extends StatelessWidget {
     required this.onDelta,
     required this.onSend,
     required this.onPay,
+    this.onIssueFiscalCoupon,
+    this.canIssueFiscalCoupon = false,
     this.canPay = false,
     this.isPaying = false,
     this.isSendingOrder = false,
+    this.isIssuingFiscalCoupon = false,
     this.showTotal = true,
     this.showPayButton = true,
+    this.showFiscalCouponButton = false,
     this.totalLabel = 'Totali',
   });
 
@@ -35,10 +40,19 @@ class OrderPanel extends StatelessWidget {
   final void Function(ProductItem p, int delta) onDelta;
   final VoidCallback onSend;
   final VoidCallback onPay;
+
+  /// Null when fiscalisation is off — the button is then not rendered at all.
+  final VoidCallback? onIssueFiscalCoupon;
+
+  /// Unlike PRINTO, a coupon can also be issued for a bill that was printed
+  /// earlier and has no new items — the customers are leaving and want it.
+  final bool canIssueFiscalCoupon;
   final bool isPaying;
   final bool isSendingOrder;
+  final bool isIssuingFiscalCoupon;
   final bool showTotal;
   final bool showPayButton;
+  final bool showFiscalCouponButton;
 
   /// Etiketa e shumës (p.sh. 'Totali' ose 'Porosia aktuale').
   final String totalLabel;
@@ -149,6 +163,17 @@ class OrderPanel extends StatelessWidget {
               enabled: canPay && !isPaying && !isSendingOrder,
               onPay: onPay,
               isPaying: isPaying,
+            ),
+          ],
+          if (showFiscalCouponButton && onIssueFiscalCoupon != null) ...[
+            const SizedBox(height: 10),
+            FiscalCouponButton(
+              enabled: canIssueFiscalCoupon &&
+                  !isIssuingFiscalCoupon &&
+                  !isSendingOrder &&
+                  !isPaying,
+              onIssue: onIssueFiscalCoupon!,
+              isIssuing: isIssuingFiscalCoupon,
             ),
           ],
         ],

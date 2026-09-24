@@ -44,6 +44,99 @@ class EscPosReceiptBuilder {
     return b.build();
   }
 
+  /// ATK fiscal coupon ("Kupon Fiskal").
+  ///
+  /// Layout follows the payment receipt so the paper looks familiar, plus the
+  /// three things the law needs: the VAT breakdown, the coupon/verification
+  /// numbers, and the QR code the citizen app scans to verify the coupon.
+  static Uint8List buildFiscalCoupon({
+    required PrinterProfile profile,
+    required String companyName,
+    required String waiterName,
+    required int tableNumber,
+    required List<ReceiptLine> lines,
+    required int couponId,
+    required String verificationNo,
+    required String qrCode,
+    required double total,
+    required double totalTax,
+    required double totalNoTax,
+    required String taxRateCode,
+    required int taxRatePercent,
+    required DateTime issuedAt,
+    required String footerText,
+    String? businessAddress,
+    String? businessPhone,
+    String? businessId,
+    String? posId,
+    String? transactionNo,
+    bool pendingSubmission = false,
+  }) {
+    final b = EscPosBytes(paperWidthMm: profile.paperWidthMm);
+    final w = b.lineWidth;
+
+    b.reset();
+    b.boldCenteredDoubleLine('KUPON FISKAL');
+    b.lf();
+
+    final name = companyName.trim();
+    if (name.isNotEmpty) b.boldCenteredLine(name);
+    if (businessAddress != null && businessAddress.isNotEmpty) {
+      b.alignCenter().textLine(businessAddress).alignLeft();
+    }
+    if (businessPhone != null && businessPhone.isNotEmpty) {
+      b.alignCenter().textLine('Tel: $businessPhone').alignLeft();
+    }
+    if (businessId != null && businessId.isNotEmpty) {
+      b.alignCenter().textLine('NUI: $businessId').alignLeft();
+    }
+    b.separator();
+
+    _waiterTable(b, waiterName, tableNumber);
+    b.lf();
+    _itemsHeader(b, w);
+    _itemLines(b, lines, w);
+    b.separator();
+
+    // VAT breakdown — required on the printed coupon.
+    b.rowLR('Vlera pa TVSH:', _money(totalNoTax));
+    b.rowLR('TVSH ($taxRateCode $taxRatePercent%):', _money(totalTax));
+    b.boldOn();
+    b.rowLR('TOTALI:', _money(total));
+    b.boldOff();
+    b.separator();
+
+    b.textLine('Nr. i kuponit: $couponId');
+    b.textLine('Nr. i verifikimit: $verificationNo');
+    if (posId != null && posId.isNotEmpty) b.textLine('Arka: $posId');
+    if (transactionNo != null && transactionNo.isNotEmpty) {
+      b.textLine('Nr. i transaksionit: $transactionNo');
+    }
+    b.textLine(
+      'Data: '
+      '${_two(issuedAt.day)}.${_two(issuedAt.month)}.${issuedAt.year} '
+      '${_two(issuedAt.hour)}:${_two(issuedAt.minute)}:${_two(issuedAt.second)}',
+    );
+    if (pendingSubmission) {
+      b.lf();
+      b.boldCenteredLine('DERGOHET ME VONE NE ATK');
+    }
+
+    b.lf();
+    b.alignCenter();
+    b.qrCode(qrCode, moduleSize: profile.paperWidthMm <= 58 ? 3 : 4);
+    b.lf();
+    b.textLine('Skano per verifikim');
+    b.alignLeft();
+
+    b.lf();
+    b.boldCenteredLine(footerText.isNotEmpty ? footerText : tr.juFaleminderit);
+    b.lf(4);
+
+    if (profile.supportsCut) b.partialCut();
+    return b.build();
+  }
+
   /// Payment receipt (sent to the customer printer on "Pay").
   static Uint8List buildPaymentReceipt({
     required PrinterProfile profile,

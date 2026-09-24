@@ -108,6 +108,12 @@ class ManagerSideNav extends StatelessWidget {
       sq: 'Audit',
       en: 'Audit log',
     ),
+    (
+      icon: Icons.receipt_long_outlined,
+      sel: Icons.receipt_long,
+      sq: 'Fiskalizimi',
+      en: 'Fiscalisation',
+    ),
   ];
 
   @override

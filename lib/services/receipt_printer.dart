@@ -1,6 +1,7 @@
 import '../manager/manager_data.dart';
 import 'escpos/escpos_printer_service.dart';
 import 'escpos/escpos_receipt_builder.dart';
+import 'fiscal/fiscal_receipt_text.dart';
 import 'printer_settings_store.dart';
 import 'receipt_text.dart';
 import 'windows_printers_service.dart';
@@ -112,6 +113,99 @@ class ReceiptPrinter {
     if (ok) return true;
     // Fallback: strip style tags and retry.
     final plain = text.replaceAll('[[B]]', '').replaceAll('[[/B]]', '');
+    return WindowsPrintersService.printRawText(
+      printerName: selectedPrinter,
+      text: '$plain\n\n\n',
+    );
+  }
+
+  // ── ATK fiscal coupon ─────────────────────────────────────────────────────
+
+  /// Prints the fiscal coupon. Returns false when no printer is configured.
+  ///
+  /// The QR code needs ESC/POS: in legacy text mode the coupon still prints,
+  /// but with the verification number in place of the symbol, so the customer
+  /// can still look the coupon up.
+  static Future<bool> printFiscalCoupon({
+    required String companyName,
+    required String waiterName,
+    required int tableNumber,
+    required List<ReceiptLine> lines,
+    required int couponId,
+    required String verificationNo,
+    required String qrCode,
+    required double total,
+    required double totalTax,
+    required double totalNoTax,
+    required String taxRateCode,
+    required int taxRatePercent,
+    required DateTime issuedAt,
+    String? businessId,
+    String? posId,
+    String? transactionNo,
+    bool pendingSubmission = false,
+  }) async {
+    final selectedPrinter = await PrinterSettingsStore.loadSelectedPrinterName();
+    if (selectedPrinter.trim().isEmpty) return false;
+
+    final data = ManagerData.instance;
+    final fallback = buildFiscalCouponReceiptText(
+      companyName: companyName,
+      waiterName: waiterName,
+      tableNumber: tableNumber,
+      lines: lines,
+      couponId: couponId,
+      verificationNo: verificationNo,
+      total: total,
+      totalTax: totalTax,
+      totalNoTax: totalNoTax,
+      taxRateCode: taxRateCode,
+      taxRatePercent: taxRatePercent,
+      issuedAt: issuedAt,
+      businessId: businessId,
+      posId: posId,
+      transactionNo: transactionNo,
+      pendingSubmission: pendingSubmission,
+      footerText: data.receiptFooter,
+    );
+
+    if (data.useEscPos) {
+      final profile = EscPosPrinterService.instance.profileFor(
+        selectedPrinter,
+        paperWidthMm: data.paperWidthMm,
+      );
+      final bytes = EscPosReceiptBuilder.buildFiscalCoupon(
+        profile: profile,
+        companyName: companyName,
+        waiterName: waiterName,
+        tableNumber: tableNumber,
+        lines: lines,
+        couponId: couponId,
+        verificationNo: verificationNo,
+        qrCode: qrCode,
+        total: total,
+        totalTax: totalTax,
+        totalNoTax: totalNoTax,
+        taxRateCode: taxRateCode,
+        taxRatePercent: taxRatePercent,
+        issuedAt: issuedAt,
+        footerText: data.receiptFooter,
+        businessAddress: data.businessAddress,
+        businessPhone: data.businessPhone,
+        businessId: businessId,
+        posId: posId,
+        transactionNo: transactionNo,
+        pendingSubmission: pendingSubmission,
+      );
+      return EscPosPrinterService.instance.printNow(
+        printerName: selectedPrinter,
+        escPosBytes: bytes,
+        fallbackText: fallback,
+      );
+    }
+
+    final plain =
+        fallback.replaceAll('[[B]]', '').replaceAll('[[/B]]', '');
     return WindowsPrintersService.printRawText(
       printerName: selectedPrinter,
       text: '$plain\n\n\n',
