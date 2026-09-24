@@ -22,13 +22,19 @@ class FiscalOnboardingResult {
 }
 
 class FiscalOnboardingException implements Exception {
-  FiscalOnboardingException(this.message, {this.statusCode});
+  FiscalOnboardingException(this.message, {this.statusCode, this.hint});
   final String message;
   final int? statusCode;
 
+  /// What the operator can actually do about it, when the server's own
+  /// message is too terse to act on.
+  final String? hint;
+
   @override
-  String toString() =>
-      statusCode == null ? message : 'ATK $statusCode: $message';
+  String toString() {
+    final head = statusCode == null ? message : 'ATK $statusCode: $message';
+    return hint == null ? head : '$head\n\n$hint';
+  }
 }
 
 /// Does in-app what ATK's `onboarder.exe` does, using the documented API:
@@ -148,7 +154,7 @@ class FiscalOnboardingService {
 
   // ── ATK calls ────────────────────────────────────────────────────────────
 
-  Future<({String businessName, String verificationCode})> _verifyBusiness({
+  Future<({String businessName, BigInt verificationCode})> _verifyBusiness({
     required FiscalEnvironment environment,
     required int businessId,
     required String fiscalizationNo,
@@ -167,15 +173,52 @@ class FiscalOnboardingService {
     );
     final body = response.data;
     final status = response.statusCode ?? 0;
+
+    if (status == 429) {
+      throw FiscalOnboardingException(
+        'Shërbimi i ATK-së po kufizon kërkesat.',
+        statusCode: 429,
+        hint: 'Prit disa minuta para se ta provosh përsëri.',
+      );
+    }
+    if (status == 404) {
+      final message = _errorText(body);
+      // When the CA says its own upstream answered 404, the problem is on
+      // ATK's side: the same body comes back for every input, including ones
+      // that should fail validation first.
+      final upstream = message.contains('ATK service is responding');
+      throw FiscalOnboardingException(
+        message.isEmpty ? 'ATK nuk e njeh këtë kombinim.' : message,
+        statusCode: 404,
+        hint: upstream
+            ? 'Ky mesazh vjen nga shërbimi i brendshëm i ATK-së, jo nga '
+                'kontrolli i të dhënave tua. Ose ai shërbim nuk është i '
+                'disponueshëm, ose ky NUI nuk është i regjistruar në këtë '
+                'mjedis. Kontakto ATK-në me këtë mesazh.'
+            : 'Sipas ATK-së: ose kjo arkë është regjistruar tashmë (provo '
+                'një POS ID tjetër), ose biznesi nuk ka Application ID të '
+                'lidhur. Kontrollo NUI-n dhe numrin e fiskalizimit.',
+      );
+    }
     if (status < 200 || status >= 300) {
       throw FiscalOnboardingException(_errorText(body), statusCode: status);
     }
     if (body is! Map) {
       throw FiscalOnboardingException('Përgjigje e papritur nga ATK.');
     }
+
+    // A 200 can still carry an error object — check it before trusting the
+    // rest of the payload.
+    final embedded = _errorText(body);
+    if (embedded.isNotEmpty) {
+      throw FiscalOnboardingException(embedded, statusCode: status);
+    }
+
     final name = '${body['business_name'] ?? ''}'.trim();
-    final code = '${body['verification_code'] ?? ''}'.trim();
-    if (name.isEmpty || code.isEmpty) {
+    // The live API returns verification_code as an int64, not a string as the
+    // GitHub readme shows — and /ca/signcsr wants that same integer back.
+    final code = BigInt.tryParse('${body['verification_code'] ?? ''}'.trim());
+    if (name.isEmpty || code == null || code == BigInt.zero) {
       throw FiscalOnboardingException(
         'ATK nuk ktheu emrin e biznesit dhe kodin e verifikimit.',
       );
@@ -188,7 +231,7 @@ class FiscalOnboardingService {
     required String businessName,
     required int businessId,
     required int branchId,
-    required String verificationCode,
+    required BigInt verificationCode,
     required int posId,
     required int applicationId,
     required String csrPem,
@@ -199,7 +242,10 @@ class FiscalOnboardingService {
         'business_name': businessName,
         'business_id': businessId,
         'branch_id': branchId,
-        'verification_code': verificationCode,
+        // The live schema calls this `verification_no` and types it as an
+        // int64. The GitHub readme says `verification_code` as a string —
+        // sending that gets the field silently ignored.
+        'verification_no': _asJsonInt(verificationCode),
         'pos_id': posId,
         'application_id': applicationId,
         'csr': csrPem,
@@ -217,11 +263,23 @@ class FiscalOnboardingService {
     return cert;
   }
 
+  /// The verification code is an int64 that can exceed 2^53, so it must not
+  /// go through a double. Dart ints are 64-bit, which covers it.
+  static int _asJsonInt(BigInt value) => value.toInt();
+
+  /// ATK nests the real message under `error: {code, message}` on the CA
+  /// endpoints, while the coupon endpoint uses a flat `error` string.
   static String _errorText(dynamic body) {
-    if (body is Map) {
-      return '${body['error'] ?? body['message'] ?? body}';
+    if (body is! Map) return '$body';
+    final error = body['error'];
+    if (error is Map) {
+      final message = '${error['message'] ?? ''}'.trim();
+      final code = '${error['code'] ?? ''}'.trim();
+      if (message.isEmpty) return '';
+      return code.isEmpty ? message : '$message (kodi $code)';
     }
-    return '$body';
+    final flat = '${error ?? body['message'] ?? ''}'.trim();
+    return flat;
   }
 
   // ── PKCS#10 CSR ──────────────────────────────────────────────────────────
